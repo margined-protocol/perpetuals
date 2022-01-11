@@ -1,13 +1,13 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
-// use cosmwasm_bignumber::{Uint256};
+use cosmwasm_bignumber::{Uint256};
 use margined_perp::margined_vamm::{InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
 use crate::{
-    query::{query_config},
-    state::{Config, CONFIG}
+    query::{query_config, query_state},
+    state::{Config, CONFIG, State, STATE}
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -22,10 +22,18 @@ pub fn instantiate(
         decimals: msg.decimals,
         quote_asset: msg.quote_asset,
         base_asset: msg.base_asset,
-
     };
     
     CONFIG.save(deps.storage, &config)?;
+
+    let state = State {
+        base_asset_reserve: msg.base_asset_reserve,
+        quote_asset_reserve: msg.quote_asset_reserve,
+        funding_rate: Uint256::zero(), // Initialise the funding rate as 0
+        funding_period: msg.funding_period, // Funding period in seconds
+    };
+
+    STATE.save(deps.storage, &state)?;
 
     Ok(Response::default())
 }
@@ -33,17 +41,31 @@ pub fn instantiate(
 // #[cfg_attr(not(feature = "library"), entry_point)]
 // pub fn execute(
 //     deps: DepsMut,
-//     _env: Env,
+//     env: Env,
 //     info: MessageInfo,
 //     msg: ExecuteMsg,
 // ) -> Result<Response, ContractError> {
-//     // match msg {
-//     // }
+//     match msg {
+//         // ExecuteMsg::CreatePool {
+            
+//         // } => { 
+//         //     create_pool(
+//         //         deps,
+//         //         env,
+//         //         info,
+//         //         quote_asset_reserve,
+//         //         base_asset_reserve,
+//         //         funding_period,
+//         //         funding_rate,
+//         //     )
+//         // },
+//     }
 // }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
+        QueryMsg::State {} => to_binary(&query_state(deps)?),
     }
 }

@@ -9,6 +9,7 @@ This repo contains a template vAMM for use on Terra blockchain.
         - [ ] Owner, assets, etc
     - [ ] Execute
         - [ ] Init vAMM (define constant product func k)
+            - define the state of the new vAMM
         - [ ] Long / Short
     - [ ] Query
         - Latest Price
