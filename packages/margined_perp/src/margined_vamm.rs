@@ -32,8 +32,8 @@ pub enum ExecuteMsg {
         direction: Direction,
         base_asset_amount: Uint256,
     },
-    SettleFunding {},
-    CalculateFee {},
+    // SettleFunding {},
+    // CalculateFee {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -2,10 +2,11 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cosmwasm_bignumber::{Uint256};
-use margined_perp::margined_vamm::{InstantiateMsg, QueryMsg};
+use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
 use crate::{
+    handle::{swap_input, swap_output},
     query::{query_config, query_state},
     state::{Config, CONFIG, State, STATE}
 };
@@ -38,29 +39,40 @@ pub fn instantiate(
     Ok(Response::default())
 }
 
-// #[cfg_attr(not(feature = "library"), entry_point)]
-// pub fn execute(
-//     deps: DepsMut,
-//     env: Env,
-//     info: MessageInfo,
-//     msg: ExecuteMsg,
-// ) -> Result<Response, ContractError> {
-//     match msg {
-//         // ExecuteMsg::CreatePool {
-            
-//         // } => { 
-//         //     create_pool(
-//         //         deps,
-//         //         env,
-//         //         info,
-//         //         quote_asset_reserve,
-//         //         base_asset_reserve,
-//         //         funding_period,
-//         //         funding_rate,
-//         //     )
-//         // },
-//     }
-// }
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn execute(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    msg: ExecuteMsg,
+) -> Result<Response, ContractError> {
+    match msg {
+        ExecuteMsg::SwapInput {
+            direction,
+            quote_asset_amount,
+        } => { 
+            swap_input(
+                deps,
+                env,
+                info,
+                direction,
+                quote_asset_amount,
+            )
+        },
+        ExecuteMsg::SwapOutput {
+            direction,
+            base_asset_amount,
+        } => { 
+            swap_output(
+                deps,
+                env,
+                info,
+                direction,
+                base_asset_amount,
+            )
+        },
+    }
+}
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
