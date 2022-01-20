@@ -41,7 +41,7 @@ pub fn swap_input(
     let state: State = read_state(deps.storage)?;
 
     let base_asset_amount = get_input_price_with_reserves(
-        state,
+        &state,
         &direction,
         quote_asset_amount
     )?;
@@ -68,7 +68,7 @@ pub fn swap_output(
     let state: State = read_state(deps.storage)?;
 
     let base_asset_amount = get_output_price_with_reserves(
-        state,
+        &state,
         &direction,
         quote_asset_amount
     );
@@ -85,7 +85,7 @@ pub fn swap_output(
 }
 
 fn get_input_price_with_reserves(
-    state: State,
+    state: &State,
     direction: &Direction,
     quote_asset_amount: Uint128,
 ) -> StdResult<Uint128> {
@@ -97,10 +97,6 @@ fn get_input_price_with_reserves(
     let invariant_k = state.quote_asset_reserve
         .checked_mul(state.base_asset_reserve)?
         .checked_div(state.decimals)?;
-
-    println!("HERE: {}", state.quote_asset_reserve);
-    println!("HERE: {}", state.base_asset_reserve);
-    println!("HERE: {}", invariant_k);
 
     let quote_asset_after: Uint128;
     let base_asset_after: Uint128;
@@ -117,21 +113,21 @@ fn get_input_price_with_reserves(
         }
     }
     
-    base_asset_after = invariant_k * state.decimals / quote_asset_after;
+    base_asset_after = invariant_k
+        .checked_mul(state.decimals)?
+        .checked_div(quote_asset_after)?;
+
     let base_asset_bought = if base_asset_after > state.base_asset_reserve {
         base_asset_after - state.base_asset_reserve
     } else {
         state.base_asset_reserve - base_asset_after
     };
 
-    println!("{}", base_asset_bought);
-
-
-    Ok(base_asset_bought as Uint128)
+    Ok(base_asset_bought)
 }
 
 fn get_output_price_with_reserves(
-    state: State,
+    state: &State,
     direction: &Direction,
     base_asset_amount: Uint128,
 ) -> StdResult<Uint128> {
@@ -139,7 +135,10 @@ fn get_output_price_with_reserves(
         Uint128::zero();
     }
     
-    let invariant_k = state.quote_asset_reserve * state.base_asset_reserve;
+    let invariant_k = state.quote_asset_reserve 
+        .checked_mul(state.base_asset_reserve)?
+        .checked_div(state.decimals)?;
+
     let quote_asset_after: Uint128;
     let base_asset_after: Uint128;
 
@@ -155,13 +154,15 @@ fn get_output_price_with_reserves(
         }
     }
 
-    quote_asset_after = invariant_k / base_asset_after;
+    quote_asset_after = invariant_k
+        .checked_mul(state.decimals)?
+        .checked_div(base_asset_after)?;
+
     let quote_asset_sold = if quote_asset_after > state.quote_asset_reserve {
         quote_asset_after - state.quote_asset_reserve
     } else {
         state.quote_asset_reserve - quote_asset_after
     };
-
 
     Ok(quote_asset_sold)
 }
@@ -201,13 +202,61 @@ fn test_get_input_price() {
         decimals: Uint128::from(1_000_000u128), // equivalent to 6dp
     };
 
+    // amount = 100(quote asset reserved) - (100 * 1000) / (1000 + 50) = 4.7619...
+    // price = 50 / 4.7619 = 10.499
     let quote_asset_amount = Uint128::from(50_000_000u128);
-
     let result = get_input_price_with_reserves(
-        state,
+        &state,
         &Direction::LONG,
         quote_asset_amount
     ).unwrap();
-
     assert_eq!(result, Uint128::from(4761905u128));
+
+    // amount = (100 * 1000) / (1000 - 50) - 100(quote asset reserved) = 5.2631578947368
+    // price = 50 / 5.263 = 9.5
+    let quote_asset_amount = Uint128::from(50_000_000u128);
+    let result = get_input_price_with_reserves(
+        &state,
+        &Direction::SHORT,
+        quote_asset_amount
+    ).unwrap();
+    assert_eq!(result, Uint128::from(5263157u128));
+
+    // amount = 1000(base asset reversed) - (100 * 1000) / (100 + 5) = 47.619047619047619048
+    // price = 47.619 / 5 = 9.52
+    let quote_asset_amount = Uint128::from(5_000_000u128);
+    let result = get_output_price_with_reserves(
+        &state,
+        &Direction::LONG,
+        quote_asset_amount
+    ).unwrap();
+    assert_eq!(result, Uint128::from(47619048u128));
+
+    // a dividable number should not plus 1 at mantissa
+    let quote_asset_amount = Uint128::from(25_000_000u128);
+    let result = get_output_price_with_reserves(
+        &state,
+        &Direction::LONG,
+        quote_asset_amount
+    ).unwrap();
+    assert_eq!(result, Uint128::from(200_000_000u128));
+
+    // amount = (100 * 1000) / (100 - 5) - 1000(base asset reversed) = 52.631578947368
+    // price = 52.631 / 5 = 10.52
+    let quote_asset_amount = Uint128::from(5_000_000u128);
+    let result = get_output_price_with_reserves(
+        &state,
+        &Direction::SHORT,
+        quote_asset_amount
+    ).unwrap();
+    assert_eq!(result, Uint128::from(52631578u128));
+
+    // divisable output
+    let quote_asset_amount = Uint128::from(37_500_000u128);
+    let result = get_output_price_with_reserves(
+        &state,
+        &Direction::SHORT,
+        quote_asset_amount
+    ).unwrap();
+    assert_eq!(result, Uint128::from(600_000_000u128));
 }
