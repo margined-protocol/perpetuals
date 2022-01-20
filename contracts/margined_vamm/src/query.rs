@@ -3,12 +3,11 @@ use margined_perp::margined_vamm::{
     ConfigResponse, StateResponse,
 };
 
-use crate::state::{Config, CONFIG, State, read_state};
+use crate::state::{Config, read_config, State, read_state};
 
 /// Queries contract Config
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
-    // let config: Config = read_config(deps.storage)?;
-    let config: Config = CONFIG.load(deps.storage)?;
+    let config: Config = read_config(deps.storage)?;
 
     Ok(
         ConfigResponse {

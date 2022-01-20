@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    attr, DepsMut, Env, MessageInfo, Response, StdResult, Storage,
+    Addr, DepsMut, Env, MessageInfo, Response, StdResult, Storage,
 };
 
 use cosmwasm_bignumber::{Decimal256, Uint256};
@@ -7,9 +7,31 @@ use margined_perp::margined_vamm::Direction;
 use crate::{
     error::ContractError,
     state::{
+        Config, read_config, store_config,
         State, read_state, store_state,
     },
 };
+
+pub fn update_config(
+    deps: DepsMut,
+    _info: MessageInfo,
+    owner: String,
+    decimals: u8,
+) -> Result<Response, ContractError> {
+    let config = read_config(deps.storage)?;
+
+    let new_config = Config {
+        owner: Addr::unchecked(owner),
+        decimals: decimals,
+        quote_asset: config.quote_asset,
+        base_asset: config.base_asset,
+    };
+
+    store_config(deps.storage, &new_config)?;
+
+    Ok(Response::default())
+}
+
 
 // Function should only be called by the margin engine
 pub fn swap_input(
@@ -20,20 +42,19 @@ pub fn swap_input(
     quote_asset_amount: Uint256,
 ) -> Result<Response, ContractError> {
     let state: State = read_state(deps.storage)?;
-    println!("TEST");
-    // let base_asset_amount = get_input_price_with_reserves(
-    //     deps.storage,
-    //     &direction,
-    //     quote_asset_amount
-    // )?;
-    // println!("Base Asset Amount: {:?}", base_asset_amount);
 
-    // update_reserve(
-    //     deps.storage,
-    //     direction,
-    //     quote_asset_amount,
-    //     base_asset_amount
-    // )?;
+    let base_asset_amount = get_input_price_with_reserves(
+        deps.storage,
+        &direction,
+        quote_asset_amount
+    )?;
+
+    update_reserve(
+        deps.storage,
+        direction,
+        quote_asset_amount,
+        base_asset_amount
+    )?;
 
 
     Ok(Response::new().add_attributes(vec![("action", "swap")]))
