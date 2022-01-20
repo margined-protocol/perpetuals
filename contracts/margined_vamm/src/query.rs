@@ -12,7 +12,6 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     Ok(
         ConfigResponse {
             owner: config.owner,
-            decimals: config.decimals,
             quote_asset: config.quote_asset,
             base_asset: config.base_asset,
         }
@@ -29,6 +28,7 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
             base_asset_reserve: state.base_asset_reserve,
             funding_rate: state.funding_rate,
             funding_period: state.funding_period,
+            decimals: state.decimals,            
         }
     )
 }

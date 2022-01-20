@@ -1,10 +1,8 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_bignumber::Uint256;
 use cosmwasm_std::{Addr, StdResult, Storage, Uint128};
 use cosmwasm_storage::{singleton, singleton_read};
-use cw_storage_plus::Item;
 
 pub static KEY_CONFIG: &[u8] = b"config";
 pub static KEY_STATE: &[u8] = b"state";
@@ -12,7 +10,6 @@ pub static KEY_STATE: &[u8] = b"state";
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
-    pub decimals: u8,
     pub quote_asset: String,
     pub base_asset: String,
 }
@@ -28,10 +25,11 @@ pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct State {
-    pub quote_asset_reserve: Uint256,
-    pub base_asset_reserve: Uint256,
-    pub funding_rate: Uint256,
-    pub funding_period: Uint128,
+    pub quote_asset_reserve: Uint128,
+    pub base_asset_reserve: Uint128,
+    pub funding_rate: Uint128,
+    pub decimals: Uint128,
+    pub funding_period: u64,
 }
 
 pub fn store_state(storage: &mut dyn Storage, state: &State) -> StdResult<()> {

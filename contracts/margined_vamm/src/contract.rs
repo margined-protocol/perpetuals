@@ -1,7 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
-use cosmwasm_bignumber::{Uint256};
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128};
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
@@ -20,18 +19,20 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     let config = Config {
         owner: info.sender.clone(),
-        decimals: msg.decimals,
         quote_asset: msg.quote_asset,
         base_asset: msg.base_asset,
     };
     
     store_config(deps.storage, &config)?;
 
+    let decimals = Uint128::from(10u128.pow(msg.decimals as u32));
+
     let state = State {
         base_asset_reserve: msg.base_asset_reserve,
         quote_asset_reserve: msg.quote_asset_reserve,
-        funding_rate: Uint256::zero(), // Initialise the funding rate as 0
+        funding_rate: Uint128::zero(), // Initialise the funding rate as 0
         funding_period: msg.funding_period, // Funding period in seconds
+        decimals: decimals,
     };
 
     store_state(deps.storage, &state)?;
@@ -49,13 +50,11 @@ pub fn execute(
     match msg {
         ExecuteMsg::UpdateConfig {
             owner,
-            decimals,
         } => {
             update_config(
                 deps,
                 info,
                 owner,
-                decimals,
             )
         },
         ExecuteMsg::SwapInput {

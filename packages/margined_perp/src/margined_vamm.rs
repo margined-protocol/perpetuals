@@ -1,7 +1,6 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_bignumber::Uint256;
 use cosmwasm_std::{Addr, Uint128};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -16,9 +15,9 @@ pub struct InstantiateMsg {
     pub decimals: u8,
     pub quote_asset: String,
     pub base_asset: String,
-    pub quote_asset_reserve: Uint256,
-    pub base_asset_reserve: Uint256,
-    pub funding_period: Uint128,
+    pub quote_asset_reserve: Uint128,
+    pub base_asset_reserve: Uint128,
+    pub funding_period: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -26,15 +25,14 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     SwapInput {
         direction: Direction,
-        quote_asset_amount: Uint256,
+        quote_asset_amount: Uint128,
     },
     SwapOutput {
         direction: Direction,
-        base_asset_amount: Uint256,
+        base_asset_amount: Uint128,
     },
     UpdateConfig {
         owner: String,
-        decimals: u8,
     },
 }
 
@@ -48,15 +46,16 @@ pub enum QueryMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: Addr,
-    pub decimals: u8,
     pub quote_asset: String,
     pub base_asset: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct StateResponse {
-    pub quote_asset_reserve: Uint256,
-    pub base_asset_reserve: Uint256,
-    pub funding_rate: Uint256,
-    pub funding_period: Uint128,
+    pub quote_asset_reserve: Uint128,
+    pub base_asset_reserve: Uint128,
+    pub funding_rate: Uint128,
+    pub decimals: Uint128,
+    pub funding_period: u64,
+
 }
