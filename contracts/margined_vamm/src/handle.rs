@@ -7,7 +7,7 @@ use margined_perp::margined_vamm::Direction;
 use crate::{
     error::ContractError,
     state::{
-        State, STATE,
+        State, read_state, store_state,
     },
 };
 
@@ -19,18 +19,21 @@ pub fn swap_input(
     direction: Direction,
     quote_asset_amount: Uint256,
 ) -> Result<Response, ContractError> {
-    let base_asset_amount = getInputPriceWithReserves(
-        deps.storage,
-        &direction,
-        quote_asset_amount
-    );
+    let state: State = read_state(deps.storage)?;
+    println!("TEST");
+    // let base_asset_amount = get_input_price_with_reserves(
+    //     deps.storage,
+    //     &direction,
+    //     quote_asset_amount
+    // )?;
+    // println!("Base Asset Amount: {:?}", base_asset_amount);
 
-    updateReserve(
-        deps.storage,
-        direction,
-        quote_asset_amount,
-        base_asset_amount.unwrap()
-    )?;
+    // update_reserve(
+    //     deps.storage,
+    //     direction,
+    //     quote_asset_amount,
+    //     base_asset_amount
+    // )?;
 
 
     Ok(Response::new().add_attributes(vec![("action", "swap")]))
@@ -44,13 +47,13 @@ pub fn swap_output(
     direction: Direction,
     quote_asset_amount: Uint256,
 ) -> Result<Response, ContractError> {
-    let base_asset_amount = getOutputPriceWithReserves(
+    let base_asset_amount = get_output_price_with_reserves(
         deps.storage,
         &direction,
         quote_asset_amount
     );
 
-    updateReserve(
+    update_reserve(
         deps.storage,
         direction,
         quote_asset_amount,
@@ -61,21 +64,22 @@ pub fn swap_output(
     Ok(Response::new().add_attributes(vec![("action", "swap")]))
 }
 
-fn getInputPriceWithReserves(
-    storage: &dyn Storage,
+fn get_input_price_with_reserves(
+    storage: &mut dyn Storage,
     direction: &Direction,
     quote_asset_amount: Uint256,
 ) -> StdResult<Uint256> {
     if quote_asset_amount == Uint256::zero() {
         Uint256::zero();
     }
-    
-    let state: State = STATE.load(storage)?;
-
+    println!("HERE");
+    let state: State = read_state(storage)?;
+    println!("HERE");
     let invariant_k = state.quote_asset_reserve * state.base_asset_reserve;
     let quote_asset_after: Uint256;
     let base_asset_after: Uint256;
 
+    println!("HERE");
     match direction {
         Direction::LONG => {
             quote_asset_after = state.quote_asset_reserve
@@ -87,20 +91,21 @@ fn getInputPriceWithReserves(
                 - quote_asset_amount;
         }
     }
-
+    println!("{:?}", invariant_k);
     base_asset_after = invariant_k / Decimal256::from_uint256(quote_asset_after);
     let base_asset_bought = if base_asset_after > state.base_asset_reserve {
         base_asset_after - state.base_asset_reserve
     } else {
         state.base_asset_reserve - base_asset_after
     };
+    println!("{:?}", base_asset_bought);
 
 
     Ok(base_asset_bought)
 }
 
-fn getOutputPriceWithReserves(
-    storage: &dyn Storage,
+fn get_output_price_with_reserves(
+    storage: &mut dyn Storage,
     direction: &Direction,
     base_asset_amount: Uint256,
 ) -> StdResult<Uint256> {
@@ -108,7 +113,7 @@ fn getOutputPriceWithReserves(
         Uint256::zero();
     }
     
-    let state: State = STATE.load(storage)?;
+    let state: State = read_state(storage)?;
 
     let invariant_k = state.quote_asset_reserve * state.base_asset_reserve;
     let quote_asset_after: Uint256;
@@ -137,13 +142,13 @@ fn getOutputPriceWithReserves(
     Ok(quote_asset_sold)
 }
 
-fn updateReserve(
+fn update_reserve(
     storage: &mut dyn Storage,
     direction: Direction,
     quote_asset_amount: Uint256,
     base_asset_amount: Uint256,
 ) -> StdResult<Response> {
-    let state: State = STATE.load(storage)?;
+    let state: State = read_state(storage)?;
     let mut update_state = state.clone();
 
     match direction {
@@ -157,7 +162,7 @@ fn updateReserve(
         }
     }
 
-    STATE.save(storage, &update_state)?;
+    store_state(storage, &update_state)?;
 
     Ok(Response::new().add_attributes(vec![("action", "update_reserve")]))
 }

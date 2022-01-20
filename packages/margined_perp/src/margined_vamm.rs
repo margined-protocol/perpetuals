@@ -32,8 +32,10 @@ pub enum ExecuteMsg {
         direction: Direction,
         base_asset_amount: Uint256,
     },
-    // SettleFunding {},
-    // CalculateFee {},
+    UpdateConfig {
+        owner: String,
+        decimals: u8,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
