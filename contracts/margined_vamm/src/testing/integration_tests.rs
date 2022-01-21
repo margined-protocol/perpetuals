@@ -99,48 +99,23 @@ fn test_update_config() {
 }
 
 #[test]
-fn test_swap_input() {
+fn test_swap_input_long() {
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {
         decimals: 10u8,
         quote_asset: "ETH/USD".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: Uint128::from(1_000u128),
-        base_asset_reserve: Uint128::from(100u128),
+        quote_asset_reserve: Uint128::from(1_000_000_000u128),
+        base_asset_reserve: Uint128::from(100_000_000u128),
         funding_period: 3_600 as u64,
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config: ConfigResponse = from_binary(&res).unwrap();
-    let info = mock_info("addr0000", &[]);
-    assert_eq!(
-        config,
-        ConfigResponse {
-            owner: info.sender.clone(),
-            quote_asset: "ETH/USD".to_string(),
-            base_asset: "USD".to_string(),
-        }
-    );
-
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
-    let state: StateResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        state,
-        StateResponse {
-            quote_asset_reserve: Uint128::from(100u128),
-            base_asset_reserve: Uint128::from(10_000u128),
-            funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
-            decimals: Uint128::from(1_0000_000_000u128),
-        }
-    );
-
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::LONG,
-        quote_asset_amount: Uint128::from(50u128),
+        quote_asset_amount: Uint128::from(600_000_000u128),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -150,12 +125,314 @@ fn test_swap_input() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: Uint128::from(100u128),
-            base_asset_reserve: Uint128::from(10_200u128),
+            quote_asset_reserve: Uint128::from(1_600_000_000u128),
+            base_asset_reserve: Uint128::from(62_500_000u128),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
             decimals: Uint128::from(10_000_000_000u128),
         }
     );
+}
 
+#[test]
+fn test_swap_input_short() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 10u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: Uint128::from(1_000_000_000u128),
+        base_asset_reserve: Uint128::from(100_000_000u128),
+        funding_period: 3_600 as u64,
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // Swap in USD
+    let swap_msg = ExecuteMsg::SwapInput {
+        direction: Direction::SHORT,
+        quote_asset_amount: Uint128::from(600_000_000u128),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        state,
+        StateResponse {
+            quote_asset_reserve: Uint128::from(400_000_000u128),
+            base_asset_reserve: Uint128::from(250_000_000u128),
+            funding_rate: Uint128::zero(),
+            funding_period: 3_600 as u64,
+            decimals: Uint128::from(10_000_000_000u128),
+        }
+    );
+}
+
+#[test]
+fn test_swap_output_short() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 10u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: Uint128::from(1_000_000_000u128),
+        base_asset_reserve: Uint128::from(100_000_000u128),
+        funding_period: 3_600 as u64,
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // Swap in USD
+    let swap_msg = ExecuteMsg::SwapOutput {
+        direction: Direction::LONG,
+        base_asset_amount: Uint128::from(150_000_000u128),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        state,
+        StateResponse {
+            quote_asset_reserve: Uint128::from(400_000_000u128),
+            base_asset_reserve: Uint128::from(250_000_000u128),
+            funding_rate: Uint128::zero(),
+            funding_period: 3_600 as u64,
+            decimals: Uint128::from(10_000_000_000u128),
+        }
+    );
+}
+
+#[test]
+fn test_swap_output_long() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 10u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: Uint128::from(1_000_000_000u128),
+        base_asset_reserve: Uint128::from(100_000_000u128),
+        funding_period: 3_600 as u64,
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // Swap in USD
+    let swap_msg = ExecuteMsg::SwapOutput {
+        direction: Direction::SHORT,
+        base_asset_amount: Uint128::from(50_000_000u128),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        state,
+        StateResponse {
+            quote_asset_reserve: Uint128::from(2_000_000_000u128),
+            base_asset_reserve: Uint128::from(50_000_000u128),
+            funding_rate: Uint128::zero(),
+            funding_period: 3_600 as u64,
+            decimals: Uint128::from(10_000_000_000u128),
+        }
+    );
+}
+
+#[test]
+fn test_swap_input_short_long() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 10u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: Uint128::from(1_000_000_000u128),
+        base_asset_reserve: Uint128::from(100_000_000u128),
+        funding_period: 3_600 as u64,
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // Swap in USD
+    let swap_msg = ExecuteMsg::SwapInput {
+        direction: Direction::SHORT,
+        quote_asset_amount: Uint128::from(480_000_000u128),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+
+    // Swap in USD
+    let swap_msg = ExecuteMsg::SwapInput {
+        direction: Direction::LONG,
+        quote_asset_amount: Uint128::from(960_000_000u128),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        state,
+        StateResponse {
+            quote_asset_reserve: Uint128::from(1_480_000_000u128),
+            base_asset_reserve: Uint128::from(67_567_560u128),
+            funding_rate: Uint128::zero(),
+            funding_period: 3_600 as u64,
+            decimals: Uint128::from(10_000_000_000u128),
+        }
+    );
+}
+
+#[test]
+fn test_swap_input_short_long_long() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 10u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: Uint128::from(1_000_000_000u128),
+        base_asset_reserve: Uint128::from(100_000_000u128),
+        funding_period: 3_600 as u64,
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    let swap_msg = ExecuteMsg::SwapInput {
+        direction: Direction::SHORT,
+        quote_asset_amount: Uint128::from(200_000_000u128),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+
+    let swap_msg = ExecuteMsg::SwapInput {
+        direction: Direction::LONG,
+        quote_asset_amount: Uint128::from(100_000_000u128),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+
+    let swap_msg = ExecuteMsg::SwapInput {
+        direction: Direction::LONG,
+        quote_asset_amount: Uint128::from(200_000_000u128),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        state,
+        StateResponse {
+            quote_asset_reserve: Uint128::from(1_100_000_000u128),
+            base_asset_reserve: Uint128::from(90_909_081u128),
+            funding_rate: Uint128::zero(),
+            funding_period: 3_600 as u64,
+            decimals: Uint128::from(10_000_000_000u128),
+        }
+    );
+}
+
+#[test]
+fn test_swap_input_short_long_short() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 10u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: Uint128::from(1_000_000_000u128),
+        base_asset_reserve: Uint128::from(100_000_000u128),
+        funding_period: 3_600 as u64,
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    let swap_msg = ExecuteMsg::SwapInput {
+        direction: Direction::SHORT,
+        quote_asset_amount: Uint128::from(200_000_000u128),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+
+    let swap_msg = ExecuteMsg::SwapInput {
+        direction: Direction::LONG,
+        quote_asset_amount: Uint128::from(450_000_000u128),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+
+    let swap_msg = ExecuteMsg::SwapInput {
+        direction: Direction::SHORT,
+        quote_asset_amount: Uint128::from(250_000_000u128),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        state,
+        StateResponse {
+            quote_asset_reserve: Uint128::from(1_000_000_000u128),
+            base_asset_reserve: Uint128::from(100_000_000u128),
+            funding_rate: Uint128::zero(),
+            funding_period: 3_600 as u64,
+            decimals: Uint128::from(10_000_000_000u128),
+        }
+    );
+}
+
+#[test]
+fn test_swap_output_short_long() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 10u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: Uint128::from(1_000_000_000u128),
+        base_asset_reserve: Uint128::from(100_000_000u128),
+        funding_period: 3_600 as u64,
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    let swap_msg = ExecuteMsg::SwapOutput {
+        direction: Direction::SHORT,
+        base_asset_amount: Uint128::from(10_000_000u128),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+
+    let swap_msg = ExecuteMsg::SwapOutput {
+        direction: Direction::LONG,
+        base_asset_amount: Uint128::from(10_000_000u128),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        state,
+        StateResponse {
+            quote_asset_reserve: Uint128::from(999_999_900u128),
+            base_asset_reserve: Uint128::from(100_000_000u128),
+            funding_rate: Uint128::zero(),
+            funding_period: 3_600 as u64,
+            decimals: Uint128::from(10_000_000_000u128),
+        }
+    );
 }

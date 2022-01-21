@@ -63,21 +63,29 @@ pub fn swap_output(
     _env: Env,
     _info: MessageInfo,
     direction: Direction,
-    quote_asset_amount: Uint128,
+    base_asset_amount: Uint128,
 ) -> Result<Response, ContractError> {
     let state: State = read_state(deps.storage)?;
 
-    let base_asset_amount = get_output_price_with_reserves(
+    let quote_asset_amount = get_output_price_with_reserves(
         &state,
         &direction,
-        quote_asset_amount
-    );
+        base_asset_amount
+    )?;
+
+    // flip direction when updating reserve
+    let mut update_direction = direction;
+    if update_direction == Direction::LONG {
+        update_direction = Direction::SHORT;
+    } else {
+        update_direction = Direction::LONG;
+    }
 
     update_reserve(
         deps.storage,
-        direction,
+        update_direction,
         quote_asset_amount,
-        base_asset_amount.unwrap()
+        base_asset_amount,
     )?;
 
 
@@ -145,18 +153,18 @@ fn get_output_price_with_reserves(
     match direction {
         Direction::LONG => {
             base_asset_after = state.base_asset_reserve
-                + base_asset_amount;
-
+                .checked_add(base_asset_amount)?;
         }
         Direction::SHORT => {
             base_asset_after = state.base_asset_reserve
-                - base_asset_amount;
+                .checked_sub(base_asset_amount)?;
         }
     }
 
     quote_asset_after = invariant_k
         .checked_mul(state.decimals)?
         .checked_div(base_asset_after)?;
+    
 
     let quote_asset_sold = if quote_asset_after > state.quote_asset_reserve {
         quote_asset_after - state.quote_asset_reserve
@@ -175,15 +183,19 @@ fn update_reserve(
 ) -> StdResult<Response> {
     let state: State = read_state(storage)?;
     let mut update_state = state.clone();
-
+    
     match direction {
         Direction::LONG => {
-            update_state.quote_asset_reserve += quote_asset_amount;
-            update_state.base_asset_reserve = state.base_asset_reserve - base_asset_amount;
+            update_state.quote_asset_reserve = update_state.quote_asset_reserve
+                .checked_add(quote_asset_amount)?;
+            update_state.base_asset_reserve = state.base_asset_reserve
+                .checked_sub(base_asset_amount)?;
         }
         Direction::SHORT => {
-            update_state.base_asset_reserve += base_asset_amount;
-            update_state.quote_asset_reserve = state.quote_asset_reserve - quote_asset_amount;
+            update_state.base_asset_reserve = update_state.base_asset_reserve
+                .checked_add(base_asset_amount)?;
+            update_state.quote_asset_reserve = state.quote_asset_reserve
+                .checked_sub(quote_asset_amount)?;
         }
     }
 
@@ -192,8 +204,9 @@ fn update_reserve(
     Ok(Response::new().add_attributes(vec![("action", "update_reserve")]))
 }
 
+/// Unit tests
 #[test]
-fn test_get_input_price() {
+fn test_get_input_and_output_price() {
     let state = State {
         quote_asset_reserve: Uint128::from(1_000_000_000u128), // 1000
         base_asset_reserve: Uint128::from(100_000_000u128), // 100
