@@ -3,7 +3,7 @@ name = "margined-perp"
 version = "0.1.0"
 authors = ["Margined Protocol"]
 edition = "2018"
-description = "Common helpers for margin protocol vamm"
+description = "Common helpers for margin protocol perpetual contracts"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

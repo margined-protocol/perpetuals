@@ -19,6 +19,8 @@ This repo contains a template vAMM for use on Terra blockchain.
     - [ ] Execute
         - [ ] New position / Close position
     - [ ] Query
+- [ ] Factory
+- [ ] Governance
     
 
 ## Quickstart
