@@ -2,7 +2,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, Uint128};
-
+use cw20::Cw20ReceiveMsg;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -14,7 +14,7 @@ pub enum Side {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum PNLCalc {
-    SPOT_PRICE,
+    SPOTPRICE,
     TWAP,
     ORACLE
 }
@@ -22,25 +22,35 @@ pub enum PNLCalc {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub decimals: u8,
-    pub initial_margin: Uint128,
-    pub maintenance_margin: Uint128,
+    pub eligible_collateral: String,
+    pub initial_margin_ratio: Uint128,
+    pub maintenance_margin_ratio: Uint128,
     pub liquidation_fee: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
+    Receive(Cw20ReceiveMsg),
+    UpdateConfig{
+        owner: String,
+    },
+    // ClosePosition {},
+    // Liquidate {},
+    // PayFunding {},
+    // DepositMargin {},
+    // WithdrawMargin {},
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Cw20HookMsg {
     OpenPosition {
-        amm: String,
+        vamm: String,
         side: Side,
         quote_asset_amount: Uint128,
         leverage: Uint128,
     },
-    ClosePosition {},
-    Liquidate {},
-    PayFunding {},
-    DepositMargin {},
-    WithdrawMargin {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -51,12 +61,13 @@ pub enum QueryMsg {
         vamm: String,
         trader: String,
     },
-    MarginRatio {},
+    // MarginRatio {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: Addr,
+    pub eligible_collateral: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

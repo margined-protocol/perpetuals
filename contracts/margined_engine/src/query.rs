@@ -3,7 +3,7 @@ use margined_perp::margined_engine::{
     ConfigResponse, PositionResponse,
 };
 
-use crate::state::{Config, read_config, Position, read_position};
+use crate::state::{Config, read_config, read_position};
 
 /// Queries contract Config
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
@@ -12,6 +12,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     Ok(
         ConfigResponse {
             owner: config.owner,
+            eligible_collateral: config.eligible_collateral,
         }
     )
 }
@@ -23,16 +24,16 @@ pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Pos
         deps.storage,
         &deps.api.addr_validate(&vamm)?,
         &deps.api.addr_validate(&trader)?,
-    )?;
+    )?.unwrap();
 
     Ok(
         PositionResponse {
-            size: position?.size,
-            margin: position?.margin,
-            notional: position?.notional,
-            premium_fraction: position?.premium_fraction,
-            liquidity_history_index: position?.liquidity_history_index,
-            timestamp: position?.timestamp,
+            size: position.size,
+            margin: position.margin,
+            notional: position.notional,
+            premium_fraction: position.premium_fraction,
+            liquidity_history_index: position.liquidity_history_index,
+            timestamp: position.timestamp,
         }
     )
 }

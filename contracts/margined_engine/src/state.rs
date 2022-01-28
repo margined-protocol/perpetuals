@@ -7,6 +7,8 @@ use cosmwasm_storage::{
     bucket, bucket_read, singleton, singleton_read,
 };
 
+use margined_perp::margined_vamm::Direction;
+
 use sha3::{Digest, Sha3_256};
 
 pub static KEY_CONFIG: &[u8] = b"config";
@@ -16,9 +18,10 @@ pub static KEY_POSITION: &[u8] = b"position";
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
+    pub eligible_collateral: Addr,
     pub decimals: Uint128,
-    pub initial_margin: Uint128,
-    pub maintenance_margin: Uint128,
+    pub initial_margin_ratio: Uint128,
+    pub maintenance_margin_ratio: Uint128,
     pub liquidation_fee: Uint128,
 }
 
@@ -45,6 +48,7 @@ pub fn read_vamm(storage: &dyn Storage) -> StdResult<Vamm> {
 pub struct Position {
     pub vamm: Addr,
     pub trader: Addr,
+    pub direction: Direction,
     pub size: Uint128,
     pub margin: Uint128,
     pub notional: Uint128,

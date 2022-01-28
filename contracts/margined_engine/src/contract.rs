@@ -1,14 +1,20 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128};
-use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use cosmwasm_std::{
+    attr, to_binary, from_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
+    StdError, Uint128
+};
+use cw20::{Cw20ReceiveMsg};
+use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg, Cw20HookMsg};
 
 use crate::error::ContractError;
 use crate::{
-    handle::{update_config, swap_input},
+    handle::{update_config, open_position},
     query::{query_config, query_position},
-    state::{Config, store_config},
+    state::{Config, read_config, store_config},
 };
+
+pub const SWAP_EXECUTE_REPLY_ID: u64 = 1;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -17,14 +23,15 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-
     let decimals = Uint128::from(10u128.pow(msg.decimals as u32));
+    let eligible_collateral = deps.api.addr_validate(&msg.eligible_collateral)?;
 
     let config = Config {
         owner: info.sender.clone(),
+        eligible_collateral: eligible_collateral,
         decimals: decimals,
-        initial_margin: msg.initial_margin,
-        maintenance_margin: msg.maintenance_margin,
+        initial_margin_ratio: msg.initial_margin_ratio,
+        maintenance_margin_ratio: msg.maintenance_margin_ratio,
         liquidation_fee: msg.liquidation_fee,
     };
     
@@ -39,8 +46,16 @@ pub fn execute(
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response, ContractError> {
+) -> StdResult<Response> {
+    println!("execute");
+    println!("{:?}", &msg);
     match msg {
+        ExecuteMsg::Receive(msg) => receive_cw20(
+            deps,
+            env,
+            info,
+            msg
+        ),
         ExecuteMsg::UpdateConfig {
             owner,
         } => {
@@ -50,15 +65,38 @@ pub fn execute(
                 owner,
             )
         },
-        ExecuteMsg::OpenPosition {
-            owner,
-        } => {
-            open_position(
-                deps,
-                info,
-                owner,
-            )
-        },
+    }
+}
+
+pub fn receive_cw20(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    cw20_msg: Cw20ReceiveMsg,
+) -> StdResult<Response> {
+    // only asset contract can execute this message
+    let config: Config = read_config(deps.storage)?;
+    if config.eligible_collateral != deps.api.addr_validate(info.sender.as_str())? {
+        return Err(StdError::generic_err("unauthorized"));
+    }
+    
+    match from_binary(&cw20_msg.msg) {
+        Ok(Cw20HookMsg::OpenPosition {
+            vamm,
+            side,
+            quote_asset_amount,
+            leverage,
+        }) => open_position(
+            deps,
+            env,
+            info,
+            vamm,
+            cw20_msg.sender,
+            side,
+            quote_asset_amount,
+            leverage,
+        ),
+        Err(_) => Err(StdError::generic_err("invalid cw20 hook message")),
     }
 }
 
@@ -70,5 +108,22 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             vamm,
             trader,
         } => to_binary(&query_position(deps, vamm, trader)?),
+    }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> StdResult<Response> {
+    match msg.id {
+        SWAP_EXECUTE_REPLY_ID => {
+            println!("this works");
+            Ok(Response::new()
+            .add_attributes(vec![
+                attr("action", "execute_swap"),
+            ]))
+        }
+        _ => {
+            println!("{:?}", msg.id);
+            Err(StdError::generic_err("reply id is invalid"))
+        },
     }
 }
