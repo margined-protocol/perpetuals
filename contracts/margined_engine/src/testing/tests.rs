@@ -9,25 +9,29 @@ use cosmwasm_std::{Addr, Binary, to_binary, coins, Empty, from_binary, Uint128};
 use margined_perp::margined_engine::{
     ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg, Side,
 };
+use margined_perp::margined_vamm::{
+    InstantiateMsg as VammInstantiateMsg,
+    QueryMsg as VammQueryMsg,
+    StateResponse as VammStateResponse,
+};
+use margined_vamm;
 
-const COLLATERAL_TOKEN: &str = "USDC";
-const OWNER: &str = "owner_address";
 const ALICE: &str = "alice_address";
-const BOB: &str = "bob_address";
-const VAMM: &str = "vamm_address";
 
-// fn mock_env_with_block_time(time: u64) -> Env {
-//     let env = mock_env();
-//     // register time
-//     Env {
-//         block: BlockInfo {
-//             height: 1,
-//             time: Timestamp::from_seconds(time),
-//             chain_id: "columbus".to_string(),
-//         },
-//         ..env
-//     }
-// }
+struct ContractInfo {
+    addr: Addr,
+    id: u64,
+}
+
+struct TestingEnv {
+    router: App,
+    owner: Addr,
+    alice: Addr,
+    bob: Addr,
+    usdc: ContractInfo,
+    vamm: ContractInfo,
+    engine: ContractInfo,
+}
 
 fn mock_app() -> App {
     AppBuilder::new().build()
@@ -42,6 +46,15 @@ fn contract_cw20() -> Box<dyn Contract<Empty>> {
     Box::new(contract)
 }
 
+fn contract_vamm() -> Box<dyn Contract<Empty>> {
+    let contract = ContractWrapper::new_with_empty(
+        margined_vamm::contract::execute,
+        margined_vamm::contract::instantiate,
+        margined_vamm::contract::query,
+    );
+    Box::new(contract)
+}
+
 fn contract_engine() -> Box<dyn Contract<Empty>> {
     let contract = ContractWrapper::new_with_empty(
         execute,
@@ -50,6 +63,102 @@ fn contract_engine() -> Box<dyn Contract<Empty>> {
     );
     Box::new(contract)
 }
+
+fn setup() -> TestingEnv {
+    let mut router = mock_app();
+
+    let owner = Addr::unchecked("owner");
+    let alice = Addr::unchecked("alice");
+    let bob = Addr::unchecked("bob");
+
+    let usdc_id = router.store_code(contract_cw20());
+    let engine_id = router.store_code(contract_engine());
+    let vamm_id = router.store_code(contract_vamm());
+
+    let usdc_addr = router.instantiate_contract(
+        usdc_id,
+        owner.clone(),
+        & cw20_base::msg::InstantiateMsg {
+            name: "USDC".to_string(),
+            symbol: "USDC".to_string(),
+            decimals: 2,
+            initial_balances: vec![
+                Cw20Coin {
+                    address: owner.to_string(),
+                    amount: Uint128::new(5000),
+                },
+                Cw20Coin {
+                    address: ALICE.to_string(),
+                    amount: Uint128::new(1200),
+                }
+            ],
+            mint: None,
+            marketing: None,
+        },
+        &[],
+        "cw20",
+        None
+    ).unwrap();
+
+    let vamm_addr = router.instantiate_contract(
+        vamm_id,
+        owner.clone(),
+        &VammInstantiateMsg {
+            decimals: 10u8,
+            quote_asset: "ETH".to_string(),
+            base_asset: "USD".to_string(),
+            quote_asset_reserve: Uint128::from(100u128),
+            base_asset_reserve: Uint128::from(10_000u128),
+            funding_period: 3_600 as u64,
+        },
+        &[],
+        "vamm",
+        None
+    ).unwrap();
+
+    // set up margined engine contract    
+    let engine_addr = router
+        .instantiate_contract(
+            engine_id,
+            owner.clone(),
+            &InstantiateMsg {
+                decimals: 10u8,
+                eligible_collateral: usdc_addr.to_string(),
+                initial_margin_ratio: Uint128::from(100u128), 
+                maintenance_margin_ratio: Uint128::from(100u128), 
+                liquidation_fee: Uint128::from(100u128),
+            },
+            &[],
+            "engine",
+            None,
+        )
+        .unwrap();
+
+    TestingEnv {
+        router,
+        owner,
+        alice,
+        bob,
+        usdc: ContractInfo {
+            addr: usdc_addr,
+            id: usdc_id,
+        },
+        vamm: ContractInfo {
+            addr: vamm_addr,
+            id: vamm_id,
+        },
+        engine: ContractInfo {
+            addr: engine_addr,
+            id: engine_id,
+        },
+    }
+}
+
+#[test]
+fn test_initialization() {
+    setup();
+}
+
 
 #[test]
 // receive cw20 tokens and release upon approval
@@ -60,8 +169,10 @@ fn test_open_position() {
     let owner = Addr::unchecked("owner");
     let alice_address = Addr::unchecked(ALICE);
     let cw20_id = router.store_code(contract_cw20());
+    let engine_id = router.store_code(contract_engine());
+    let vamm_id = router.store_code(contract_vamm());
 
-    let msg = cw20_base::msg::InstantiateMsg {
+    let cw20_init_msg = cw20_base::msg::InstantiateMsg {
         name: "USDC".to_string(),
         symbol: "USDC".to_string(),
         decimals: 2,
@@ -82,14 +193,31 @@ fn test_open_position() {
     let usdc_addr = router.instantiate_contract(
         cw20_id,
         owner.clone(),
-        &msg,
+        &cw20_init_msg,
         &[],
-        "proxy",
+        "cw20",
         None
     ).unwrap();
 
-    // set up margine engine contract
-    let engine_id = router.store_code(contract_engine());
+    let vamm_init_msg = VammInstantiateMsg {
+        decimals: 10u8,
+        quote_asset: "ETH".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: Uint128::from(100u128),
+        base_asset_reserve: Uint128::from(10_000u128),
+        funding_period: 3_600 as u64,
+    };
+
+    let vamm_addr = router.instantiate_contract(
+        vamm_id,
+        owner.clone(),
+        &vamm_init_msg,
+        &[],
+        "vamm",
+        None
+    ).unwrap();
+
+    // set up margined engine contract    
     let engine_addr = router
         .instantiate_contract(
             engine_id,
@@ -102,7 +230,7 @@ fn test_open_position() {
                 liquidation_fee: Uint128::from(100u128),
             },
             &[],
-            "Engine",
+            "engine",
             None,
         )
         .unwrap();
@@ -145,7 +273,7 @@ fn test_open_position() {
     assert_eq!(alice_balance, Uint128::new(1700));
 
     let hook_msg = Cw20HookMsg::OpenPosition {
-        vamm: VAMM.to_string(),
+        vamm: vamm_addr.to_string(),
         side: Side::BUY,
         quote_asset_amount: Uint128::from(100u128),
         leverage: Uint128::from(100u128),
@@ -171,7 +299,24 @@ fn test_open_position() {
     assert_eq!(alice_balance, Uint128::new(1600));
     let engine_balance = usdc.balance(&router, engine_addr.clone()).unwrap();
     assert_eq!(engine_balance, Uint128::new(100));
-    
+
+    // verify the engine owner
+    let config: VammStateResponse = router
+        .wrap()
+        .query_wasm_smart(&vamm_addr, &VammQueryMsg::State {})
+        .unwrap();
+    assert_eq!(
+        config,
+        VammStateResponse {
+            quote_asset_reserve: Uint128::from(100u128),
+            base_asset_reserve: Uint128::from(10_000u128),
+            funding_rate: Uint128::zero(),
+            funding_period: 3_600 as u64,
+            decimals: Uint128::from(10_000_000_000u128),
+        }
+    );
+
+    assert_eq!(1, 2);
 }
 
 // #[test]

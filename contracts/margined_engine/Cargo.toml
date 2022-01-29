@@ -54,5 +54,6 @@ sha3 = "0.10.0"
 [dev-dependencies]
 cosmwasm-schema = { version = "1.0.0-beta" }
 cw20-base = { version = "0.9.1", features = ["library"] }
+margined_vamm = { version = "0.1.0", path = "../../contracts/margined_vamm" }
 cw-multi-test = "0.9.1"
 

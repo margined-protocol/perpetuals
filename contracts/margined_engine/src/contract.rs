@@ -47,8 +47,6 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> StdResult<Response> {
-    println!("execute");
-    println!("{:?}", &msg);
     match msg {
         ExecuteMsg::Receive(msg) => receive_cw20(
             deps,

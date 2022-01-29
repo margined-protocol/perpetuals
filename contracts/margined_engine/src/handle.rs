@@ -47,18 +47,14 @@ pub fn open_position(
     quote_asset_amount: Uint128,
     _leverage: Uint128,
 ) -> StdResult<Response> {
-    println!("HELLO");    
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = deps.api.addr_validate(&trader)?;
-    println!("{}", vamm);
-    println!("{}", trader);
 
     // read the position for the trader from vamm
     let position = read_position(deps.storage, &vamm, &trader)?;
 
     // so if the position returned is None then its new
     if position.is_none() {
-        println!("HELLO");
         swap_input(
             vamm,
             side,

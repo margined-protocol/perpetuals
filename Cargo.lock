@@ -546,6 +546,7 @@ dependencies = [
  "cw20 0.9.1",
  "cw20-base",
  "margined-perp",
+ "margined_vamm",
  "schemars",
  "serde",
  "sha3",

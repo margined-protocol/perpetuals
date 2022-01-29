@@ -1,5 +1,4 @@
 use crate::contract::{instantiate, execute, query};
-// use crate::error::ContractError;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{Addr, from_binary, Uint128};
 use margined_perp::margined_vamm::{
@@ -10,19 +9,6 @@ use margined_perp::margined_vamm::{
     StateResponse,
     Direction,
 };
-
-// fn mock_env_with_block_time(time: u64) -> Env {
-//     let env = mock_env();
-//     // register time
-//     Env {
-//         block: BlockInfo {
-//             height: 1,
-//             time: Timestamp::from_seconds(time),
-//             chain_id: "columbus".to_string(),
-//         },
-//         ..env
-//     }
-// }
 
 #[test]
 fn test_instantiation() {
