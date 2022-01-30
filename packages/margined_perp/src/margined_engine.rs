@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::{Addr, Timestamp, Uint128};
 use cw20::Cw20ReceiveMsg;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -77,5 +77,5 @@ pub struct PositionResponse {
     pub notional: Uint128,
     pub premium_fraction: Uint128,
     pub liquidity_history_index: Uint128,
-    pub timestamp: Uint128,
+    pub timestamp: Timestamp,
 }

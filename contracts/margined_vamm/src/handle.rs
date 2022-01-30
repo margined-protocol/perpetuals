@@ -53,8 +53,9 @@ pub fn swap_input(
         base_asset_amount
     )?;
 
-
-    Ok(Response::new().add_attributes(vec![("action", "swap")]))
+    Ok(Response::new()
+        .add_attributes(vec![("action", "swap")])
+    )
 }
 
 // Function should only be called by the margin engine

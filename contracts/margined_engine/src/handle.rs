@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    Addr, attr, CosmosMsg, DepsMut, Env, MessageInfo, Response,
+    Addr, CosmosMsg, DepsMut, Env, MessageInfo, Response,
     ReplyOn, StdError, StdResult, SubMsg, to_binary, Uint128,
     WasmMsg,
 };
@@ -8,10 +8,10 @@ use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 use margined_perp::margined_engine::Side;
 use crate::{
     contract::{SWAP_EXECUTE_REPLY_ID},
-    error::ContractError,
     state::{
         Config, read_config, store_config,
         Position, read_position, store_position,
+        store_tmp_position, read_tmp_position, remove_tmp_position,
     },
 };
 
@@ -39,7 +39,7 @@ pub fn update_config(
 // Opens a position
 pub fn open_position(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     _info: MessageInfo,
     vamm: String,
     trader: String,
@@ -47,19 +47,42 @@ pub fn open_position(
     quote_asset_amount: Uint128,
     _leverage: Uint128,
 ) -> StdResult<Response> {
+    // create a response, so that we can assign relevant submessages to
+    // be executed
+    let mut response = Response::new();
+
+    // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = deps.api.addr_validate(&trader)?;
-
+    
     // read the position for the trader from vamm
     let position = read_position(deps.storage, &vamm, &trader)?;
 
     // so if the position returned is None then its new
     if position.is_none() {
-        swap_input(
-            vamm,
+        let msg = swap_input(
+            &vamm,
             side,
             quote_asset_amount,
-        );
+        ).unwrap();
+
+        // Add the submessage to the response
+        response = response.add_submessage(msg);
+
+        // store the temporary position
+        let position = Position {
+            vamm: vamm,
+            trader,
+            direction: Direction::LONG,
+            size: Uint128::zero(), // todo need to think how to tmp store
+            margin: Uint128::zero(), // todo need to think how to tmp store
+            notional: Uint128::zero(), // todo need to think how to tmp store
+            premium_fraction: Uint128::zero(),
+            liquidity_history_index: Uint128::zero(),
+            timestamp: env.block.time,
+        };
+
+        store_tmp_position(deps.storage, &position)?;
     }
 
     // let is_increase: bool = false;
@@ -78,40 +101,60 @@ pub fn open_position(
     //     println!("REVERSE REVERSE REVERSE");
     // }
 
-    Ok(Response::new().add_attributes(vec![("action", "open_position")]))
+    response = response.add_attributes(vec![("action", "open_position")]);
+    Ok(response)
+}
+
+// Updates position after successful execution of the swap
+pub fn update_position(
+    deps: DepsMut,
+    env: Env,
+) -> StdResult<Response> {
+    let tmp_position = read_tmp_position(deps.storage)?;
+    if tmp_position.is_none() {
+        return Err(StdError::generic_err("no temporary position"));
+    }
+
+    // TODO update the position with what actually happened in the
+    // swap
+    let tmp_position = tmp_position.unwrap();
+
+    // store the updated position
+    store_position(deps.storage, &tmp_position)?;
+
+    // remove the tmp position
+    remove_tmp_position(deps.storage);
+
+    Ok(Response::new())
 }
 
 fn swap_input(
-    vamm: Addr, 
+    vamm: &Addr, 
     side: Side, 
     input_amount: Uint128, 
-) -> StdResult<Response> {
+) -> StdResult<SubMsg> {
     let mut direction = Direction::LONG;
     if side == Side::SELL {
         direction = Direction::SHORT;
     }
-    let swap_msg = CosmosMsg::Wasm(WasmMsg::Execute {
+
+    let swap_msg = WasmMsg::Execute {
         contract_addr: vamm.to_string(),
         funds: vec![],
         msg: to_binary(&ExecuteMsg::SwapInput {
             direction: direction,
             quote_asset_amount: input_amount,
         })?,
-    });
+    };
 
     let execute_submsg = SubMsg {
-        msg: swap_msg,
+        msg: CosmosMsg::Wasm(swap_msg),
         gas_limit: None, // probably should set a limit in the config
         id: SWAP_EXECUTE_REPLY_ID,
         reply_on: ReplyOn::Always,
     };
 
-    Ok(Response::new()
-        .add_submessage(execute_submsg)
-        .add_attributes(vec![
-            attr("action", "execute_swap"),
-            attr("amount_in", input_amount),
-        ]))
+    Ok(execute_submsg)
 }
 
 // fn adjust_position_for_liquidity_changed(

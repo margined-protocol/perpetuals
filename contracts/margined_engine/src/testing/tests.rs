@@ -1,10 +1,8 @@
 use crate::contract::{instantiate, execute, query};
-use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg, Cw20ReceiveMsg};
-use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{Addr, Binary, to_binary, coins, Empty, from_binary, Uint128};
+use cosmwasm_std::{Addr, from_binary, Uint128};
 use margined_perp::margined_engine::{
-    ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg, Side,
+    ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg,
 };
 
 const TOKEN: &str = "token";

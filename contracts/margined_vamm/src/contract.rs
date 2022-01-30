@@ -1,6 +1,9 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128};
+use cosmwasm_std::{
+    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
+    StdResult, Uint128
+};
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;

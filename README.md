@@ -14,7 +14,7 @@ This repo contains a template vAMM for use on Terra blockchain.
     - [ ] Query
         - Latest Price
 - [ ] Margin Engine
-    - [ ] Initialise
+    - [x] Initialise
         - [x] owner, vAMM, etc
     - [ ] Execute
         - [ ] New position / Close position
@@ -32,4 +32,3 @@ TODO
 
 * [Perpetual Protocol](https://docs.perp.fi/getting-started/how-it-works/trading)
 * [Audaces Protocol](https://docs.bonfida.org/collection/v/help/audaces-perpetuals/white-paper)
-* [Example MultiTest](https://github.com/astroport-fi/astroport-core/blob/c0ab5440300102498b025b8d3aedb7cf22ac5800/contracts/factory/tests/integration.rs)

@@ -1,15 +1,15 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    attr, to_binary, from_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
-    StdError, Uint128
+    attr, to_binary, from_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn, Response,
+    StdResult, StdError, Uint128, SubMsg, CosmosMsg, WasmMsg,
 };
-use cw20::{Cw20ReceiveMsg};
+use cw20::{Cw20ReceiveMsg, Cw20ExecuteMsg};
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg, Cw20HookMsg};
 
 use crate::error::ContractError;
 use crate::{
-    handle::{update_config, open_position},
+    handle::{update_config, update_position, open_position},
     query::{query_config, query_position},
     state::{Config, read_config, store_config},
 };
@@ -91,7 +91,7 @@ pub fn receive_cw20(
             vamm,
             cw20_msg.sender,
             side,
-            quote_asset_amount,
+            quote_asset_amount, // not needed, we should take from deposited amount or validate
             leverage,
         ),
         Err(_) => Err(StdError::generic_err("invalid cw20 hook message")),
@@ -110,14 +110,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> StdResult<Response> {
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
     match msg.id {
         SWAP_EXECUTE_REPLY_ID => {
-            println!("this works");
-            Ok(Response::new()
-            .add_attributes(vec![
-                attr("action", "execute_swap"),
-            ]))
+            let response = update_position(deps, env)?;
+            Ok(response)
         }
         _ => {
             println!("{:?}", msg.id);

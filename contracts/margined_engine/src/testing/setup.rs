@@ -1,5 +1,5 @@
 use crate::{
-    contract::{instantiate, execute, query},
+    contract::{instantiate, execute, query, reply},
 };
 use cw20::{Cw20Coin};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
@@ -49,7 +49,7 @@ fn contract_engine() -> Box<dyn Contract<Empty>> {
         execute,
         instantiate,
         query,
-    );
+    ).with_reply(reply);
     Box::new(contract)
 }
 
@@ -77,12 +77,12 @@ pub fn setup() -> TestingEnv {
             decimals: 2,
             initial_balances: vec![
                 Cw20Coin {
-                    address: owner.to_string(),
-                    amount: Uint128::new(5000),
+                    address: alice.to_string(),
+                    amount: Uint128::new(5000) * Uint128::new(10_000_000_000u128), // this is 5000 with 10dp
                 },
                 Cw20Coin {
-                    address: alice.to_string(),
-                    amount: Uint128::new(1200),
+                    address: bob.to_string(),
+                    amount: Uint128::new(5000) * Uint128::new(10_000_000_000u128), // this is 5000 with 10dp
                 }
             ],
             mint: None,
