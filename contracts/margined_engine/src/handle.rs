@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     Addr, CosmosMsg, DepsMut, Env, MessageInfo, Response,
-    ReplyOn, StdError, StdResult, SubMsg, to_binary, Uint128,
+    Reply, ReplyOn, StdError, StdResult, SubMsg, to_binary, Uint128,
     WasmMsg,
 };
 
@@ -108,7 +108,7 @@ pub fn open_position(
 // Updates position after successful execution of the swap
 pub fn update_position(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
 ) -> StdResult<Response> {
     let tmp_position = read_tmp_position(deps.storage)?;
     if tmp_position.is_none() {

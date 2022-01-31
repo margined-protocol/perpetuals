@@ -1,8 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    attr, to_binary, from_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn, Response,
-    StdResult, StdError, Uint128, SubMsg, CosmosMsg, WasmMsg,
+    attr, to_binary, from_binary, Binary, ContractResult, Deps, DepsMut, Env, MessageInfo,
+    Reply, ReplyOn, Response, StdResult, StdError, Uint128, SubMsg, CosmosMsg, WasmMsg,
 };
 use cw20::{Cw20ReceiveMsg, Cw20ExecuteMsg};
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg, Cw20HookMsg};
@@ -111,14 +111,25 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
-    match msg.id {
-        SWAP_EXECUTE_REPLY_ID => {
-            let response = update_position(deps, env)?;
-            Ok(response)
+    match msg.result {
+        ContractResult::Ok(response) => {
+            match msg.id {
+                SWAP_EXECUTE_REPLY_ID => {
+                    println!("{:?}", response.events);
+                    println!("{:?}", response.data);
+                    // ContractResult::Ok(response)
+                    let response = update_position(deps, env)?;
+                    Ok(response)
+                },
+                _ => Err(StdError::generic_err(format!(
+                    "reply (id {:?}) invalid",
+                    msg.id
+                ))),
+            }
         }
-        _ => {
-            println!("{:?}", msg.id);
-            Err(StdError::generic_err("reply id is invalid"))
-        },
+        ContractResult::Err(e) => Err(StdError::generic_err(format!(
+            "reply (id {:?}) error {:?}",
+            msg.id, e
+        ))),
     }
 }
