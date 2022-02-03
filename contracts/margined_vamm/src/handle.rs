@@ -80,10 +80,10 @@ pub fn swap_output(
 
     // flip direction when updating reserve
     let mut update_direction = direction;
-    if update_direction == Direction::LONG {
-        update_direction = Direction::SHORT;
+    if update_direction == Direction::AddToAmm {
+        update_direction = Direction::RemoveFromAmm;
     } else {
-        update_direction = Direction::LONG;
+        update_direction = Direction::AddToAmm;
     }
 
     update_reserve(
@@ -115,14 +115,14 @@ fn get_input_price_with_reserves(
     let base_asset_after: Uint128;
 
     match direction {
-        Direction::LONG => {
+        Direction::AddToAmm => {
             quote_asset_after = state.quote_asset_reserve
-                + quote_asset_amount;
+                .checked_add(quote_asset_amount)?;
 
         }
-        Direction::SHORT => {
+        Direction::RemoveFromAmm => {
             quote_asset_after = state.quote_asset_reserve
-                - quote_asset_amount;
+                .checked_sub(quote_asset_amount)?;
         }
     }
     
@@ -156,11 +156,11 @@ fn get_output_price_with_reserves(
     let base_asset_after: Uint128;
 
     match direction {
-        Direction::LONG => {
+        Direction::AddToAmm => {
             base_asset_after = state.base_asset_reserve
                 .checked_add(base_asset_amount)?;
         }
-        Direction::SHORT => {
+        Direction::RemoveFromAmm => {
             base_asset_after = state.base_asset_reserve
                 .checked_sub(base_asset_amount)?;
         }
@@ -190,13 +190,13 @@ fn update_reserve(
     let mut update_state = state.clone();
     
     match direction {
-        Direction::LONG => {
+        Direction::AddToAmm => {
             update_state.quote_asset_reserve = update_state.quote_asset_reserve
                 .checked_add(quote_asset_amount)?;
             update_state.base_asset_reserve = state.base_asset_reserve
                 .checked_sub(base_asset_amount)?;
         }
-        Direction::SHORT => {
+        Direction::RemoveFromAmm => {
             update_state.base_asset_reserve = update_state.base_asset_reserve
                 .checked_add(base_asset_amount)?;
             update_state.quote_asset_reserve = state.quote_asset_reserve
@@ -225,7 +225,7 @@ fn test_get_input_and_output_price() {
     let quote_asset_amount = Uint128::from(50_000_000u128);
     let result = get_input_price_with_reserves(
         &state,
-        &Direction::LONG,
+        &Direction::AddToAmm,
         quote_asset_amount
     ).unwrap();
     assert_eq!(result, Uint128::from(4761905u128));
@@ -235,7 +235,7 @@ fn test_get_input_and_output_price() {
     let quote_asset_amount = Uint128::from(50_000_000u128);
     let result = get_input_price_with_reserves(
         &state,
-        &Direction::SHORT,
+        &Direction::RemoveFromAmm,
         quote_asset_amount
     ).unwrap();
     assert_eq!(result, Uint128::from(5263157u128));
@@ -245,7 +245,7 @@ fn test_get_input_and_output_price() {
     let quote_asset_amount = Uint128::from(5_000_000u128);
     let result = get_output_price_with_reserves(
         &state,
-        &Direction::LONG,
+        &Direction::AddToAmm,
         quote_asset_amount
     ).unwrap();
     assert_eq!(result, Uint128::from(47619048u128));
@@ -254,7 +254,7 @@ fn test_get_input_and_output_price() {
     let quote_asset_amount = Uint128::from(25_000_000u128);
     let result = get_output_price_with_reserves(
         &state,
-        &Direction::LONG,
+        &Direction::AddToAmm,
         quote_asset_amount
     ).unwrap();
     assert_eq!(result, Uint128::from(200_000_000u128));
@@ -264,7 +264,7 @@ fn test_get_input_and_output_price() {
     let quote_asset_amount = Uint128::from(5_000_000u128);
     let result = get_output_price_with_reserves(
         &state,
-        &Direction::SHORT,
+        &Direction::RemoveFromAmm,
         quote_asset_amount
     ).unwrap();
     assert_eq!(result, Uint128::from(52631578u128));
@@ -273,7 +273,7 @@ fn test_get_input_and_output_price() {
     let quote_asset_amount = Uint128::from(37_500_000u128);
     let result = get_output_price_with_reserves(
         &state,
-        &Direction::SHORT,
+        &Direction::RemoveFromAmm,
         quote_asset_amount
     ).unwrap();
     assert_eq!(result, Uint128::from(600_000_000u128));

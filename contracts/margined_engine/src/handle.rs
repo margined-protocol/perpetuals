@@ -47,6 +47,7 @@ pub fn open_position(
     quote_asset_amount: Uint128,
     leverage: Uint128,
 ) -> StdResult<Response> {
+    let config: Config = read_config(deps.storage)?;
     // create a response, so that we can assign relevant submessages to
     // be executed
     let mut response = Response::new();
@@ -55,7 +56,12 @@ pub fn open_position(
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = deps.api.addr_validate(&trader)?;
-    
+
+    // calc the input amount wrt to leverage and decimals
+    let input_amount = quote_asset_amount
+                .checked_mul(leverage)?
+                .checked_div(config.decimals)?;
+
     // read the position for the trader from vamm
     let position = read_position(deps.storage, &vamm, &trader)?;
 
@@ -64,17 +70,19 @@ pub fn open_position(
         let msg = swap_input(
             &vamm,
             side.clone(),
-            quote_asset_amount,
+            input_amount,
         ).unwrap();
 
         // Add the submessage to the response
         response = response.add_submessage(msg);
 
+        let direction: Direction = side_to_direction(side);
+
         // store the temporary position
         let position = Position {
             vamm: vamm.clone(),
             trader,
-            direction: Direction::LONG,
+            direction: direction,
             size: Uint128::zero(), // todo need to think how to tmp store
             margin: Uint128::zero(), // todo need to think how to tmp store
             notional: Uint128::zero(), // todo need to think how to tmp store
@@ -88,8 +96,8 @@ pub fn open_position(
     } else {
         let mut is_increase: bool = false;
         let position = position.unwrap();
-        if (position.direction == Direction::LONG && side.clone() == Side::BUY) ||
-                (position.direction == Direction::SHORT && side.clone() == Side::SELL) {
+        if (position.direction == Direction::AddToAmm && side.clone() == Side::BUY) ||
+                (position.direction == Direction::RemoveFromAmm && side.clone() == Side::SELL) {
             is_increase = true;
         }
     
@@ -98,7 +106,7 @@ pub fn open_position(
             let msg = swap_input(
                 &vamm,
                 side.clone(),
-                quote_asset_amount,
+                input_amount
             ).unwrap();
     
             // Add the submessage to the response
@@ -149,10 +157,7 @@ fn swap_input(
     side: Side, 
     input_amount: Uint128, 
 ) -> StdResult<SubMsg> {
-    let mut direction = Direction::LONG;
-    if side == Side::SELL {
-        direction = Direction::SHORT;
-    }
+    let direction: Direction = side_to_direction(side);
 
     let swap_msg = WasmMsg::Execute {
         contract_addr: vamm.to_string(),
@@ -173,14 +178,17 @@ fn swap_input(
     Ok(execute_submsg)
 }
 
-// fn adjust_position_for_liquidity_changed(
-//     deps: DepsMut,
-//     vamm: Addr,
-//     trader: Addr
-// ) -> StdResult<Position> {
-//     // retrieve traders, existing position
-//     let position = read_position(&deps.storage, vamm, trader);
-// }
+// takes the side (buy|sell) and returns the direction (long|short)
+fn side_to_direction(
+    side: Side,
+) -> Direction {
+    let direction: Direction = match side {
+            Side::BUY => Direction::AddToAmm,
+            Side::SELL => Direction::RemoveFromAmm,
+    };
+
+    return direction
+}
 
 // /// Unit tests
 // #[test]

@@ -49,7 +49,7 @@ fn test_open_position_long() {
             vamm: env.vamm.addr.to_string(),
             side: Side::BUY,
             quote_asset_amount: Uint128::from(60u128) * DECIMAL_MULTIPLIER,
-            leverage: Uint128::from(10u128),
+            leverage: Uint128::from(10u128) * DECIMAL_MULTIPLIER,
         }).unwrap(),
     };
 
@@ -75,7 +75,7 @@ fn test_open_position_long() {
             trader: env.alice.to_string(),
         })
         .unwrap();
-    assert_eq!(Uint128::new(3750_000_000_000), position.size);
+    assert_eq!(Uint128::new(37500_000_000), position.size);
 
 }
 
@@ -99,7 +99,7 @@ fn test_open_position_two_longs() {
             vamm: env.vamm.addr.to_string(),
             side: Side::BUY,
             quote_asset_amount: Uint128::from(60u128) * DECIMAL_MULTIPLIER,
-            leverage: Uint128::from(10u128),
+            leverage: Uint128::from(10u128) * DECIMAL_MULTIPLIER,
         }).unwrap(),
     };
 
@@ -117,7 +117,7 @@ fn test_open_position_two_longs() {
             vamm: env.vamm.addr.to_string(),
             side: Side::BUY,
             quote_asset_amount: Uint128::from(60u128) * DECIMAL_MULTIPLIER,
-            leverage: Uint128::from(10u128),
+            leverage: Uint128::from(10u128) * DECIMAL_MULTIPLIER,
         }).unwrap(),
     };
 
@@ -143,6 +143,67 @@ fn test_open_position_two_longs() {
             trader: env.alice.to_string(),
         })
         .unwrap();
-    assert_eq!(Uint128::new(5454_545_454_546), position.size);
+    assert_eq!(Uint128::new(54_545_454_546), position.size);
+
+}
+
+#[test]
+fn test_open_position_two_shorts() {
+    let mut env = setup::setup();
+
+    // set up cw20 helpers
+    let usdc = Cw20Contract(env.usdc.addr.clone());
+
+    // verify the engine owner
+    let _config: ConfigResponse = env.router
+        .wrap()
+        .query_wasm_smart(&env.engine.addr, &QueryMsg::Config {})
+        .unwrap();
+
+    let send_msg = Cw20ExecuteMsg::Send {
+        contract: env.engine.addr.to_string(),
+        amount: Uint128::from(40u128) * DECIMAL_MULTIPLIER,
+        msg: to_binary(&Cw20HookMsg::OpenPosition {
+            vamm: env.vamm.addr.to_string(),
+            side: Side::SELL,
+            quote_asset_amount: Uint128::from(40u128) * DECIMAL_MULTIPLIER,
+            leverage: Uint128::from(5u128) * DECIMAL_MULTIPLIER,
+        }).unwrap(),
+    };
+
+    let _res = env.router.execute_contract(
+        env.alice.clone(),
+        env.usdc.addr.clone(),
+        &send_msg,
+        &[]
+    ).unwrap();
+
+    let send_msg = Cw20ExecuteMsg::Send {
+        contract: env.engine.addr.to_string(),
+        amount: Uint128::from(40u128) * DECIMAL_MULTIPLIER,
+        msg: to_binary(&Cw20HookMsg::OpenPosition {
+            vamm: env.vamm.addr.to_string(),
+            side: Side::SELL,
+            quote_asset_amount: Uint128::from(40u128) * DECIMAL_MULTIPLIER,
+            leverage: Uint128::from(5u128) * DECIMAL_MULTIPLIER,
+        }).unwrap(),
+    };
+
+    let _res = env.router.execute_contract(
+        env.alice.clone(),
+        env.usdc.addr.clone(),
+        &send_msg,
+        &[]
+    ).unwrap();
+
+    // retrieve the vamm state
+    let position: PositionResponse = env.router
+        .wrap()
+        .query_wasm_smart(&env.engine.addr, &QueryMsg::Position {
+            vamm: env.vamm.addr.to_string(),
+            trader: env.alice.to_string(),
+        })
+        .unwrap();
+    assert_eq!(Uint128::new(66_666_666_666), position.size);
 
 }

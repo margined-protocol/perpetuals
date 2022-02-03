@@ -100,7 +100,7 @@ fn test_swap_input_long() {
 
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::LONG,
+        direction: Direction::AddToAmm,
         quote_asset_amount: Uint128::from(600_000_000u128),
     };
 
@@ -136,7 +136,7 @@ fn test_swap_input_short() {
 
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::SHORT,
+        direction: Direction::RemoveFromAmm,
         quote_asset_amount: Uint128::from(600_000_000u128),
     };
 
@@ -172,7 +172,7 @@ fn test_swap_output_short() {
 
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapOutput {
-        direction: Direction::LONG,
+        direction: Direction::AddToAmm,
         base_asset_amount: Uint128::from(150_000_000u128),
     };
 
@@ -208,7 +208,7 @@ fn test_swap_output_long() {
 
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapOutput {
-        direction: Direction::SHORT,
+        direction: Direction::RemoveFromAmm,
         base_asset_amount: Uint128::from(50_000_000u128),
     };
 
@@ -244,7 +244,7 @@ fn test_swap_input_short_long() {
 
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::SHORT,
+        direction: Direction::RemoveFromAmm,
         quote_asset_amount: Uint128::from(480_000_000u128),
     };
 
@@ -253,7 +253,7 @@ fn test_swap_input_short_long() {
 
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::LONG,
+        direction: Direction::AddToAmm,
         quote_asset_amount: Uint128::from(960_000_000u128),
     };
 
@@ -288,7 +288,7 @@ fn test_swap_input_short_long_long() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::SHORT,
+        direction: Direction::RemoveFromAmm,
         quote_asset_amount: Uint128::from(200_000_000u128),
     };
 
@@ -296,7 +296,7 @@ fn test_swap_input_short_long_long() {
     execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::LONG,
+        direction: Direction::AddToAmm,
         quote_asset_amount: Uint128::from(100_000_000u128),
     };
 
@@ -304,7 +304,7 @@ fn test_swap_input_short_long_long() {
     execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::LONG,
+        direction: Direction::AddToAmm,
         quote_asset_amount: Uint128::from(200_000_000u128),
     };
 
@@ -341,7 +341,7 @@ fn test_swap_input_short_long_short() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::SHORT,
+        direction: Direction::RemoveFromAmm,
         quote_asset_amount: Uint128::from(200_000_000u128),
     };
 
@@ -349,7 +349,7 @@ fn test_swap_input_short_long_short() {
     execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::LONG,
+        direction: Direction::AddToAmm,
         quote_asset_amount: Uint128::from(450_000_000u128),
     };
 
@@ -357,7 +357,7 @@ fn test_swap_input_short_long_short() {
     execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::SHORT,
+        direction: Direction::RemoveFromAmm,
         quote_asset_amount: Uint128::from(250_000_000u128),
     };
 
@@ -394,7 +394,7 @@ fn test_swap_output_short_long() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapOutput {
-        direction: Direction::SHORT,
+        direction: Direction::RemoveFromAmm,
         base_asset_amount: Uint128::from(10_000_000u128),
     };
 
@@ -402,7 +402,7 @@ fn test_swap_output_short_long() {
     execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapOutput {
-        direction: Direction::LONG,
+        direction: Direction::AddToAmm,
         base_asset_amount: Uint128::from(10_000_000u128),
     };
 
@@ -427,7 +427,7 @@ fn test_swap_output_short_long() {
 fn test_swap_input_long_integration_example() {
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {
-        decimals: 10u8,
+        decimals: 9u8,
         quote_asset: "ETH/USD".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: Uint128::from(1_000_000_000_000u128),
@@ -439,8 +439,8 @@ fn test_swap_input_long_integration_example() {
 
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::LONG,
-        quote_asset_amount: Uint128::from(600_000_000_000u128), // this is swapping 600 at 10x leverage
+        direction: Direction::AddToAmm,
+        quote_asset_amount: Uint128::from(600_000_000_000u128), // this is swapping 60 at 10x leverage
     };
 
     let info = mock_info("addr0000", &[]);
@@ -454,7 +454,7 @@ fn test_swap_input_long_integration_example() {
             base_asset_reserve: Uint128::from(62_500_000_000u128),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: Uint128::from(10_000_000_000u128),
+            decimals: Uint128::from(1_000_000_000u128),
         }
     );
 }
