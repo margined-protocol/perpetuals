@@ -22,7 +22,7 @@ This repo contains a template vAMM for use on Terra blockchain.
     - [ ] Query
 - [ ] Factory
 - [ ] Governance
-    
+- [ ] Code Coverage - cargo-tarpaulin   
 
 ## Quickstart
 

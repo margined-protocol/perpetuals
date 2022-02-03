@@ -26,6 +26,8 @@ pub struct TestingEnv {
     pub engine: ContractInfo,
 }
 
+pub const DECIMAL_MULTIPLIER: Uint128 = Uint128::new(1_000_000_000u128);
+
 fn contract_cw20() -> Box<dyn Contract<Empty>> {
     let contract = ContractWrapper::new_with_empty(
         cw20_base::contract::execute,
@@ -74,15 +76,15 @@ pub fn setup() -> TestingEnv {
         & cw20_base::msg::InstantiateMsg {
             name: "USDC".to_string(),
             symbol: "USDC".to_string(),
-            decimals: 2,
+            decimals: 9,
             initial_balances: vec![
                 Cw20Coin {
                     address: alice.to_string(),
-                    amount: Uint128::new(5000) * Uint128::new(10_000_000_000u128), // this is 5000 with 10dp
+                    amount: Uint128::new(5000) * DECIMAL_MULTIPLIER, // this is 5000 with 9dp
                 },
                 Cw20Coin {
                     address: bob.to_string(),
-                    amount: Uint128::new(5000) * Uint128::new(10_000_000_000u128), // this is 5000 with 10dp
+                    amount: Uint128::new(5000) * DECIMAL_MULTIPLIER, // this is 5000 with 9dp
                 }
             ],
             mint: None,
@@ -97,11 +99,11 @@ pub fn setup() -> TestingEnv {
         vamm_id,
         owner.clone(),
         &VammInstantiateMsg {
-            decimals: 10u8,
+            decimals: 9u8,
             quote_asset: "ETH".to_string(),
             base_asset: "USD".to_string(),
-            quote_asset_reserve: Uint128::from(100u128),
-            base_asset_reserve: Uint128::from(10_000u128),
+            quote_asset_reserve: Uint128::new(100) * DECIMAL_MULTIPLIER,
+            base_asset_reserve: Uint128::new(10_000) * DECIMAL_MULTIPLIER,
             funding_period: 3_600 as u64,
         },
         &[],
@@ -115,7 +117,7 @@ pub fn setup() -> TestingEnv {
             engine_id,
             owner.clone(),
             &InstantiateMsg {
-                decimals: 10u8,
+                decimals: 9u8,
                 eligible_collateral: usdc_addr.to_string(),
                 initial_margin_ratio: Uint128::from(100u128), 
                 maintenance_margin_ratio: Uint128::from(100u128), 

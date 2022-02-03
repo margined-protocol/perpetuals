@@ -422,3 +422,39 @@ fn test_swap_output_short_long() {
         }
     );
 }
+
+#[test]
+fn test_swap_input_long_integration_example() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 10u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: Uint128::from(1_000_000_000_000u128),
+        base_asset_reserve: Uint128::from(100_000_000_000u128),
+        funding_period: 3_600 as u64,
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // Swap in USD
+    let swap_msg = ExecuteMsg::SwapInput {
+        direction: Direction::LONG,
+        quote_asset_amount: Uint128::from(600_000_000_000u128), // this is swapping 600 at 10x leverage
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        state,
+        StateResponse {
+            quote_asset_reserve: Uint128::from(1_600_000_000_000u128),
+            base_asset_reserve: Uint128::from(62_500_000_000u128),
+            funding_rate: Uint128::zero(),
+            funding_period: 3_600 as u64,
+            decimals: Uint128::from(10_000_000_000u128),
+        }
+    );
+}

@@ -1,7 +1,7 @@
 use cosmwasm_std::{
     Addr, CosmosMsg, DepsMut, Env, MessageInfo, Response,
     Reply, ReplyOn, StdError, StdResult, SubMsg, to_binary, Uint128,
-    WasmMsg,
+    WasmMsg, SubMsgExecutionResponse,
 };
 
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
@@ -45,7 +45,7 @@ pub fn open_position(
     trader: String,
     side: Side,
     quote_asset_amount: Uint128,
-    _leverage: Uint128,
+    leverage: Uint128,
 ) -> StdResult<Response> {
     // create a response, so that we can assign relevant submessages to
     // be executed
@@ -109,6 +109,8 @@ pub fn open_position(
 pub fn update_position(
     deps: DepsMut,
     _env: Env,
+    input: Uint128,
+    output: Uint128,
 ) -> StdResult<Response> {
     let tmp_position = read_tmp_position(deps.storage)?;
     if tmp_position.is_none() {
@@ -116,11 +118,14 @@ pub fn update_position(
     }
 
     // TODO update the position with what actually happened in the
-    // swap
-    let tmp_position = tmp_position.unwrap();
+    // swap, probably later this requires to check if long, short,buy, sell
+    // but for now lets just implement the long case
+    let mut position: Position = tmp_position.unwrap();
+    position.size = position.size.checked_add(output)?;
+    position.notional = position.notional.checked_add(input)?;
 
     // store the updated position
-    store_position(deps.storage, &tmp_position)?;
+    store_position(deps.storage, &position)?;
 
     // remove the tmp position
     remove_tmp_position(deps.storage);

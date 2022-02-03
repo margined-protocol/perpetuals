@@ -1,8 +1,10 @@
+use std::str::FromStr;
+
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     attr, to_binary, from_binary, Binary, ContractResult, Deps, DepsMut, Env, MessageInfo,
-    Reply, ReplyOn, Response, StdResult, StdError, Uint128, SubMsg, CosmosMsg, WasmMsg,
+    Reply, ReplyOn, Response, StdResult, StdError, Uint128, SubMsg, CosmosMsg, WasmMsg, SubMsgExecutionResponse,
 };
 use cw20::{Cw20ReceiveMsg, Cw20ExecuteMsg};
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg, Cw20HookMsg};
@@ -115,10 +117,13 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
         ContractResult::Ok(response) => {
             match msg.id {
                 SWAP_EXECUTE_REPLY_ID => {
-                    println!("{:?}", response.events);
-                    println!("{:?}", response.data);
-                    // ContractResult::Ok(response)
-                    let response = update_position(deps, env)?;
+                    let (input, output) = parse_swap_input(response);
+                    let response = update_position(
+                        deps,
+                        env,
+                        input,
+                        output,
+                    )?;
                     Ok(response)
                 },
                 _ => Err(StdError::generic_err(format!(
@@ -132,4 +137,30 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
             msg.id, e
         ))),
     }
+}
+
+fn parse_swap_input(
+    response: SubMsgExecutionResponse,
+) -> (Uint128, Uint128) {
+    // Find swap inputs and output events
+    let wasm = response.events.iter().find(|&e| e.ty == "wasm");
+    let wasm = wasm.unwrap();
+    let input_str = &wasm
+        .attributes
+        .iter()
+        .find(|&attr| attr.key == "input")
+        .unwrap()
+        .value;
+    let input: Uint128 = Uint128::from_str(input_str).unwrap();
+
+
+    let output_str = &wasm
+        .attributes
+        .iter()
+        .find(|&attr| attr.key == "output")
+        .unwrap()
+        .value;
+    let output: Uint128 = Uint128::from_str(output_str).unwrap();
+
+    return (input, output)
 }
