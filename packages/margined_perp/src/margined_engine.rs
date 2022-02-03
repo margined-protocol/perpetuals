@@ -35,6 +35,12 @@ pub enum ExecuteMsg {
     UpdateConfig{
         owner: String,
     },
+    OpenPosition {
+        vamm: String,
+        side: Side,
+        quote_asset_amount: Uint128,
+        leverage: Uint128,
+    },
     // ClosePosition {},
     // Liquidate {},
     // PayFunding {},
@@ -45,10 +51,10 @@ pub enum ExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Cw20HookMsg {
+    // allows you to open a position and directly transfer funds
     OpenPosition {
         vamm: String,
         side: Side,
-        quote_asset_amount: Uint128,
         leverage: Uint128,
     },
 }

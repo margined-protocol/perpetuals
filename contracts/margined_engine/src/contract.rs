@@ -16,7 +16,9 @@ use crate::{
     state::{Config, read_config, store_config},
 };
 
-pub const SWAP_EXECUTE_REPLY_ID: u64 = 1;
+pub const SWAP_INCREASE_REPLY_ID: u64 = 1;
+pub const SWAP_DECREASE_REPLY_ID: u64 = 2;
+pub const SWAP_REVERSE_REPLY_ID: u64 = 3;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -53,7 +55,7 @@ pub fn execute(
         ExecuteMsg::Receive(msg) => receive_cw20(
             deps,
             env,
-            info,
+            info.clone(),
             msg
         ),
         ExecuteMsg::UpdateConfig {
@@ -61,10 +63,27 @@ pub fn execute(
         } => {
             update_config(
                 deps,
-                info,
+                info.clone(),
                 owner,
             )
         },
+        ExecuteMsg::OpenPosition {
+            vamm,
+            side,
+            quote_asset_amount,
+            leverage,
+         } => {
+             let trader = info.sender.clone();
+         open_position(
+            deps,
+            env,
+            info.clone(),
+            vamm,
+            trader.to_string(),
+            side,
+            quote_asset_amount,
+            leverage,
+        )},
     }
 }
 
@@ -84,7 +103,6 @@ pub fn receive_cw20(
         Ok(Cw20HookMsg::OpenPosition {
             vamm,
             side,
-            quote_asset_amount,
             leverage,
         }) => open_position(
             deps,
@@ -93,7 +111,7 @@ pub fn receive_cw20(
             vamm,
             cw20_msg.sender,
             side,
-            quote_asset_amount, // not needed, we should take from deposited amount or validate
+            cw20_msg.amount, // not needed, we should take from deposited amount or validate
             leverage,
         ),
         Err(_) => Err(StdError::generic_err("invalid cw20 hook message")),

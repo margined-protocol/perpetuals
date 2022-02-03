@@ -7,7 +7,7 @@ use cosmwasm_std::{
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 use margined_perp::margined_engine::Side;
 use crate::{
-    contract::{SWAP_EXECUTE_REPLY_ID},
+    contract::{SWAP_INCREASE_REPLY_ID, SWAP_DECREASE_REPLY_ID, SWAP_REVERSE_REPLY_ID},
     state::{
         Config, read_config, store_config,
         Position, read_position, store_position,
@@ -71,6 +71,7 @@ pub fn open_position(
             &vamm,
             side.clone(),
             input_amount,
+            SWAP_INCREASE_REPLY_ID
         ).unwrap();
 
         // Add the submessage to the response
@@ -84,18 +85,18 @@ pub fn open_position(
             trader,
             direction: direction,
             size: Uint128::zero(), // todo need to think how to tmp store
-            margin: Uint128::zero(), // todo need to think how to tmp store
-            notional: Uint128::zero(), // todo need to think how to tmp store
+            margin: quote_asset_amount,
+            notional: input_amount,
             premium_fraction: Uint128::zero(),
             liquidity_history_index: Uint128::zero(),
             timestamp: env.block.time,
         };
-
+        println!("{}, {}", position.notional, input_amount);
         store_tmp_position(deps.storage, &position)?;
 
     } else {
         let mut is_increase: bool = false;
-        let position = position.unwrap();
+        let mut position = position.unwrap();
         if (position.direction == Direction::AddToAmm && side.clone() == Side::BUY) ||
                 (position.direction == Direction::RemoveFromAmm && side.clone() == Side::SELL) {
             is_increase = true;
@@ -106,15 +107,55 @@ pub fn open_position(
             let msg = swap_input(
                 &vamm,
                 side.clone(),
-                input_amount
+                input_amount,
+                SWAP_INCREASE_REPLY_ID
             ).unwrap();
+
+            // increase the margin, notional etc...
+            position.margin = position.margin.checked_add(quote_asset_amount)?;
+            position.notional = position.notional.checked_add(input_amount)?;
     
             // Add the submessage to the response
             response = response.add_submessage(msg);
     
         } else {
-            // we are reversing
-            println!("REVERSE REVERSE REVERSE");
+            // if old position is greater then we don't need to reverse just need to 
+            // reduce
+            // else if it is equal or great there is more complicado stuff to do
+            if position.notional > input_amount {
+                println!("{}, {}", position.notional, input_amount);
+                // then we are opening a new position or adding to an existing
+                let msg = swap_input(
+                    &vamm,
+                    side.clone(),
+                    input_amount,
+                    SWAP_INCREASE_REPLY_ID
+                ).unwrap();
+
+                // increase the margin, notional etc...
+                position.margin = position.margin.checked_sub(quote_asset_amount)?;
+                position.notional = position.notional.checked_sub(input_amount)?;
+
+                // Add the submessage to the response
+                response = response.add_submessage(msg);
+            } else {
+                println!("{}, {}", position.notional, input_amount);
+                println!("{}, {}", position.notional, input_amount);
+                // then we are opening a new position or adding to an existing
+                let msg = swap_input(
+                    &vamm,
+                    side.clone(),
+                    input_amount,
+                    SWAP_INCREASE_REPLY_ID
+                ).unwrap();
+
+                // increase the margin, notional etc...
+                position.margin = position.margin.checked_sub(quote_asset_amount)?;
+                position.notional = position.notional.checked_sub(input_amount)?;
+
+                // Add the submessage to the response
+                response = response.add_submessage(msg);
+            }
         }
 
         store_tmp_position(deps.storage, &position)?;
@@ -141,7 +182,6 @@ pub fn update_position(
     // but for now lets just implement the long case
     let mut position: Position = tmp_position.unwrap();
     position.size = position.size.checked_add(output)?;
-    position.notional = position.notional.checked_add(input)?;
 
     // store the updated position
     store_position(deps.storage, &position)?;
@@ -156,6 +196,7 @@ fn swap_input(
     vamm: &Addr, 
     side: Side, 
     input_amount: Uint128, 
+    id: u64,
 ) -> StdResult<SubMsg> {
     let direction: Direction = side_to_direction(side);
 
@@ -171,7 +212,7 @@ fn swap_input(
     let execute_submsg = SubMsg {
         msg: CosmosMsg::Wasm(swap_msg),
         gas_limit: None, // probably should set a limit in the config
-        id: SWAP_EXECUTE_REPLY_ID,
+        id: id,
         reply_on: ReplyOn::Always,
     };
 

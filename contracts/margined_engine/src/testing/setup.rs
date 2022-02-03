@@ -148,3 +148,10 @@ pub fn setup() -> TestingEnv {
         },
     }
 }
+
+// takes in a Uint128 and multiplies by the decimals just to make tests more legible
+pub fn to_decimals(input: u64) -> Uint128 {
+    let output = Uint128::from(input) * DECIMAL_MULTIPLIER;
+
+    output
+}
