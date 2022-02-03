@@ -50,6 +50,7 @@ pub fn open_position(
     // create a response, so that we can assign relevant submessages to
     // be executed
     let mut response = Response::new();
+    response = response.add_attributes(vec![("action", "open_position")]);
 
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
@@ -62,7 +63,7 @@ pub fn open_position(
     if position.is_none() {
         let msg = swap_input(
             &vamm,
-            side,
+            side.clone(),
             quote_asset_amount,
         ).unwrap();
 
@@ -71,7 +72,7 @@ pub fn open_position(
 
         // store the temporary position
         let position = Position {
-            vamm: vamm,
+            vamm: vamm.clone(),
             trader,
             direction: Direction::LONG,
             size: Uint128::zero(), // todo need to think how to tmp store
@@ -83,25 +84,35 @@ pub fn open_position(
         };
 
         store_tmp_position(deps.storage, &position)?;
+
+    } else {
+        let mut is_increase: bool = false;
+        let position = position.unwrap();
+        if (position.direction == Direction::LONG && side.clone() == Side::BUY) ||
+                (position.direction == Direction::SHORT && side.clone() == Side::SELL) {
+            is_increase = true;
+        }
+    
+        if is_increase {
+            // then we are opening a new position or adding to an existing
+            let msg = swap_input(
+                &vamm,
+                side.clone(),
+                quote_asset_amount,
+            ).unwrap();
+    
+            // Add the submessage to the response
+            response = response.add_submessage(msg);
+    
+        } else {
+            // we are reversing
+            println!("REVERSE REVERSE REVERSE");
+        }
+
+        store_tmp_position(deps.storage, &position)?;
     }
 
-    // let is_increase: bool = false;
-    // if (position.direction == Direction::LONG && side == Side::BUY) ||
-    //         (position?.direction == Direction::SHORT && side == Side::SELL) {
-    //     is_increase = true;
-    // }
 
-    // if position == None || is_increase {
-    //     // then we are opening a new position or adding to an existing
-    //     increase_position(
-    //         de
-    //     )
-    // } else {
-    //     // we are reversing
-    //     println!("REVERSE REVERSE REVERSE");
-    // }
-
-    response = response.add_attributes(vec![("action", "open_position")]);
     Ok(response)
 }
 
