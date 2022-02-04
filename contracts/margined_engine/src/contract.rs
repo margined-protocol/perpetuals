@@ -134,7 +134,27 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
     match msg.result {
         ContractResult::Ok(response) => {
             match msg.id {
-                SWAP_EXECUTE_REPLY_ID => {
+                SWAP_INCREASE_REPLY_ID => {
+                    let (input, output) = parse_swap_input(response);
+                    let response = update_position(
+                        deps,
+                        env,
+                        input,
+                        output,
+                    )?;
+                    Ok(response)
+                },
+                SWAP_DECREASE_REPLY_ID => {
+                    let (input, output) = parse_swap_input(response);
+                    let response = update_position(
+                        deps,
+                        env,
+                        input,
+                        output,
+                    )?;
+                    Ok(response)
+                },
+                SWAP_REVERSE_REPLY_ID => {
                     let (input, output) = parse_swap_input(response);
                     let response = update_position(
                         deps,

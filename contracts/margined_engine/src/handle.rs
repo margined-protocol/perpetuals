@@ -63,10 +63,31 @@ pub fn open_position(
                 .checked_div(config.decimals)?;
 
     // read the position for the trader from vamm
-    let position = read_position(deps.storage, &vamm, &trader)?;
+    let current_position = read_position(deps.storage, &vamm, &trader)?;
+    let mut position = Position::default();
 
     // so if the position returned is None then its new
-    if position.is_none() {
+    if current_position.is_none() {
+        let direction: Direction = side_to_direction(side.clone());
+
+        // update the default position
+        position.vamm = vamm.clone();
+        position.trader = trader.clone();
+        position.direction = direction.clone();
+        position.timestamp = env.block.time;
+
+    } else {
+        position = current_position.unwrap();
+    }
+    
+    let mut is_increase: bool = true;
+    if !(position.direction == Direction::AddToAmm && side.clone() == Side::BUY) &&
+            !(position.direction == Direction::RemoveFromAmm && side.clone() == Side::SELL) {
+        is_increase = false;
+    }
+
+    if is_increase {
+        // then we are opening a new position or adding to an existing
         let msg = swap_input(
             &vamm,
             side.clone(),
@@ -74,35 +95,19 @@ pub fn open_position(
             SWAP_INCREASE_REPLY_ID
         ).unwrap();
 
+        // increase the margin, notional etc...
+        position.margin = position.margin.checked_add(quote_asset_amount)?;
+        position.notional = position.notional.checked_add(input_amount)?;
+
         // Add the submessage to the response
         response = response.add_submessage(msg);
 
-        let direction: Direction = side_to_direction(side);
-
-        // store the temporary position
-        let position = Position {
-            vamm: vamm.clone(),
-            trader,
-            direction: direction,
-            size: Uint128::zero(), // todo need to think how to tmp store
-            margin: quote_asset_amount,
-            notional: input_amount,
-            premium_fraction: Uint128::zero(),
-            liquidity_history_index: Uint128::zero(),
-            timestamp: env.block.time,
-        };
-        println!("{}, {}", position.notional, input_amount);
-        store_tmp_position(deps.storage, &position)?;
-
     } else {
-        let mut is_increase: bool = false;
-        let mut position = position.unwrap();
-        if (position.direction == Direction::AddToAmm && side.clone() == Side::BUY) ||
-                (position.direction == Direction::RemoveFromAmm && side.clone() == Side::SELL) {
-            is_increase = true;
-        }
-    
-        if is_increase {
+        // if old position is greater then we don't need to reverse just need to 
+        // reduce
+        // else if it is equal or great there is more complicado stuff to do
+        if position.notional > input_amount {
+            println!("{}, {}", position.notional, input_amount);
             // then we are opening a new position or adding to an existing
             let msg = swap_input(
                 &vamm,
@@ -112,54 +117,32 @@ pub fn open_position(
             ).unwrap();
 
             // increase the margin, notional etc...
-            position.margin = position.margin.checked_add(quote_asset_amount)?;
-            position.notional = position.notional.checked_add(input_amount)?;
-    
+            position.margin = position.margin.checked_sub(quote_asset_amount)?;
+            position.notional = position.notional.checked_sub(input_amount)?;
+
             // Add the submessage to the response
             response = response.add_submessage(msg);
-    
         } else {
-            // if old position is greater then we don't need to reverse just need to 
-            // reduce
-            // else if it is equal or great there is more complicado stuff to do
-            if position.notional > input_amount {
-                println!("{}, {}", position.notional, input_amount);
-                // then we are opening a new position or adding to an existing
-                let msg = swap_input(
-                    &vamm,
-                    side.clone(),
-                    input_amount,
-                    SWAP_INCREASE_REPLY_ID
-                ).unwrap();
+            println!("{}, {}", position.notional, input_amount);
+            // then we are opening a new position or adding to an existing
+            let msg = swap_input(
+                &vamm,
+                side.clone(),
+                input_amount,
+                SWAP_INCREASE_REPLY_ID
+            ).unwrap();
 
-                // increase the margin, notional etc...
-                position.margin = position.margin.checked_sub(quote_asset_amount)?;
-                position.notional = position.notional.checked_sub(input_amount)?;
+            // increase the margin, notional etc...
+            position.margin = position.margin.checked_sub(quote_asset_amount)?;
+            position.notional = position.notional.checked_sub(input_amount)?;
 
-                // Add the submessage to the response
-                response = response.add_submessage(msg);
-            } else {
-                println!("{}, {}", position.notional, input_amount);
-                println!("{}, {}", position.notional, input_amount);
-                // then we are opening a new position or adding to an existing
-                let msg = swap_input(
-                    &vamm,
-                    side.clone(),
-                    input_amount,
-                    SWAP_INCREASE_REPLY_ID
-                ).unwrap();
-
-                // increase the margin, notional etc...
-                position.margin = position.margin.checked_sub(quote_asset_amount)?;
-                position.notional = position.notional.checked_sub(input_amount)?;
-
-                // Add the submessage to the response
-                response = response.add_submessage(msg);
-            }
+            // Add the submessage to the response
+            response = response.add_submessage(msg);
         }
-
-        store_tmp_position(deps.storage, &position)?;
     }
+
+    store_tmp_position(deps.storage, &position)?;
+
 
 
     Ok(response)

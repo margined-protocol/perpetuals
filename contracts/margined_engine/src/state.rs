@@ -59,6 +59,22 @@ pub struct Position {
     pub timestamp: Timestamp,
 }
 
+impl Default for Position {
+    fn default () -> Position {
+        Position{
+            vamm: Addr::unchecked(""),
+            trader: Addr::unchecked(""),
+            direction: Direction::AddToAmm,
+            size: Uint128::zero(),
+            margin: Uint128::zero(),
+            notional: Uint128::zero(),
+            premium_fraction: Uint128::zero(),
+            liquidity_history_index: Uint128::zero(),
+            timestamp: Timestamp::from_seconds(0),
+        }
+    }
+}
+
 fn position_bucket(storage: &mut dyn Storage) -> Bucket<Position> {
     bucket(storage, KEY_POSITION)
 }
