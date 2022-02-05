@@ -41,7 +41,9 @@ pub enum ExecuteMsg {
         quote_asset_amount: Uint128,
         leverage: Uint128,
     },
-    // ClosePosition {},
+    ClosePosition {
+        vamm: String,
+    },
     // Liquidate {},
     // PayFunding {},
     // DepositMargin {},

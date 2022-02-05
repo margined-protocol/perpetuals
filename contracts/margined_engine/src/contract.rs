@@ -11,7 +11,10 @@ use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg, Cw20H
 
 use crate::error::ContractError;
 use crate::{
-    handle::{update_config, update_position, open_position},
+    handle::{
+        update_config, increase_position, decrease_position, reverse_position,
+        open_position, close_position, finalize_close_position,
+    },
     query::{query_config, query_position},
     state::{Config, read_config, store_config},
 };
@@ -19,6 +22,7 @@ use crate::{
 pub const SWAP_INCREASE_REPLY_ID: u64 = 1;
 pub const SWAP_DECREASE_REPLY_ID: u64 = 2;
 pub const SWAP_REVERSE_REPLY_ID: u64 = 3;
+pub const CLOSE_POSITION_REPLY_ID: u64 = 4;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -84,6 +88,18 @@ pub fn execute(
             quote_asset_amount,
             leverage,
         )},
+        ExecuteMsg::ClosePosition {
+            vamm,
+         } => {
+             let trader = info.sender.clone();
+         close_position(
+            deps,
+            env,
+            info.clone(),
+            vamm,
+            trader.to_string(),
+            CLOSE_POSITION_REPLY_ID,
+        )},
     }
 }
 
@@ -135,8 +151,8 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
         ContractResult::Ok(response) => {
             match msg.id {
                 SWAP_INCREASE_REPLY_ID => {
-                    let (input, output) = parse_swap_input(response);
-                    let response = update_position(
+                    let (input, output) = parse_swap(response);
+                    let response = increase_position(
                         deps,
                         env,
                         input,
@@ -145,8 +161,8 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
                     Ok(response)
                 },
                 SWAP_DECREASE_REPLY_ID => {
-                    let (input, output) = parse_swap_input(response);
-                    let response = update_position(
+                    let (input, output) = parse_swap(response);
+                    let response = decrease_position(
                         deps,
                         env,
                         input,
@@ -155,8 +171,18 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
                     Ok(response)
                 },
                 SWAP_REVERSE_REPLY_ID => {
-                    let (input, output) = parse_swap_input(response);
-                    let response = update_position(
+                    let (input, output) = parse_swap(response);
+                    let response = reverse_position(
+                        deps,
+                        env,
+                        input,
+                        output,
+                    )?;
+                    Ok(response)
+                },
+                CLOSE_POSITION_REPLY_ID => {
+                    let (input, output) = parse_swap(response);
+                    let response = finalize_close_position(
                         deps,
                         env,
                         input,
@@ -177,7 +203,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
     }
 }
 
-fn parse_swap_input(
+fn parse_swap(
     response: SubMsgExecutionResponse,
 ) -> (Uint128, Uint128) {
     // Find swap inputs and output events
@@ -202,3 +228,4 @@ fn parse_swap_input(
 
     return (input, output)
 }
+

@@ -94,7 +94,13 @@ pub fn swap_output(
     )?;
 
 
-    Ok(Response::new().add_attributes(vec![("action", "swap_output")]))
+    Ok(Response::new()
+        .add_attributes(vec![
+            ("action", "swap_output"),
+            ("input", &base_asset_amount.to_string()),
+            ("output", &quote_asset_amount.to_string()),
+        ])
+    )
 }
 
 fn get_input_price_with_reserves(
