@@ -6,7 +6,7 @@ This repo contains a template vAMM for use on Terra blockchain.
 
 - [ ] vAMM
     - [ ] Initialise
-        - [ ] Owner, assets, etc
+        - [x] Owner, assets, etc
     - [ ] Execute
         - [ ] Init vAMM (define constant product func k)
             - define the state of the new vAMM
@@ -14,14 +14,15 @@ This repo contains a template vAMM for use on Terra blockchain.
     - [ ] Query
         - Latest Price
 - [ ] Margin Engine
-    - [ ] Initialise
-        - [ ] owner, vAMM, etc
+    - [x] Initialise
+        - [x] owner, vAMM, etc
     - [ ] Execute
         - [ ] New position / Close position
+        - [ ] New eligible collateral (maybe? potentially we only allow a single type? would make x-margin easier)
     - [ ] Query
 - [ ] Factory
 - [ ] Governance
-    
+- [ ] Code Coverage - cargo-tarpaulin   
 
 ## Quickstart
 

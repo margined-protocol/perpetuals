@@ -1,438 +1,327 @@
-use crate::contract::{instantiate, execute, query};
-// use crate::error::ContractError;
-use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{Addr, from_binary, Uint128};
-use margined_perp::margined_vamm::{
-    ConfigResponse,
-    ExecuteMsg,
-    InstantiateMsg,
-    QueryMsg,
-    StateResponse,
-    Direction,
+use cw20::{Cw20Contract, Cw20ExecuteMsg};
+use cw_multi_test::{Executor};
+use cosmwasm_std::{Binary, to_binary, Uint128};
+use margined_perp::margined_engine::{
+    ConfigResponse, Cw20HookMsg, QueryMsg, Side, ExecuteMsg,
+    PositionResponse,
 };
-
-// fn mock_env_with_block_time(time: u64) -> Env {
-//     let env = mock_env();
-//     // register time
-//     Env {
-//         block: BlockInfo {
-//             height: 1,
-//             time: Timestamp::from_seconds(time),
-//             chain_id: "columbus".to_string(),
-//         },
-//         ..env
-//     }
-// }
+use margined_perp::margined_vamm::{
+    QueryMsg as VammQueryMsg,
+    StateResponse as VammStateResponse,
+};
+use crate::testing::setup::{self, DECIMAL_MULTIPLIER, to_decimals};
 
 #[test]
-fn test_instantiation() {
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {
-        decimals: 10u8,
-        quote_asset: "ETH".to_string(),
-        base_asset: "USD".to_string(),
-        quote_asset_reserve: Uint128::from(100u128),
-        base_asset_reserve: Uint128::from(10_000u128),
-        funding_period: 3_600 as u64,
-    };
-    let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+fn test_initialization() {
+    let env = setup::setup();
 
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config: ConfigResponse = from_binary(&res).unwrap();
-    let info = mock_info("addr0000", &[]);
-    assert_eq!(
-        config,
-        ConfigResponse {
-            owner: info.sender.clone(),
-            quote_asset: "ETH".to_string(),
-            base_asset: "USD".to_string(),
-        }
-    );
+    // set up cw20 helpers
+    let usdc = Cw20Contract(env.usdc.addr.clone());
 
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
-    let state: StateResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        state,
-        StateResponse {
-            quote_asset_reserve: Uint128::from(100u128),
-            base_asset_reserve: Uint128::from(10_000u128),
-            funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
-            decimals: Uint128::from(10_000_000_000u128),
-        }
-    );
+    // verfiy the balances
+    let owner_balance = usdc.balance(&env.router, env.owner.clone()).unwrap();
+    assert_eq!(owner_balance, Uint128::zero());
+    let alice_balance = usdc.balance(&env.router, env.alice.clone()).unwrap();
+    assert_eq!(alice_balance, Uint128::new(5_000_000_000_000));
+    let bob_balance = usdc.balance(&env.router, env.bob.clone()).unwrap();
+    assert_eq!(bob_balance, Uint128::new(5_000_000_000_000));
+    let engine_balance = usdc.balance(&env.router, env.engine.addr.clone()).unwrap();
+    assert_eq!(engine_balance, Uint128::zero());
 }
 
 #[test]
-fn test_update_config() {
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {
-        decimals: 10u8,
-        quote_asset: "ETH".to_string(),
-        base_asset: "USD".to_string(),
-        quote_asset_reserve: Uint128::from(100u128),
-        base_asset_reserve: Uint128::from(10_000u128),
-        funding_period: 3_600 as u64,
+fn test_open_position_long() {
+    let mut env = setup::setup();
+
+    // set up cw20 helpers
+    let usdc = Cw20Contract(env.usdc.addr.clone());
+
+    // verify the engine owner
+    let _config: ConfigResponse = env.router
+        .wrap()
+        .query_wasm_smart(&env.engine.addr, &QueryMsg::Config {})
+        .unwrap();
+
+    let send_msg = Cw20ExecuteMsg::Send {
+        contract: env.engine.addr.to_string(),
+        amount: to_decimals(60u64),
+        msg: to_binary(&Cw20HookMsg::OpenPosition {
+            vamm: env.vamm.addr.to_string(),
+            side: Side::BUY,
+            leverage: to_decimals(10u64),
+        }).unwrap(),
     };
-    let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    // Update the config
-    let msg = ExecuteMsg::UpdateConfig {
-        owner: "addr0001".to_string(),
-    };
+    let _res = env.router.execute_contract(
+        env.alice.clone(),
+        env.usdc.addr.clone(),
+        &send_msg,
+        &[]
+    ).unwrap();
 
-    let info = mock_info("addr0000", &[]);
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    let owner_balance = usdc.balance(&env.router, env.owner.clone()).unwrap();
+    assert_eq!(owner_balance, Uint128::zero());
+    let alice_balance = usdc.balance(&env.router, env.alice.clone()).unwrap();
+    assert_eq!(alice_balance, Uint128::new(4940) * DECIMAL_MULTIPLIER);
+    let engine_balance = usdc.balance(&env.router, env.engine.addr.clone()).unwrap();
+    assert_eq!(engine_balance, Uint128::new(60) * DECIMAL_MULTIPLIER);
 
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        config,
-        ConfigResponse {
-            owner: Addr::unchecked("addr0001".to_string()),
-            quote_asset: "ETH".to_string(),
-            base_asset: "USD".to_string(),
-        }
-    );
+    // retrieve the vamm state
+    let position: PositionResponse = env.router
+        .wrap()
+        .query_wasm_smart(&env.engine.addr, &QueryMsg::Position {
+            vamm: env.vamm.addr.to_string(),
+            trader: env.alice.to_string(),
+        })
+        .unwrap();
+    assert_eq!(Uint128::new(37500_000_000), position.size);
+
 }
 
 #[test]
-fn test_swap_input_long() {
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {
-        decimals: 10u8,
-        quote_asset: "ETH/USD".to_string(),
-        base_asset: "USD".to_string(),
-        quote_asset_reserve: Uint128::from(1_000_000_000u128),
-        base_asset_reserve: Uint128::from(100_000_000u128),
-        funding_period: 3_600 as u64,
-    };
-    let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+fn test_open_position_two_longs() {
+    let mut env = setup::setup();
 
-    // Swap in USD
-    let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::LONG,
-        quote_asset_amount: Uint128::from(600_000_000u128),
+    // set up cw20 helpers
+    let usdc = Cw20Contract(env.usdc.addr.clone());
+
+    // verify the engine owner
+    let _config: ConfigResponse = env.router
+        .wrap()
+        .query_wasm_smart(&env.engine.addr, &QueryMsg::Config {})
+        .unwrap();
+
+    let send_msg = Cw20ExecuteMsg::Send {
+        contract: env.engine.addr.to_string(),
+        amount: to_decimals(60u64),
+        msg: to_binary(&Cw20HookMsg::OpenPosition {
+            vamm: env.vamm.addr.to_string(),
+            side: Side::BUY,
+            leverage: to_decimals(10u64),
+        }).unwrap(),
     };
 
-    let info = mock_info("addr0000", &[]);
-    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
-    let state: StateResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        state,
-        StateResponse {
-            quote_asset_reserve: Uint128::from(1_600_000_000u128),
-            base_asset_reserve: Uint128::from(62_500_000u128),
-            funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
-            decimals: Uint128::from(10_000_000_000u128),
-        }
-    );
+    let _res = env.router.execute_contract(
+        env.alice.clone(),
+        env.usdc.addr.clone(),
+        &send_msg,
+        &[]
+    ).unwrap();
+
+    let send_msg = Cw20ExecuteMsg::Send {
+        contract: env.engine.addr.to_string(),
+        amount: to_decimals(60u64),
+        msg: to_binary(&Cw20HookMsg::OpenPosition {
+            vamm: env.vamm.addr.to_string(),
+            side: Side::BUY,
+            leverage: to_decimals(10u64),
+        }).unwrap(),
+    };
+
+    let _res = env.router.execute_contract(
+        env.alice.clone(),
+        env.usdc.addr.clone(),
+        &send_msg,
+        &[]
+    ).unwrap();
+
+    let owner_balance = usdc.balance(&env.router, env.owner.clone()).unwrap();
+    assert_eq!(owner_balance, Uint128::zero());
+    let alice_balance = usdc.balance(&env.router, env.alice.clone()).unwrap();
+    assert_eq!(alice_balance, Uint128::new(4880) * DECIMAL_MULTIPLIER);
+    let engine_balance = usdc.balance(&env.router, env.engine.addr.clone()).unwrap();
+    assert_eq!(engine_balance, Uint128::new(120) * DECIMAL_MULTIPLIER);
+
+    // retrieve the vamm state
+    let position: PositionResponse = env.router
+        .wrap()
+        .query_wasm_smart(&env.engine.addr, &QueryMsg::Position {
+            vamm: env.vamm.addr.to_string(),
+            trader: env.alice.to_string(),
+        })
+        .unwrap();
+    assert_eq!(Uint128::new(54_545_454_546), position.size);
+    assert_eq!(to_decimals(120), position.margin);
+
 }
 
 #[test]
-fn test_swap_input_short() {
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {
-        decimals: 10u8,
-        quote_asset: "ETH/USD".to_string(),
-        base_asset: "USD".to_string(),
-        quote_asset_reserve: Uint128::from(1_000_000_000u128),
-        base_asset_reserve: Uint128::from(100_000_000u128),
-        funding_period: 3_600 as u64,
-    };
-    let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+fn test_open_position_two_shorts() {
+    let mut env = setup::setup();
 
-    // Swap in USD
-    let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::SHORT,
-        quote_asset_amount: Uint128::from(600_000_000u128),
+    // set up cw20 helpers
+    let usdc = Cw20Contract(env.usdc.addr.clone());
+
+    // verify the engine owner
+    let _config: ConfigResponse = env.router
+        .wrap()
+        .query_wasm_smart(&env.engine.addr, &QueryMsg::Config {})
+        .unwrap();
+
+    let send_msg = Cw20ExecuteMsg::Send {
+        contract: env.engine.addr.to_string(),
+        amount: to_decimals(40u64),
+        msg: to_binary(&Cw20HookMsg::OpenPosition {
+            vamm: env.vamm.addr.to_string(),
+            side: Side::SELL,
+            leverage: to_decimals(5u64),
+        }).unwrap(),
     };
 
-    let info = mock_info("addr0000", &[]);
-    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
-    let state: StateResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        state,
-        StateResponse {
-            quote_asset_reserve: Uint128::from(400_000_000u128),
-            base_asset_reserve: Uint128::from(250_000_000u128),
-            funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
-            decimals: Uint128::from(10_000_000_000u128),
-        }
-    );
+    let _res = env.router.execute_contract(
+        env.alice.clone(),
+        env.usdc.addr.clone(),
+        &send_msg,
+        &[]
+    ).unwrap();
+
+    let send_msg = Cw20ExecuteMsg::Send {
+        contract: env.engine.addr.to_string(),
+        amount: to_decimals(40u64),
+        msg: to_binary(&Cw20HookMsg::OpenPosition {
+            vamm: env.vamm.addr.to_string(),
+            side: Side::SELL,
+            leverage: to_decimals(5u64),
+        }).unwrap(),
+    };
+
+    let _res = env.router.execute_contract(
+        env.alice.clone(),
+        env.usdc.addr.clone(),
+        &send_msg,
+        &[]
+    ).unwrap();
+
+    // retrieve the vamm state
+    let position: PositionResponse = env.router
+        .wrap()
+        .query_wasm_smart(&env.engine.addr, &QueryMsg::Position {
+            vamm: env.vamm.addr.to_string(),
+            trader: env.alice.to_string(),
+        })
+        .unwrap();
+    assert_eq!(Uint128::new(66_666_666_666), position.size);
+    assert_eq!(to_decimals(80), position.margin);
+
 }
 
 #[test]
-fn test_swap_output_short() {
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {
-        decimals: 10u8,
-        quote_asset: "ETH/USD".to_string(),
-        base_asset: "USD".to_string(),
-        quote_asset_reserve: Uint128::from(1_000_000_000u128),
-        base_asset_reserve: Uint128::from(100_000_000u128),
-        funding_period: 3_600 as u64,
-    };
-    let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+fn test_open_position_equal_size_long_short() {
+    let mut env = setup::setup();
 
-    // Swap in USD
-    let swap_msg = ExecuteMsg::SwapOutput {
-        direction: Direction::LONG,
-        base_asset_amount: Uint128::from(150_000_000u128),
+    // set up cw20 helpers
+    let usdc = Cw20Contract(env.usdc.addr.clone());
+
+    // verify the engine owner
+    let _config: ConfigResponse = env.router
+        .wrap()
+        .query_wasm_smart(&env.engine.addr, &QueryMsg::Config {})
+        .unwrap();
+
+    let send_msg = Cw20ExecuteMsg::Send {
+        contract: env.engine.addr.to_string(),
+        amount: to_decimals(60u64),
+        msg: to_binary(&Cw20HookMsg::OpenPosition {
+            vamm: env.vamm.addr.to_string(),
+            side: Side::BUY,
+            leverage: to_decimals(10u64),
+        }).unwrap(),
     };
 
-    let info = mock_info("addr0000", &[]);
-    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
-    let state: StateResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        state,
-        StateResponse {
-            quote_asset_reserve: Uint128::from(400_000_000u128),
-            base_asset_reserve: Uint128::from(250_000_000u128),
-            funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
-            decimals: Uint128::from(10_000_000_000u128),
-        }
-    );
+    let _res = env.router.execute_contract(
+        env.alice.clone(),
+        env.usdc.addr.clone(),
+        &send_msg,
+        &[]
+    ).unwrap();
+
+    let send_msg = Cw20ExecuteMsg::Send {
+        contract: env.engine.addr.to_string(),
+        amount: to_decimals(300u64),
+        msg: to_binary(&Cw20HookMsg::OpenPosition {
+            vamm: env.vamm.addr.to_string(),
+            side: Side::SELL,
+            leverage: to_decimals(2u64),
+        }).unwrap(),
+    };
+
+    let _res = env.router.execute_contract(
+        env.alice.clone(),
+        env.usdc.addr.clone(),
+        &send_msg,
+        &[]
+    ).unwrap();
+
+    // retrieve the vamm state
+    let position: PositionResponse = env.router
+        .wrap()
+        .query_wasm_smart(&env.engine.addr, &QueryMsg::Position {
+            vamm: env.vamm.addr.to_string(),
+            trader: env.alice.to_string(),
+        })
+        .unwrap();
+    assert_eq!(Uint128::zero(), position.size);
+    assert_eq!(Uint128::zero(), position.margin);
+
 }
 
 #[test]
-fn test_swap_output_long() {
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {
-        decimals: 10u8,
-        quote_asset: "ETH/USD".to_string(),
-        base_asset: "USD".to_string(),
-        quote_asset_reserve: Uint128::from(1_000_000_000u128),
-        base_asset_reserve: Uint128::from(100_000_000u128),
-        funding_period: 3_600 as u64,
-    };
-    let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+fn test_open_position_one_long_two_shorts() {
+    let mut env = setup::setup();
 
-    // Swap in USD
-    let swap_msg = ExecuteMsg::SwapOutput {
-        direction: Direction::SHORT,
-        base_asset_amount: Uint128::from(50_000_000u128),
+    // set up cw20 helpers
+    let usdc = Cw20Contract(env.usdc.addr.clone());
+
+    // verify the engine owner
+    let _config: ConfigResponse = env.router
+        .wrap()
+        .query_wasm_smart(&env.engine.addr, &QueryMsg::Config {})
+        .unwrap();
+
+    let send_msg = Cw20ExecuteMsg::Send {
+        contract: env.engine.addr.to_string(),
+        amount: to_decimals(60u64),
+        msg: to_binary(&Cw20HookMsg::OpenPosition {
+            vamm: env.vamm.addr.to_string(),
+            side: Side::BUY,
+            leverage: to_decimals(10u64),
+        }).unwrap(),
     };
 
-    let info = mock_info("addr0000", &[]);
-    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
-    let state: StateResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        state,
-        StateResponse {
-            quote_asset_reserve: Uint128::from(2_000_000_000u128),
-            base_asset_reserve: Uint128::from(50_000_000u128),
-            funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
-            decimals: Uint128::from(10_000_000_000u128),
-        }
-    );
+    let _res = env.router.execute_contract(
+        env.alice.clone(),
+        env.usdc.addr.clone(),
+        &send_msg,
+        &[]
+    ).unwrap();
+
+    let send_msg = Cw20ExecuteMsg::Send {
+        contract: env.engine.addr.to_string(),
+        amount: to_decimals(20u64),
+        msg: to_binary(&Cw20HookMsg::OpenPosition {
+            vamm: env.vamm.addr.to_string(),
+            side: Side::SELL,
+            leverage: to_decimals(5u64),
+        }).unwrap(),
+    };
+
+    let _res = env.router.execute_contract(
+        env.alice.clone(),
+        env.usdc.addr.clone(),
+        &send_msg,
+        &[]
+    ).unwrap();
+
+    // retrieve the vamm state
+    let position: PositionResponse = env.router
+        .wrap()
+        .query_wasm_smart(&env.engine.addr, &QueryMsg::Position {
+            vamm: env.vamm.addr.to_string(),
+            trader: env.alice.to_string(),
+        })
+        .unwrap();
+    assert_eq!(Uint128::new(33_333_333_334), position.size);
+    assert_eq!(to_decimals(60), position.margin);
+
 }
 
-#[test]
-fn test_swap_input_short_long() {
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {
-        decimals: 10u8,
-        quote_asset: "ETH/USD".to_string(),
-        base_asset: "USD".to_string(),
-        quote_asset_reserve: Uint128::from(1_000_000_000u128),
-        base_asset_reserve: Uint128::from(100_000_000u128),
-        funding_period: 3_600 as u64,
-    };
-    let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    // Swap in USD
-    let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::SHORT,
-        quote_asset_amount: Uint128::from(480_000_000u128),
-    };
-
-    let info = mock_info("addr0000", &[]);
-    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
-
-    // Swap in USD
-    let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::LONG,
-        quote_asset_amount: Uint128::from(960_000_000u128),
-    };
-
-    let info = mock_info("addr0000", &[]);
-    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
-    let state: StateResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        state,
-        StateResponse {
-            quote_asset_reserve: Uint128::from(1_480_000_000u128),
-            base_asset_reserve: Uint128::from(67_567_560u128),
-            funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
-            decimals: Uint128::from(10_000_000_000u128),
-        }
-    );
-}
-
-#[test]
-fn test_swap_input_short_long_long() {
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {
-        decimals: 10u8,
-        quote_asset: "ETH/USD".to_string(),
-        base_asset: "USD".to_string(),
-        quote_asset_reserve: Uint128::from(1_000_000_000u128),
-        base_asset_reserve: Uint128::from(100_000_000u128),
-        funding_period: 3_600 as u64,
-    };
-    let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::SHORT,
-        quote_asset_amount: Uint128::from(200_000_000u128),
-    };
-
-    let info = mock_info("addr0000", &[]);
-    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
-
-    let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::LONG,
-        quote_asset_amount: Uint128::from(100_000_000u128),
-    };
-
-    let info = mock_info("addr0000", &[]);
-    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
-
-    let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::LONG,
-        quote_asset_amount: Uint128::from(200_000_000u128),
-    };
-
-    let info = mock_info("addr0000", &[]);
-    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
-
-
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
-    let state: StateResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        state,
-        StateResponse {
-            quote_asset_reserve: Uint128::from(1_100_000_000u128),
-            base_asset_reserve: Uint128::from(90_909_081u128),
-            funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
-            decimals: Uint128::from(10_000_000_000u128),
-        }
-    );
-}
-
-#[test]
-fn test_swap_input_short_long_short() {
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {
-        decimals: 10u8,
-        quote_asset: "ETH/USD".to_string(),
-        base_asset: "USD".to_string(),
-        quote_asset_reserve: Uint128::from(1_000_000_000u128),
-        base_asset_reserve: Uint128::from(100_000_000u128),
-        funding_period: 3_600 as u64,
-    };
-    let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::SHORT,
-        quote_asset_amount: Uint128::from(200_000_000u128),
-    };
-
-    let info = mock_info("addr0000", &[]);
-    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
-
-    let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::LONG,
-        quote_asset_amount: Uint128::from(450_000_000u128),
-    };
-
-    let info = mock_info("addr0000", &[]);
-    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
-
-    let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::SHORT,
-        quote_asset_amount: Uint128::from(250_000_000u128),
-    };
-
-    let info = mock_info("addr0000", &[]);
-    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
-
-
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
-    let state: StateResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        state,
-        StateResponse {
-            quote_asset_reserve: Uint128::from(1_000_000_000u128),
-            base_asset_reserve: Uint128::from(100_000_000u128),
-            funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
-            decimals: Uint128::from(10_000_000_000u128),
-        }
-    );
-}
-
-#[test]
-fn test_swap_output_short_long() {
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {
-        decimals: 10u8,
-        quote_asset: "ETH/USD".to_string(),
-        base_asset: "USD".to_string(),
-        quote_asset_reserve: Uint128::from(1_000_000_000u128),
-        base_asset_reserve: Uint128::from(100_000_000u128),
-        funding_period: 3_600 as u64,
-    };
-    let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    let swap_msg = ExecuteMsg::SwapOutput {
-        direction: Direction::SHORT,
-        base_asset_amount: Uint128::from(10_000_000u128),
-    };
-
-    let info = mock_info("addr0000", &[]);
-    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
-
-    let swap_msg = ExecuteMsg::SwapOutput {
-        direction: Direction::LONG,
-        base_asset_amount: Uint128::from(10_000_000u128),
-    };
-
-    let info = mock_info("addr0000", &[]);
-    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
-
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
-    let state: StateResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        state,
-        StateResponse {
-            quote_asset_reserve: Uint128::from(999_999_900u128),
-            base_asset_reserve: Uint128::from(100_000_000u128),
-            funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
-            decimals: Uint128::from(10_000_000_000u128),
-        }
-    );
-}

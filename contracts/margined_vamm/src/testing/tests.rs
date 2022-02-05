@@ -1,5 +1,4 @@
 use crate::contract::{instantiate, execute, query};
-// use crate::error::ContractError;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{Addr, from_binary, Uint128};
 use margined_perp::margined_vamm::{
@@ -10,19 +9,6 @@ use margined_perp::margined_vamm::{
     StateResponse,
     Direction,
 };
-
-// fn mock_env_with_block_time(time: u64) -> Env {
-//     let env = mock_env();
-//     // register time
-//     Env {
-//         block: BlockInfo {
-//             height: 1,
-//             time: Timestamp::from_seconds(time),
-//             chain_id: "columbus".to_string(),
-//         },
-//         ..env
-//     }
-// }
 
 #[test]
 fn test_instantiation() {
@@ -114,7 +100,7 @@ fn test_swap_input_long() {
 
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::LONG,
+        direction: Direction::AddToAmm,
         quote_asset_amount: Uint128::from(600_000_000u128),
     };
 
@@ -150,7 +136,7 @@ fn test_swap_input_short() {
 
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::SHORT,
+        direction: Direction::RemoveFromAmm,
         quote_asset_amount: Uint128::from(600_000_000u128),
     };
 
@@ -186,7 +172,7 @@ fn test_swap_output_short() {
 
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapOutput {
-        direction: Direction::LONG,
+        direction: Direction::AddToAmm,
         base_asset_amount: Uint128::from(150_000_000u128),
     };
 
@@ -222,7 +208,7 @@ fn test_swap_output_long() {
 
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapOutput {
-        direction: Direction::SHORT,
+        direction: Direction::RemoveFromAmm,
         base_asset_amount: Uint128::from(50_000_000u128),
     };
 
@@ -258,7 +244,7 @@ fn test_swap_input_short_long() {
 
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::SHORT,
+        direction: Direction::RemoveFromAmm,
         quote_asset_amount: Uint128::from(480_000_000u128),
     };
 
@@ -267,7 +253,7 @@ fn test_swap_input_short_long() {
 
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::LONG,
+        direction: Direction::AddToAmm,
         quote_asset_amount: Uint128::from(960_000_000u128),
     };
 
@@ -302,7 +288,7 @@ fn test_swap_input_short_long_long() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::SHORT,
+        direction: Direction::RemoveFromAmm,
         quote_asset_amount: Uint128::from(200_000_000u128),
     };
 
@@ -310,7 +296,7 @@ fn test_swap_input_short_long_long() {
     execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::LONG,
+        direction: Direction::AddToAmm,
         quote_asset_amount: Uint128::from(100_000_000u128),
     };
 
@@ -318,7 +304,7 @@ fn test_swap_input_short_long_long() {
     execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::LONG,
+        direction: Direction::AddToAmm,
         quote_asset_amount: Uint128::from(200_000_000u128),
     };
 
@@ -355,7 +341,7 @@ fn test_swap_input_short_long_short() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::SHORT,
+        direction: Direction::RemoveFromAmm,
         quote_asset_amount: Uint128::from(200_000_000u128),
     };
 
@@ -363,7 +349,7 @@ fn test_swap_input_short_long_short() {
     execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::LONG,
+        direction: Direction::AddToAmm,
         quote_asset_amount: Uint128::from(450_000_000u128),
     };
 
@@ -371,7 +357,7 @@ fn test_swap_input_short_long_short() {
     execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapInput {
-        direction: Direction::SHORT,
+        direction: Direction::RemoveFromAmm,
         quote_asset_amount: Uint128::from(250_000_000u128),
     };
 
@@ -408,7 +394,7 @@ fn test_swap_output_short_long() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapOutput {
-        direction: Direction::SHORT,
+        direction: Direction::RemoveFromAmm,
         base_asset_amount: Uint128::from(10_000_000u128),
     };
 
@@ -416,7 +402,7 @@ fn test_swap_output_short_long() {
     execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapOutput {
-        direction: Direction::LONG,
+        direction: Direction::AddToAmm,
         base_asset_amount: Uint128::from(10_000_000u128),
     };
 
@@ -433,6 +419,99 @@ fn test_swap_output_short_long() {
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
             decimals: Uint128::from(10_000_000_000u128),
+        }
+    );
+}
+
+#[test]
+fn test_swap_input_long_integration_example() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: Uint128::from(1_000_000_000_000u128),
+        base_asset_reserve: Uint128::from(100_000_000_000u128),
+        funding_period: 3_600 as u64,
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // Swap in USD
+    let swap_msg = ExecuteMsg::SwapInput {
+        direction: Direction::AddToAmm,
+        quote_asset_amount: Uint128::from(600_000_000_000u128), // this is swapping 60 at 10x leverage
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        state,
+        StateResponse {
+            quote_asset_reserve: Uint128::from(1_600_000_000_000u128),
+            base_asset_reserve: Uint128::from(62_500_000_000u128),
+            funding_rate: Uint128::zero(),
+            funding_period: 3_600 as u64,
+            decimals: Uint128::from(1_000_000_000u128),
+        }
+    );
+}
+
+#[test]
+fn test_swap_input_long_short_integration_example() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: Uint128::from(1_000_000_000_000u128),
+        base_asset_reserve: Uint128::from(100_000_000_000u128),
+        funding_period: 3_600 as u64,
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // Swap in USD
+    let swap_msg = ExecuteMsg::SwapInput {
+        direction: Direction::AddToAmm,
+        quote_asset_amount: Uint128::from(600_000_000_000u128), // this is swapping 60 at 10x leverage
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        state,
+        StateResponse {
+            quote_asset_reserve: Uint128::from(1_600_000_000_000u128),
+            base_asset_reserve: Uint128::from(62_500_000_000u128),
+            funding_rate: Uint128::zero(),
+            funding_period: 3_600 as u64,
+            decimals: Uint128::from(1_000_000_000u128),
+        }
+    );
+
+    // Swap in ETH
+    let swap_msg = ExecuteMsg::SwapOutput {
+        direction: Direction::AddToAmm,
+        base_asset_amount: Uint128::from(37_500_000_000u128), // this is swapping 60 at 10x leverage
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        state,
+        StateResponse {
+            quote_asset_reserve: Uint128::from(1_000_000_000_000u128),
+            base_asset_reserve: Uint128::from(100_000_000_000u128),
+            funding_rate: Uint128::zero(),
+            funding_period: 3_600 as u64,
+            decimals: Uint128::from(1_000_000_000u128),
         }
     );
 }

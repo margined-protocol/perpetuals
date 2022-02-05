@@ -1,14 +1,28 @@
+use std::str::FromStr;
+
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128};
-use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use cosmwasm_std::{
+    attr, to_binary, from_binary, Binary, ContractResult, Deps, DepsMut, Env, MessageInfo,
+    Reply, ReplyOn, Response, StdResult, StdError, Uint128, SubMsg, CosmosMsg, WasmMsg, SubMsgExecutionResponse,
+};
+use cw20::{Cw20ReceiveMsg, Cw20ExecuteMsg};
+use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg, Cw20HookMsg};
 
 use crate::error::ContractError;
 use crate::{
-    handle::{update_config, swap_input},
+    handle::{
+        update_config, increase_position, decrease_position, reverse_position,
+        open_position, close_position, finalize_close_position,
+    },
     query::{query_config, query_position},
-    state::{Config, store_config},
+    state::{Config, read_config, store_config},
 };
+
+pub const SWAP_INCREASE_REPLY_ID: u64 = 1;
+pub const SWAP_DECREASE_REPLY_ID: u64 = 2;
+pub const SWAP_REVERSE_REPLY_ID: u64 = 3;
+pub const CLOSE_POSITION_REPLY_ID: u64 = 4;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -17,14 +31,15 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-
     let decimals = Uint128::from(10u128.pow(msg.decimals as u32));
+    let eligible_collateral = deps.api.addr_validate(&msg.eligible_collateral)?;
 
     let config = Config {
         owner: info.sender.clone(),
+        eligible_collateral: eligible_collateral,
         decimals: decimals,
-        initial_margin: msg.initial_margin,
-        maintenance_margin: msg.maintenance_margin,
+        initial_margin_ratio: msg.initial_margin_ratio,
+        maintenance_margin_ratio: msg.maintenance_margin_ratio,
         liquidation_fee: msg.liquidation_fee,
     };
     
@@ -39,26 +54,83 @@ pub fn execute(
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response, ContractError> {
+) -> StdResult<Response> {
     match msg {
+        ExecuteMsg::Receive(msg) => receive_cw20(
+            deps,
+            env,
+            info.clone(),
+            msg
+        ),
         ExecuteMsg::UpdateConfig {
             owner,
         } => {
             update_config(
                 deps,
-                info,
+                info.clone(),
                 owner,
             )
         },
         ExecuteMsg::OpenPosition {
-            owner,
-        } => {
-            open_position(
-                deps,
-                info,
-                owner,
-            )
-        },
+            vamm,
+            side,
+            quote_asset_amount,
+            leverage,
+         } => {
+             let trader = info.sender.clone();
+         open_position(
+            deps,
+            env,
+            info.clone(),
+            vamm,
+            trader.to_string(),
+            side,
+            quote_asset_amount,
+            leverage,
+        )},
+        ExecuteMsg::ClosePosition {
+            vamm,
+         } => {
+             let trader = info.sender.clone();
+         close_position(
+            deps,
+            env,
+            info.clone(),
+            vamm,
+            trader.to_string(),
+            CLOSE_POSITION_REPLY_ID,
+        )},
+    }
+}
+
+pub fn receive_cw20(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    cw20_msg: Cw20ReceiveMsg,
+) -> StdResult<Response> {
+    // only asset contract can execute this message
+    let config: Config = read_config(deps.storage)?;
+    if config.eligible_collateral != deps.api.addr_validate(info.sender.as_str())? {
+        return Err(StdError::generic_err("unauthorized"));
+    }
+    
+    match from_binary(&cw20_msg.msg) {
+        Ok(Cw20HookMsg::OpenPosition {
+            vamm,
+            side,
+            leverage,
+        }) => open_position(
+            deps,
+            env,
+            info,
+            vamm,
+            cw20_msg.sender,
+            side,
+            cw20_msg.amount, // not needed, we should take from deposited amount or validate
+            leverage,
+        ),
+        Err(_) => Err(StdError::generic_err("invalid cw20 hook message")),
     }
 }
 
@@ -72,3 +144,88 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => to_binary(&query_position(deps, vamm, trader)?),
     }
 }
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
+    match msg.result {
+        ContractResult::Ok(response) => {
+            match msg.id {
+                SWAP_INCREASE_REPLY_ID => {
+                    let (input, output) = parse_swap(response);
+                    let response = increase_position(
+                        deps,
+                        env,
+                        input,
+                        output,
+                    )?;
+                    Ok(response)
+                },
+                SWAP_DECREASE_REPLY_ID => {
+                    let (input, output) = parse_swap(response);
+                    let response = decrease_position(
+                        deps,
+                        env,
+                        input,
+                        output,
+                    )?;
+                    Ok(response)
+                },
+                SWAP_REVERSE_REPLY_ID => {
+                    let (input, output) = parse_swap(response);
+                    let response = reverse_position(
+                        deps,
+                        env,
+                        input,
+                        output,
+                    )?;
+                    Ok(response)
+                },
+                CLOSE_POSITION_REPLY_ID => {
+                    let (input, output) = parse_swap(response);
+                    let response = finalize_close_position(
+                        deps,
+                        env,
+                        input,
+                        output,
+                    )?;
+                    Ok(response)
+                },
+                _ => Err(StdError::generic_err(format!(
+                    "reply (id {:?}) invalid",
+                    msg.id
+                ))),
+            }
+        }
+        ContractResult::Err(e) => Err(StdError::generic_err(format!(
+            "reply (id {:?}) error {:?}",
+            msg.id, e
+        ))),
+    }
+}
+
+fn parse_swap(
+    response: SubMsgExecutionResponse,
+) -> (Uint128, Uint128) {
+    // Find swap inputs and output events
+    let wasm = response.events.iter().find(|&e| e.ty == "wasm");
+    let wasm = wasm.unwrap();
+    let input_str = &wasm
+        .attributes
+        .iter()
+        .find(|&attr| attr.key == "input")
+        .unwrap()
+        .value;
+    let input: Uint128 = Uint128::from_str(input_str).unwrap();
+
+
+    let output_str = &wasm
+        .attributes
+        .iter()
+        .find(|&attr| attr.key == "output")
+        .unwrap()
+        .value;
+    let output: Uint128 = Uint128::from_str(output_str).unwrap();
+
+    return (input, output)
+}
+
