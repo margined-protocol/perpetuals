@@ -1,8 +1,9 @@
 use cosmwasm_std::{
     Addr, CosmosMsg, DepsMut, Env, MessageInfo, Response,
     Reply, ReplyOn, StdError, StdResult, SubMsg, to_binary, Uint128,
-    WasmMsg, SubMsgExecutionResponse,
+    WasmMsg, SubMsgExecutionResponse, Storage,
 };
+use cw20::{Cw20ExecuteMsg};
 
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 use margined_perp::margined_engine::Side;
@@ -12,6 +13,7 @@ use crate::{
         Config, read_config, store_config,
         Position, read_position, store_position,
         store_tmp_position, read_tmp_position, remove_tmp_position,
+        VammList, read_vamm,
     },
 };
 
@@ -48,6 +50,13 @@ pub fn open_position(
     leverage: Uint128,
 ) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
+    
+    // check that it is a registered vamm
+    let vamm_list: VammList = read_vamm(deps.storage)?;
+    if !vamm_list.is_vamm(&vamm) {
+        return Err(StdError::generic_err("vAMM is not registered"));
+    }
+
     // create a response, so that we can assign relevant submessages to
     // be executed
     let mut response = Response::new();
@@ -87,7 +96,7 @@ pub fn open_position(
 
     if is_increase {
         // then we are opening a new position or adding to an existing
-        let msg = swap_input(
+        let swap_msg = swap_input(
             &vamm,
             side.clone(),
             open_notional,
@@ -98,8 +107,17 @@ pub fn open_position(
         position.margin = position.margin.checked_add(quote_asset_amount)?;
         position.notional = position.notional.checked_add(open_notional)?;
 
+        let transfer_msg = execute_transfer_from(
+            deps.storage,
+            &trader.clone(),
+            &env.contract.address,
+            position.margin,
+        ).unwrap();
+
         // Add the submessage to the response
-        response = response.add_submessage(msg);
+        response = response
+            .add_submessage(transfer_msg)
+            .add_submessage(swap_msg);
 
     } else {
         // TODO make this a function maybe called, open_reverse_position
@@ -350,6 +368,33 @@ fn swap_input(
     };
 
     Ok(execute_submsg)
+}
+
+fn execute_transfer_from(
+    storage: &dyn Storage,
+    sender: &Addr,
+    receiver: &Addr, 
+    amount: Uint128, 
+) -> StdResult<SubMsg> {
+    let config = read_config(storage)?;
+    let msg = WasmMsg::Execute {
+        contract_addr: config.eligible_collateral.to_string(),
+        funds: vec![],
+        msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
+            owner: sender.to_string(),
+            recipient: receiver.to_string(),
+            amount: amount,
+        })?,
+    };
+
+    let transfer_msg = SubMsg {
+        msg: CosmosMsg::Wasm(msg),
+        gas_limit: None, // probably should set a limit in the config
+        id: 0u64,
+        reply_on: ReplyOn::Never,
+    };
+
+    Ok(transfer_msg)
 }
 
 // takes the side (buy|sell) and returns the direction (long|short)

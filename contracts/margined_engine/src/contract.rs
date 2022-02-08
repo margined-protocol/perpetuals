@@ -15,8 +15,10 @@ use crate::{
         update_config, increase_position, decrease_position, reverse_position,
         open_position, close_position, finalize_close_position,
     },
-    query::{query_config, query_position},
-    state::{Config, read_config, store_config},
+    query::{
+        query_config, query_position, query_trader_balance_with_funding_payment,
+    },
+    state::{Config, read_config, store_config, read_vamm, store_vamm},
 };
 
 pub const SWAP_INCREASE_REPLY_ID: u64 = 1;
@@ -34,6 +36,7 @@ pub fn instantiate(
     let decimals = Uint128::from(10u128.pow(msg.decimals as u32));
     let eligible_collateral = deps.api.addr_validate(&msg.eligible_collateral)?;
 
+    // config parameters
     let config = Config {
         owner: info.sender.clone(),
         eligible_collateral: eligible_collateral,
@@ -44,6 +47,9 @@ pub fn instantiate(
     };
     
     store_config(deps.storage, &config)?;
+
+    // store default vamms
+    store_vamm(deps, &msg.vamm)?;
 
     Ok(Response::default())
 }
@@ -142,6 +148,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             vamm,
             trader,
         } => to_binary(&query_position(deps, vamm, trader)?),
+        QueryMsg::TraderBalance {
+            trader,
+        } => to_binary(&query_trader_balance_with_funding_payment(deps, trader)?),
     }
 }
 

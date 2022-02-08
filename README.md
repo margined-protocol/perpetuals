@@ -8,9 +8,10 @@ This repo contains a template vAMM for use on Terra blockchain.
     - [ ] Initialise
         - [x] Owner, assets, etc
     - [ ] Execute
-        - [ ] Init vAMM (define constant product func k)
+        - [x] Init vAMM (define constant product func k)
             - define the state of the new vAMM
-        - [ ] Long / Short
+        - [x] Long / Short
+        - [ ] SettleFunding
     - [ ] Query
         - Latest Price
 - [ ] Margin Engine
@@ -19,10 +20,18 @@ This repo contains a template vAMM for use on Terra blockchain.
     - [ ] Execute
         - [ ] New position / Close position
         - [ ] New eligible collateral (maybe? potentially we only allow a single type? would make x-margin easier)
+        - [ ] Update vAmms, i.e. append, remove etc
+        - [ ] Update vAmms, i.e. append, remove etc
     - [ ] Query
+- [ ] Oracle
+  - [ ] Wrapper for TeFi oracles which do calcs listed below
+  - [ ] TWAP
+  - [ ] ???
 - [ ] Factory
 - [ ] Governance
-- [ ] Code Coverage - cargo-tarpaulin   
+- [ ] General
+  - [ ] Code comment documentation
+  - [ ] Code Coverage - cargo-tarpaulin   
 
 ## Quickstart
 
