@@ -130,6 +130,18 @@ pub fn setup() -> TestingEnv {
         )
         .unwrap();
 
+    // create allowance for alice
+    router.execute_contract(
+        alice.clone(),
+        usdc_addr.clone(),
+        &Cw20ExecuteMsg::IncreaseAllowance {
+            spender: engine_addr.to_string(),
+            amount: to_decimals(2000),
+            expires: None,
+        },
+        &[]
+    ).unwrap();
+
     TestingEnv {
         router,
         owner,
@@ -153,25 +165,4 @@ pub fn setup() -> TestingEnv {
 // takes in a Uint128 and multiplies by the decimals just to make tests more legible
 pub fn to_decimals(input: u64) -> Uint128 {
     return Uint128::from(input) * DECIMAL_MULTIPLIER;
-}
-
-pub fn increase_allowance(
-    mut router: App,
-    sender: &Addr,
-    spender: &Addr,
-    contract: &Addr,
-    amount: Uint128,
-) {
-    let msg = Cw20ExecuteMsg::IncreaseAllowance {
-        spender: spender.to_string(),
-        amount: amount,
-        expires: None,
-    };
-
-    router.execute_contract(
-        sender.clone(),
-        contract.clone(),
-        &msg,
-        &[]
-    ).unwrap();
 }

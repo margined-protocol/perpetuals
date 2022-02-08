@@ -14,7 +14,6 @@ use margined_perp::margined_vamm::Direction;
 use sha3::{Digest, Sha3_256};
 
 pub static KEY_CONFIG: &[u8] = b"config";
-pub static KEY_VAMM: &[u8] = b"vamm";
 pub static KEY_POSITION: &[u8] = b"position";
 pub static KEY_TMP_POSITION: &[u8] = b"tmp-position";
 pub const VAMM_LIST: Item<VammList> = Item::new("admin_list");

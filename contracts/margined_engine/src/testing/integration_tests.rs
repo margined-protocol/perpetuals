@@ -36,19 +36,6 @@ fn test_initialization() {
 fn test_open_position_long() {
     let mut env = setup::setup();
 
-    let msg = Cw20ExecuteMsg::IncreaseAllowance {
-        spender: env.engine.addr.to_string(),
-        amount: to_decimals(2000),
-        expires: None,
-    };
-
-    env.router.execute_contract(
-        env.alice.clone(),
-        env.usdc.addr.clone(),
-        &msg,
-        &[]
-    ).unwrap();
-
     // set up cw20 helpers
     let usdc = Cw20Contract(env.usdc.addr.clone());
 
