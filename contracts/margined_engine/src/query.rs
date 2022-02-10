@@ -1,9 +1,12 @@
-use cosmwasm_std::{Deps, StdResult};
+use cosmwasm_std::{Deps, StdResult, Uint128};
 use margined_perp::margined_engine::{
     ConfigResponse, PositionResponse,
 };
 
-use crate::state::{Config, read_config, read_position};
+use crate::state::{
+    Config, read_config,
+    read_position, read_vamm,
+};
 
 /// Queries contract Config
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
@@ -36,4 +39,21 @@ pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Pos
             timestamp: position.timestamp,
         }
     )
+}
+
+
+/// Queries traders position across all vamms
+pub fn query_trader_balance_with_funding_payment(
+    deps: Deps,
+    trader: String
+) -> StdResult<Uint128> {
+    let mut margin = Uint128::zero();
+    let vamm_list = read_vamm(deps.storage)?;
+    for vamm in vamm_list.vamm.iter() {
+        let position = query_position(deps, vamm.to_string(), trader.clone())?;
+        margin = margin.checked_add(position.margin)?;
+
+    }
+
+    Ok(margin)
 }

@@ -26,6 +26,7 @@ pub struct InstantiateMsg {
     pub initial_margin_ratio: Uint128,
     pub maintenance_margin_ratio: Uint128,
     pub liquidation_fee: Uint128,
+    pub vamm: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -67,6 +68,9 @@ pub enum QueryMsg {
     Config {},
     Position {
         vamm: String,
+        trader: String,
+    },
+    TraderBalance {
         trader: String,
     },
     // MarginRatio {},

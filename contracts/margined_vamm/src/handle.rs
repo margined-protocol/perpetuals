@@ -11,6 +11,7 @@ use crate::{
     },
 };
 
+
 pub fn update_config(
     deps: DepsMut,
     _info: MessageInfo,
@@ -103,7 +104,7 @@ pub fn swap_output(
     )
 }
 
-fn get_input_price_with_reserves(
+pub fn get_input_price_with_reserves(
     state: &State,
     direction: &Direction,
     quote_asset_amount: Uint128,
@@ -136,16 +137,25 @@ fn get_input_price_with_reserves(
         .checked_mul(state.decimals)?
         .checked_div(quote_asset_after)?;
 
-    let base_asset_bought = if base_asset_after > state.base_asset_reserve {
+    let mut base_asset_bought = if base_asset_after > state.base_asset_reserve {
         base_asset_after - state.base_asset_reserve
     } else {
         state.base_asset_reserve - base_asset_after
     };
 
+    let remainder = modulo(invariant_k, quote_asset_after);
+    if remainder != Uint128::zero() {
+        if *direction == Direction::AddToAmm {
+            base_asset_bought = base_asset_bought.checked_sub(Uint128::new(1u128))?;
+        } else {
+            base_asset_bought = base_asset_bought.checked_add(Uint128::from(1u128))?;
+        }
+    }
+
     Ok(base_asset_bought)
 }
 
-fn get_output_price_with_reserves(
+pub fn get_output_price_with_reserves(
     state: &State,
     direction: &Direction,
     base_asset_amount: Uint128,
@@ -153,7 +163,7 @@ fn get_output_price_with_reserves(
     if base_asset_amount == Uint128::zero() {
         Uint128::zero();
     }
-    
+    println!("base asset input: {}", base_asset_amount);
     let invariant_k = state.quote_asset_reserve 
         .checked_mul(state.base_asset_reserve)?
         .checked_div(state.decimals)?;
@@ -171,17 +181,26 @@ fn get_output_price_with_reserves(
                 .checked_sub(base_asset_amount)?;
         }
     }
-
+    println!("base asset input: {}", base_asset_amount);
     quote_asset_after = invariant_k
         .checked_mul(state.decimals)?
         .checked_div(base_asset_after)?;
     
 
-    let quote_asset_sold = if quote_asset_after > state.quote_asset_reserve {
+    let mut quote_asset_sold = if quote_asset_after > state.quote_asset_reserve {
         quote_asset_after - state.quote_asset_reserve
     } else {
         state.quote_asset_reserve - quote_asset_after
     };
+
+    let remainder = modulo(invariant_k, base_asset_after);
+    if remainder != Uint128::zero() {
+        if *direction == Direction::AddToAmm {
+            quote_asset_sold = quote_asset_sold.checked_sub(Uint128::from(1u128))?;
+        } else {
+            quote_asset_sold = quote_asset_sold.checked_add(Uint128::new(1u128))?;
+        }
+    }
 
     Ok(quote_asset_sold)
 }
@@ -194,6 +213,9 @@ fn update_reserve(
 ) -> StdResult<Response> {
     let state: State = read_state(storage)?;
     let mut update_state = state.clone();
+
+    println!("Quote Asset Reserve: {}", update_state.quote_asset_reserve);
+    println!("Base Asset Reserve: {}", update_state.base_asset_reserve);
     
     match direction {
         Direction::AddToAmm => {
@@ -210,77 +232,24 @@ fn update_reserve(
         }
     }
 
+    println!("Quote Asset Reserve: {}", update_state.quote_asset_reserve);
+    println!("Base Asset Reserve: {}", update_state.base_asset_reserve);
+
     store_state(storage, &update_state)?;
 
     Ok(Response::new().add_attributes(vec![("action", "update_reserve")]))
 }
 
-/// Unit tests
-#[test]
-fn test_get_input_and_output_price() {
-    let state = State {
-        quote_asset_reserve: Uint128::from(1_000_000_000u128), // 1000
-        base_asset_reserve: Uint128::from(100_000_000u128), // 100
-        funding_rate: Uint128::from(1_000u128),
-        funding_period: 3_600 as u64,
-        decimals: Uint128::from(1_000_000u128), // equivalent to 6dp
-    };
-
-    // amount = 100(quote asset reserved) - (100 * 1000) / (1000 + 50) = 4.7619...
-    // price = 50 / 4.7619 = 10.499
-    let quote_asset_amount = Uint128::from(50_000_000u128);
-    let result = get_input_price_with_reserves(
-        &state,
-        &Direction::AddToAmm,
-        quote_asset_amount
-    ).unwrap();
-    assert_eq!(result, Uint128::from(4761905u128));
-
-    // amount = (100 * 1000) / (1000 - 50) - 100(quote asset reserved) = 5.2631578947368
-    // price = 50 / 5.263 = 9.5
-    let quote_asset_amount = Uint128::from(50_000_000u128);
-    let result = get_input_price_with_reserves(
-        &state,
-        &Direction::RemoveFromAmm,
-        quote_asset_amount
-    ).unwrap();
-    assert_eq!(result, Uint128::from(5263157u128));
-
-    // amount = 1000(base asset reversed) - (100 * 1000) / (100 + 5) = 47.619047619047619048
-    // price = 47.619 / 5 = 9.52
-    let quote_asset_amount = Uint128::from(5_000_000u128);
-    let result = get_output_price_with_reserves(
-        &state,
-        &Direction::AddToAmm,
-        quote_asset_amount
-    ).unwrap();
-    assert_eq!(result, Uint128::from(47619048u128));
-
-    // a dividable number should not plus 1 at mantissa
-    let quote_asset_amount = Uint128::from(25_000_000u128);
-    let result = get_output_price_with_reserves(
-        &state,
-        &Direction::AddToAmm,
-        quote_asset_amount
-    ).unwrap();
-    assert_eq!(result, Uint128::from(200_000_000u128));
-
-    // amount = (100 * 1000) / (100 - 5) - 1000(base asset reversed) = 52.631578947368
-    // price = 52.631 / 5 = 10.52
-    let quote_asset_amount = Uint128::from(5_000_000u128);
-    let result = get_output_price_with_reserves(
-        &state,
-        &Direction::RemoveFromAmm,
-        quote_asset_amount
-    ).unwrap();
-    assert_eq!(result, Uint128::from(52631578u128));
-
-    // divisable output
-    let quote_asset_amount = Uint128::from(37_500_000u128);
-    let result = get_output_price_with_reserves(
-        &state,
-        &Direction::RemoveFromAmm,
-        quote_asset_amount
-    ).unwrap();
-    assert_eq!(result, Uint128::from(600_000_000u128));
+/// Does the modulus (%) operator on Uin128.
+/// However it follows the design of the perpertual protocol decimals
+/// https://github.com/perpetual-protocol/perpetual-protocol/blob/release/v2.1.x/src/utils/Decimal.sol
+fn modulo(
+    a: Uint128,
+    b: Uint128,
+) -> Uint128 {
+    // TODO the decimals are currently hardcoded to 9dp, this needs to change in the future but without
+    // needing to pass the entire world to this function, i.e. access to storage
+    let a_decimals = a.checked_mul(Uint128::from(1_000_000_000u128)).unwrap();
+    let integral = a_decimals / b;
+    return a_decimals - (b*integral)
 }

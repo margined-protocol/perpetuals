@@ -1,7 +1,7 @@
 use crate::{
     contract::{instantiate, execute, query, reply},
 };
-use cw20::{Cw20Coin};
+use cw20::{Cw20Coin, Cw20ExecuteMsg};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use cosmwasm_std::{Addr, Empty, Uint128};
 use margined_perp::margined_engine::{
@@ -26,7 +26,7 @@ pub struct TestingEnv {
     pub engine: ContractInfo,
 }
 
-pub const DECIMAL_MULTIPLIER: Uint128 = Uint128::new(1_000_000_000u128);
+pub const DECIMAL_MULTIPLIER: Uint128 = Uint128::new(1_000_000_000);
 
 fn contract_cw20() -> Box<dyn Contract<Empty>> {
     let contract = ContractWrapper::new_with_empty(
@@ -73,18 +73,18 @@ pub fn setup() -> TestingEnv {
     let usdc_addr = router.instantiate_contract(
         usdc_id,
         owner.clone(),
-        & cw20_base::msg::InstantiateMsg {
+        &cw20_base::msg::InstantiateMsg {
             name: "USDC".to_string(),
             symbol: "USDC".to_string(),
             decimals: 9,
             initial_balances: vec![
                 Cw20Coin {
                     address: alice.to_string(),
-                    amount: Uint128::new(5000) * DECIMAL_MULTIPLIER, // this is 5000 with 9dp
+                    amount: to_decimals(5000),
                 },
                 Cw20Coin {
                     address: bob.to_string(),
-                    amount: Uint128::new(5000) * DECIMAL_MULTIPLIER, // this is 5000 with 9dp
+                    amount: to_decimals(5000),
                 }
             ],
             mint: None,
@@ -102,8 +102,8 @@ pub fn setup() -> TestingEnv {
             decimals: 9u8,
             quote_asset: "ETH".to_string(),
             base_asset: "USD".to_string(),
-            quote_asset_reserve: Uint128::new(1_000) * DECIMAL_MULTIPLIER,
-            base_asset_reserve: Uint128::new(100) * DECIMAL_MULTIPLIER,
+            quote_asset_reserve: to_decimals(1_000),
+            base_asset_reserve: to_decimals(100),
             funding_period: 3_600 as u64,
         },
         &[],
@@ -122,12 +122,25 @@ pub fn setup() -> TestingEnv {
                 initial_margin_ratio: Uint128::from(100u128), 
                 maintenance_margin_ratio: Uint128::from(100u128), 
                 liquidation_fee: Uint128::from(100u128),
+                vamm: vec![vamm_addr.to_string()],
             },
             &[],
             "engine",
             None,
         )
         .unwrap();
+
+    // create allowance for alice
+    router.execute_contract(
+        alice.clone(),
+        usdc_addr.clone(),
+        &Cw20ExecuteMsg::IncreaseAllowance {
+            spender: engine_addr.to_string(),
+            amount: to_decimals(2000),
+            expires: None,
+        },
+        &[]
+    ).unwrap();
 
     TestingEnv {
         router,
@@ -151,7 +164,5 @@ pub fn setup() -> TestingEnv {
 
 // takes in a Uint128 and multiplies by the decimals just to make tests more legible
 pub fn to_decimals(input: u64) -> Uint128 {
-    let output = Uint128::from(input) * DECIMAL_MULTIPLIER;
-
-    output
+    return Uint128::from(input) * DECIMAL_MULTIPLIER;
 }
