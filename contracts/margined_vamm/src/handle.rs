@@ -94,7 +94,7 @@ pub fn swap_output(
         base_asset_amount,
     )?;
 
-
+    println!("HERE?");
     Ok(Response::new()
         .add_attributes(vec![
             ("action", "swap_output"),
@@ -181,12 +181,12 @@ pub fn get_output_price_with_reserves(
                 .checked_sub(base_asset_amount)?;
         }
     }
-    println!("base asset input: {}", base_asset_amount);
+    println!("invariant: {}", invariant_k);
     quote_asset_after = invariant_k
         .checked_mul(state.decimals)?
         .checked_div(base_asset_after)?;
     
-
+    println!("quote_asset_after: {}", quote_asset_after);
     let mut quote_asset_sold = if quote_asset_after > state.quote_asset_reserve {
         quote_asset_after - state.quote_asset_reserve
     } else {
@@ -201,7 +201,7 @@ pub fn get_output_price_with_reserves(
             quote_asset_sold = quote_asset_sold.checked_add(Uint128::new(1u128))?;
         }
     }
-
+    println!("quote_asset_sold: {}", quote_asset_sold);
     Ok(quote_asset_sold)
 }
 

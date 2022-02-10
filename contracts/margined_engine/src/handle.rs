@@ -49,45 +49,22 @@ pub fn open_position(
     quote_asset_amount: Uint128,
     leverage: Uint128,
 ) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-    
-    // check that it is a registered vamm
-    let vamm_list: VammList = read_vamm(deps.storage)?;
-    if !vamm_list.is_vamm(&vamm) {
-        return Err(StdError::generic_err("vAMM is not registered"));
-    }
-
-    // create a response, so that we can assign relevant submessages to
-    // be executed
-    let mut response = Response::new();
-
-    // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = deps.api.addr_validate(&trader)?;
+    validate_vamm(deps.storage, &vamm)?;
+    
+    let config: Config = read_config(deps.storage)?;
+    
+    // create a response, so that we can assign relevant submessages
+    let mut response = Response::new();
 
     // calc the input amount wrt to leverage and decimals
     let open_notional = quote_asset_amount
                 .checked_mul(leverage)?
                 .checked_div(config.decimals)?;
 
-    // read the position for the trader from vamm
-    let current_position = read_position(deps.storage, &vamm, &trader)?;
-    let mut position = Position::default();
+    let mut position = get_position(env, deps.storage, &vamm, &trader, side);
 
-    // so if the position returned is None then its new
-    if current_position.is_none() {
-        let direction: Direction = side_to_direction(side.clone());
-
-        // update the default position
-        position.vamm = vamm.clone();
-        position.trader = trader.clone();
-        position.direction = direction.clone();
-        position.timestamp = env.block.time;
-
-    } else {
-        position = current_position.unwrap();
-    }
-    
     let mut is_increase: bool = true;
     if !(position.direction == Direction::AddToAmm && side.clone() == Side::BUY) &&
             !(position.direction == Direction::RemoveFromAmm && side.clone() == Side::SELL) {
@@ -95,6 +72,7 @@ pub fn open_position(
     }
 
     if is_increase {
+        println!("increase");
         // then we are opening a new position or adding to an existing
         let swap_msg = swap_input(
             &vamm,
@@ -122,7 +100,9 @@ pub fn open_position(
     } else {
         // TODO make this a function maybe called, open_reverse_position
         // if old position is greater then we don't need to reverse just reduce the position
+        println!("{}, {}", position.notional, open_notional);
         if position.notional > open_notional {
+            println!("decrease");
             // then we are opening a new position or adding to an existing
             let msg = swap_input(
                 &vamm,
@@ -135,7 +115,8 @@ pub fn open_position(
 
             // Add the submessage to the response
             response = response.add_submessage(msg);
-        } else {            
+        } else {    
+            println!("reverse");        
             let amount = position.size;
 
             // then we are opening a new position or adding to an existing
@@ -291,7 +272,7 @@ pub fn reverse_position(
     output: Uint128,
 ) -> StdResult<Response> {
     let mut response: Response = Response::new();
-
+    println!("reverse_position");
     let tmp_position = read_tmp_position(deps.storage)?;
     if tmp_position.is_none() {
         return Err(StdError::generic_err("no temporary position"));
@@ -301,7 +282,7 @@ pub fn reverse_position(
     let amount = open_notional
         .checked_sub(output)?;
 
-
+    println!("{}", amount);
     // so if the position to reverse is large then we do something, if it is smaller than a few wei
     // just reset the position and move on with life
     let mut position = clear_position(env, tmp_position.clone().unwrap())?;
@@ -427,6 +408,46 @@ fn execute_transfer_from(
     };
 
     Ok(transfer_msg)
+}
+
+fn get_position(
+    env: Env,
+    storage: &dyn Storage,
+    vamm: &Addr,
+    trader: &Addr,
+    side: Side,
+) -> Position {
+    // read the position for the trader from vamm
+    let current_position = read_position(storage, &vamm, &trader)?;
+    let mut position = Position::default();
+
+    // so if the position returned is None then its new
+    if current_position.is_none() {
+        let direction: Direction = side_to_direction(side);
+
+        // update the default position
+        position.vamm = vamm.clone();
+        position.trader = trader.clone();
+        position.direction = direction;
+        position.timestamp = env.block.time;
+
+    } else {
+        position = current_position.unwrap();
+    }
+
+    position
+    
+}
+
+fn validate_vamm(storage: &dyn Storage, vamm: &Addr) -> StdResult<Response> {
+    // check that it is a registered vamm
+    let vamm_list: VammList = read_vamm(storage)?;
+    if !vamm_list.is_vamm(&vamm.to_string()) {
+        return Err(StdError::generic_err("vAMM is not registered"));
+    }
+
+    Ok(Response::new())
+
 }
 
 // takes the side (buy|sell) and returns the direction (long|short)
