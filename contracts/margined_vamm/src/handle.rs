@@ -163,7 +163,7 @@ pub fn get_output_price_with_reserves(
     if base_asset_amount == Uint128::zero() {
         Uint128::zero();
     }
-    
+    println!("base asset input: {}", base_asset_amount);
     let invariant_k = state.quote_asset_reserve 
         .checked_mul(state.base_asset_reserve)?
         .checked_div(state.decimals)?;
@@ -181,7 +181,7 @@ pub fn get_output_price_with_reserves(
                 .checked_sub(base_asset_amount)?;
         }
     }
-
+    println!("base asset input: {}", base_asset_amount);
     quote_asset_after = invariant_k
         .checked_mul(state.decimals)?
         .checked_div(base_asset_after)?;
@@ -213,6 +213,9 @@ fn update_reserve(
 ) -> StdResult<Response> {
     let state: State = read_state(storage)?;
     let mut update_state = state.clone();
+
+    println!("Quote Asset Reserve: {}", update_state.quote_asset_reserve);
+    println!("Base Asset Reserve: {}", update_state.base_asset_reserve);
     
     match direction {
         Direction::AddToAmm => {

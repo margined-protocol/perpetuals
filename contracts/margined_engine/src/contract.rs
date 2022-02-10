@@ -3,10 +3,10 @@ use std::str::FromStr;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    attr, to_binary, from_binary, Binary, ContractResult, Deps, DepsMut, Env, MessageInfo,
-    Reply, ReplyOn, Response, StdResult, StdError, Uint128, SubMsg, CosmosMsg, WasmMsg, SubMsgExecutionResponse,
+    to_binary, from_binary, Binary, ContractResult, Deps, DepsMut, Env, MessageInfo,
+    Reply, Response, StdResult, StdError, Uint128, SubMsgExecutionResponse,
 };
-use cw20::{Cw20ReceiveMsg, Cw20ExecuteMsg};
+use cw20::{Cw20ReceiveMsg};
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg, Cw20HookMsg};
 
 use crate::error::ContractError;
@@ -18,7 +18,7 @@ use crate::{
     query::{
         query_config, query_position, query_trader_balance_with_funding_payment,
     },
-    state::{Config, read_config, store_config, read_vamm, store_vamm},
+    state::{Config, read_config, store_config, store_vamm},
 };
 
 pub const SWAP_INCREASE_REPLY_ID: u64 = 1;

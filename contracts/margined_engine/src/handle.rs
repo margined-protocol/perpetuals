@@ -1,7 +1,7 @@
 use cosmwasm_std::{
     Addr, CosmosMsg, DepsMut, Env, MessageInfo, Response,
-    Reply, ReplyOn, StdError, StdResult, SubMsg, to_binary, Uint128,
-    WasmMsg, SubMsgExecutionResponse, Storage,
+    ReplyOn, StdError, StdResult, SubMsg, to_binary, Uint128,
+    WasmMsg, Storage,
 };
 use cw20::{Cw20ExecuteMsg};
 
@@ -95,7 +95,6 @@ pub fn open_position(
     }
 
     if is_increase {
-        println!("Increase");
         // then we are opening a new position or adding to an existing
         let swap_msg = swap_input(
             &vamm,
@@ -124,7 +123,6 @@ pub fn open_position(
         // TODO make this a function maybe called, open_reverse_position
         // if old position is greater then we don't need to reverse just reduce the position
         if position.notional > open_notional {
-            println!("Decrease");
             // then we are opening a new position or adding to an existing
             let msg = swap_input(
                 &vamm,
@@ -138,7 +136,6 @@ pub fn open_position(
             // Add the submessage to the response
             response = response.add_submessage(msg);
         } else {            
-            println!("Close");
             let amount = position.size;
 
             let swap_msg = WasmMsg::Execute {
@@ -218,7 +215,7 @@ pub fn close_position(
 pub fn finalize_close_position(
     deps: DepsMut,
     _env: Env,
-    input: Uint128,
+    _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
     let tmp_position = read_tmp_position(deps.storage)?;
@@ -245,7 +242,7 @@ pub fn finalize_close_position(
 pub fn increase_position(
     deps: DepsMut,
     _env: Env,
-    input: Uint128,
+    _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
     let tmp_position = read_tmp_position(deps.storage)?;
@@ -272,7 +269,7 @@ pub fn increase_position(
 pub fn decrease_position(
     deps: DepsMut,
     _env: Env,
-    input: Uint128,
+    _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
     let tmp_position = read_tmp_position(deps.storage)?;
@@ -298,11 +295,10 @@ pub fn decrease_position(
 pub fn reverse_position(
     deps: DepsMut,
     env: Env,
-    input: Uint128,
+    _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    println!("reverse position");
-    let config: Config = read_config(deps.storage)?;
+    let mut response: Response = Response::new();
 
     let tmp_position = read_tmp_position(deps.storage)?;
     if tmp_position.is_none() {
@@ -313,27 +309,38 @@ pub fn reverse_position(
     let amount = open_notional
         .checked_sub(output)?;
 
-    println!("open notional: {}", open_notional);
 
+    // so if the position to reverse is large then we do something, if it is smaller than a few wei
+    // just reset the position and move on with life
     let mut position = clear_position(env, tmp_position.clone().unwrap())?;
-    let direction = switch_direction(position.direction.clone());
+    store_position(deps.storage, &position)?;
 
-    // then we are opening a new position or adding to an existing
-    let msg = swap_input(
-        &position.vamm,
-        direction_to_side(direction),
-        amount,
-        SWAP_INCREASE_REPLY_ID
-    ).unwrap();
+    // TODO, this is hardcoded to close and clear if the amount is less than the smallest 4dp of you precision
+    // not for production
+    if amount > Uint128::from(1000u128) {
+        let direction = switch_direction(position.direction.clone());
 
-    // increase the margin, notional etc...
-    position.margin = position.margin.checked_add(amount)?;
-    position.notional = position.notional.checked_add(open_notional)?;
+        // then we are opening a new position or adding to an existing
+        let msg = swap_input(
+            &position.vamm,
+            direction_to_side(direction),
+            amount,
+            SWAP_INCREASE_REPLY_ID
+        ).unwrap();
+    
+        // increase the margin, notional etc...
+        position.margin = position.margin.checked_add(amount)?;
+        position.notional = position.notional.checked_add(open_notional)?;
+    
+        // store the updated position
+        store_tmp_position(deps.storage, &position)?;
 
-    // store the updated position
-    store_tmp_position(deps.storage, &position)?;
-
-    Ok(Response::new().add_submessage(msg))
+        // add the response
+        response = response.add_submessage(msg);
+    
+    }
+    
+    Ok(response)
 }
 
 // this resets the main variables of a position
