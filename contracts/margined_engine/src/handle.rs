@@ -95,6 +95,7 @@ pub fn open_position(
     }
 
     if is_increase {
+        println!("Increase");
         // then we are opening a new position or adding to an existing
         let swap_msg = swap_input(
             &vamm,
@@ -123,6 +124,7 @@ pub fn open_position(
         // TODO make this a function maybe called, open_reverse_position
         // if old position is greater then we don't need to reverse just reduce the position
         if position.notional > open_notional {
+            println!("Decrease");
             // then we are opening a new position or adding to an existing
             let msg = swap_input(
                 &vamm,
@@ -136,6 +138,7 @@ pub fn open_position(
             // Add the submessage to the response
             response = response.add_submessage(msg);
         } else {            
+            println!("Close");
             let amount = position.size;
 
             let swap_msg = WasmMsg::Execute {
@@ -298,6 +301,7 @@ pub fn reverse_position(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    println!("reverse position");
     let config: Config = read_config(deps.storage)?;
 
     let tmp_position = read_tmp_position(deps.storage)?;
@@ -308,6 +312,8 @@ pub fn reverse_position(
     let open_notional = tmp_position.clone().unwrap().notional;
     let amount = open_notional
         .checked_sub(output)?;
+
+    println!("open notional: {}", open_notional);
 
     let mut position = clear_position(env, tmp_position.clone().unwrap())?;
     let direction = switch_direction(position.direction.clone());
