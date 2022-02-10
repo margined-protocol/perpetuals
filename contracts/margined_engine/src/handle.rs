@@ -138,21 +138,13 @@ pub fn open_position(
         } else {            
             let amount = position.size;
 
-            let swap_msg = WasmMsg::Execute {
-                contract_addr: vamm.to_string(),
-                funds: vec![],
-                msg: to_binary(&ExecuteMsg::SwapOutput {
-                    direction: position.direction.clone(),
-                    base_asset_amount: amount,
-                })?,
-            };
-
-            let msg = SubMsg {
-                msg: CosmosMsg::Wasm(swap_msg),
-                gas_limit: None, // probably should set a limit in the config
-                id: SWAP_REVERSE_REPLY_ID,
-                reply_on: ReplyOn::Always,
-            };
+            // then we are opening a new position or adding to an existing
+            let msg = swap_output(
+                &vamm,
+                direction_to_side(position.direction.clone()),
+                amount,
+                SWAP_REVERSE_REPLY_ID
+            ).unwrap();
 
             // Add the submessage to the response
             response = response.add_submessage(msg);
@@ -370,6 +362,33 @@ fn swap_input(
         msg: to_binary(&ExecuteMsg::SwapInput {
             direction: direction,
             quote_asset_amount: open_notional,
+        })?,
+    };
+
+    let execute_submsg = SubMsg {
+        msg: CosmosMsg::Wasm(swap_msg),
+        gas_limit: None, // probably should set a limit in the config
+        id: id,
+        reply_on: ReplyOn::Always,
+    };
+
+    Ok(execute_submsg)
+}
+
+fn swap_output(
+    vamm: &Addr,
+    side: Side, 
+    open_notional: Uint128, 
+    id: u64,
+) -> StdResult<SubMsg> {
+    let direction: Direction = side_to_direction(side);
+
+    let swap_msg = WasmMsg::Execute {
+        contract_addr: vamm.to_string(),
+        funds: vec![],
+        msg: to_binary(&ExecuteMsg::SwapOutput {
+            direction: direction,
+            base_asset_amount: open_notional,
         })?,
     };
 
