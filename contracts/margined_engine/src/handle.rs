@@ -75,7 +75,6 @@ pub fn open_position(
     }
 
     if is_increase {
-        println!("increase");
         let msg = internal_increase_position(vamm.clone(), side.clone(), open_notional);
 
         // Add the submessage to the response
@@ -86,35 +85,17 @@ pub fn open_position(
         // TODO make this a function maybe called, open_reverse_position
         // if old position is greater then we don't need to reverse just reduce the position
         println!("{}, {}", position.notional, open_notional);
-        if position.notional > open_notional {
-            println!("decrease");
-            // then we are opening a new position or adding to an existing
-            let msg = swap_input(
-                &vamm,
-                side.clone(),
-                open_notional,
-                SWAP_DECREASE_REPLY_ID
-            ).unwrap();
+        let msg = open_reverse_position(
+            &deps,
+            env,
+            vamm.clone(),
+            trader.clone(),
+            side.clone(),
+            open_notional
+        );
 
-            position.notional = position.notional.checked_sub(open_notional)?;
-
-            // Add the submessage to the response
-            response = response.add_submessage(msg);
-        } else {    
-            println!("reverse");        
-            let amount = position.size;
-
-            // then we are opening a new position or adding to an existing
-            let msg = swap_output(
-                &vamm,
-                direction_to_side(position.direction.clone()),
-                amount,
-                SWAP_REVERSE_REPLY_ID
-            ).unwrap();
-
-            // Add the submessage to the response
-            response = response.add_submessage(msg);
-        }
+        response = response
+            .add_submessage(msg);
     }
 
     store_tmp_swap(
@@ -339,6 +320,45 @@ fn internal_increase_position(
         SWAP_INCREASE_REPLY_ID
     ).unwrap()
 }
+
+// Increase the position, just basically wraps swap input though it may do more in the future
+fn open_reverse_position(
+    deps: &DepsMut,
+    env: Env,
+    vamm: Addr,
+    trader: Addr,
+    side: Side,
+    open_notional: Uint128,
+) -> SubMsg {
+    let msg: SubMsg;
+    let position: Position = get_position(env.clone(), deps.storage, &vamm, &trader, side.clone());
+
+    if position.notional > open_notional {
+        println!("decrease");
+        // then we are opening a new position or adding to an existing
+        msg = swap_input(
+            &vamm,
+            side.clone(),
+            open_notional,
+            SWAP_DECREASE_REPLY_ID
+        ).unwrap();
+
+    } else {    
+        println!("reverse");        
+        let amount = position.size;
+
+        // then we are opening a new position or adding to an existing
+        msg = swap_output(
+            &vamm,
+            direction_to_side(position.direction.clone()),
+            amount,
+            SWAP_REVERSE_REPLY_ID
+        ).unwrap();
+    }
+
+    return msg
+}
+
 
 // this resets the main variables of a position
 fn clear_position(
