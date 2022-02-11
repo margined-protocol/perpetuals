@@ -3,8 +3,9 @@ use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, Timestamp, Uint128};
 use cw20::Cw20ReceiveMsg;
+use strum::{Display, EnumString};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Display, EnumString, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Side {
     BUY,
@@ -90,4 +91,16 @@ pub struct PositionResponse {
     pub premium_fraction: Uint128,
     pub liquidity_history_index: Uint128,
     pub timestamp: Timestamp,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct SwapResponse {
+    pub vamm: String,
+    pub trader: String,
+    pub side: String,
+    pub quote_asset_amount: Uint128,
+    pub leverage: Uint128,
+    pub open_notional: Uint128,
+    pub input: Uint128,
+    pub output: Uint128,
 }

@@ -3,16 +3,18 @@ use std::str::FromStr;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, from_binary, Binary, ContractResult, Deps, DepsMut, Env, MessageInfo,
-    Reply, Response, StdResult, StdError, Uint128, SubMsgExecutionResponse,
+    Addr, to_binary, from_binary, Binary, ContractResult, Deps, DepsMut, Env, Event, MessageInfo,
+    Reply, Response, StdResult, StdError, Uint128, SubMsgExecutionResponse, Attribute,
 };
 use cw20::{Cw20ReceiveMsg};
-use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg, Cw20HookMsg};
+use margined_perp::margined_engine::{
+    ExecuteMsg, InstantiateMsg, QueryMsg, Cw20HookMsg, SwapResponse,
+};
 
 use crate::error::ContractError;
 use crate::{
     handle::{
-        update_config, increase_position, decrease_position, reverse_position,
+        update_config, increase_position_reply, decrease_position, reverse_position,
         open_position, close_position, finalize_close_position,
     },
     query::{
@@ -161,7 +163,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
             match msg.id {
                 SWAP_INCREASE_REPLY_ID => {
                     let (input, output) = parse_swap(response);
-                    let response = increase_position(
+                    let response = increase_position_reply(
                         deps,
                         env,
                         input,
@@ -212,29 +214,74 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
     }
 }
 
+fn parse_increase_swap(
+    response: SubMsgExecutionResponse,
+) -> SwapResponse {
+    // Find swap inputs and output events
+    println!("{:?}", response);
+    let execute = response.events.iter().find(|&e| e.ty == "execute");
+    let execute = execute.unwrap();
+
+    println!("Execute {:?}", execute);
+    let vamm = read_event("vamm".to_string(), execute).value;
+    let trader = read_event("trader".to_string(), execute).value;
+    let side = read_event("side".to_string(), execute).value;
+
+    let quote_str = read_event("quote_asset_amount".to_string(), execute).value;
+    let quote_asset_amount: Uint128 = Uint128::from_str(&quote_str).unwrap();
+
+    let leverage_str = read_event("leverage".to_string(), execute).value;
+    let leverage: Uint128 = Uint128::from_str(&leverage_str).unwrap();
+
+    let open_notional_str = read_event("open_notional".to_string(), execute).value;
+    let open_notional: Uint128 = Uint128::from_str(&open_notional_str).unwrap();
+
+    
+    let wasm = response.events.iter().find(|&e| e.ty == "wasm");
+    let wasm = wasm.unwrap();
+    println!("Wasm {:?}", wasm);
+
+    let input_str = read_event("input".to_string(), wasm).value;
+    let input: Uint128 = Uint128::from_str(&input_str).unwrap();
+
+    let output_str = read_event("output".to_string(), wasm).value;
+    let output: Uint128 = Uint128::from_str(&output_str).unwrap();
+
+    println!("Nt here?");
+
+    return SwapResponse {
+        vamm,
+        trader,
+        side,
+        quote_asset_amount,
+        leverage,
+        open_notional,
+        input,
+        output,
+    }
+}
+
+
 fn parse_swap(
     response: SubMsgExecutionResponse,
 ) -> (Uint128, Uint128) {
     // Find swap inputs and output events
+    println!("{:?}", response);
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");
     let wasm = wasm.unwrap();
-    let input_str = &wasm
-        .attributes
-        .iter()
-        .find(|&attr| attr.key == "input")
-        .unwrap()
-        .value;
-    let input: Uint128 = Uint128::from_str(input_str).unwrap();
+    let input_str = read_event("input".to_string(), wasm).value;
+    let input: Uint128 = Uint128::from_str(&input_str).unwrap();
 
-
-    let output_str = &wasm
-        .attributes
-        .iter()
-        .find(|&attr| attr.key == "output")
-        .unwrap()
-        .value;
-    let output: Uint128 = Uint128::from_str(output_str).unwrap();
+    let output_str = read_event("output".to_string(), wasm).value;
+    let output: Uint128 = Uint128::from_str(&output_str).unwrap();
 
     return (input, output)
 }
 
+fn read_event(
+    key: String,
+    event: &Event,
+) -> Attribute {
+    let result = event.attributes.iter().find(|&attr| attr.key == key).unwrap();
+    return result.clone()
+}
