@@ -13,8 +13,10 @@ use crate::{
         Config, read_config, store_config,
         Position, read_position, store_position,
         store_tmp_position, read_tmp_position, remove_tmp_position,
-        VammList, read_vamm,
     },
+    utils::{
+        require_vamm, side_to_direction, direction_to_side, switch_direction,
+    }
 };
 
 pub fn update_config(
@@ -51,7 +53,7 @@ pub fn open_position(
 ) -> StdResult<Response> {
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = deps.api.addr_validate(&trader)?;
-    validate_vamm(deps.storage, &vamm)?;
+    require_vamm(deps.storage, &vamm)?;
     
     let config: Config = read_config(deps.storage)?;
     
@@ -63,7 +65,7 @@ pub fn open_position(
                 .checked_mul(leverage)?
                 .checked_div(config.decimals)?;
 
-    let mut position = get_position(env, deps.storage, &vamm, &trader, side);
+    let mut position = get_position(env.clone(), deps.storage, &vamm, &trader, side.clone());
 
     let mut is_increase: bool = true;
     if !(position.direction == Direction::AddToAmm && side.clone() == Side::BUY) &&
@@ -418,7 +420,7 @@ fn get_position(
     side: Side,
 ) -> Position {
     // read the position for the trader from vamm
-    let current_position = read_position(storage, &vamm, &trader)?;
+    let current_position = read_position(storage, &vamm, &trader).unwrap();
     let mut position = Position::default();
 
     // so if the position returned is None then its new
@@ -439,48 +441,4 @@ fn get_position(
     
 }
 
-fn validate_vamm(storage: &dyn Storage, vamm: &Addr) -> StdResult<Response> {
-    // check that it is a registered vamm
-    let vamm_list: VammList = read_vamm(storage)?;
-    if !vamm_list.is_vamm(&vamm.to_string()) {
-        return Err(StdError::generic_err("vAMM is not registered"));
-    }
 
-    Ok(Response::new())
-
-}
-
-// takes the side (buy|sell) and returns the direction (long|short)
-fn side_to_direction(
-    side: Side,
-) -> Direction {
-    let direction: Direction = match side {
-            Side::BUY => Direction::AddToAmm,
-            Side::SELL => Direction::RemoveFromAmm,
-    };
-
-    return direction
-}
-
-// takes the direction (long|short) and returns the side (buy|sell)
-fn direction_to_side(
-    direction: Direction,
-) -> Side {
-    let side: Side = match direction {
-            Direction::AddToAmm => Side::BUY,
-            Direction::RemoveFromAmm => Side::SELL,
-    };
-
-    return side
-}
-
-// takes the side (buy|sell) and returns opposite (short|long)
-// this is useful when closing/reversing a position
-fn switch_direction(
-    dir: Direction,
-) -> Direction {
-    return match dir {
-            Direction::RemoveFromAmm => Direction::AddToAmm,
-            Direction::AddToAmm => Direction::RemoveFromAmm,
-    };
-}
