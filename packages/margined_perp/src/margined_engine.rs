@@ -3,9 +3,8 @@ use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, Timestamp, Uint128};
 use cw20::Cw20ReceiveMsg;
-use strum::{Display, EnumString};
 
-#[derive(Serialize, Deserialize, Display, EnumString, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Side {
     BUY,

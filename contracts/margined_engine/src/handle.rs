@@ -76,12 +76,11 @@ pub fn open_position(
 
     if is_increase {
         println!("increase");
-        let swap_msg = internal_increase_position(vamm.clone(), side.clone(), open_notional);
+        let msg = internal_increase_position(vamm.clone(), side.clone(), open_notional);
 
         // Add the submessage to the response
         response = response
-            // .add_submessage(transfer_msg)
-            .add_submessage(swap_msg);
+            .add_submessage(msg);
 
     } else {
         // TODO make this a function maybe called, open_reverse_position
