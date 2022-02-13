@@ -7,7 +7,7 @@ use cosmwasm_std::{
 use cw20::{Cw20ExecuteMsg};
 
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
-use margined_perp::margined_engine::{Side, SwapResponse};
+use margined_perp::margined_engine::{Side};
 use crate::{
     contract::{SWAP_INCREASE_REPLY_ID, SWAP_DECREASE_REPLY_ID, SWAP_REVERSE_REPLY_ID},
     state::{
@@ -17,6 +17,7 @@ use crate::{
     },
     utils::{
         require_vamm, side_to_direction, direction_to_side, switch_direction,
+        switch_side,
     }
 };
 
@@ -74,18 +75,15 @@ pub fn open_position(
         is_increase = false;
     }
 
+    let msg: SubMsg;
     if is_increase {
-        let msg = internal_increase_position(vamm.clone(), side.clone(), open_notional);
-
-        // Add the submessage to the response
-        response = response
-            .add_submessage(msg);
+        msg = internal_increase_position(vamm.clone(), side.clone(), open_notional);
 
     } else {
         // TODO make this a function maybe called, open_reverse_position
         // if old position is greater then we don't need to reverse just reduce the position
         println!("{}, {}", position.notional, open_notional);
-        let msg = open_reverse_position(
+        msg = open_reverse_position(
             &deps,
             env,
             vamm.clone(),
@@ -93,9 +91,6 @@ pub fn open_position(
             side.clone(),
             open_notional
         );
-
-        response = response
-            .add_submessage(msg);
     }
 
     store_tmp_swap(
@@ -110,8 +105,9 @@ pub fn open_position(
         },
     )?;
 
-    Ok(
-        response.add_attributes(vec![
+    Ok(response
+        .add_submessage(msg)
+        .add_attributes(vec![
             ("action", "open_position")
         ])
     )
@@ -159,33 +155,6 @@ pub fn close_position(
     )
 }
 
-// Closes position returning funds after successful execution of the swap out
-pub fn finalize_close_position(
-    deps: DepsMut,
-    _env: Env,
-    _input: Uint128,
-    output: Uint128,
-) -> StdResult<Response> {
-    let swap = read_tmp_swap(deps.storage)?;
-    if swap.is_none() {
-        return Err(StdError::generic_err("no temporary swap stored"));
-    }
-
-    // TODO update the position with what actually happened in the
-    // swap, probably later this requires to check if long, short,buy, sell
-    // but for now lets just implement the long case
-    // let mut position: Position = swap.unwrap();
-    // position.size = position.size.checked_add(output)?;
-
-    // // store the updated position
-    // store_position(deps.storage, &position)?;
-
-    // remove the tmp position
-    remove_tmp_swap(deps.storage);
-
-    Ok(Response::new())
-}
-
 // Increases position after successful execution of the swap
 pub fn increase_position_reply(
     deps: DepsMut,
@@ -223,13 +192,15 @@ pub fn increase_position_reply(
         position.margin,
     ).unwrap();
 
+    remove_tmp_swap(deps.storage);
+
     Ok(Response::new().add_submessage(msg))
 }
 
 // Decreases position after successful execution of the swap
-pub fn decrease_position(
+pub fn decrease_position_reply(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
@@ -237,14 +208,21 @@ pub fn decrease_position(
     if tmp_swap.is_none() {
         return Err(StdError::generic_err("no temporary position"));
     }
-    // TODO update the position with what actually happened in the
-    // swap, probably later this requires to check if long, short,buy, sell
-    // but for now lets just implement the long case
-    // let mut position: Position = tmp_swap.unwrap();
-    // position.size = position.size.checked_sub(output)?;
+    
+    let swap = tmp_swap.unwrap();
+    let mut position = get_position(
+        env.clone(),
+        deps.storage,
+        &swap.vamm,
+        &swap.trader,
+        swap.side.clone()
+    );
 
-    // // store the updated position
-    // store_position(deps.storage, &position)?;
+    // now update the position
+    position.size = position.size.checked_sub(output)?;
+    position.notional = position.notional.checked_sub(swap.open_notional)?;
+
+    store_position(deps.storage, &position)?;
 
     // remove the tmp position
     remove_tmp_swap(deps.storage);
@@ -253,63 +231,92 @@ pub fn decrease_position(
 }
 
 // Decreases position after successful execution of the swap
-pub fn reverse_position(
+pub fn reverse_position_reply(
     deps: DepsMut,
     env: Env,
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
     let mut response: Response = Response::new();
-    println!("reverse_position");
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
         return Err(StdError::generic_err("no temporary position"));
     }
 
-    // let open_notional = tmp_swap.clone().unwrap().notional;
-    // let amount = open_notional
-    //     .checked_sub(output)?;
+    let swap = tmp_swap.unwrap();
+    let mut position = get_position(
+        env.clone(),
+        deps.storage,
+        &swap.vamm,
+        &swap.trader,
+        swap.side.clone()
+    );
+    let margin_amount = position.margin;
 
-    // println!("{}", amount);
-    // // so if the position to reverse is large then we do something, if it is smaller than a few wei
-    // // just reset the position and move on with life
-    // let mut position = clear_position(env, tmp_swap.clone().unwrap())?;
-    // store_position(deps.storage, &position)?;
+    position = clear_position(env.clone(), position)?;
 
-    // // TODO, this is hardcoded to close and clear if the amount is less than the smallest 4dp of you precision
-    // // not for production
-    // if amount > Uint128::from(1000u128) {
-    //     let direction = switch_direction(position.direction.clone());
+    let msg: SubMsg;
+    // now increase the position again if there is additional position
+    let margin: Uint128;
+    if swap.open_notional > output {
+        margin = swap.open_notional.checked_sub(output)?;
+    } else {
+        margin = output.checked_sub(swap.open_notional)?;
+    }
 
-    //     // then we are opening a new position or adding to an existing
-    //     let msg = swap_input(
-    //         &position.vamm,
-    //         direction_to_side(direction),
-    //         amount,
-    //         SWAP_INCREASE_REPLY_ID
-    //     ).unwrap();
-    
-    //     // increase the margin, notional etc...
-    //     position.margin = position.margin.checked_add(amount)?;
-    //     position.notional = position.notional.checked_add(open_notional)?;
-    
-    //     // store the updated position
-    //     tmp_store_swap(deps.storage, &position)?;
+    if margin.checked_div(swap.leverage)? == Uint128::zero() {
+        // create transfer message
+        msg = execute_transfer(
+            deps.storage,
+            &swap.trader,
+            margin_amount,
+        ).unwrap();
+    } else {
+        // reverse the position and increase
+        msg = internal_increase_position(swap.vamm, switch_side(swap.side), margin)
+    }
 
-    //     // add the response
-    //     response = response.add_submessage(msg);
+    store_position(deps.storage, &position)?;
+
+    remove_tmp_swap(deps.storage);
     
-    // }
-    
-    Ok(response)
+    Ok(response.add_submessage(msg))
 }
+
+// // Closes position returning funds after successful execution of the swap out
+// pub fn close_position_reply(
+//     deps: DepsMut,
+//     env: Env,
+//     _input: Uint128,
+//     output: Uint128,
+// ) -> StdResult<Response> {
+//     let response: Response = Response::new();
+//     let tmp_swap = read_tmp_swap(deps.storage)?;
+//     if tmp_swap.is_none() {
+//         return Err(StdError::generic_err("no temporary position"));
+//     }
+//     println!("Close Output {}", output);
+//     let swap = tmp_swap.unwrap();
+//     let mut position = get_position(
+//         env.clone(),
+//         deps.storage,
+//         &swap.vamm,
+//         &swap.trader,
+//         swap.side.clone()
+//     );
+    
+//     position = clear_position(env, position)?;
+
+//     store_position(deps.storage, &position)?;
+    
+//     remove_tmp_swap(deps.storage);
+
+//     Ok(response)
+// }
 
 // Increase the position, just basically wraps swap input though it may do more in the future
 fn internal_increase_position(
-    // deps: DepsMut,
-    // env: Env,
     vamm: Addr,
-    // trader: Addr,
     side: Side,
     open_notional: Uint128,
 ) -> SubMsg {
@@ -332,7 +339,7 @@ fn open_reverse_position(
 ) -> SubMsg {
     let msg: SubMsg;
     let position: Position = get_position(env.clone(), deps.storage, &vamm, &trader, side.clone());
-
+    println!("Position {}", position.notional);
     if position.notional > open_notional {
         println!("decrease");
         // then we are opening a new position or adding to an existing
@@ -345,13 +352,11 @@ fn open_reverse_position(
 
     } else {    
         println!("reverse");        
-        let amount = position.size;
-
-        // then we are opening a new position or adding to an existing
+        // first close position swap out the entire position
         msg = swap_output(
             &vamm,
             direction_to_side(position.direction.clone()),
-            amount,
+            position.size,
             SWAP_REVERSE_REPLY_ID
         ).unwrap();
     }
@@ -429,7 +434,7 @@ fn swap_output(
 
 fn execute_transfer_from(
     storage: &dyn Storage,
-    sender: &Addr,
+    owner: &Addr,
     receiver: &Addr, 
     amount: Uint128, 
 ) -> StdResult<SubMsg> {
@@ -438,7 +443,33 @@ fn execute_transfer_from(
         contract_addr: config.eligible_collateral.to_string(),
         funds: vec![],
         msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
-            owner: sender.to_string(),
+            owner: owner.to_string(),
+            recipient: receiver.to_string(),
+            amount: amount,
+        })?,
+    };
+
+    let transfer_msg = SubMsg {
+        msg: CosmosMsg::Wasm(msg),
+        gas_limit: None, // probably should set a limit in the config
+        id: 0u64,
+        reply_on: ReplyOn::Never,
+    };
+
+    Ok(transfer_msg)
+}
+
+fn execute_transfer(
+    storage: &dyn Storage,
+    receiver: &Addr, 
+    amount: Uint128, 
+) -> StdResult<SubMsg> {
+    println!("LOL AUDREY MASSAGE ME");
+    let config = read_config(storage)?;
+    let msg = WasmMsg::Execute {
+        contract_addr: config.eligible_collateral.to_string(),
+        funds: vec![],
+        msg: to_binary(&Cw20ExecuteMsg::Transfer {
             recipient: receiver.to_string(),
             amount: amount,
         })?,
