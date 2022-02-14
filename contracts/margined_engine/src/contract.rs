@@ -3,22 +3,20 @@ use std::str::FromStr;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, from_binary, Binary, ContractResult, Deps, DepsMut, Env, MessageInfo,
-    Reply, Response, StdResult, StdError, Uint128, SubMsgExecutionResponse,
+    from_binary, to_binary, Binary, ContractResult, Deps, DepsMut, Env, MessageInfo, Reply,
+    Response, StdError, StdResult, SubMsgExecutionResponse, Uint128,
 };
-use cw20::{Cw20ReceiveMsg};
-use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg, Cw20HookMsg};
+use cw20::Cw20ReceiveMsg;
+use margined_perp::margined_engine::{Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
 use crate::{
     handle::{
-        update_config, increase_position, decrease_position, reverse_position,
-        open_position, close_position, finalize_close_position,
+        close_position, decrease_position, finalize_close_position, increase_position,
+        open_position, reverse_position, update_config,
     },
-    query::{
-        query_config, query_position, query_trader_balance_with_funding_payment,
-    },
-    state::{Config, read_config, store_config, store_vamm},
+    query::{query_config, query_position, query_trader_balance_with_funding_payment},
+    state::{read_config, store_config, store_vamm, Config},
 };
 
 pub const SWAP_INCREASE_REPLY_ID: u64 = 1;
@@ -38,14 +36,14 @@ pub fn instantiate(
 
     // config parameters
     let config = Config {
-        owner: info.sender.clone(),
-        eligible_collateral: eligible_collateral,
-        decimals: decimals,
+        owner: info.sender,
+        eligible_collateral,
+        decimals,
         initial_margin_ratio: msg.initial_margin_ratio,
         maintenance_margin_ratio: msg.maintenance_margin_ratio,
         liquidation_fee: msg.liquidation_fee,
     };
-    
+
     store_config(deps.storage, &config)?;
 
     // store default vamms
@@ -55,57 +53,39 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn execute(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    msg: ExecuteMsg,
-) -> StdResult<Response> {
+pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::Receive(msg) => receive_cw20(
-            deps,
-            env,
-            info.clone(),
-            msg
-        ),
-        ExecuteMsg::UpdateConfig {
-            owner,
-        } => {
-            update_config(
-                deps,
-                info.clone(),
-                owner,
-            )
-        },
+        ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
+        ExecuteMsg::UpdateConfig { owner } => update_config(deps, info, owner),
         ExecuteMsg::OpenPosition {
             vamm,
             side,
             quote_asset_amount,
             leverage,
-         } => {
-             let trader = info.sender.clone();
-         open_position(
-            deps,
-            env,
-            info.clone(),
-            vamm,
-            trader.to_string(),
-            side,
-            quote_asset_amount,
-            leverage,
-        )},
-        ExecuteMsg::ClosePosition {
-            vamm,
-         } => {
-             let trader = info.sender.clone();
-         close_position(
-            deps,
-            env,
-            info.clone(),
-            vamm,
-            trader.to_string(),
-            CLOSE_POSITION_REPLY_ID,
-        )},
+        } => {
+            let trader = info.sender.clone();
+            open_position(
+                deps,
+                env,
+                info,
+                vamm,
+                trader.to_string(),
+                side,
+                quote_asset_amount,
+                leverage,
+            )
+        }
+        ExecuteMsg::ClosePosition { vamm } => {
+            let trader = info.sender.clone();
+            close_position(
+                deps,
+                env,
+                info,
+                vamm,
+                trader.to_string(),
+                CLOSE_POSITION_REPLY_ID,
+            )
+        }
     }
 }
 
@@ -120,7 +100,7 @@ pub fn receive_cw20(
     if config.eligible_collateral != deps.api.addr_validate(info.sender.as_str())? {
         return Err(StdError::generic_err("unauthorized"));
     }
-    
+
     match from_binary(&cw20_msg.msg) {
         Ok(Cw20HookMsg::OpenPosition {
             vamm,
@@ -144,67 +124,42 @@ pub fn receive_cw20(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
-        QueryMsg::Position {
-            vamm,
-            trader,
-        } => to_binary(&query_position(deps, vamm, trader)?),
-        QueryMsg::TraderBalance {
-            trader,
-        } => to_binary(&query_trader_balance_with_funding_payment(deps, trader)?),
+        QueryMsg::Position { vamm, trader } => to_binary(&query_position(deps, vamm, trader)?),
+        QueryMsg::TraderBalance { trader } => {
+            to_binary(&query_trader_balance_with_funding_payment(deps, trader)?)
+        }
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
     match msg.result {
-        ContractResult::Ok(response) => {
-            match msg.id {
-                SWAP_INCREASE_REPLY_ID => {
-                    let (input, output) = parse_swap(response);
-                    let response = increase_position(
-                        deps,
-                        env,
-                        input,
-                        output,
-                    )?;
-                    Ok(response)
-                },
-                SWAP_DECREASE_REPLY_ID => {
-                    let (input, output) = parse_swap(response);
-                    let response = decrease_position(
-                        deps,
-                        env,
-                        input,
-                        output,
-                    )?;
-                    Ok(response)
-                },
-                SWAP_REVERSE_REPLY_ID => {
-                    let (input, output) = parse_swap(response);
-                    let response = reverse_position(
-                        deps,
-                        env,
-                        input,
-                        output,
-                    )?;
-                    Ok(response)
-                },
-                CLOSE_POSITION_REPLY_ID => {
-                    let (input, output) = parse_swap(response);
-                    let response = finalize_close_position(
-                        deps,
-                        env,
-                        input,
-                        output,
-                    )?;
-                    Ok(response)
-                },
-                _ => Err(StdError::generic_err(format!(
-                    "reply (id {:?}) invalid",
-                    msg.id
-                ))),
+        ContractResult::Ok(response) => match msg.id {
+            SWAP_INCREASE_REPLY_ID => {
+                let (input, output) = parse_swap(response);
+                let response = increase_position(deps, env, input, output)?;
+                Ok(response)
             }
-        }
+            SWAP_DECREASE_REPLY_ID => {
+                let (input, output) = parse_swap(response);
+                let response = decrease_position(deps, env, input, output)?;
+                Ok(response)
+            }
+            SWAP_REVERSE_REPLY_ID => {
+                let (input, output) = parse_swap(response);
+                let response = reverse_position(deps, env, input, output)?;
+                Ok(response)
+            }
+            CLOSE_POSITION_REPLY_ID => {
+                let (input, output) = parse_swap(response);
+                let response = finalize_close_position(deps, env, input, output)?;
+                Ok(response)
+            }
+            _ => Err(StdError::generic_err(format!(
+                "reply (id {:?}) invalid",
+                msg.id
+            ))),
+        },
         ContractResult::Err(e) => Err(StdError::generic_err(format!(
             "reply (id {:?}) error {:?}",
             msg.id, e
@@ -212,9 +167,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
     }
 }
 
-fn parse_swap(
-    response: SubMsgExecutionResponse,
-) -> (Uint128, Uint128) {
+fn parse_swap(response: SubMsgExecutionResponse) -> (Uint128, Uint128) {
     // Find swap inputs and output events
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");
     let wasm = wasm.unwrap();
@@ -226,7 +179,6 @@ fn parse_swap(
         .value;
     let input: Uint128 = Uint128::from_str(input_str).unwrap();
 
-
     let output_str = &wasm
         .attributes
         .iter()
@@ -235,6 +187,5 @@ fn parse_swap(
         .value;
     let output: Uint128 = Uint128::from_str(output_str).unwrap();
 
-    return (input, output)
+    (input, output)
 }
-

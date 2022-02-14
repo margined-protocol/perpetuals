@@ -1,27 +1,20 @@
 use cosmwasm_std::{
-    Addr, CosmosMsg, DepsMut, Env, MessageInfo, Response,
-    ReplyOn, StdError, StdResult, SubMsg, to_binary, Uint128,
-    WasmMsg, Storage,
+    to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError, StdResult,
+    Storage, SubMsg, Uint128, WasmMsg,
 };
-use cw20::{Cw20ExecuteMsg};
+use cw20::Cw20ExecuteMsg;
 
-use margined_perp::margined_vamm::{Direction, ExecuteMsg};
-use margined_perp::margined_engine::Side;
 use crate::{
-    contract::{SWAP_INCREASE_REPLY_ID, SWAP_DECREASE_REPLY_ID, SWAP_REVERSE_REPLY_ID},
+    contract::{SWAP_DECREASE_REPLY_ID, SWAP_INCREASE_REPLY_ID, SWAP_REVERSE_REPLY_ID},
     state::{
-        Config, read_config, store_config,
-        Position, read_position, store_position,
-        store_tmp_position, read_tmp_position, remove_tmp_position,
-        VammList, read_vamm,
+        read_config, read_position, read_tmp_position, read_vamm, remove_tmp_position,
+        store_config, store_position, store_tmp_position, Config, Position, VammList,
     },
 };
+use margined_perp::margined_engine::Side;
+use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 
-pub fn update_config(
-    deps: DepsMut,
-    info: MessageInfo,
-    owner: String,
-) -> StdResult<Response> {
+pub fn update_config(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
     if info.sender != config.owner {
         return Err(StdError::generic_err("unauthorized"));
@@ -37,8 +30,9 @@ pub fn update_config(
     Ok(Response::default())
 }
 
-
 // Opens a position
+// TODO - refactor arguments into a struct
+#[allow(clippy::too_many_arguments)]
 pub fn open_position(
     deps: DepsMut,
     env: Env,
@@ -50,7 +44,7 @@ pub fn open_position(
     leverage: Uint128,
 ) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
-    
+
     // check that it is a registered vamm
     let vamm_list: VammList = read_vamm(deps.storage)?;
     if !vamm_list.is_vamm(&vamm) {
@@ -67,41 +61,36 @@ pub fn open_position(
 
     // calc the input amount wrt to leverage and decimals
     let open_notional = quote_asset_amount
-                .checked_mul(leverage)?
-                .checked_div(config.decimals)?;
+        .checked_mul(leverage)?
+        .checked_div(config.decimals)?;
 
     // read the position for the trader from vamm
     let current_position = read_position(deps.storage, &vamm, &trader)?;
     let mut position = Position::default();
 
     // so if the position returned is None then its new
-    if current_position.is_none() {
+    if let Some(..) = current_position {
+        position = current_position.unwrap();
+    } else {
         let direction: Direction = side_to_direction(side.clone());
 
         // update the default position
         position.vamm = vamm.clone();
         position.trader = trader.clone();
-        position.direction = direction.clone();
+        position.direction = direction;
         position.timestamp = env.block.time;
-
-    } else {
-        position = current_position.unwrap();
     }
-    
+
     let mut is_increase: bool = true;
-    if !(position.direction == Direction::AddToAmm && side.clone() == Side::BUY) &&
-            !(position.direction == Direction::RemoveFromAmm && side.clone() == Side::SELL) {
+    if !(position.direction == Direction::AddToAmm && side == Side::BUY
+        || position.direction == Direction::RemoveFromAmm && side == Side::SELL)
+    {
         is_increase = false;
     }
 
     if is_increase {
         // then we are opening a new position or adding to an existing
-        let swap_msg = swap_input(
-            &vamm,
-            side.clone(),
-            open_notional,
-            SWAP_INCREASE_REPLY_ID
-        ).unwrap();
+        let swap_msg = swap_input(&vamm, side, open_notional, SWAP_INCREASE_REPLY_ID).unwrap();
 
         // increase the margin, notional etc...
         position.margin = position.margin.checked_add(quote_asset_amount)?;
@@ -109,33 +98,28 @@ pub fn open_position(
 
         let transfer_msg = execute_transfer_from(
             deps.storage,
-            &trader.clone(),
+            &trader,
             &env.contract.address,
             position.margin,
-        ).unwrap();
+        )
+        .unwrap();
 
         // Add the submessage to the response
         response = response
             .add_submessage(transfer_msg)
             .add_submessage(swap_msg);
-
     } else {
         // TODO make this a function maybe called, open_reverse_position
         // if old position is greater then we don't need to reverse just reduce the position
         if position.notional > open_notional {
             // then we are opening a new position or adding to an existing
-            let msg = swap_input(
-                &vamm,
-                side.clone(),
-                open_notional,
-                SWAP_DECREASE_REPLY_ID
-            ).unwrap();
+            let msg = swap_input(&vamm, side, open_notional, SWAP_DECREASE_REPLY_ID).unwrap();
 
             position.notional = position.notional.checked_sub(open_notional)?;
 
             // Add the submessage to the response
             response = response.add_submessage(msg);
-        } else {            
+        } else {
             let amount = position.size;
 
             let swap_msg = WasmMsg::Execute {
@@ -161,12 +145,10 @@ pub fn open_position(
 
     store_tmp_position(deps.storage, &position)?;
 
-    Ok(
-        response.add_attributes(vec![
-            ("action", "open_position"),
-            ("open_notional", &open_notional.to_string()),
-        ])
-    )
+    Ok(response.add_attributes(vec![
+        ("action", "open_position"),
+        ("open_notional", &open_notional.to_string()),
+    ]))
 }
 
 pub fn close_position(
@@ -191,7 +173,7 @@ pub fn close_position(
         contract_addr: vamm.to_string(),
         funds: vec![],
         msg: to_binary(&ExecuteMsg::SwapOutput {
-            direction: direction,
+            direction,
             base_asset_amount: amount,
         })?,
     };
@@ -199,7 +181,7 @@ pub fn close_position(
     let msg = SubMsg {
         msg: CosmosMsg::Wasm(swap_msg),
         gas_limit: None, // probably should set a limit in the config
-        id: id,
+        id,
         reply_on: ReplyOn::Always,
     };
 
@@ -207,8 +189,7 @@ pub fn close_position(
 
     Ok(Response::new()
         .add_attributes(vec![("action", "close_position")])
-        .add_submessage(msg)
-    )
+        .add_submessage(msg))
 }
 
 // Closes position returning funds after successful execution of the swap out
@@ -306,13 +287,11 @@ pub fn reverse_position(
     }
 
     let open_notional = tmp_position.clone().unwrap().notional;
-    let amount = open_notional
-        .checked_sub(output)?;
-
+    let amount = open_notional.checked_sub(output)?;
 
     // so if the position to reverse is large then we do something, if it is smaller than a few wei
     // just reset the position and move on with life
-    let mut position = clear_position(env, tmp_position.clone().unwrap())?;
+    let mut position = clear_position(env, tmp_position.unwrap())?;
     store_position(deps.storage, &position)?;
 
     // TODO, this is hardcoded to close and clear if the amount is less than the smallest 4dp of you precision
@@ -325,29 +304,26 @@ pub fn reverse_position(
             &position.vamm,
             direction_to_side(direction),
             amount,
-            SWAP_INCREASE_REPLY_ID
-        ).unwrap();
-    
+            SWAP_INCREASE_REPLY_ID,
+        )
+        .unwrap();
+
         // increase the margin, notional etc...
         position.margin = position.margin.checked_add(amount)?;
         position.notional = position.notional.checked_add(open_notional)?;
-    
+
         // store the updated position
         store_tmp_position(deps.storage, &position)?;
 
         // add the response
         response = response.add_submessage(msg);
-    
     }
-    
+
     Ok(response)
 }
 
 // this resets the main variables of a position
-fn clear_position(
-    env: Env,
-    mut position: Position,
-) -> StdResult<Position> {
+fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
     position.size = Uint128::zero();
     position.margin = Uint128::zero();
     position.notional = Uint128::zero();
@@ -356,19 +332,14 @@ fn clear_position(
     Ok(position)
 }
 
-fn swap_input(
-    vamm: &Addr,
-    side: Side, 
-    open_notional: Uint128, 
-    id: u64,
-) -> StdResult<SubMsg> {
+fn swap_input(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdResult<SubMsg> {
     let direction: Direction = side_to_direction(side);
 
     let swap_msg = WasmMsg::Execute {
         contract_addr: vamm.to_string(),
         funds: vec![],
         msg: to_binary(&ExecuteMsg::SwapInput {
-            direction: direction,
+            direction,
             quote_asset_amount: open_notional,
         })?,
     };
@@ -376,7 +347,7 @@ fn swap_input(
     let execute_submsg = SubMsg {
         msg: CosmosMsg::Wasm(swap_msg),
         gas_limit: None, // probably should set a limit in the config
-        id: id,
+        id,
         reply_on: ReplyOn::Always,
     };
 
@@ -386,8 +357,8 @@ fn swap_input(
 fn execute_transfer_from(
     storage: &dyn Storage,
     sender: &Addr,
-    receiver: &Addr, 
-    amount: Uint128, 
+    receiver: &Addr,
+    amount: Uint128,
 ) -> StdResult<SubMsg> {
     let config = read_config(storage)?;
     let msg = WasmMsg::Execute {
@@ -396,7 +367,7 @@ fn execute_transfer_from(
         msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
             owner: sender.to_string(),
             recipient: receiver.to_string(),
-            amount: amount,
+            amount,
         })?,
     };
 
@@ -411,36 +382,28 @@ fn execute_transfer_from(
 }
 
 // takes the side (buy|sell) and returns the direction (long|short)
-fn side_to_direction(
-    side: Side,
-) -> Direction {
+fn side_to_direction(side: Side) -> Direction {
     let direction: Direction = match side {
-            Side::BUY => Direction::AddToAmm,
-            Side::SELL => Direction::RemoveFromAmm,
+        Side::BUY => Direction::AddToAmm,
+        Side::SELL => Direction::RemoveFromAmm,
     };
-
-    return direction
+    direction
 }
 
 // takes the direction (long|short) and returns the side (buy|sell)
-fn direction_to_side(
-    direction: Direction,
-) -> Side {
+fn direction_to_side(direction: Direction) -> Side {
     let side: Side = match direction {
-            Direction::AddToAmm => Side::BUY,
-            Direction::RemoveFromAmm => Side::SELL,
+        Direction::AddToAmm => Side::BUY,
+        Direction::RemoveFromAmm => Side::SELL,
     };
-
-    return side
+    side
 }
 
 // takes the side (buy|sell) and returns opposite (short|long)
 // this is useful when closing/reversing a position
-fn switch_direction(
-    dir: Direction,
-) -> Direction {
-    return match dir {
-            Direction::RemoveFromAmm => Direction::AddToAmm,
-            Direction::AddToAmm => Direction::RemoveFromAmm,
-    };
+fn switch_direction(dir: Direction) -> Direction {
+    match dir {
+        Direction::RemoveFromAmm => Direction::AddToAmm,
+        Direction::AddToAmm => Direction::RemoveFromAmm,
+    }
 }
