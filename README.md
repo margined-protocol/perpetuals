@@ -1,6 +1,7 @@
 # Margin Protocol virtual Automated Market Maker (vAMM)
 
 [![Continuous Integration](https://github.com/shapeshed/mrgnd-perpetuals/actions/workflows/ci.yml/badge.svg)](https://github.com/shapeshed/mrgnd-perpetuals/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/shapeshed/mrgnd-perpetuals/branch/main/graph/badge.svg?token=OXwMwRifUv)](https://codecov.io/gh/shapeshed/mrgnd-perpetuals)
 
 This repo contains a template vAMM for use on Terra blockchain.
 
