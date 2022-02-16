@@ -44,3 +44,4 @@ TODO
 
 * [Perpetual Protocol](https://docs.perp.fi/getting-started/how-it-works/trading)
 * [Audaces Protocol](https://docs.bonfida.org/collection/v/help/audaces-perpetuals/white-paper)
+* [Perpetuals In-Depth](https://0xkowloon.substack.com/p/dissecting-the-perpetual-protocol)

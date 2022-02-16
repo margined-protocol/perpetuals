@@ -141,7 +141,6 @@ pub fn get_output_price_with_reserves(
     if base_asset_amount == Uint128::zero() {
         Uint128::zero();
     }
-    println!("base asset input: {}", base_asset_amount);
     let invariant_k = state
         .quote_asset_reserve
         .checked_mul(state.base_asset_reserve)?
@@ -158,7 +157,6 @@ pub fn get_output_price_with_reserves(
             base_asset_after = state.base_asset_reserve.checked_sub(base_asset_amount)?;
         }
     }
-    println!("base asset input: {}", base_asset_amount);
     quote_asset_after = invariant_k
         .checked_mul(state.decimals)?
         .checked_div(base_asset_after)?;
@@ -177,7 +175,6 @@ pub fn get_output_price_with_reserves(
             quote_asset_sold = quote_asset_sold.checked_add(Uint128::new(1u128))?;
         }
     }
-
     Ok(quote_asset_sold)
 }
 
@@ -189,9 +186,6 @@ fn update_reserve(
 ) -> StdResult<Response> {
     let state: State = read_state(storage)?;
     let mut update_state = state.clone();
-
-    println!("Quote Asset Reserve: {}", update_state.quote_asset_reserve);
-    println!("Base Asset Reserve: {}", update_state.base_asset_reserve);
 
     match direction {
         Direction::AddToAmm => {
@@ -210,15 +204,12 @@ fn update_reserve(
         }
     }
 
-    println!("Quote Asset Reserve: {}", update_state.quote_asset_reserve);
-    println!("Base Asset Reserve: {}", update_state.base_asset_reserve);
-
     store_state(storage, &update_state)?;
 
     Ok(Response::new().add_attributes(vec![("action", "update_reserve")]))
 }
 
-/// Does the modulus (%) operator on Uin128.
+/// Does the modulus (%) operator on Uint128.
 /// However it follows the design of the perpertual protocol decimals
 /// https://github.com/perpetual-protocol/perpetual-protocol/blob/release/v2.1.x/src/utils/Decimal.sol
 fn modulo(a: Uint128, b: Uint128) -> Uint128 {

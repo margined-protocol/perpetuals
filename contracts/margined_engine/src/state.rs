@@ -7,13 +7,14 @@ use cosmwasm_storage::{
 };
 use cw_storage_plus::Item;
 
+use margined_perp::margined_engine::Side;
 use margined_perp::margined_vamm::Direction;
 
 use sha3::{Digest, Sha3_256};
 
 pub static KEY_CONFIG: &[u8] = b"config";
 pub static KEY_POSITION: &[u8] = b"position";
-pub static KEY_TMP_POSITION: &[u8] = b"tmp-position";
+pub static KEY_TMP_SWAP: &[u8] = b"tmp-position";
 pub const VAMM_LIST: Item<VammList> = Item::new("admin_list");
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -129,15 +130,25 @@ pub fn read_position(
     position_bucket_read(storage).may_load(&hash)
 }
 
-pub fn store_tmp_position(storage: &mut dyn Storage, position: &Position) -> StdResult<()> {
-    singleton(storage, KEY_TMP_POSITION).save(position)
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct Swap {
+    pub vamm: Addr,
+    pub trader: Addr,
+    pub side: Side,
+    pub quote_asset_amount: Uint128,
+    pub leverage: Uint128,
+    pub open_notional: Uint128,
 }
 
-pub fn remove_tmp_position(storage: &mut dyn Storage) {
-    let mut store: Singleton<Position> = singleton(storage, KEY_TMP_POSITION);
+pub fn store_tmp_swap(storage: &mut dyn Storage, swap: &Swap) -> StdResult<()> {
+    singleton(storage, KEY_TMP_SWAP).save(swap)
+}
+
+pub fn remove_tmp_swap(storage: &mut dyn Storage) {
+    let mut store: Singleton<Swap> = singleton(storage, KEY_TMP_SWAP);
     store.remove()
 }
 
-pub fn read_tmp_position(storage: &dyn Storage) -> StdResult<Option<Position>> {
-    singleton_read(storage, KEY_TMP_POSITION).load()
+pub fn read_tmp_swap(storage: &dyn Storage) -> StdResult<Option<Swap>> {
+    singleton_read(storage, KEY_TMP_SWAP).load()
 }

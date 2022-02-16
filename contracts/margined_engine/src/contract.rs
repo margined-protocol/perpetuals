@@ -1,28 +1,25 @@
-use std::str::FromStr;
-
-#[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_binary, to_binary, Binary, ContractResult, Deps, DepsMut, Env, MessageInfo, Reply,
-    Response, StdError, StdResult, SubMsgExecutionResponse, Uint128,
+    from_binary, to_binary, Attribute, Binary, ContractResult, Deps, DepsMut, Env, Event,
+    MessageInfo, Reply, Response, StdError, StdResult, SubMsgExecutionResponse, Uint128,
 };
 use cw20::Cw20ReceiveMsg;
 use margined_perp::margined_engine::{Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
+#[cfg(not(feature = "library"))]
+use std::str::FromStr;
 
 use crate::error::ContractError;
 use crate::{
-    handle::{
-        close_position, decrease_position, finalize_close_position, increase_position,
-        open_position, reverse_position, update_config,
-    },
+    handle::{close_position, open_position, update_config},
     query::{query_config, query_position, query_trader_balance_with_funding_payment},
+    reply::{decrease_position_reply, increase_position_reply, reverse_position_reply},
     state::{read_config, store_config, store_vamm, Config},
 };
 
 pub const SWAP_INCREASE_REPLY_ID: u64 = 1;
 pub const SWAP_DECREASE_REPLY_ID: u64 = 2;
 pub const SWAP_REVERSE_REPLY_ID: u64 = 3;
-pub const CLOSE_POSITION_REPLY_ID: u64 = 4;
+pub const SWAP_CLOSE_REPLY_ID: u64 = 4;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -83,7 +80,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
                 info,
                 vamm,
                 trader.to_string(),
-                CLOSE_POSITION_REPLY_ID,
+                SWAP_CLOSE_REPLY_ID,
             )
         }
     }
@@ -137,22 +134,17 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
         ContractResult::Ok(response) => match msg.id {
             SWAP_INCREASE_REPLY_ID => {
                 let (input, output) = parse_swap(response);
-                let response = increase_position(deps, env, input, output)?;
+                let response = increase_position_reply(deps, env, input, output)?;
                 Ok(response)
             }
             SWAP_DECREASE_REPLY_ID => {
                 let (input, output) = parse_swap(response);
-                let response = decrease_position(deps, env, input, output)?;
+                let response = decrease_position_reply(deps, env, input, output)?;
                 Ok(response)
             }
             SWAP_REVERSE_REPLY_ID => {
                 let (input, output) = parse_swap(response);
-                let response = reverse_position(deps, env, input, output)?;
-                Ok(response)
-            }
-            CLOSE_POSITION_REPLY_ID => {
-                let (input, output) = parse_swap(response);
-                let response = finalize_close_position(deps, env, input, output)?;
+                let response = reverse_position_reply(deps, env, input, output)?;
                 Ok(response)
             }
             _ => Err(StdError::generic_err(format!(
@@ -171,21 +163,20 @@ fn parse_swap(response: SubMsgExecutionResponse) -> (Uint128, Uint128) {
     // Find swap inputs and output events
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");
     let wasm = wasm.unwrap();
-    let input_str = &wasm
-        .attributes
-        .iter()
-        .find(|&attr| attr.key == "input")
-        .unwrap()
-        .value;
-    let input: Uint128 = Uint128::from_str(input_str).unwrap();
+    let input_str = read_event("input".to_string(), wasm).value;
+    let input: Uint128 = Uint128::from_str(&input_str).unwrap();
 
-    let output_str = &wasm
-        .attributes
-        .iter()
-        .find(|&attr| attr.key == "output")
-        .unwrap()
-        .value;
-    let output: Uint128 = Uint128::from_str(output_str).unwrap();
+    let output_str = read_event("output".to_string(), wasm).value;
+    let output: Uint128 = Uint128::from_str(&output_str).unwrap();
 
     (input, output)
+}
+
+fn read_event(key: String, event: &Event) -> Attribute {
+    let result = event
+        .attributes
+        .iter()
+        .find(|&attr| attr.key == key)
+        .unwrap();
+    result.clone()
 }

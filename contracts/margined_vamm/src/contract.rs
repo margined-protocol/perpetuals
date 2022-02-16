@@ -6,6 +6,7 @@ use cosmwasm_std::{
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
+use crate::query::query_output_price;
 use crate::{
     handle::{swap_input, swap_output, update_config},
     query::{query_config, query_state},
@@ -67,5 +68,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
+        QueryMsg::OutputPrice { direction, amount } => {
+            to_binary(&query_output_price(deps, direction, amount)?)
+        }
     }
 }

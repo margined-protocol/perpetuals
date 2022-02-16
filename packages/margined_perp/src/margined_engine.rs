@@ -86,3 +86,15 @@ pub struct PositionResponse {
     pub liquidity_history_index: Uint128,
     pub timestamp: Timestamp,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct SwapResponse {
+    pub vamm: String,
+    pub trader: String,
+    pub side: String,
+    pub quote_asset_amount: Uint128,
+    pub leverage: Uint128,
+    pub open_notional: Uint128,
+    pub input: Uint128,
+    pub output: Uint128,
+}
