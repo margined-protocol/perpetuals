@@ -187,6 +187,8 @@ fn update_reserve(
     let state: State = read_state(storage)?;
     let mut update_state = state.clone();
 
+    println!("State before:\n{:?}\n", state);
+
     match direction {
         Direction::AddToAmm => {
             update_state.quote_asset_reserve = update_state
@@ -205,6 +207,7 @@ fn update_reserve(
     }
 
     store_state(storage, &update_state)?;
+    println!("State after:\n{:?}\n", update_state);
 
     Ok(Response::new().add_attributes(vec![("action", "update_reserve")]))
 }

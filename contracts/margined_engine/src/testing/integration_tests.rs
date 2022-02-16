@@ -42,7 +42,6 @@ fn test_open_position_long() {
         .router
         .execute_contract(env.alice.clone(), env.engine.addr.clone(), &msg, &[])
         .unwrap();
-    println!("{:?}", _res);
 
     // expect to be 60
     let margin = env
@@ -55,7 +54,6 @@ fn test_open_position_long() {
             },
         )
         .unwrap();
-    println!("{}", margin);
     assert_eq!(to_decimals(60), margin);
 
     // personal position should be 37.5
@@ -492,34 +490,34 @@ fn test_open_position_short_long_short() {
             },
         )
         .unwrap();
-    // assert_eq!(Uint128::new(11_111_111_112), position.size);
+    assert_eq!(to_decimals(20u64), position.size);
     assert_eq!(Uint128::new(83_333_333_333), position.margin);
 
-    // let msg = ExecuteMsg::OpenPosition {
-    //     vamm: env.vamm.addr.to_string(),
-    //     side: Side::BUY,
-    //     quote_asset_amount: to_decimals(10u64),
-    //     leverage: to_decimals(10u64),
-    // };
+    let msg = ExecuteMsg::OpenPosition {
+        vamm: env.vamm.addr.to_string(),
+        side: Side::SELL,
+        quote_asset_amount: to_decimals(25u64),
+        leverage: to_decimals(10u64),
+    };
 
-    // let _res = env
-    //     .router
-    //     .execute_contract(env.alice.clone(), env.engine.addr.clone(), &msg, &[])
-    //     .unwrap();
+    let _res = env
+        .router
+        .execute_contract(env.alice.clone(), env.engine.addr.clone(), &msg, &[])
+        .unwrap();
 
-    // // retrieve the vamm state
-    // let position: PositionResponse = env
-    //     .router
-    //     .wrap()
-    //     .query_wasm_smart(
-    //         &env.engine.addr,
-    //         &QueryMsg::Position {
-    //             vamm: env.vamm.addr.to_string(),
-    //             trader: env.alice.to_string(),
-    //         },
-    //     )
-    //     .unwrap();
-    // assert_eq!(Uint128::from(1 as u128), position.size);
-    // assert_eq!(to_decimals(40u64), position.margin);
+    // retrieve the vamm state
+    let position: PositionResponse = env
+        .router
+        .wrap()
+        .query_wasm_smart(
+            &env.engine.addr,
+            &QueryMsg::Position {
+                vamm: env.vamm.addr.to_string(),
+                trader: env.alice.to_string(),
+            },
+        )
+        .unwrap();
+    assert_eq!(Uint128::zero(), position.size);
+    assert_eq!(Uint128::zero(), position.margin);
 }
 
