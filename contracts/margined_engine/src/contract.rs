@@ -14,12 +14,12 @@ use margined_perp::margined_engine::{
 use crate::error::ContractError;
 use crate::{
     handle::{
-        update_config, increase_position_reply, decrease_position_reply, reverse_position_reply,
-        open_position, close_position,
+        update_config, open_position, close_position,
     },
     query::{
         query_config, query_position, query_trader_balance_with_funding_payment,
     },
+    reply::{increase_position_reply, decrease_position_reply, reverse_position_reply},
     state::{Config, read_config, store_config, store_vamm},
 };
 
@@ -182,16 +182,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
                     Ok(response)
                 },
                 SWAP_REVERSE_REPLY_ID => {
-                    let (input, output) = parse_swap(response);
-                    let response = reverse_position_reply(
-                        deps,
-                        env,
-                        input,
-                        output,
-                    )?;
-                    Ok(response)
-                },
-                CLOSE_POSITION_REPLY_ID => {
                     let (input, output) = parse_swap(response);
                     let response = reverse_position_reply(
                         deps,
