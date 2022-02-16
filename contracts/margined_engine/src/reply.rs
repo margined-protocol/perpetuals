@@ -6,8 +6,8 @@ use cw20::Cw20ExecuteMsg;
 
 use crate::{
     handle::{clear_position, get_position, internal_increase_position},
-    state::{read_config, store_tmp_swap, read_tmp_swap, remove_tmp_swap, store_position},
-    utils::{side_to_direction, switch_side},
+    state::{read_config, read_tmp_swap, remove_tmp_swap, store_position, store_tmp_swap},
+    utils::side_to_direction,
 };
 
 // Increases position after successful execution of the swap
@@ -38,7 +38,8 @@ pub fn increase_position_reply(
     position.direction = side_to_direction(swap.side);
 
     // TODO make my own decimal math lib
-    position.margin = position.notional
+    position.margin = position
+        .notional
         .checked_mul(config.decimals)?
         .checked_div(swap.leverage)?;
 
@@ -50,7 +51,6 @@ pub fn increase_position_reply(
         &swap.trader,
         &env.contract.address,
         position.margin,
-
     )
     .unwrap();
 
