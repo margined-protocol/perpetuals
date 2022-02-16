@@ -229,7 +229,7 @@ fn update_reserve(
     Ok(Response::new().add_attributes(vec![("action", "update_reserve")]))
 }
 
-/// Does the modulus (%) operator on Uin128.
+/// Does the modulus (%) operator on Uint128.
 /// However it follows the design of the perpertual protocol decimals
 /// https://github.com/perpetual-protocol/perpetual-protocol/blob/release/v2.1.x/src/utils/Decimal.sol
 fn modulo(
