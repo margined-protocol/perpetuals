@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
+    Addr, CosmosMsg, DepsMut, Env, MessageInfo, Response,
     ReplyOn, StdError, StdResult, SubMsg, to_binary, Uint128,
     WasmMsg, Storage,
 };
@@ -18,11 +18,7 @@ use crate::{
     }
 };
 
-pub fn update_config(
-    deps: DepsMut,
-    info: MessageInfo,
-    owner: String,
-) -> StdResult<Response> {
+pub fn update_config(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
     if info.sender != config.owner {
         return Err(StdError::generic_err("unauthorized"));
@@ -38,8 +34,9 @@ pub fn update_config(
     Ok(Response::default())
 }
 
-
 // Opens a position
+// TODO - refactor arguments into a struct
+#[allow(clippy::too_many_arguments)]
 pub fn open_position(
     deps: DepsMut,
     env: Env,
@@ -58,14 +55,15 @@ pub fn open_position(
 
     // calc the input amount wrt to leverage and decimals
     let open_notional = quote_asset_amount
-                .checked_mul(leverage)?
-                .checked_div(config.decimals)?;
+        .checked_mul(leverage)?
+        .checked_div(config.decimals)?;
 
     let position: Position = get_position(env.clone(), deps.storage, &vamm, &trader, side.clone());
 
     let mut is_increase: bool = true;
-    if !(position.direction == Direction::AddToAmm && side.clone() == Side::BUY) &&
-            !(position.direction == Direction::RemoveFromAmm && side.clone() == Side::SELL) {
+    if !(position.direction == Direction::AddToAmm && side == Side::BUY
+        || position.direction == Direction::RemoveFromAmm && side == Side::SELL)
+    {
         is_increase = false;
     }
 
@@ -128,7 +126,7 @@ pub fn close_position(
         contract_addr: vamm.to_string(),
         funds: vec![],
         msg: to_binary(&ExecuteMsg::SwapOutput {
-            direction: direction,
+            direction,
             base_asset_amount: amount,
         })?,
     };
@@ -136,7 +134,7 @@ pub fn close_position(
     let msg = SubMsg {
         msg: CosmosMsg::Wasm(swap_msg),
         gas_limit: None, // probably should set a limit in the config
-        id: id,
+        id,
         reply_on: ReplyOn::Always,
     };
 
@@ -144,8 +142,7 @@ pub fn close_position(
 
     Ok(Response::new()
         .add_attributes(vec![("action", "close_position")])
-        .add_submessage(msg)
-    )
+        .add_submessage(msg))
 }
 
 // Increase the position, just basically wraps swap input though it may do more in the future
@@ -202,19 +199,14 @@ fn open_reverse_position(
     return msg
 }
 
-fn swap_input(
-    vamm: &Addr,
-    side: Side, 
-    open_notional: Uint128, 
-    id: u64,
-) -> StdResult<SubMsg> {
+fn swap_input(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdResult<SubMsg> {
     let direction: Direction = side_to_direction(side);
 
     let swap_msg = WasmMsg::Execute {
         contract_addr: vamm.to_string(),
         funds: vec![],
         msg: to_binary(&ExecuteMsg::SwapInput {
-            direction: direction,
+            direction,
             quote_asset_amount: open_notional,
         })?,
     };
@@ -222,7 +214,7 @@ fn swap_input(
     let execute_submsg = SubMsg {
         msg: CosmosMsg::Wasm(swap_msg),
         gas_limit: None, // probably should set a limit in the config
-        id: id,
+        id,
         reply_on: ReplyOn::Always,
     };
 

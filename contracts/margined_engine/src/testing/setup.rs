@@ -1,15 +1,9 @@
-use crate::{
-    contract::{instantiate, execute, query, reply},
-};
+use crate::contract::{execute, instantiate, query, reply};
+use cosmwasm_std::{Addr, Empty, Uint128};
 use cw20::{Cw20Coin, Cw20ExecuteMsg};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
-use cosmwasm_std::{Addr, Empty, Uint128};
-use margined_perp::margined_engine::{
-    InstantiateMsg,
-};
-use margined_perp::margined_vamm::{
-    InstantiateMsg as VammInstantiateMsg,
-};
+use margined_perp::margined_engine::InstantiateMsg;
+use margined_perp::margined_vamm::InstantiateMsg as VammInstantiateMsg;
 
 pub struct ContractInfo {
     pub addr: Addr,
@@ -47,11 +41,7 @@ fn contract_vamm() -> Box<dyn Contract<Empty>> {
 }
 
 fn contract_engine() -> Box<dyn Contract<Empty>> {
-    let contract = ContractWrapper::new_with_empty(
-        execute,
-        instantiate,
-        query,
-    ).with_reply(reply);
+    let contract = ContractWrapper::new_with_empty(execute, instantiate, query).with_reply(reply);
     Box::new(contract)
 }
 
@@ -70,48 +60,52 @@ pub fn setup() -> TestingEnv {
     let engine_id = router.store_code(contract_engine());
     let vamm_id = router.store_code(contract_vamm());
 
-    let usdc_addr = router.instantiate_contract(
-        usdc_id,
-        owner.clone(),
-        &cw20_base::msg::InstantiateMsg {
-            name: "USDC".to_string(),
-            symbol: "USDC".to_string(),
-            decimals: 9,
-            initial_balances: vec![
-                Cw20Coin {
-                    address: alice.to_string(),
-                    amount: to_decimals(5000),
-                },
-                Cw20Coin {
-                    address: bob.to_string(),
-                    amount: to_decimals(5000),
-                }
-            ],
-            mint: None,
-            marketing: None,
-        },
-        &[],
-        "cw20",
-        None
-    ).unwrap();
+    let usdc_addr = router
+        .instantiate_contract(
+            usdc_id,
+            owner.clone(),
+            &cw20_base::msg::InstantiateMsg {
+                name: "USDC".to_string(),
+                symbol: "USDC".to_string(),
+                decimals: 9,
+                initial_balances: vec![
+                    Cw20Coin {
+                        address: alice.to_string(),
+                        amount: to_decimals(5000),
+                    },
+                    Cw20Coin {
+                        address: bob.to_string(),
+                        amount: to_decimals(5000),
+                    },
+                ],
+                mint: None,
+                marketing: None,
+            },
+            &[],
+            "cw20",
+            None,
+        )
+        .unwrap();
 
-    let vamm_addr = router.instantiate_contract(
-        vamm_id,
-        owner.clone(),
-        &VammInstantiateMsg {
-            decimals: 9u8,
-            quote_asset: "ETH".to_string(),
-            base_asset: "USD".to_string(),
-            quote_asset_reserve: to_decimals(1_000),
-            base_asset_reserve: to_decimals(100),
-            funding_period: 3_600 as u64,
-        },
-        &[],
-        "vamm",
-        None
-    ).unwrap();
+    let vamm_addr = router
+        .instantiate_contract(
+            vamm_id,
+            owner.clone(),
+            &VammInstantiateMsg {
+                decimals: 9u8,
+                quote_asset: "ETH".to_string(),
+                base_asset: "USD".to_string(),
+                quote_asset_reserve: to_decimals(1_000),
+                base_asset_reserve: to_decimals(100),
+                funding_period: 3_600 as u64,
+            },
+            &[],
+            "vamm",
+            None,
+        )
+        .unwrap();
 
-    // set up margined engine contract    
+    // set up margined engine contract
     let engine_addr = router
         .instantiate_contract(
             engine_id,
@@ -119,8 +113,8 @@ pub fn setup() -> TestingEnv {
             &InstantiateMsg {
                 decimals: 9u8,
                 eligible_collateral: usdc_addr.to_string(),
-                initial_margin_ratio: Uint128::from(100u128), 
-                maintenance_margin_ratio: Uint128::from(100u128), 
+                initial_margin_ratio: Uint128::from(100u128),
+                maintenance_margin_ratio: Uint128::from(100u128),
                 liquidation_fee: Uint128::from(100u128),
                 vamm: vec![vamm_addr.to_string()],
             },
@@ -131,16 +125,18 @@ pub fn setup() -> TestingEnv {
         .unwrap();
 
     // create allowance for alice
-    router.execute_contract(
-        alice.clone(),
-        usdc_addr.clone(),
-        &Cw20ExecuteMsg::IncreaseAllowance {
-            spender: engine_addr.to_string(),
-            amount: to_decimals(2000),
-            expires: None,
-        },
-        &[]
-    ).unwrap();
+    router
+        .execute_contract(
+            alice.clone(),
+            usdc_addr.clone(),
+            &Cw20ExecuteMsg::IncreaseAllowance {
+                spender: engine_addr.to_string(),
+                amount: to_decimals(2000),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
 
     TestingEnv {
         router,

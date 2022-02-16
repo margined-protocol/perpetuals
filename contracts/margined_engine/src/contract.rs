@@ -1,6 +1,5 @@
-use std::str::FromStr;
-
 #[cfg(not(feature = "library"))]
+use std::str::FromStr;
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, from_binary, Binary, ContractResult, Deps, DepsMut, Env, Event, MessageInfo,
@@ -40,14 +39,14 @@ pub fn instantiate(
 
     // config parameters
     let config = Config {
-        owner: info.sender.clone(),
-        eligible_collateral: eligible_collateral,
-        decimals: decimals,
+        owner: info.sender,
+        eligible_collateral,
+        decimals,
         initial_margin_ratio: msg.initial_margin_ratio,
         maintenance_margin_ratio: msg.maintenance_margin_ratio,
         liquidation_fee: msg.liquidation_fee,
     };
-    
+
     store_config(deps.storage, &config)?;
 
     // store default vamms
@@ -57,28 +56,10 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn execute(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    msg: ExecuteMsg,
-) -> StdResult<Response> {
+pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::Receive(msg) => receive_cw20(
-            deps,
-            env,
-            info.clone(),
-            msg
-        ),
-        ExecuteMsg::UpdateConfig {
-            owner,
-        } => {
-            update_config(
-                deps,
-                info.clone(),
-                owner,
-            )
-        },
+        ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
+        ExecuteMsg::UpdateConfig { owner } => update_config(deps, info, owner),
         ExecuteMsg::OpenPosition {
             vamm,
             side,
@@ -122,7 +103,7 @@ pub fn receive_cw20(
     if config.eligible_collateral != deps.api.addr_validate(info.sender.as_str())? {
         return Err(StdError::generic_err("unauthorized"));
     }
-    
+
     match from_binary(&cw20_msg.msg) {
         Ok(Cw20HookMsg::OpenPosition {
             vamm,
@@ -146,13 +127,10 @@ pub fn receive_cw20(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
-        QueryMsg::Position {
-            vamm,
-            trader,
-        } => to_binary(&query_position(deps, vamm, trader)?),
-        QueryMsg::TraderBalance {
-            trader,
-        } => to_binary(&query_trader_balance_with_funding_payment(deps, trader)?),
+        QueryMsg::Position { vamm, trader } => to_binary(&query_position(deps, vamm, trader)?),
+        QueryMsg::TraderBalance { trader } => {
+            to_binary(&query_trader_balance_with_funding_payment(deps, trader)?)
+        }
     }
 }
 
@@ -196,7 +174,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
                     msg.id
                 ))),
             }
-        }
+        },
         ContractResult::Err(e) => Err(StdError::generic_err(format!(
             "reply (id {:?}) error {:?}",
             msg.id, e
@@ -204,9 +182,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
     }
 }
 
-fn parse_swap(
-    response: SubMsgExecutionResponse,
-) -> (Uint128, Uint128) {
+fn parse_swap(response: SubMsgExecutionResponse) -> (Uint128, Uint128) {
     // Find swap inputs and output events
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");
     let wasm = wasm.unwrap();
@@ -216,7 +192,7 @@ fn parse_swap(
     let output_str = read_event("output".to_string(), wasm).value;
     let output: Uint128 = Uint128::from_str(&output_str).unwrap();
 
-    return (input, output)
+    (input, output)
 }
 
 fn read_event(

@@ -98,7 +98,7 @@ pub fn reverse_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    let mut response: Response = Response::new();
+    let response: Response = Response::new();
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
         return Err(StdError::generic_err("no temporary position"));

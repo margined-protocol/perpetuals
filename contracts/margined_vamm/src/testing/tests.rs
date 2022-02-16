@@ -1,16 +1,9 @@
-use crate::contract::{instantiate, execute, query};
+use crate::contract::{execute, instantiate, query};
+use crate::testing::setup::{to_decimals, DECIMAL_MULTIPLIER};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{Addr, from_binary, Uint128};
+use cosmwasm_std::{from_binary, Addr, Uint128};
 use margined_perp::margined_vamm::{
-    ConfigResponse,
-    ExecuteMsg,
-    InstantiateMsg,
-    QueryMsg,
-    StateResponse,
-    Direction,
-};
-use crate::testing::setup::{
-    DECIMAL_MULTIPLIER, to_decimals,
+    ConfigResponse, Direction, ExecuteMsg, InstantiateMsg, QueryMsg, StateResponse,
 };
 
 #[test]
@@ -353,7 +346,6 @@ fn test_swap_input_short_long_long() {
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
 
-
     let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&res).unwrap();
     assert_eq!(
@@ -431,7 +423,6 @@ fn test_swap_input_short_long_short() {
 
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
-
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&res).unwrap();

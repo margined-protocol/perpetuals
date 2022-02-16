@@ -1,3 +1,3 @@
+mod integration_tests;
 mod setup;
 mod tests;
-mod integration_tests;

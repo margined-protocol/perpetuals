@@ -7,7 +7,7 @@ use cosmwasm_std::{Addr, Uint128};
 #[serde(rename_all = "snake_case")]
 pub enum Direction {
     AddToAmm,
-    RemoveFromAmm
+    RemoveFromAmm,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -61,5 +61,4 @@ pub struct StateResponse {
     pub funding_rate: Uint128,
     pub decimals: Uint128,
     pub funding_period: u64,
-
 }

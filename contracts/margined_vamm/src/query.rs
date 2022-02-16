@@ -12,13 +12,11 @@ use crate::{
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config: Config = read_config(deps.storage)?;
 
-    Ok(
-        ConfigResponse {
-            owner: config.owner,
-            quote_asset: config.quote_asset,
-            base_asset: config.base_asset,
-        }
-    )
+    Ok(ConfigResponse {
+        owner: config.owner,
+        quote_asset: config.quote_asset,
+        base_asset: config.base_asset,
+    })
 }
 
 /// Queries contract State

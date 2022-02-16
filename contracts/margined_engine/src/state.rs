@@ -1,11 +1,9 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Api, Addr, StdResult, Storage, Timestamp, Uint128, DepsMut};
+use cosmwasm_std::{Addr, Api, DepsMut, StdResult, Storage, Timestamp, Uint128};
 use cosmwasm_storage::{
-    Bucket, ReadonlyBucket,
-    bucket, bucket_read,
-    Singleton, singleton, singleton_read,
+    bucket, bucket_read, singleton, singleton_read, Bucket, ReadonlyBucket, Singleton,
 };
 use cw_storage_plus::Item;
 
@@ -47,12 +45,11 @@ impl VammList {
     pub fn is_vamm(&self, addr: &str) -> bool {
         self.vamm.iter().any(|a| a.as_ref() == addr)
     }
-
 }
 
 pub fn store_vamm(deps: DepsMut, input: &[String]) -> StdResult<()> {
     let cfg = VammList {
-        vamm: map_validate(deps.api, &input)?,
+        vamm: map_validate(deps.api, input)?,
     };
     VAMM_LIST.save(deps.storage, &cfg)
 }
@@ -79,8 +76,8 @@ pub struct Position {
 }
 
 impl Default for Position {
-    fn default () -> Position {
-        Position{
+    fn default() -> Position {
+        Position {
             vamm: Addr::unchecked(""),
             trader: Addr::unchecked(""),
             direction: Direction::AddToAmm,
@@ -116,7 +113,11 @@ pub fn store_position(storage: &mut dyn Storage, position: &Position) -> StdResu
     position_bucket(storage).save(&hash, position)
 }
 
-pub fn read_position(storage: &dyn Storage, vamm: &Addr, trader: &Addr) -> StdResult<Option<Position>> {
+pub fn read_position(
+    storage: &dyn Storage,
+    vamm: &Addr,
+    trader: &Addr,
+) -> StdResult<Option<Position>> {
     // hash the vAMM and trader together to get a unique position key
     let mut hasher = Sha3_256::new();
 

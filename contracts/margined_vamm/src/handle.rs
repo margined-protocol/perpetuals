@@ -1,16 +1,10 @@
-use cosmwasm_std::{
-    Addr, DepsMut, Env, MessageInfo, Response, StdResult, Storage, Uint128,
-};
+use cosmwasm_std::{Addr, DepsMut, Env, MessageInfo, Response, StdResult, Storage, Uint128};
 
-use margined_perp::margined_vamm::Direction;
 use crate::{
     error::ContractError,
-    state::{
-        Config, read_config, store_config,
-        State, read_state, store_state,
-    },
+    state::{read_config, read_state, store_config, store_state, Config, State},
 };
-
+use margined_perp::margined_vamm::Direction;
 
 pub fn update_config(
     deps: DepsMut,
@@ -30,7 +24,6 @@ pub fn update_config(
     Ok(Response::default())
 }
 
-
 // Function should only be called by the margin engine
 pub fn swap_input(
     deps: DepsMut,
@@ -41,26 +34,20 @@ pub fn swap_input(
 ) -> Result<Response, ContractError> {
     let state: State = read_state(deps.storage)?;
 
-    let base_asset_amount = get_input_price_with_reserves(
-        &state,
-        &direction,
-        quote_asset_amount
-    )?;
+    let base_asset_amount = get_input_price_with_reserves(&state, &direction, quote_asset_amount)?;
 
     update_reserve(
         deps.storage,
         direction,
         quote_asset_amount,
-        base_asset_amount
+        base_asset_amount,
     )?;
 
-    Ok(Response::new()
-        .add_attributes(vec![
-            ("action", "swap_input"),
-            ("input", &quote_asset_amount.to_string()),
-            ("output", &base_asset_amount.to_string()),
-        ])
-    )
+    Ok(Response::new().add_attributes(vec![
+        ("action", "swap_input"),
+        ("input", &quote_asset_amount.to_string()),
+        ("output", &base_asset_amount.to_string()),
+    ]))
 }
 
 // Function should only be called by the margin engine
@@ -73,11 +60,7 @@ pub fn swap_output(
 ) -> Result<Response, ContractError> {
     let state: State = read_state(deps.storage)?;
 
-    let quote_asset_amount = get_output_price_with_reserves(
-        &state,
-        &direction,
-        base_asset_amount
-    )?;
+    let quote_asset_amount = get_output_price_with_reserves(&state, &direction, base_asset_amount)?;
 
     // flip direction when updating reserve
     let mut update_direction = direction;
@@ -94,13 +77,11 @@ pub fn swap_output(
         base_asset_amount,
     )?;
 
-    Ok(Response::new()
-        .add_attributes(vec![
-            ("action", "swap_output"),
-            ("input", &base_asset_amount.to_string()),
-            ("output", &quote_asset_amount.to_string()),
-        ])
-    )
+    Ok(Response::new().add_attributes(vec![
+        ("action", "swap_output"),
+        ("input", &base_asset_amount.to_string()),
+        ("output", &quote_asset_amount.to_string()),
+    ]))
 }
 
 pub fn get_input_price_with_reserves(
@@ -113,7 +94,8 @@ pub fn get_input_price_with_reserves(
     }
 
     // k = x * y (divided by decimal places)
-    let invariant_k = state.quote_asset_reserve
+    let invariant_k = state
+        .quote_asset_reserve
         .checked_mul(state.base_asset_reserve)?
         .checked_div(state.decimals)?;
 
@@ -122,16 +104,13 @@ pub fn get_input_price_with_reserves(
 
     match direction {
         Direction::AddToAmm => {
-            quote_asset_after = state.quote_asset_reserve
-                .checked_add(quote_asset_amount)?;
-
+            quote_asset_after = state.quote_asset_reserve.checked_add(quote_asset_amount)?;
         }
         Direction::RemoveFromAmm => {
-            quote_asset_after = state.quote_asset_reserve
-                .checked_sub(quote_asset_amount)?;
+            quote_asset_after = state.quote_asset_reserve.checked_sub(quote_asset_amount)?;
         }
     }
-    
+
     base_asset_after = invariant_k
         .checked_mul(state.decimals)?
         .checked_div(quote_asset_after)?;
@@ -162,7 +141,8 @@ pub fn get_output_price_with_reserves(
     if base_asset_amount == Uint128::zero() {
         Uint128::zero();
     }
-    let invariant_k = state.quote_asset_reserve 
+    let invariant_k = state
+        .quote_asset_reserve
         .checked_mul(state.base_asset_reserve)?
         .checked_div(state.decimals)?;
 
@@ -171,12 +151,10 @@ pub fn get_output_price_with_reserves(
 
     match direction {
         Direction::AddToAmm => {
-            base_asset_after = state.base_asset_reserve
-                .checked_add(base_asset_amount)?;
+            base_asset_after = state.base_asset_reserve.checked_add(base_asset_amount)?;
         }
         Direction::RemoveFromAmm => {
-            base_asset_after = state.base_asset_reserve
-                .checked_sub(base_asset_amount)?;
+            base_asset_after = state.base_asset_reserve.checked_sub(base_asset_amount)?;
         }
     }
     quote_asset_after = invariant_k
@@ -211,16 +189,18 @@ fn update_reserve(
 
     match direction {
         Direction::AddToAmm => {
-            update_state.quote_asset_reserve = update_state.quote_asset_reserve
+            update_state.quote_asset_reserve = update_state
+                .quote_asset_reserve
                 .checked_add(quote_asset_amount)?;
-            update_state.base_asset_reserve = state.base_asset_reserve
-                .checked_sub(base_asset_amount)?;
+            update_state.base_asset_reserve =
+                state.base_asset_reserve.checked_sub(base_asset_amount)?;
         }
         Direction::RemoveFromAmm => {
-            update_state.base_asset_reserve = update_state.base_asset_reserve
+            update_state.base_asset_reserve = update_state
+                .base_asset_reserve
                 .checked_add(base_asset_amount)?;
-            update_state.quote_asset_reserve = state.quote_asset_reserve
-                .checked_sub(quote_asset_amount)?;
+            update_state.quote_asset_reserve =
+                state.quote_asset_reserve.checked_sub(quote_asset_amount)?;
         }
     }
 
@@ -232,13 +212,10 @@ fn update_reserve(
 /// Does the modulus (%) operator on Uint128.
 /// However it follows the design of the perpertual protocol decimals
 /// https://github.com/perpetual-protocol/perpetual-protocol/blob/release/v2.1.x/src/utils/Decimal.sol
-fn modulo(
-    a: Uint128,
-    b: Uint128,
-) -> Uint128 {
+fn modulo(a: Uint128, b: Uint128) -> Uint128 {
     // TODO the decimals are currently hardcoded to 9dp, this needs to change in the future but without
     // needing to pass the entire world to this function, i.e. access to storage
     let a_decimals = a.checked_mul(Uint128::from(1_000_000_000u128)).unwrap();
     let integral = a_decimals / b;
-    return a_decimals - (b*integral)
+    a_decimals - (b * integral)
 }
