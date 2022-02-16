@@ -8,7 +8,7 @@ use cw20::Cw20ReceiveMsg;
 #[serde(rename_all = "snake_case")]
 pub enum Side {
     BUY,
-    SELL
+    SELL,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -16,7 +16,7 @@ pub enum Side {
 pub enum PNLCalc {
     SPOTPRICE,
     TWAP,
-    ORACLE
+    ORACLE,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -33,7 +33,7 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
-    UpdateConfig{
+    UpdateConfig {
         owner: String,
     },
     OpenPosition {
@@ -66,13 +66,8 @@ pub enum Cw20HookMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
-    Position {
-        vamm: String,
-        trader: String,
-    },
-    TraderBalance {
-        trader: String,
-    },
+    Position { vamm: String, trader: String },
+    TraderBalance { trader: String },
     // MarginRatio {},
 }
 

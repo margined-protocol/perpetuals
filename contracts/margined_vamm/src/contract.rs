@@ -1,16 +1,15 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
-    StdResult, Uint128
+    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
 use crate::{
-    handle::{update_config, swap_input, swap_output},
+    handle::{swap_input, swap_output, update_config},
     query::{query_config, query_state},
-    state::{Config, store_config, State, store_state}
+    state::{store_config, store_state, Config, State},
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -21,11 +20,11 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     let config = Config {
-        owner: info.sender.clone(),
+        owner: info.sender,
         quote_asset: msg.quote_asset,
         base_asset: msg.base_asset,
     };
-    
+
     store_config(deps.storage, &config)?;
 
     let decimals = Uint128::from(10u128.pow(msg.decimals as u32));
@@ -35,7 +34,7 @@ pub fn instantiate(
         quote_asset_reserve: msg.quote_asset_reserve,
         funding_rate: Uint128::zero(), // Initialise the funding rate as 0
         funding_period: msg.funding_period, // Funding period in seconds
-        decimals: decimals,
+        decimals,
     };
 
     store_state(deps.storage, &state)?;
@@ -51,39 +50,15 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::UpdateConfig {
-            owner,
-        } => {
-            update_config(
-                deps,
-                info,
-                owner,
-            )
-        },
+        ExecuteMsg::UpdateConfig { owner } => update_config(deps, info, owner),
         ExecuteMsg::SwapInput {
             direction,
             quote_asset_amount,
-        } => {
-            swap_input(
-                deps,
-                env,
-                info,
-                direction,
-                quote_asset_amount,
-            )
-        },
+        } => swap_input(deps, env, info, direction, quote_asset_amount),
         ExecuteMsg::SwapOutput {
             direction,
             base_asset_amount,
-        } => { 
-            swap_output(
-                deps,
-                env,
-                info,
-                direction,
-                base_asset_amount,
-            )
-        },
+        } => swap_output(deps, env, info, direction, base_asset_amount),
     }
 }
 

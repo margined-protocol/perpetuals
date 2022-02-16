@@ -1,9 +1,7 @@
-use crate::contract::{instantiate, execute, query};
+use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{Addr, from_binary, Uint128};
-use margined_perp::margined_engine::{
-    ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg,
-};
+use cosmwasm_std::{from_binary, Addr, Uint128};
+use margined_perp::margined_engine::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 
 const TOKEN: &str = "token";
 const OWNER: &str = "owner";
@@ -14,8 +12,8 @@ fn test_instantiation() {
     let msg = InstantiateMsg {
         decimals: 10u8,
         eligible_collateral: TOKEN.to_string(),
-        initial_margin_ratio: Uint128::from(100u128), 
-        maintenance_margin_ratio: Uint128::from(100u128), 
+        initial_margin_ratio: Uint128::from(100u128),
+        maintenance_margin_ratio: Uint128::from(100u128),
         liquidation_fee: Uint128::from(100u128),
         vamm: vec!["test".to_string()],
     };
@@ -40,8 +38,8 @@ fn test_update_config() {
     let msg = InstantiateMsg {
         decimals: 10u8,
         eligible_collateral: TOKEN.to_string(),
-        initial_margin_ratio: Uint128::from(100u128), 
-        maintenance_margin_ratio: Uint128::from(100u128), 
+        initial_margin_ratio: Uint128::from(100u128),
+        maintenance_margin_ratio: Uint128::from(100u128),
         liquidation_fee: Uint128::from(100u128),
         vamm: vec!["test".to_string()],
     };
