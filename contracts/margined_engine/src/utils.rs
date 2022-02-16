@@ -25,24 +25,20 @@ pub fn require_vamm(storage: &dyn Storage, vamm: &Addr) -> StdResult<Response> {
 pub fn side_to_direction(
     side: Side,
 ) -> Direction {
-    let direction: Direction = match side {
+    match side {
             Side::BUY => Direction::AddToAmm,
             Side::SELL => Direction::RemoveFromAmm,
-    };
-
-    return direction
+    }
 }
 
 // takes the direction (long|short) and returns the side (buy|sell)
 pub fn direction_to_side(
     direction: Direction,
 ) -> Side {
-    let side: Side = match direction {
+    match direction {
             Direction::AddToAmm => Side::BUY,
             Direction::RemoveFromAmm => Side::SELL,
-    };
-
-    return side
+    }
 }
 
 // takes the side (buy|sell) and returns opposite (short|long)
@@ -50,10 +46,10 @@ pub fn direction_to_side(
 pub fn switch_direction(
     dir: Direction,
 ) -> Direction {
-    return match dir {
+    match dir {
             Direction::RemoveFromAmm => Direction::AddToAmm,
             Direction::AddToAmm => Direction::RemoveFromAmm,
-    };
+    }
 }
 
 // takes the side (buy|sell) and returns opposite (short|long)
@@ -61,8 +57,8 @@ pub fn switch_direction(
 pub fn switch_side(
     dir: Side,
 ) -> Side {
-    return match dir {
+    match dir {
             Side::BUY => Side::SELL,
             Side::SELL => Side::BUY,
-    };
+    }
 }

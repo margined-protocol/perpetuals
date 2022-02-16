@@ -71,7 +71,7 @@ pub fn decrease_position_reply(
     
     let swap = tmp_swap.unwrap();
     let mut position = get_position(
-        env.clone(),
+        env,
         deps.storage,
         &swap.vamm,
         &swap.trader,
@@ -114,7 +114,7 @@ pub fn reverse_position_reply(
     );
     let margin_amount = position.margin;
 
-    position = clear_position(env.clone(), position)?;
+    position = clear_position(env, position)?;
 
     let msg: SubMsg;
     // now increase the position again if there is additional position
@@ -157,7 +157,7 @@ fn execute_transfer_from(
         msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
             owner: owner.to_string(),
             recipient: receiver.to_string(),
-            amount: amount,
+            amount,
         })?,
     };
 
@@ -182,7 +182,7 @@ fn execute_transfer(
         funds: vec![],
         msg: to_binary(&Cw20ExecuteMsg::Transfer {
             recipient: receiver.to_string(),
-            amount: amount,
+            amount,
         })?,
     };
 

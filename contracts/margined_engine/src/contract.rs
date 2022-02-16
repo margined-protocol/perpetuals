@@ -70,7 +70,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
          open_position(
             deps,
             env,
-            info.clone(),
+            info,
             vamm,
             trader.to_string(),
             side,
@@ -84,7 +84,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
          close_position(
             deps,
             env,
-            info.clone(),
+            info,
             vamm,
             trader.to_string(),
             SWAP_CLOSE_REPLY_ID,
@@ -200,5 +200,5 @@ fn read_event(
     event: &Event,
 ) -> Attribute {
     let result = event.attributes.iter().find(|&attr| attr.key == key).unwrap();
-    return result.clone()
+    result.clone()
 }

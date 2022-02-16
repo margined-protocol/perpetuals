@@ -153,7 +153,7 @@ pub fn internal_increase_position(
 ) -> SubMsg {
     swap_input(
         &vamm,
-        side.clone(),
+        side,
         open_notional,
         SWAP_INCREASE_REPLY_ID
     ).unwrap()
@@ -169,9 +169,9 @@ fn open_reverse_position(
     open_notional: Uint128,
 ) -> SubMsg {
     let msg: SubMsg;
-    let position: Position = get_position(env.clone(), deps.storage, &vamm, &trader, side.clone());
+    let position: Position = get_position(env, deps.storage, &vamm, &trader, side.clone());
     let current_notional = query_vamm_output_price(
-        deps.clone(),
+        deps,
         vamm.to_string(),
         position.direction.clone(),
         position.size).unwrap();
@@ -181,7 +181,7 @@ fn open_reverse_position(
         // then we are opening a new position or adding to an existing
         msg = swap_input(
             &vamm,
-            side.clone(),
+            side,
             open_notional,
             SWAP_DECREASE_REPLY_ID
         ).unwrap();
@@ -196,7 +196,7 @@ fn open_reverse_position(
         ).unwrap();
     }
 
-    return msg
+    msg
 }
 
 fn swap_input(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdResult<SubMsg> {
@@ -233,7 +233,7 @@ fn swap_output(
         contract_addr: vamm.to_string(),
         funds: vec![],
         msg: to_binary(&ExecuteMsg::SwapOutput {
-            direction: direction,
+            direction,
             base_asset_amount: open_notional,
         })?,
     };
@@ -241,7 +241,7 @@ fn swap_output(
     let execute_submsg = SubMsg {
         msg: CosmosMsg::Wasm(swap_msg),
         gas_limit: None, // probably should set a limit in the config
-        id: id,
+        id,
         reply_on: ReplyOn::Always,
     };
 
@@ -256,11 +256,13 @@ pub fn get_position(
     side: Side,
 ) -> Position {
     // read the position for the trader from vamm
-    let current_position = read_position(storage, &vamm, &trader).unwrap();
+    let current_position = read_position(storage, vamm, trader).unwrap();
     let mut position = Position::default();
 
     // so if the position returned is None then its new
-    if current_position.is_none() {
+    if let Some(current_position) = current_position {
+        position = current_position;
+    } else {
         let direction: Direction = side_to_direction(side);
 
         // update the default position
@@ -268,9 +270,6 @@ pub fn get_position(
         position.trader = trader.clone();
         position.direction = direction;
         position.timestamp = env.block.time;
-
-    } else {
-        position = current_position.unwrap();
     }
 
     position
