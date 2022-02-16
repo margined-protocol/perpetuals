@@ -415,7 +415,7 @@ fn test_open_position_short_and_two_longs() {
             trader: env.alice.to_string(),
         })
         .unwrap();
-    assert_eq!(Uint128::zero(), position.size);
+    assert_eq!(Uint128::from(1 as u128), position.size);
     assert_eq!(to_decimals(40u64), position.margin);
 
 }

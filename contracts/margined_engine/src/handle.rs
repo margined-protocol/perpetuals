@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    Addr, CosmosMsg, DepsMut, Env, MessageInfo, Response,
+    Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
     ReplyOn, StdError, StdResult, SubMsg, to_binary, Uint128,
     WasmMsg, Storage,
 };
@@ -8,6 +8,7 @@ use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 use margined_perp::margined_engine::{Side};
 use crate::{
     contract::{SWAP_INCREASE_REPLY_ID, SWAP_DECREASE_REPLY_ID, SWAP_REVERSE_REPLY_ID},
+    querier::{query_vamm_output_price},
     state::{
         Config, read_config, store_config,
         Position, read_position, Swap, store_tmp_swap,
@@ -75,7 +76,6 @@ pub fn open_position(
     } else {
         // TODO make this a function maybe called, open_reverse_position
         // if old position is greater then we don't need to reverse just reduce the position
-        println!("{}, {}", position.notional, open_notional);
         msg = open_reverse_position(
             &deps,
             env,
@@ -173,9 +173,14 @@ fn open_reverse_position(
 ) -> SubMsg {
     let msg: SubMsg;
     let position: Position = get_position(env.clone(), deps.storage, &vamm, &trader, side.clone());
-    println!("Position {}", position.notional);
-    if position.notional > open_notional {
-        println!("decrease");
+    let current_notional = query_vamm_output_price(
+        deps.clone(),
+        vamm.to_string(),
+        position.direction.clone(),
+        position.size).unwrap();
+
+    // if position.notional > open_notional {
+    if current_notional > open_notional {
         // then we are opening a new position or adding to an existing
         msg = swap_input(
             &vamm,
@@ -185,7 +190,6 @@ fn open_reverse_position(
         ).unwrap();
 
     } else {    
-        println!("close and open reverse position");        
         // first close position swap out the entire position
         msg = swap_output(
             &vamm,

@@ -1,9 +1,12 @@
-use cosmwasm_std::{Deps, StdResult};
+use cosmwasm_std::{Deps, StdResult, Uint128};
 use margined_perp::margined_vamm::{
-    ConfigResponse, StateResponse,
+    ConfigResponse, Direction, StateResponse,
 };
 
-use crate::state::{Config, read_config, State, read_state};
+use crate::{
+    state::{Config, read_config, State, read_state},
+    handle::{get_output_price_with_reserves},
+};
 
 /// Queries contract Config
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
@@ -31,4 +34,12 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
             decimals: state.decimals,            
         }
     )
+}
+
+/// Queries contract State
+pub fn query_output_price(deps: Deps, direction: Direction, amount: Uint128) -> StdResult<Uint128> {
+    let state: State = read_state(deps.storage)?;
+    let res = get_output_price_with_reserves(&state, &direction, amount)?;
+
+    Ok(res)
 }

@@ -176,7 +176,6 @@ fn execute_transfer(
     receiver: &Addr, 
     amount: Uint128, 
 ) -> StdResult<SubMsg> {
-    println!("LOL AUDREY MASSAGE ME");
     let config = read_config(storage)?;
     let msg = WasmMsg::Execute {
         contract_addr: config.eligible_collateral.to_string(),

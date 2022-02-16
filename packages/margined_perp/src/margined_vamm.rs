@@ -41,6 +41,10 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     Config {},
     State {},
+    OutputPrice {
+        direction: Direction,
+        amount: Uint128,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -94,7 +94,6 @@ pub fn swap_output(
         base_asset_amount,
     )?;
 
-    println!("HERE?");
     Ok(Response::new()
         .add_attributes(vec![
             ("action", "swap_output"),
@@ -163,7 +162,6 @@ pub fn get_output_price_with_reserves(
     if base_asset_amount == Uint128::zero() {
         Uint128::zero();
     }
-    println!("base asset input: {}", base_asset_amount);
     let invariant_k = state.quote_asset_reserve 
         .checked_mul(state.base_asset_reserve)?
         .checked_div(state.decimals)?;
@@ -181,12 +179,10 @@ pub fn get_output_price_with_reserves(
                 .checked_sub(base_asset_amount)?;
         }
     }
-    println!("invariant: {}", invariant_k);
     quote_asset_after = invariant_k
         .checked_mul(state.decimals)?
         .checked_div(base_asset_after)?;
     
-    println!("quote_asset_after: {}", quote_asset_after);
     let mut quote_asset_sold = if quote_asset_after > state.quote_asset_reserve {
         quote_asset_after - state.quote_asset_reserve
     } else {
@@ -201,7 +197,6 @@ pub fn get_output_price_with_reserves(
             quote_asset_sold = quote_asset_sold.checked_add(Uint128::new(1u128))?;
         }
     }
-    println!("quote_asset_sold: {}", quote_asset_sold);
     Ok(quote_asset_sold)
 }
 
@@ -214,9 +209,6 @@ fn update_reserve(
     let state: State = read_state(storage)?;
     let mut update_state = state.clone();
 
-    println!("Quote Asset Reserve: {}", update_state.quote_asset_reserve);
-    println!("Base Asset Reserve: {}", update_state.base_asset_reserve);
-    
     match direction {
         Direction::AddToAmm => {
             update_state.quote_asset_reserve = update_state.quote_asset_reserve
@@ -231,9 +223,6 @@ fn update_reserve(
                 .checked_sub(quote_asset_amount)?;
         }
     }
-
-    println!("Quote Asset Reserve: {}", update_state.quote_asset_reserve);
-    println!("Base Asset Reserve: {}", update_state.base_asset_reserve);
 
     store_state(storage, &update_state)?;
 

@@ -208,7 +208,6 @@ fn parse_swap(
     response: SubMsgExecutionResponse,
 ) -> (Uint128, Uint128) {
     // Find swap inputs and output events
-    println!("{:?}", response);
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");
     let wasm = wasm.unwrap();
     let input_str = read_event("input".to_string(), wasm).value;
