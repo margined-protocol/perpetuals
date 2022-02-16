@@ -41,6 +41,7 @@ pub fn open_position(
     quote_asset_amount: Uint128,
     leverage: Uint128,
 ) -> StdResult<Response> {
+    println!("open_position");
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = deps.api.addr_validate(&trader)?;
     require_vamm(deps.storage, &vamm)?;
@@ -65,8 +66,6 @@ pub fn open_position(
     if is_increase {
         msg = internal_increase_position(vamm.clone(), side.clone(), open_notional);
     } else {
-        // TODO make this a function maybe called, open_reverse_position
-        // if old position is greater then we don't need to reverse just reduce the position
         msg = open_reverse_position(
             &deps,
             env,
@@ -149,6 +148,7 @@ fn open_reverse_position(
     side: Side,
     open_notional: Uint128,
 ) -> SubMsg {
+    println!("open_reverse_position");
     let msg: SubMsg;
     let position: Position = get_position(env, deps.storage, &vamm, &trader, side.clone());
     let current_notional = query_vamm_output_price(
@@ -165,6 +165,8 @@ fn open_reverse_position(
         msg = swap_input(&vamm, side, open_notional, SWAP_DECREASE_REPLY_ID).unwrap();
     } else {
         // first close position swap out the entire position
+        println!("close the positions");
+        println!("{:?}", position);
         msg = swap_output(
             &vamm,
             direction_to_side(position.direction.clone()),

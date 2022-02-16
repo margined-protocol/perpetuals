@@ -6,7 +6,7 @@ use cw20::Cw20ExecuteMsg;
 
 use crate::{
     handle::{clear_position, get_position, internal_increase_position},
-    state::{read_config, read_tmp_swap, remove_tmp_swap, store_position},
+    state::{read_config, store_tmp_swap, read_tmp_swap, remove_tmp_swap, store_position},
     utils::{side_to_direction, switch_side},
 };
 
@@ -17,6 +17,7 @@ pub fn increase_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    let config = read_config(deps.storage)?;
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
         return Err(StdError::generic_err("no temporary position"));
@@ -31,11 +32,18 @@ pub fn increase_position_reply(
         swap.side.clone(),
     );
 
+    println!("{:?}", swap);
+    println!("{:?}", position);
+
     // now update the position
     position.size = position.size.checked_add(output)?;
-    position.margin = position.margin.checked_add(swap.quote_asset_amount)?;
     position.notional = position.notional.checked_add(swap.open_notional)?;
     position.direction = side_to_direction(swap.side);
+
+    // TODO make my own decimal math lib
+    position.margin = position.notional
+        .checked_mul(config.decimals)?
+        .checked_div(swap.leverage)?;
 
     store_position(deps.storage, &position)?;
 
@@ -93,13 +101,15 @@ pub fn reverse_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    println!("reverse_position_reply");
     let response: Response = Response::new();
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
         return Err(StdError::generic_err("no temporary position"));
     }
 
-    let swap = tmp_swap.unwrap();
+    let mut swap = tmp_swap.unwrap();
+    println!("{:?}", swap);
     let mut position = get_position(
         env.clone(),
         deps.storage,
@@ -116,21 +126,23 @@ pub fn reverse_position_reply(
     let margin: Uint128;
     if swap.open_notional > output {
         margin = swap.open_notional.checked_sub(output)?;
+        swap.open_notional = swap.open_notional.checked_sub(output)?;
     } else {
         margin = output.checked_sub(swap.open_notional)?;
+        swap.open_notional = output.checked_sub(swap.open_notional)?;
     }
-
+    println!("{}", margin);
     if margin.checked_div(swap.leverage)? == Uint128::zero() {
         // create transfer message
         msg = execute_transfer(deps.storage, &swap.trader, margin_amount).unwrap();
+        remove_tmp_swap(deps.storage);
     } else {
-        // reverse the position and increase
+        store_tmp_swap(deps.storage, &swap)?;
+
         msg = internal_increase_position(swap.vamm, switch_side(swap.side), margin)
     }
 
     store_position(deps.storage, &position)?;
-
-    remove_tmp_swap(deps.storage);
 
     Ok(response.add_submessage(msg))
 }
