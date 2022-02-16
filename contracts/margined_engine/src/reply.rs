@@ -1,18 +1,13 @@
 use cosmwasm_std::{
-    Addr, CosmosMsg, DepsMut, Env, Response,
-    ReplyOn, StdError, StdResult, SubMsg, to_binary, Uint128,
-    WasmMsg, Storage,
+    to_binary, Addr, CosmosMsg, DepsMut, Env, ReplyOn, Response, StdError, StdResult, Storage,
+    SubMsg, Uint128, WasmMsg,
 };
-use cw20::{Cw20ExecuteMsg};
+use cw20::Cw20ExecuteMsg;
 
 use crate::{
     handle::{clear_position, get_position, internal_increase_position},
-    state::{
-        read_config, store_position, read_tmp_swap, remove_tmp_swap,
-    },
-    utils::{
-        side_to_direction, switch_side,
-    }
+    state::{read_config, read_tmp_swap, remove_tmp_swap, store_position},
+    utils::{side_to_direction, switch_side},
 };
 
 // Increases position after successful execution of the swap
@@ -33,7 +28,7 @@ pub fn increase_position_reply(
         deps.storage,
         &swap.vamm,
         &swap.trader,
-        swap.side.clone()
+        swap.side.clone(),
     );
 
     // now update the position
@@ -50,7 +45,8 @@ pub fn increase_position_reply(
         &swap.trader,
         &env.contract.address,
         position.margin,
-    ).unwrap();
+    )
+    .unwrap();
 
     remove_tmp_swap(deps.storage);
 
@@ -68,14 +64,14 @@ pub fn decrease_position_reply(
     if tmp_swap.is_none() {
         return Err(StdError::generic_err("no temporary position"));
     }
-    
+
     let swap = tmp_swap.unwrap();
     let mut position = get_position(
         env,
         deps.storage,
         &swap.vamm,
         &swap.trader,
-        swap.side.clone()
+        swap.side.clone(),
     );
 
     // now update the position
@@ -89,7 +85,6 @@ pub fn decrease_position_reply(
 
     Ok(Response::new())
 }
-
 
 // Decreases position after successful execution of the swap
 pub fn reverse_position_reply(
@@ -110,7 +105,7 @@ pub fn reverse_position_reply(
         deps.storage,
         &swap.vamm,
         &swap.trader,
-        swap.side.clone()
+        swap.side.clone(),
     );
     let margin_amount = position.margin;
 
@@ -127,11 +122,7 @@ pub fn reverse_position_reply(
 
     if margin.checked_div(swap.leverage)? == Uint128::zero() {
         // create transfer message
-        msg = execute_transfer(
-            deps.storage,
-            &swap.trader,
-            margin_amount,
-        ).unwrap();
+        msg = execute_transfer(deps.storage, &swap.trader, margin_amount).unwrap();
     } else {
         // reverse the position and increase
         msg = internal_increase_position(swap.vamm, switch_side(swap.side), margin)
@@ -140,15 +131,15 @@ pub fn reverse_position_reply(
     store_position(deps.storage, &position)?;
 
     remove_tmp_swap(deps.storage);
-    
+
     Ok(response.add_submessage(msg))
 }
 
 fn execute_transfer_from(
     storage: &dyn Storage,
     owner: &Addr,
-    receiver: &Addr, 
-    amount: Uint128, 
+    receiver: &Addr,
+    amount: Uint128,
 ) -> StdResult<SubMsg> {
     let config = read_config(storage)?;
     let msg = WasmMsg::Execute {
@@ -171,11 +162,7 @@ fn execute_transfer_from(
     Ok(transfer_msg)
 }
 
-fn execute_transfer(
-    storage: &dyn Storage,
-    receiver: &Addr, 
-    amount: Uint128, 
-) -> StdResult<SubMsg> {
+fn execute_transfer(storage: &dyn Storage, receiver: &Addr, amount: Uint128) -> StdResult<SubMsg> {
     let config = read_config(storage)?;
     let msg = WasmMsg::Execute {
         contract_addr: config.eligible_collateral.to_string(),

@@ -1,22 +1,16 @@
 use cosmwasm_std::{
-    Addr, CosmosMsg, DepsMut, Env, MessageInfo, Response,
-    ReplyOn, StdError, StdResult, SubMsg, to_binary, Uint128,
-    WasmMsg, Storage,
+    to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError, StdResult,
+    Storage, SubMsg, Uint128, WasmMsg,
 };
 
-use margined_perp::margined_vamm::{Direction, ExecuteMsg};
-use margined_perp::margined_engine::{Side};
 use crate::{
-    contract::{SWAP_INCREASE_REPLY_ID, SWAP_DECREASE_REPLY_ID, SWAP_REVERSE_REPLY_ID},
-    querier::{query_vamm_output_price},
-    state::{
-        Config, read_config, store_config,
-        Position, read_position, Swap, store_tmp_swap,
-    },
-    utils::{
-        require_vamm, side_to_direction, direction_to_side, switch_direction,
-    }
+    contract::{SWAP_DECREASE_REPLY_ID, SWAP_INCREASE_REPLY_ID, SWAP_REVERSE_REPLY_ID},
+    querier::query_vamm_output_price,
+    state::{read_config, read_position, store_config, store_tmp_swap, Config, Position, Swap},
+    utils::{direction_to_side, require_vamm, side_to_direction, switch_direction},
 };
+use margined_perp::margined_engine::Side;
+use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 
 pub fn update_config(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
@@ -50,7 +44,7 @@ pub fn open_position(
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = deps.api.addr_validate(&trader)?;
     require_vamm(deps.storage, &vamm)?;
-    
+
     let config: Config = read_config(deps.storage)?;
 
     // calc the input amount wrt to leverage and decimals
@@ -70,7 +64,6 @@ pub fn open_position(
     let msg: SubMsg;
     if is_increase {
         msg = internal_increase_position(vamm.clone(), side.clone(), open_notional);
-
     } else {
         // TODO make this a function maybe called, open_reverse_position
         // if old position is greater then we don't need to reverse just reduce the position
@@ -80,7 +73,7 @@ pub fn open_position(
             vamm.clone(),
             trader.clone(),
             side.clone(),
-            open_notional
+            open_notional,
         );
     }
 
@@ -98,10 +91,7 @@ pub fn open_position(
 
     Ok(Response::new()
         .add_submessage(msg)
-        .add_attributes(vec![
-            ("action", "open_position")
-        ])
-    )
+        .add_attributes(vec![("action", "open_position")]))
 }
 
 pub fn close_position(
@@ -146,17 +136,8 @@ pub fn close_position(
 }
 
 // Increase the position, just basically wraps swap input though it may do more in the future
-pub fn internal_increase_position(
-    vamm: Addr,
-    side: Side,
-    open_notional: Uint128,
-) -> SubMsg {
-    swap_input(
-        &vamm,
-        side,
-        open_notional,
-        SWAP_INCREASE_REPLY_ID
-    ).unwrap()
+pub fn internal_increase_position(vamm: Addr, side: Side, open_notional: Uint128) -> SubMsg {
+    swap_input(&vamm, side, open_notional, SWAP_INCREASE_REPLY_ID).unwrap()
 }
 
 // Increase the position, just basically wraps swap input though it may do more in the future
@@ -174,26 +155,23 @@ fn open_reverse_position(
         deps,
         vamm.to_string(),
         position.direction.clone(),
-        position.size).unwrap();
+        position.size,
+    )
+    .unwrap();
 
     // if position.notional > open_notional {
     if current_notional > open_notional {
         // then we are opening a new position or adding to an existing
-        msg = swap_input(
-            &vamm,
-            side,
-            open_notional,
-            SWAP_DECREASE_REPLY_ID
-        ).unwrap();
-
-    } else {    
+        msg = swap_input(&vamm, side, open_notional, SWAP_DECREASE_REPLY_ID).unwrap();
+    } else {
         // first close position swap out the entire position
         msg = swap_output(
             &vamm,
             direction_to_side(position.direction.clone()),
             position.size,
-            SWAP_REVERSE_REPLY_ID
-        ).unwrap();
+            SWAP_REVERSE_REPLY_ID,
+        )
+        .unwrap();
     }
 
     msg
@@ -221,12 +199,7 @@ fn swap_input(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdRe
     Ok(execute_submsg)
 }
 
-fn swap_output(
-    vamm: &Addr,
-    side: Side, 
-    open_notional: Uint128, 
-    id: u64,
-) -> StdResult<SubMsg> {
+fn swap_output(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdResult<SubMsg> {
     let direction: Direction = side_to_direction(side);
 
     let swap_msg = WasmMsg::Execute {
@@ -273,14 +246,10 @@ pub fn get_position(
     }
 
     position
-    
 }
 
 // this resets the main variables of a position
-pub fn clear_position(
-    env: Env,
-    mut position: Position,
-) -> StdResult<Position> {
+pub fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
     position.size = Uint128::zero();
     position.margin = Uint128::zero();
     position.notional = Uint128::zero();

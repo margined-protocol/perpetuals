@@ -7,8 +7,8 @@ use cosmwasm_storage::{
 };
 use cw_storage_plus::Item;
 
-use margined_perp::margined_vamm::Direction;
 use margined_perp::margined_engine::Side;
+use margined_perp::margined_vamm::Direction;
 
 use sha3::{Digest, Sha3_256};
 

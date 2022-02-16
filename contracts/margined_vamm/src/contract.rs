@@ -68,9 +68,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
-        QueryMsg::OutputPrice {
-            direction,
-            amount,
-        } => to_binary(&query_output_price(deps, direction, amount)?),
+        QueryMsg::OutputPrice { direction, amount } => {
+            to_binary(&query_output_price(deps, direction, amount)?)
+        }
     }
 }

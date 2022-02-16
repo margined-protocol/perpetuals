@@ -160,7 +160,7 @@ pub fn get_output_price_with_reserves(
     quote_asset_after = invariant_k
         .checked_mul(state.decimals)?
         .checked_div(base_asset_after)?;
-    
+
     let mut quote_asset_sold = if quote_asset_after > state.quote_asset_reserve {
         quote_asset_after - state.quote_asset_reserve
     } else {

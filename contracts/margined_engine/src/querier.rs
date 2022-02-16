@@ -1,11 +1,7 @@
 // Contains queries for external contracts
-use cosmwasm_std::{
-    to_binary, DepsMut, QueryRequest, StdResult, Uint128, WasmQuery,
-};
+use cosmwasm_std::{to_binary, DepsMut, QueryRequest, StdResult, Uint128, WasmQuery};
 
-use margined_perp::margined_vamm::{
-    Direction, QueryMsg, StateResponse,
-};
+use margined_perp::margined_vamm::{Direction, QueryMsg, StateResponse};
 
 // returns the state of the request vamm
 // can be used to calculate the input and outputs
@@ -26,6 +22,6 @@ pub fn query_vamm_output_price(
 ) -> StdResult<Uint128> {
     deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: address,
-        msg: to_binary(&QueryMsg::OutputPrice {direction, amount})?,
+        msg: to_binary(&QueryMsg::OutputPrice { direction, amount })?,
     }))
 }

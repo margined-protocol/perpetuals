@@ -1,25 +1,19 @@
-#[cfg(not(feature = "library"))]
-use std::str::FromStr;
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, from_binary, Binary, ContractResult, Deps, DepsMut, Env, Event, MessageInfo,
-    Reply, Response, StdResult, StdError, Uint128, SubMsgExecutionResponse, Attribute,
+    from_binary, to_binary, Attribute, Binary, ContractResult, Deps, DepsMut, Env, Event,
+    MessageInfo, Reply, Response, StdError, StdResult, SubMsgExecutionResponse, Uint128,
 };
-use cw20::{Cw20ReceiveMsg};
-use margined_perp::margined_engine::{
-    ExecuteMsg, InstantiateMsg, QueryMsg, Cw20HookMsg,
-};
+use cw20::Cw20ReceiveMsg;
+use margined_perp::margined_engine::{Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
+#[cfg(not(feature = "library"))]
+use std::str::FromStr;
 
 use crate::error::ContractError;
 use crate::{
-    handle::{
-        update_config, open_position, close_position,
-    },
-    query::{
-        query_config, query_position, query_trader_balance_with_funding_payment,
-    },
-    reply::{increase_position_reply, decrease_position_reply, reverse_position_reply},
-    state::{Config, read_config, store_config, store_vamm},
+    handle::{close_position, open_position, update_config},
+    query::{query_config, query_position, query_trader_balance_with_funding_payment},
+    reply::{decrease_position_reply, increase_position_reply, reverse_position_reply},
+    state::{read_config, store_config, store_vamm, Config},
 };
 
 pub const SWAP_INCREASE_REPLY_ID: u64 = 1;
@@ -65,30 +59,30 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             side,
             quote_asset_amount,
             leverage,
-         } => {
-             let trader = info.sender.clone();
-         open_position(
-            deps,
-            env,
-            info,
-            vamm,
-            trader.to_string(),
-            side,
-            quote_asset_amount,
-            leverage,
-        )},
-        ExecuteMsg::ClosePosition {
-            vamm,
-         } => {
-             let trader = info.sender.clone();
-         close_position(
-            deps,
-            env,
-            info,
-            vamm,
-            trader.to_string(),
-            SWAP_CLOSE_REPLY_ID,
-        )},
+        } => {
+            let trader = info.sender.clone();
+            open_position(
+                deps,
+                env,
+                info,
+                vamm,
+                trader.to_string(),
+                side,
+                quote_asset_amount,
+                leverage,
+            )
+        }
+        ExecuteMsg::ClosePosition { vamm } => {
+            let trader = info.sender.clone();
+            close_position(
+                deps,
+                env,
+                info,
+                vamm,
+                trader.to_string(),
+                SWAP_CLOSE_REPLY_ID,
+            )
+        }
     }
 }
 
@@ -137,43 +131,26 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
     match msg.result {
-        ContractResult::Ok(response) => {
-            match msg.id {
-                SWAP_INCREASE_REPLY_ID => {
-                    let (input, output) = parse_swap(response);
-                    let response = increase_position_reply(
-                        deps,
-                        env,
-                        input,
-                        output,
-                    )?;
-                    Ok(response)
-                },
-                SWAP_DECREASE_REPLY_ID => {
-                    let (input, output) = parse_swap(response);
-                    let response = decrease_position_reply(
-                        deps,
-                        env,
-                        input,
-                        output,
-                    )?;
-                    Ok(response)
-                },
-                SWAP_REVERSE_REPLY_ID => {
-                    let (input, output) = parse_swap(response);
-                    let response = reverse_position_reply(
-                        deps,
-                        env,
-                        input,
-                        output,
-                    )?;
-                    Ok(response)
-                },
-                _ => Err(StdError::generic_err(format!(
-                    "reply (id {:?}) invalid",
-                    msg.id
-                ))),
+        ContractResult::Ok(response) => match msg.id {
+            SWAP_INCREASE_REPLY_ID => {
+                let (input, output) = parse_swap(response);
+                let response = increase_position_reply(deps, env, input, output)?;
+                Ok(response)
             }
+            SWAP_DECREASE_REPLY_ID => {
+                let (input, output) = parse_swap(response);
+                let response = decrease_position_reply(deps, env, input, output)?;
+                Ok(response)
+            }
+            SWAP_REVERSE_REPLY_ID => {
+                let (input, output) = parse_swap(response);
+                let response = reverse_position_reply(deps, env, input, output)?;
+                Ok(response)
+            }
+            _ => Err(StdError::generic_err(format!(
+                "reply (id {:?}) invalid",
+                msg.id
+            ))),
         },
         ContractResult::Err(e) => Err(StdError::generic_err(format!(
             "reply (id {:?}) error {:?}",
@@ -195,10 +172,11 @@ fn parse_swap(response: SubMsgExecutionResponse) -> (Uint128, Uint128) {
     (input, output)
 }
 
-fn read_event(
-    key: String,
-    event: &Event,
-) -> Attribute {
-    let result = event.attributes.iter().find(|&attr| attr.key == key).unwrap();
+fn read_event(key: String, event: &Event) -> Attribute {
+    let result = event
+        .attributes
+        .iter()
+        .find(|&attr| attr.key == key)
+        .unwrap();
     result.clone()
 }
