@@ -6,7 +6,7 @@ use cosmwasm_std::{
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
-use crate::query::query_output_price;
+use crate::query::{query_calc_fee, query_output_price};
 use crate::{
     handle::{swap_input, swap_output, update_config},
     query::{query_config, query_state},
@@ -26,18 +26,16 @@ pub fn instantiate(
         base_asset: msg.base_asset,
         toll_ratio: msg.toll_ratio,
         spread_ratio: msg.spread_ratio,
+        decimals: Uint128::from(10u128.pow(msg.decimals as u32)),
     };
 
     store_config(deps.storage, &config)?;
-
-    let decimals = Uint128::from(10u128.pow(msg.decimals as u32));
 
     let state = State {
         base_asset_reserve: msg.base_asset_reserve,
         quote_asset_reserve: msg.quote_asset_reserve,
         funding_rate: Uint128::zero(), // Initialise the funding rate as 0
         funding_period: msg.funding_period, // Funding period in seconds
-        decimals,
     };
 
     store_state(deps.storage, &state)?;
@@ -76,6 +74,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::State {} => to_binary(&query_state(deps)?),
         QueryMsg::OutputPrice { direction, amount } => {
             to_binary(&query_output_price(deps, direction, amount)?)
+        }
+        QueryMsg::CalcFee { quote_asset_amount } => {
+            to_binary(&query_calc_fee(deps, quote_asset_amount)?)
         }
     }
 }

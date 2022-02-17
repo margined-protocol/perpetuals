@@ -1,4 +1,4 @@
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdResult, Storage, Uint128};
+use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdResult, Storage, Uint128};
 
 use crate::{
     error::ContractError,
@@ -48,9 +48,8 @@ pub fn swap_input(
     direction: Direction,
     quote_asset_amount: Uint128,
 ) -> Result<Response, ContractError> {
-    let state: State = read_state(deps.storage)?;
-
-    let base_asset_amount = get_input_price_with_reserves(&state, &direction, quote_asset_amount)?;
+    let base_asset_amount =
+        get_input_price_with_reserves(deps.as_ref(), &direction, quote_asset_amount)?;
 
     update_reserve(
         deps.storage,
@@ -74,9 +73,8 @@ pub fn swap_output(
     direction: Direction,
     base_asset_amount: Uint128,
 ) -> Result<Response, ContractError> {
-    let state: State = read_state(deps.storage)?;
-
-    let quote_asset_amount = get_output_price_with_reserves(&state, &direction, base_asset_amount)?;
+    let quote_asset_amount =
+        get_output_price_with_reserves(deps.as_ref(), &direction, base_asset_amount)?;
 
     // flip direction when updating reserve
     let mut update_direction = direction;
@@ -101,10 +99,13 @@ pub fn swap_output(
 }
 
 pub fn get_input_price_with_reserves(
-    state: &State,
+    deps: Deps,
     direction: &Direction,
     quote_asset_amount: Uint128,
 ) -> StdResult<Uint128> {
+    let state: State = read_state(deps.storage)?;
+    let config: Config = read_config(deps.storage)?;
+
     if quote_asset_amount == Uint128::zero() {
         Uint128::zero();
     }
@@ -113,7 +114,7 @@ pub fn get_input_price_with_reserves(
     let invariant_k = state
         .quote_asset_reserve
         .checked_mul(state.base_asset_reserve)?
-        .checked_div(state.decimals)?;
+        .checked_div(config.decimals)?;
 
     let quote_asset_after: Uint128;
     let base_asset_after: Uint128;
@@ -128,7 +129,7 @@ pub fn get_input_price_with_reserves(
     }
 
     base_asset_after = invariant_k
-        .checked_mul(state.decimals)?
+        .checked_mul(config.decimals)?
         .checked_div(quote_asset_after)?;
 
     let mut base_asset_bought = if base_asset_after > state.base_asset_reserve {
@@ -150,17 +151,20 @@ pub fn get_input_price_with_reserves(
 }
 
 pub fn get_output_price_with_reserves(
-    state: &State,
+    deps: Deps,
     direction: &Direction,
     base_asset_amount: Uint128,
 ) -> StdResult<Uint128> {
+    let state: State = read_state(deps.storage)?;
+    let config: Config = read_config(deps.storage)?;
+
     if base_asset_amount == Uint128::zero() {
         Uint128::zero();
     }
     let invariant_k = state
         .quote_asset_reserve
         .checked_mul(state.base_asset_reserve)?
-        .checked_div(state.decimals)?;
+        .checked_div(config.decimals)?;
 
     let quote_asset_after: Uint128;
     let base_asset_after: Uint128;
@@ -174,7 +178,7 @@ pub fn get_output_price_with_reserves(
         }
     }
     quote_asset_after = invariant_k
-        .checked_mul(state.decimals)?
+        .checked_mul(config.decimals)?
         .checked_div(base_asset_after)?;
 
     let mut quote_asset_sold = if quote_asset_after > state.quote_asset_reserve {

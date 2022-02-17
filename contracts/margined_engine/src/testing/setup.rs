@@ -98,6 +98,8 @@ pub fn setup() -> TestingEnv {
                 quote_asset_reserve: to_decimals(1_000),
                 base_asset_reserve: to_decimals(100),
                 funding_period: 3_600 as u64,
+                toll_ratio: Uint128::zero(),
+                spread_ratio: Uint128::zero(),
             },
             &[],
             "vamm",

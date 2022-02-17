@@ -1,8 +1,8 @@
 use cosmwasm_std::{Deps, StdResult, Uint128};
-use margined_perp::margined_vamm::{ConfigResponse, Direction, StateResponse};
+use margined_perp::margined_vamm::{CalcFeeResponse, ConfigResponse, Direction, StateResponse};
 
 use crate::{
-    handle::{get_input_price_with_reserves, get_output_price_with_reserves},
+    handle::get_output_price_with_reserves,
     state::{read_config, read_state, Config, State},
 };
 
@@ -14,6 +14,9 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         owner: config.owner,
         quote_asset: config.quote_asset,
         base_asset: config.base_asset,
+        toll_ratio: config.toll_ratio,
+        spread_ratio: config.spread_ratio,
+        decimals: config.decimals,
     })
 }
 
@@ -26,22 +29,33 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
         base_asset_reserve: state.base_asset_reserve,
         funding_rate: state.funding_rate,
         funding_period: state.funding_period,
-        decimals: state.decimals,
     })
 }
 
 /// Queries output price
 pub fn query_output_price(deps: Deps, direction: Direction, amount: Uint128) -> StdResult<Uint128> {
-    let state: State = read_state(deps.storage)?;
-    let res = get_output_price_with_reserves(&state, &direction, amount)?;
+    let res = get_output_price_with_reserves(deps, &direction, amount)?;
 
     Ok(res)
 }
 
-// /// Queries output price
-// pub fn query_calc_fee(deps: Deps, quote_asset_amount: Uint128) -> StdResult<Uint128> {
-//     let state: State = read_state(deps.storage)?;
-//     let res = get_output_price_with_reserves(&state, &direction, amount)?;
+/// Returns the total (i.e. toll + spread) fees for an amount
+pub fn query_calc_fee(deps: Deps, quote_asset_amount: Uint128) -> StdResult<CalcFeeResponse> {
+    let mut res = CalcFeeResponse {
+        toll_fee: Uint128::zero(),
+        spread_fee: Uint128::zero(),
+    };
 
-//     Ok(res)
-// }
+    if quote_asset_amount != Uint128::zero() {
+        let config: Config = read_config(deps.storage)?;
+
+        res.toll_fee = quote_asset_amount
+            .checked_mul(config.toll_ratio)?
+            .checked_div(config.decimals)?;
+        res.spread_fee = quote_asset_amount
+            .checked_mul(config.spread_ratio)?
+            .checked_div(config.decimals)?;
+    }
+
+    Ok(res)
+}
