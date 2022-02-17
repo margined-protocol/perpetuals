@@ -41,7 +41,7 @@ pub fn switch_direction(dir: Direction) -> Direction {
 
 // takes the side (buy|sell) and returns opposite (short|long)
 // this is useful when closing/reversing a position
-pub fn switch_side(dir: Side) -> Side {
+pub fn _switch_side(dir: Side) -> Side {
     match dir {
         Side::BUY => Side::SELL,
         Side::SELL => Side::BUY,

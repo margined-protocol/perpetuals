@@ -12,6 +12,9 @@ pub struct Config {
     pub owner: Addr,
     pub quote_asset: String,
     pub base_asset: String,
+    pub decimals: Uint128,
+    pub toll_ratio: Uint128,
+    pub spread_ratio: Uint128,
 }
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
@@ -27,7 +30,6 @@ pub struct State {
     pub quote_asset_reserve: Uint128,
     pub base_asset_reserve: Uint128,
     pub funding_rate: Uint128,
-    pub decimals: Uint128,
     pub funding_period: u64,
 }
 

@@ -16,6 +16,8 @@ fn test_instantiation() {
         quote_asset_reserve: Uint128::from(100u128),
         base_asset_reserve: Uint128::from(10_000u128),
         funding_period: 3_600 as u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -29,6 +31,9 @@ fn test_instantiation() {
             owner: info.sender.clone(),
             quote_asset: "ETH".to_string(),
             base_asset: "USD".to_string(),
+            toll_ratio: Uint128::zero(),
+            spread_ratio: Uint128::zero(),
+            decimals: DECIMAL_MULTIPLIER,
         }
     );
 
@@ -41,7 +46,6 @@ fn test_instantiation() {
             base_asset_reserve: Uint128::from(10_000u128),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: DECIMAL_MULTIPLIER,
         }
     );
 }
@@ -56,13 +60,17 @@ fn test_update_config() {
         quote_asset_reserve: Uint128::from(100u128),
         base_asset_reserve: Uint128::from(10_000u128),
         funding_period: 3_600 as u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     // Update the config
     let msg = ExecuteMsg::UpdateConfig {
-        owner: "addr0001".to_string(),
+        owner: Some("addr0001".to_string()),
+        toll_ratio: None,
+        spread_ratio: None,
     };
 
     let info = mock_info("addr0000", &[]);
@@ -76,6 +84,9 @@ fn test_update_config() {
             owner: Addr::unchecked("addr0001".to_string()),
             quote_asset: "ETH".to_string(),
             base_asset: "USD".to_string(),
+            toll_ratio: Uint128::zero(),
+            spread_ratio: Uint128::zero(),
+            decimals: DECIMAL_MULTIPLIER,
         }
     );
 }
@@ -90,6 +101,8 @@ fn test_swap_input_long() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -111,7 +124,6 @@ fn test_swap_input_long() {
             base_asset_reserve: Uint128::from(62_500_000_000u128),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: DECIMAL_MULTIPLIER,
         }
     );
 }
@@ -126,6 +138,8 @@ fn test_swap_input_short() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -147,7 +161,6 @@ fn test_swap_input_short() {
             base_asset_reserve: to_decimals(250),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: DECIMAL_MULTIPLIER,
         }
     );
 }
@@ -162,6 +175,8 @@ fn test_swap_output_short() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -183,7 +198,6 @@ fn test_swap_output_short() {
             base_asset_reserve: to_decimals(250),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: DECIMAL_MULTIPLIER,
         }
     );
 }
@@ -198,6 +212,8 @@ fn test_swap_output_long() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -219,7 +235,6 @@ fn test_swap_output_long() {
             base_asset_reserve: to_decimals(50),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: DECIMAL_MULTIPLIER,
         }
     );
 }
@@ -234,6 +249,8 @@ fn test_swap_input_short_long() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -256,7 +273,6 @@ fn test_swap_input_short_long() {
             base_asset_reserve: Uint128::from(192_307_692_308u128),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: DECIMAL_MULTIPLIER,
         }
     );
 
@@ -277,7 +293,6 @@ fn test_swap_input_short_long() {
             base_asset_reserve: Uint128::from(67_567_567_568u128),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: DECIMAL_MULTIPLIER,
         }
     );
 }
@@ -292,6 +307,8 @@ fn test_swap_input_short_long_long() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -313,7 +330,6 @@ fn test_swap_input_short_long_long() {
             base_asset_reserve: to_decimals(125),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: DECIMAL_MULTIPLIER,
         }
     );
 
@@ -334,7 +350,6 @@ fn test_swap_input_short_long_long() {
             base_asset_reserve: Uint128::from(111_111_111_112u128),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: DECIMAL_MULTIPLIER,
         }
     );
 
@@ -355,7 +370,6 @@ fn test_swap_input_short_long_long() {
             base_asset_reserve: Uint128::from(90_909_090_910u128),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: DECIMAL_MULTIPLIER,
         }
     );
 }
@@ -370,6 +384,8 @@ fn test_swap_input_short_long_short() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -391,7 +407,6 @@ fn test_swap_input_short_long_short() {
             base_asset_reserve: to_decimals(125),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: DECIMAL_MULTIPLIER,
         }
     );
 
@@ -412,7 +427,6 @@ fn test_swap_input_short_long_short() {
             base_asset_reserve: to_decimals(80),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: DECIMAL_MULTIPLIER,
         }
     );
 
@@ -433,7 +447,6 @@ fn test_swap_input_short_long_short() {
             base_asset_reserve: to_decimals(100),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: DECIMAL_MULTIPLIER,
         }
     );
 }
@@ -445,9 +458,11 @@ fn test_swap_input_long_integration_example() {
         decimals: 9u8,
         quote_asset: "ETH/USD".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: Uint128::from(1_000_000_000_000u128),
-        base_asset_reserve: Uint128::from(100_000_000_000u128),
+        quote_asset_reserve: to_decimals(1_000),
+        base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -469,7 +484,6 @@ fn test_swap_input_long_integration_example() {
             base_asset_reserve: Uint128::from(62_500_000_000u128),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: Uint128::from(1_000_000_000u128),
         }
     );
 }
@@ -481,9 +495,11 @@ fn test_swap_input_long_short_integration_example() {
         decimals: 9u8,
         quote_asset: "ETH/USD".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: Uint128::from(1_000_000_000_000u128),
-        base_asset_reserve: Uint128::from(100_000_000_000u128),
+        quote_asset_reserve: to_decimals(1_000),
+        base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -505,7 +521,6 @@ fn test_swap_input_long_short_integration_example() {
             base_asset_reserve: Uint128::from(62_500_000_000u128),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: Uint128::from(1_000_000_000u128),
         }
     );
 
@@ -526,7 +541,6 @@ fn test_swap_input_long_short_integration_example() {
             base_asset_reserve: Uint128::from(100_000_000_000u128),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: Uint128::from(1_000_000_000u128),
         }
     );
 }
@@ -541,6 +555,8 @@ fn test_swap_input_twice_short_long() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -571,7 +587,6 @@ fn test_swap_input_twice_short_long() {
             base_asset_reserve: Uint128::from(100_000_000_001u128),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: DECIMAL_MULTIPLIER,
         }
     );
 }
@@ -586,6 +601,8 @@ fn test_swap_input_twice_long_short() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -616,7 +633,6 @@ fn test_swap_input_twice_long_short() {
             base_asset_reserve: Uint128::from(100_000_000_001u128),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: DECIMAL_MULTIPLIER,
         }
     );
 }
@@ -631,6 +647,8 @@ fn test_swap_output_twice_short_long() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -661,7 +679,6 @@ fn test_swap_output_twice_short_long() {
             base_asset_reserve: to_decimals(100),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: DECIMAL_MULTIPLIER,
         }
     );
 }
@@ -676,6 +693,8 @@ fn test_swap_output_twice_long_short() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -706,7 +725,6 @@ fn test_swap_output_twice_long_short() {
             base_asset_reserve: to_decimals(100),
             funding_rate: Uint128::zero(),
             funding_period: 3_600 as u64,
-            decimals: DECIMAL_MULTIPLIER,
         }
     );
 }

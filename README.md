@@ -1,9 +1,13 @@
-# Margin Protocol virtual Automated Market Maker (vAMM)
+# Margined Protocol Perpertuals
 
 [![Continuous Integration](https://github.com/shapeshed/mrgnd-perpetuals/actions/workflows/ci.yml/badge.svg)](https://github.com/shapeshed/mrgnd-perpetuals/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/shapeshed/mrgnd-perpetuals/branch/main/graph/badge.svg?token=OXwMwRifUv)](https://codecov.io/gh/shapeshed/mrgnd-perpetuals)
 
-This repo contains a template vAMM for use on Terra blockchain.
+This repo contains a perpetual protocol for use on CosmWasm blockchains.
+
+## Quickstart
+
+TODO
 
 ## To Do List
 
@@ -26,7 +30,8 @@ This repo contains a template vAMM for use on Terra blockchain.
         - [ ] Update vAmms, i.e. append, remove etc
         - [ ] Update vAmms, i.e. append, remove etc
     - [ ] Query
-- [ ] Oracle
+- [ ] [Oracle](https://github.com/terra-money/tefi-oracle-contracts)
+  - [ ] PriceFeed contract that integrates against TeFi hub
   - [ ] Wrapper for TeFi oracles which do calcs listed below
   - [ ] TWAP
   - [ ] ???
@@ -35,10 +40,6 @@ This repo contains a template vAMM for use on Terra blockchain.
 - [ ] General
   - [ ] Code comment documentation
   - [ ] Code Coverage - cargo-tarpaulin   
-
-## Quickstart
-
-TODO
 
 ## Reading / Docs
 

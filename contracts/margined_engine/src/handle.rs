@@ -65,8 +65,6 @@ pub fn open_position(
     if is_increase {
         msg = internal_increase_position(vamm.clone(), side.clone(), open_notional);
     } else {
-        // TODO make this a function maybe called, open_reverse_position
-        // if old position is greater then we don't need to reverse just reduce the position
         msg = open_reverse_position(
             &deps,
             env,

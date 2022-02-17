@@ -442,3 +442,157 @@ fn test_open_position_short_and_two_longs() {
     assert_eq!(Uint128::from(1 as u128), position.size);
     assert_eq!(to_decimals(40u64), position.margin);
 }
+
+#[test]
+fn test_open_position_short_long_short() {
+    let mut env = setup::setup();
+
+    // verify the engine owner
+    let _config: ConfigResponse = env
+        .router
+        .wrap()
+        .query_wasm_smart(&env.engine.addr, &QueryMsg::Config {})
+        .unwrap();
+
+    let msg = ExecuteMsg::OpenPosition {
+        vamm: env.vamm.addr.to_string(),
+        side: Side::SELL,
+        quote_asset_amount: to_decimals(20u64),
+        leverage: to_decimals(10u64),
+    };
+
+    let _res = env
+        .router
+        .execute_contract(env.alice.clone(), env.engine.addr.clone(), &msg, &[])
+        .unwrap();
+
+    let msg = ExecuteMsg::OpenPosition {
+        vamm: env.vamm.addr.to_string(),
+        side: Side::BUY,
+        quote_asset_amount: to_decimals(150u64),
+        leverage: to_decimals(3u64),
+    };
+
+    let _res = env
+        .router
+        .execute_contract(env.alice.clone(), env.engine.addr.clone(), &msg, &[])
+        .unwrap();
+
+    let position: PositionResponse = env
+        .router
+        .wrap()
+        .query_wasm_smart(
+            &env.engine.addr,
+            &QueryMsg::Position {
+                vamm: env.vamm.addr.to_string(),
+                trader: env.alice.to_string(),
+            },
+        )
+        .unwrap();
+    assert_eq!(to_decimals(20u64), position.size);
+    assert_eq!(Uint128::new(83_333_333_333), position.margin);
+
+    let msg = ExecuteMsg::OpenPosition {
+        vamm: env.vamm.addr.to_string(),
+        side: Side::SELL,
+        quote_asset_amount: to_decimals(25u64),
+        leverage: to_decimals(10u64),
+    };
+
+    let _res = env
+        .router
+        .execute_contract(env.alice.clone(), env.engine.addr.clone(), &msg, &[])
+        .unwrap();
+
+    // retrieve the vamm state
+    let position: PositionResponse = env
+        .router
+        .wrap()
+        .query_wasm_smart(
+            &env.engine.addr,
+            &QueryMsg::Position {
+                vamm: env.vamm.addr.to_string(),
+                trader: env.alice.to_string(),
+            },
+        )
+        .unwrap();
+    assert_eq!(Uint128::zero(), position.size);
+    assert_eq!(Uint128::zero(), position.margin);
+}
+
+#[test]
+fn test_open_position_long_short_short() {
+    let mut env = setup::setup();
+
+    // verify the engine owner
+    let _config: ConfigResponse = env
+        .router
+        .wrap()
+        .query_wasm_smart(&env.engine.addr, &QueryMsg::Config {})
+        .unwrap();
+
+    let msg = ExecuteMsg::OpenPosition {
+        vamm: env.vamm.addr.to_string(),
+        side: Side::BUY,
+        quote_asset_amount: to_decimals(25u64),
+        leverage: to_decimals(10u64),
+    };
+
+    let _res = env
+        .router
+        .execute_contract(env.alice.clone(), env.engine.addr.clone(), &msg, &[])
+        .unwrap();
+
+    let msg = ExecuteMsg::OpenPosition {
+        vamm: env.vamm.addr.to_string(),
+        side: Side::SELL,
+        quote_asset_amount: to_decimals(150u64),
+        leverage: to_decimals(3u64),
+    };
+
+    let _res = env
+        .router
+        .execute_contract(env.alice.clone(), env.engine.addr.clone(), &msg, &[])
+        .unwrap();
+
+    let position: PositionResponse = env
+        .router
+        .wrap()
+        .query_wasm_smart(
+            &env.engine.addr,
+            &QueryMsg::Position {
+                vamm: env.vamm.addr.to_string(),
+                trader: env.alice.to_string(),
+            },
+        )
+        .unwrap();
+    assert_eq!(to_decimals(25u64), position.size);
+    assert_eq!(Uint128::new(66_666_666_666), position.margin);
+
+    let msg = ExecuteMsg::OpenPosition {
+        vamm: env.vamm.addr.to_string(),
+        side: Side::BUY,
+        quote_asset_amount: to_decimals(20u64),
+        leverage: to_decimals(10u64),
+    };
+
+    let _res = env
+        .router
+        .execute_contract(env.alice.clone(), env.engine.addr.clone(), &msg, &[])
+        .unwrap();
+
+    // retrieve the vamm state
+    let position: PositionResponse = env
+        .router
+        .wrap()
+        .query_wasm_smart(
+            &env.engine.addr,
+            &QueryMsg::Position {
+                vamm: env.vamm.addr.to_string(),
+                trader: env.alice.to_string(),
+            },
+        )
+        .unwrap();
+    assert_eq!(Uint128::zero(), position.size);
+    assert_eq!(Uint128::zero(), position.margin);
+}
