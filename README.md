@@ -3,11 +3,53 @@
 [![Continuous Integration](https://github.com/shapeshed/mrgnd-perpetuals/actions/workflows/ci.yml/badge.svg)](https://github.com/shapeshed/mrgnd-perpetuals/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/shapeshed/mrgnd-perpetuals/branch/main/graph/badge.svg?token=OXwMwRifUv)](https://codecov.io/gh/shapeshed/mrgnd-perpetuals)
 
-This repo contains a perpetual protocol for use on CosmWasm blockchains.
+This repo contains a the Margined Protocol a decentralized perpetual contract protocol on the Terra Blockchain.
 
-## Quickstart
+## Contracts
 
-TODO
+| Contract                                                | Reference | Description                                                                                           |
+| ------------------------------------------------------- | --------- | ----------------------------------------------------------------------------------------------------- |
+| [`Margin Engine`](./contracts/margined-engine)          | [doc]()   | Margin engine that manages users positions and the collateral management                              |
+| [`vAMM`](./contracts/margined-vamm)                     | [doc]()   | Virtual AMM enabling users to take perpetual positions                                                |
+| [`Price Feed`](./contracts/margined-price-feed)         | [doc]()   | Integration contract for the data oracles and other data related logic                                |
+| [`Governance`](./contracts/margined-price-feed)         | [doc]()   | TODO                                                                                                  |
+| [`Factory`](./contracts/margined-price-feed)            | [doc]()   | TODO                                                                                                  |
+
+## Get started
+
+### Environment Setup
+
+- Rust v1.44.1+
+- `wasm32-unknown-unknown` target
+- Docker
+
+1. Install `rustup` via https://rustup.rs/
+
+2. Run the following:
+
+```sh
+rustup default stable
+rustup target add wasm32-unknown-unknown
+```
+
+3. Make sure [Docker](https://www.docker.com/) is installed
+
+### Unit / Integration Tests
+
+Each contract contains Rust unit and integration tests embedded within the contract source directories. You can run:
+
+```sh
+cargo unit-test
+cargo integration-test
+```
+### Build
+
+Clone this repository and build the source code:
+```
+git clone git@github.com:margined-protocol/mrgnd-perpetuals.git
+cd mrgnd-perpetuals
+cargo build
+```
 
 ## To Do List
 
@@ -20,12 +62,12 @@ TODO
         - [x] Long / Short
         - [ ] SettleFunding
     - [ ] Query
-        - Latest Price
+        - [x] Latest Price
 - [ ] Margin Engine
     - [x] Initialise
         - [x] owner, vAMM, etc
     - [ ] Execute
-        - [ ] New position / Close position
+        - [x] New position / Close position
         - [ ] New eligible collateral (maybe? potentially we only allow a single type? would make x-margin easier)
         - [ ] Update vAmms, i.e. append, remove etc
         - [ ] Update vAmms, i.e. append, remove etc
@@ -35,11 +77,14 @@ TODO
   - [ ] Wrapper for TeFi oracles which do calcs listed below
   - [ ] TWAP
   - [ ] ???
+- [ ] Decimal Library
+  - General decimal calculation library for use around with my fixed point decimals
 - [ ] Factory
 - [ ] Governance
 - [ ] General
   - [ ] Code comment documentation
-  - [ ] Code Coverage - cargo-tarpaulin   
+  - [x] Code Coverage - cargo-tarpaulin   
+  - [x] Code linting
 
 ## Reading / Docs
 
