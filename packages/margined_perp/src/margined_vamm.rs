@@ -18,6 +18,8 @@ pub struct InstantiateMsg {
     pub quote_asset_reserve: Uint128,
     pub base_asset_reserve: Uint128,
     pub funding_period: u64,
+    pub toll_ratio: Uint128,
+    pub spread_ratio: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -32,7 +34,9 @@ pub enum ExecuteMsg {
         base_asset_amount: Uint128,
     },
     UpdateConfig {
-        owner: String,
+        owner: Option<String>,
+        toll_ratio: Option<Uint128>,
+        spread_ratio: Option<Uint128>,
     },
 }
 

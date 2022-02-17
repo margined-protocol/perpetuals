@@ -30,7 +30,8 @@ TODO
         - [ ] Update vAmms, i.e. append, remove etc
         - [ ] Update vAmms, i.e. append, remove etc
     - [ ] Query
-- [ ] Oracle
+- [ ] [Oracle](https://github.com/terra-money/tefi-oracle-contracts)
+  - [ ] PriceFeed contract that integrates against TeFi hub
   - [ ] Wrapper for TeFi oracles which do calcs listed below
   - [ ] TWAP
   - [ ] ???

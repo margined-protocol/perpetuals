@@ -24,6 +24,8 @@ pub fn instantiate(
         owner: info.sender,
         quote_asset: msg.quote_asset,
         base_asset: msg.base_asset,
+        toll_ratio: msg.toll_ratio,
+        spread_ratio: msg.spread_ratio,
     };
 
     store_config(deps.storage, &config)?;
@@ -51,7 +53,11 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::UpdateConfig { owner } => update_config(deps, info, owner),
+        ExecuteMsg::UpdateConfig {
+            owner,
+            toll_ratio,
+            spread_ratio,
+        } => update_config(deps, info, owner, toll_ratio, spread_ratio),
         ExecuteMsg::SwapInput {
             direction,
             quote_asset_amount,

@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, DepsMut, Env, MessageInfo, Response, StdResult, Storage, Uint128};
+use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdResult, Storage, Uint128};
 
 use crate::{
     error::ContractError,
@@ -8,18 +8,34 @@ use margined_perp::margined_vamm::Direction;
 
 pub fn update_config(
     deps: DepsMut,
-    _info: MessageInfo,
-    owner: String,
+    info: MessageInfo,
+    owner: Option<String>,
+    toll_ratio: Option<Uint128>,
+    spread_ratio: Option<Uint128>,
 ) -> Result<Response, ContractError> {
-    let config = read_config(deps.storage)?;
+    let mut config: Config = read_config(deps.storage)?;
 
-    let new_config = Config {
-        owner: Addr::unchecked(owner),
-        quote_asset: config.quote_asset,
-        base_asset: config.base_asset,
-    };
+    // check permission
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
 
-    store_config(deps.storage, &new_config)?;
+    // change owner of amm
+    if let Some(owner) = owner {
+        config.owner = deps.api.addr_validate(owner.as_str())?;
+    }
+
+    // change toll ratio
+    if let Some(toll_ratio) = toll_ratio {
+        config.toll_ratio = toll_ratio;
+    }
+
+    // change spread ratio
+    if let Some(spread_ratio) = spread_ratio {
+        config.spread_ratio = spread_ratio;
+    }
+
+    store_config(deps.storage, &config)?;
 
     Ok(Response::default())
 }
