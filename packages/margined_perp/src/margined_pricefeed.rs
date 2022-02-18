@@ -19,21 +19,19 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    // SetLatestData,
-    UpdateConfig {
-        owner: Option<String>,
-    },
+    AppendPrice { key: String, price: Uint128 },
+    UpdateConfig { owner: Option<String> },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
-//     Price {},
-//     LatestTimestamp {},
-//     PreviousPrice {},
-//     PreviousTimestamp {},
-//     TwapPrice {},
+    GetPrice { key: String },
+    //     LatestTimestamp {},
+    //     PreviousPrice {},
+    //     PreviousTimestamp {},
+    //     TwapPrice {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -1,8 +1,8 @@
-use cosmwasm_std::{DepsMut, MessageInfo, Response};
+use cosmwasm_std::{DepsMut, MessageInfo, Response, Uint128};
 
 use crate::{
     error::ContractError,
-    state::{read_config, store_config, Config},
+    state::{read_config, store_config, store_price_data, Config},
 };
 
 pub fn update_config(
@@ -23,6 +23,27 @@ pub fn update_config(
     }
 
     store_config(deps.storage, &config)?;
+
+    Ok(Response::default())
+}
+
+/// this is a mock function that enables storage of data
+/// by the contract owner will be replaced by integration
+/// with on-chain price oracles in the future.
+pub fn append_price(
+    deps: DepsMut,
+    info: MessageInfo,
+    key: String,
+    price: Uint128,
+) -> Result<Response, ContractError> {
+    let config: Config = read_config(deps.storage)?;
+
+    // check permission
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    store_price_data(deps.storage, key, price)?;
 
     Ok(Response::default())
 }

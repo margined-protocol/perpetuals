@@ -1,15 +1,15 @@
+use crate::error::ContractError;
+use crate::{
+    handle::{append_price, update_config},
+    query::{query_config, query_get_price},
+    state::{store_config, Config},
+};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
 use margined_perp::margined_pricefeed::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::error::ContractError;
-use crate::{
-    handle::{ update_config},
-    query::{query_config},
-    state::{store_config, Config},
-};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -31,14 +31,13 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::UpdateConfig {
-            owner,
-        } => update_config(deps, info, owner),
+        ExecuteMsg::AppendPrice { key, price } => append_price(deps, info, key, price),
+        ExecuteMsg::UpdateConfig { owner } => update_config(deps, info, owner),
     }
 }
 
@@ -46,5 +45,6 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
+        QueryMsg::GetPrice { key } => to_binary(&query_get_price(deps, key)?),
     }
 }
