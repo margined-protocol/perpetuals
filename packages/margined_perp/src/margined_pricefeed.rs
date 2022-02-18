@@ -19,19 +19,36 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    AppendPrice { key: String, price: Uint128 },
-    UpdateConfig { owner: Option<String> },
+    AppendPrice {
+        key: String,
+        price: Uint128,
+        timestamp: u64,
+    },
+    AppendMultiplePrice {
+        key: String,
+        prices: Vec<Uint128>,
+        timestamps: Vec<u64>,
+    },
+    UpdateConfig {
+        owner: Option<String>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
-    GetPrice { key: String },
-    //     LatestTimestamp {},
-    //     PreviousPrice {},
-    //     PreviousTimestamp {},
-    //     TwapPrice {},
+    GetPrice {
+        key: String,
+    },
+    GetPreviousPrice {
+        key: String,
+        num_round_back: Uint128,
+    },
+    GetTwapPrice {
+        key: String,
+        interval: u64,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

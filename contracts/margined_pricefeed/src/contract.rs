@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 use crate::{
-    handle::{append_price, update_config},
-    query::{query_config, query_get_price},
+    handle::{append_multiple_price, append_price, update_config},
+    query::{query_config, query_get_previous_price, query_get_price, query_get_twap_price},
     state::{store_config, Config},
 };
 #[cfg(not(feature = "library"))]
@@ -36,15 +36,31 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::AppendPrice { key, price } => append_price(deps, info, key, price),
+        ExecuteMsg::AppendPrice {
+            key,
+            price,
+            timestamp,
+        } => append_price(deps, info, key, price, timestamp),
+        ExecuteMsg::AppendMultiplePrice {
+            key,
+            prices,
+            timestamps,
+        } => append_multiple_price(deps, info, key, prices, timestamps),
         ExecuteMsg::UpdateConfig { owner } => update_config(deps, info, owner),
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::GetPrice { key } => to_binary(&query_get_price(deps, key)?),
+        QueryMsg::GetPreviousPrice {
+            key,
+            num_round_back,
+        } => to_binary(&query_get_previous_price(deps, key, num_round_back)?),
+        QueryMsg::GetTwapPrice { key, interval } => {
+            to_binary(&query_get_twap_price(deps, env, key, interval)?)
+        }
     }
 }
