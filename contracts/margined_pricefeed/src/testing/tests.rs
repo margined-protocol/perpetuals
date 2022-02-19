@@ -2,7 +2,7 @@ use crate::{
     contract::{execute, instantiate, query},
     state::PriceData,
 };
-use cosmwasm_std::{from_binary, Uint128};
+use cosmwasm_std::{from_binary, Addr, Uint128};
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
     Timestamp,
@@ -31,46 +31,34 @@ fn test_instantiation() {
     );
 }
 
-// #[test]
-// fn test_update_config() {
-//     let mut deps = mock_dependencies(&[]);
-//     let msg = InstantiateMsg {
-//         decimals: 9u8,
-//         quote_asset: "ETH".to_string(),
-//         base_asset: "USD".to_string(),
-//         quote_asset_reserve: Uint128::from(100u128),
-//         base_asset_reserve: Uint128::from(10_000u128),
-//         funding_period: 3_600 as u64,
-//         toll_ratio: Uint128::zero(),
-//         spread_ratio: Uint128::zero(),
-//     };
-//     let info = mock_info("addr0000", &[]);
-//     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+#[test]
+fn test_update_config() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        oracle_hub_contract: "oracle_hub0000".to_string(),
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-//     // Update the config
-//     let msg = ExecuteMsg::UpdateConfig {
-//         owner: Some("addr0001".to_string()),
-//         toll_ratio: None,
-//         spread_ratio: None,
-//     };
+    // Update the config
+    let msg = ExecuteMsg::UpdateConfig {
+        owner: Some("addr0001".to_string()),
+    };
 
-//     let info = mock_info("addr0000", &[]);
-//     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-//     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-//     let config: ConfigResponse = from_binary(&res).unwrap();
-//     assert_eq!(
-//         config,
-//         ConfigResponse {
-//             owner: Addr::unchecked("addr0001".to_string()),
-//             quote_asset: "ETH".to_string(),
-//             base_asset: "USD".to_string(),
-//             toll_ratio: Uint128::zero(),
-//             spread_ratio: Uint128::zero(),
-//             decimals: DECIMAL_MULTIPLIER,
-//         }
-//     );
-// }
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+    let config: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        config,
+        ConfigResponse {
+            owner: Addr::unchecked("addr0001".to_string()),
+            decimals: Uint128::from(1_000_000_000 as u128),
+        }
+    );
+}
 
 #[test]
 fn test_set_and_get_price() {
@@ -286,4 +274,90 @@ fn test_get_previous_price() {
         },
     );
     assert!(res.is_err());
+}
+
+#[test]
+fn test_get_twap_price() {
+    let mut deps = mock_dependencies(&[]);
+    let mut env = mock_env();
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        oracle_hub_contract: "oracle_hub0000".to_string(),
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+    let res = query(deps.as_ref(), env.clone(), QueryMsg::Config {}).unwrap();
+    let config: ConfigResponse = from_binary(&res).unwrap();
+    let info = mock_info("addr0000", &[]);
+    assert_eq!(
+        config,
+        ConfigResponse {
+            owner: info.sender.clone(),
+            decimals: Uint128::from(1_000_000_000 as u128),
+        }
+    );
+
+    let prices = vec![
+        Uint128::from(400_000_000_000u128),
+        Uint128::from(405_000_000_000u128),
+        Uint128::from(410_000_000_000u128),
+    ];
+
+    let timestamps: Vec<u64> = vec![
+        env.block.time.seconds(),
+        env.block.time.seconds() + 15,
+        env.block.time.seconds() + 30,
+    ];
+
+    // Set some market data
+    let msg = ExecuteMsg::AppendMultiplePrice {
+        key: "ETHUSD".to_string(),
+        prices,
+        timestamps,
+    };
+
+    env.block.time = env.block.time.plus_seconds(45);
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+    let res = query(
+        deps.as_ref(),
+        env.clone(),
+        QueryMsg::GetTwapPrice {
+            key: "ETHUSD".to_string(),
+            interval: 45,
+        },
+    )
+    .unwrap();
+
+    let twap: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(twap, Uint128::from(405_000_000_000u128));
+
+    let res = query(
+        deps.as_ref(),
+        env.clone(),
+        QueryMsg::GetTwapPrice {
+            key: "ETHUSD".to_string(),
+            interval: 46,
+        },
+    )
+    .unwrap();
+
+    let twap: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(twap, Uint128::from(405_000_000_000u128));
+
+    let res = query(
+        deps.as_ref(),
+        env.clone(),
+        QueryMsg::GetTwapPrice {
+            key: "ETHUSD".to_string(),
+            interval: 44,
+        },
+    )
+    .unwrap();
+
+    let twap: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(twap, Uint128::from(405_113_636_363u128));
 }

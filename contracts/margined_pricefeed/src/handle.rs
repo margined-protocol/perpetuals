@@ -2,7 +2,7 @@ use cosmwasm_std::{DepsMut, MessageInfo, Response, Uint128};
 
 use crate::{
     error::ContractError,
-    state::{read_config, store_config, store_price_data, Config, PriceData},
+    state::{read_config, store_config, store_price_data, Config},
 };
 
 pub fn update_config(
