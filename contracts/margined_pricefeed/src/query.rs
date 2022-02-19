@@ -76,7 +76,7 @@ pub fn query_get_twap_price(
     let mut cumulative_time =
         Uint128::from(env.block.time.seconds().checked_sub(timestamp).unwrap());
 
-    let mut weighted_price = latest_round.price.checked_mul(cumulative_time)?;  
+    let mut weighted_price = latest_round.price.checked_mul(cumulative_time)?;
 
     loop {
         if latest_round.round_id == Uint128::from(1u128) {

@@ -422,7 +422,6 @@ fn test_get_twap_variant_price_period() {
 
     let twap: Uint128 = from_binary(&res).unwrap();
     assert_eq!(twap, Uint128::from(409_736_842_105u128));
-
 }
 
 #[test]
@@ -467,7 +466,7 @@ fn test_get_twap_error_zero_interval() {
     };
 
     env.block.time = env.block.time.plus_seconds(30);
-    
+
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), env.clone(), info, msg).unwrap();
 
@@ -480,6 +479,4 @@ fn test_get_twap_error_zero_interval() {
         },
     );
     assert!(res.is_err());
-
 }
-
