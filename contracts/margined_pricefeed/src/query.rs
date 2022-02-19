@@ -62,7 +62,7 @@ pub fn query_get_twap_price(
     interval: u64,
 ) -> StdResult<Uint128> {
     if interval == 0 {
-        return Err(StdError::generic_err("Not enough history"));
+        return Err(StdError::generic_err("Interval can't be zero"));
     }
 
     let base_timestamp = env.block.time.seconds().checked_sub(interval).unwrap();
