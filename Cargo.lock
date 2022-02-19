@@ -554,6 +554,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "margined_pricefeed"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-bignumber",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-storage-plus 0.8.1",
+ "margined-perp",
+ "schemars",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "margined_vamm"
 version = "0.1.0"
 dependencies = [
