@@ -1,8 +1,12 @@
 use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdResult, Storage, Uint128};
 
 use crate::{
+    decimals::modulo,
     error::ContractError,
-    state::{read_config, read_state, store_config, store_state, Config, State},
+    state::{
+        read_config, read_state, store_config, store_reserve_snapshot, store_state, Config,
+        ReserveSnapshot, State,
+    },
 };
 use margined_perp::margined_vamm::Direction;
 
@@ -43,7 +47,7 @@ pub fn update_config(
 // Function should only be called by the margin engine
 pub fn swap_input(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     _info: MessageInfo,
     direction: Direction,
     quote_asset_amount: Uint128,
@@ -53,6 +57,7 @@ pub fn swap_input(
 
     update_reserve(
         deps.storage,
+        env,
         direction,
         quote_asset_amount,
         base_asset_amount,
@@ -68,7 +73,7 @@ pub fn swap_input(
 // Function should only be called by the margin engine
 pub fn swap_output(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     _info: MessageInfo,
     direction: Direction,
     base_asset_amount: Uint128,
@@ -86,6 +91,7 @@ pub fn swap_output(
 
     update_reserve(
         deps.storage,
+        env,
         update_direction,
         quote_asset_amount,
         base_asset_amount,
@@ -200,14 +206,13 @@ pub fn get_output_price_with_reserves(
 
 fn update_reserve(
     storage: &mut dyn Storage,
+    env: Env,
     direction: Direction,
     quote_asset_amount: Uint128,
     base_asset_amount: Uint128,
 ) -> StdResult<Response> {
     let state: State = read_state(storage)?;
     let mut update_state = state.clone();
-
-    println!("State before:\n{:?}\n", state);
 
     match direction {
         Direction::AddToAmm => {
@@ -227,18 +232,31 @@ fn update_reserve(
     }
 
     store_state(storage, &update_state)?;
-    println!("State after:\n{:?}\n", update_state);
+
+    add_reserve_snapshot(
+        storage,
+        env,
+        update_state.quote_asset_reserve,
+        update_state.base_asset_reserve,
+    )?;
 
     Ok(Response::new().add_attributes(vec![("action", "update_reserve")]))
 }
 
-/// Does the modulus (%) operator on Uint128.
-/// However it follows the design of the perpertual protocol decimals
-/// https://github.com/perpetual-protocol/perpetual-protocol/blob/release/v2.1.x/src/utils/Decimal.sol
-fn modulo(a: Uint128, b: Uint128) -> Uint128 {
-    // TODO the decimals are currently hardcoded to 9dp, this needs to change in the future but without
-    // needing to pass the entire world to this function, i.e. access to storage
-    let a_decimals = a.checked_mul(Uint128::from(1_000_000_000u128)).unwrap();
-    let integral = a_decimals / b;
-    a_decimals - (b * integral)
+fn add_reserve_snapshot(
+    storage: &mut dyn Storage,
+    env: Env,
+    quote_asset_reserve: Uint128,
+    base_asset_reserve: Uint128,
+) -> StdResult<Response> {
+    let new_snapshot = ReserveSnapshot {
+        quote_asset_reserve,
+        base_asset_reserve,
+        timestamp: env.block.time,
+        height: env.block.height,
+    };
+
+    store_reserve_snapshot(storage, &new_snapshot)?;
+
+    Ok(Response::default())
 }

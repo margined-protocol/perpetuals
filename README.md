@@ -74,14 +74,18 @@ cargo build
     - [ ] Query
 - [ ] [Oracle](https://github.com/terra-money/tefi-oracle-contracts)
   - [ ] PriceFeed contract that integrates against TeFi hub
-  - [ ] Wrapper for TeFi oracles which do calcs listed below
-  - [ ] TWAP
+  - [x] Wrapper for TeFi oracles which do calcs listed below
+  - [x] TWAP
   - [ ] ???
 - [ ] Decimal Library
   - General decimal calculation library for use around with my fixed point decimals
 - [ ] Factory
 - [ ] Governance
 - [ ] General
+  - [ ] Testing framework improvements
+    - Wrapper for smart contract functions
+    - Setup files
+    - Better organisation
   - [ ] Code comment documentation
   - [x] Code Coverage - cargo-tarpaulin   
   - [x] Code linting
