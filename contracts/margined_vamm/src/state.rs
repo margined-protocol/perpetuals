@@ -2,7 +2,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, StdResult, Storage, Timestamp, Uint128};
-use cosmwasm_storage::{bucket, bucket_read, sequence, singleton, singleton_read};
+use cosmwasm_storage::{bucket, bucket_read, singleton, singleton_read};
 
 pub static KEY_CONFIG: &[u8] = b"config";
 pub static KEY_STATE: &[u8] = b"state";
@@ -48,13 +48,11 @@ pub struct ReserveSnapshot {
     pub quote_asset_reserve: Uint128,
     pub base_asset_reserve: Uint128,
     pub timestamp: Timestamp,
-    pub height: u64,
+    pub block_height: u64,
 }
 
-pub fn _read_reserve_snapshot(storage: &mut dyn Storage) -> StdResult<Option<ReserveSnapshot>> {
-    let height = read_reserve_snapshot_counter(storage)?;
-
-    bucket_read(storage, KEY_RESERVE_SNAPSHOT).may_load(&height.to_be_bytes())
+pub fn read_reserve_snapshot(storage: &dyn Storage, height: u64) -> StdResult<ReserveSnapshot> {
+    bucket_read(storage, KEY_RESERVE_SNAPSHOT).load(&height.to_be_bytes())
 }
 
 pub fn store_reserve_snapshot(
@@ -68,8 +66,8 @@ pub fn store_reserve_snapshot(
     increment_reserve_snapshot_counter(storage)
 }
 
-pub fn read_reserve_snapshot_counter(storage: &mut dyn Storage) -> StdResult<u64> {
-    Ok(sequence(storage, KEY_RESERVE_SNAPSHOT_COUNTER)
+pub fn read_reserve_snapshot_counter(storage: &dyn Storage) -> StdResult<u64> {
+    Ok(singleton_read(storage, KEY_RESERVE_SNAPSHOT_COUNTER)
         .may_load()?
         .unwrap_or_default())
 }
@@ -77,5 +75,5 @@ pub fn read_reserve_snapshot_counter(storage: &mut dyn Storage) -> StdResult<u64
 pub fn increment_reserve_snapshot_counter(storage: &mut dyn Storage) -> StdResult<()> {
     let val = read_reserve_snapshot_counter(storage)? + 1;
 
-    sequence(storage, KEY_RESERVE_SNAPSHOT_COUNTER).save(&val)
+    singleton(storage, KEY_RESERVE_SNAPSHOT_COUNTER).save(&val)
 }

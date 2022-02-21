@@ -253,7 +253,7 @@ fn add_reserve_snapshot(
         quote_asset_reserve,
         base_asset_reserve,
         timestamp: env.block.time,
-        height: env.block.height,
+        block_height: env.block.height,
     };
 
     store_reserve_snapshot(storage, &new_snapshot)?;

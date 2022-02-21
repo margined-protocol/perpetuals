@@ -6,7 +6,8 @@ use cosmwasm_std::{
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
-use crate::query::{query_calc_fee, query_output_price};
+use crate::query::{query_calc_fee, query_output_price, query_spot_price, query_twap_price};
+use crate::state::{store_reserve_snapshot, ReserveSnapshot};
 use crate::{
     handle::{swap_input, swap_output, update_config},
     query::{query_config, query_state},
@@ -16,7 +17,7 @@ use crate::{
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -39,6 +40,15 @@ pub fn instantiate(
     };
 
     store_state(deps.storage, &state)?;
+
+    let reserve = ReserveSnapshot {
+        base_asset_reserve: msg.base_asset_reserve,
+        quote_asset_reserve: msg.quote_asset_reserve,
+        timestamp: env.block.time,
+        block_height: env.block.height,
+    };
+
+    store_reserve_snapshot(deps.storage, &reserve)?;
 
     Ok(Response::default())
 }
@@ -68,7 +78,7 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
@@ -78,5 +88,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::CalcFee { quote_asset_amount } => {
             to_binary(&query_calc_fee(deps, quote_asset_amount)?)
         }
+        QueryMsg::SpotPrice {} => to_binary(&query_spot_price(deps)?),
+        QueryMsg::TwapPrice { interval } => to_binary(&query_twap_price(deps, env, interval)?),
     }
 }
