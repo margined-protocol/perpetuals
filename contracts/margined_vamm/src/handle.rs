@@ -255,7 +255,6 @@ fn add_reserve_snapshot(
         timestamp: env.block.time,
         block_height: env.block.height,
     };
-
     store_reserve_snapshot(storage, &new_snapshot)?;
 
     Ok(Response::default())

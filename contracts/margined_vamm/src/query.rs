@@ -49,8 +49,8 @@ pub fn query_spot_price(deps: Deps) -> StdResult<Uint128> {
 
     let res = state
         .quote_asset_reserve
-        .checked_div(state.base_asset_reserve)?
-        .checked_mul(config.decimals)?;
+        .checked_mul(config.decimals)?
+        .checked_div(state.base_asset_reserve)?;
 
     Ok(res)
 }
@@ -85,12 +85,13 @@ pub fn query_calc_fee(deps: Deps, quote_asset_amount: Uint128) -> StdResult<Calc
 fn calc_reserve_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Uint128> {
     let config: Config = read_config(deps.storage)?;
     let mut counter = read_reserve_snapshot_counter(deps.storage).unwrap();
-    let mut current_snapshot = read_reserve_snapshot(deps.storage, counter).unwrap();
+    let current_snapshot = read_reserve_snapshot(deps.storage, counter);
+    let mut current_snapshot = current_snapshot.unwrap();
 
     let mut current_price = current_snapshot
         .quote_asset_reserve
-        .checked_div(current_snapshot.base_asset_reserve)?
-        .checked_mul(config.decimals)?;
+        .checked_mul(config.decimals)?
+        .checked_div(current_snapshot.base_asset_reserve)?;
     if interval == 0 {
         return Ok(current_price);
     }
@@ -110,6 +111,7 @@ fn calc_reserve_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Uint128> 
             .unwrap(),
     );
     let mut weighted_price = current_price.checked_mul(period)?;
+
     loop {
         counter -= 1;
         // if snapshot history is too short
@@ -119,8 +121,8 @@ fn calc_reserve_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Uint128> 
         current_snapshot = read_reserve_snapshot(deps.storage, counter).unwrap();
         current_price = current_snapshot
             .quote_asset_reserve
-            .checked_div(current_snapshot.base_asset_reserve)?
-            .checked_mul(config.decimals)?;
+            .checked_mul(config.decimals)?
+            .checked_div(current_snapshot.base_asset_reserve)?;
 
         if current_snapshot.timestamp.seconds() <= base_timestamp {
             let delta_timestamp =

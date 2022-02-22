@@ -59,11 +59,13 @@ pub fn store_reserve_snapshot(
     storage: &mut dyn Storage,
     reserve_snapshot: &ReserveSnapshot,
 ) -> StdResult<()> {
+    increment_reserve_snapshot_counter(storage)?;
+
     let height = read_reserve_snapshot_counter(storage)?;
 
     bucket(storage, KEY_RESERVE_SNAPSHOT).save(&height.to_be_bytes(), reserve_snapshot)?;
 
-    increment_reserve_snapshot_counter(storage)
+    Ok(())
 }
 
 pub fn read_reserve_snapshot_counter(storage: &dyn Storage) -> StdResult<u64> {
