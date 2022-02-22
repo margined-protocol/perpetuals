@@ -25,6 +25,14 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
+    UpdateConfig {
+        owner: Option<String>,
+        // open: Option<bool>,
+        // spot_price_twap_interval: Option<Uint128>,
+        toll_ratio: Option<Uint128>,
+        spread_ratio: Option<Uint128>,
+        // price_feed: Option<String>,
+    },
     SwapInput {
         direction: Direction,
         quote_asset_amount: Uint128,
@@ -33,11 +41,7 @@ pub enum ExecuteMsg {
         direction: Direction,
         base_asset_amount: Uint128,
     },
-    UpdateConfig {
-        owner: Option<String>,
-        toll_ratio: Option<Uint128>,
-        spread_ratio: Option<Uint128>,
-    },
+    // SettleFunding {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -48,6 +52,20 @@ pub enum QueryMsg {
     OutputPrice {
         direction: Direction,
         amount: Uint128,
+    },
+    // InputTwap {
+    //     direction: Direction,
+    //     amount: Uint128,
+    // },
+    // OutputTwap {
+    //     direction: Direction,
+    //     amount: Uint128,
+    // },
+    // UnderlyingPrice {},
+    // UnderlyingTwapPrice {},
+    SpotPrice {},
+    TwapPrice {
+        interval: u64,
     },
     CalcFee {
         quote_asset_amount: Uint128,
