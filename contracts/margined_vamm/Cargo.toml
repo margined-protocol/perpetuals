@@ -48,6 +48,7 @@ margined-perp = { version = "0.1.0", path = "../../packages/margined_perp" }
 schemars = "0.8"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0" }
+bigint = "4"
 
 [dev-dependencies]
 cosmwasm-schema = { version = "1.0.0-beta" }

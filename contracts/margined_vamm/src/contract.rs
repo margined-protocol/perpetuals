@@ -1,13 +1,13 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
+    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
+use cosmwasm_bignumber::{Decimal256};
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
-use crate::query::{query_calc_fee, query_output_price, query_spot_price, query_twap_price};
-use crate::state::{store_reserve_snapshot, ReserveSnapshot};
+use crate::query::{query_calc_fee, query_output_price};
 use crate::{
     handle::{swap_input, swap_output, update_config},
     query::{query_config, query_state},
@@ -17,17 +17,17 @@ use crate::{
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
+    
     let config = Config {
         owner: info.sender,
         quote_asset: msg.quote_asset,
         base_asset: msg.base_asset,
         toll_ratio: msg.toll_ratio,
         spread_ratio: msg.spread_ratio,
-        decimals: Uint128::from(10u128.pow(msg.decimals as u32)),
     };
 
     store_config(deps.storage, &config)?;
@@ -35,20 +35,11 @@ pub fn instantiate(
     let state = State {
         base_asset_reserve: msg.base_asset_reserve,
         quote_asset_reserve: msg.quote_asset_reserve,
-        funding_rate: Uint128::zero(), // Initialise the funding rate as 0
+        funding_rate: Decimal256::zero(), // Initialise the funding rate as 0
         funding_period: msg.funding_period, // Funding period in seconds
     };
 
     store_state(deps.storage, &state)?;
-
-    let reserve = ReserveSnapshot {
-        base_asset_reserve: msg.base_asset_reserve,
-        quote_asset_reserve: msg.quote_asset_reserve,
-        timestamp: env.block.time,
-        block_height: env.block.height,
-    };
-
-    store_reserve_snapshot(deps.storage, &reserve)?;
 
     Ok(Response::default())
 }
@@ -78,7 +69,7 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
@@ -88,7 +79,5 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::CalcFee { quote_asset_amount } => {
             to_binary(&query_calc_fee(deps, quote_asset_amount)?)
         }
-        QueryMsg::SpotPrice {} => to_binary(&query_spot_price(deps)?),
-        QueryMsg::TwapPrice { interval } => to_binary(&query_twap_price(deps, env, interval)?),
     }
 }

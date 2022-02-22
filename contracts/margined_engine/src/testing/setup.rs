@@ -1,6 +1,8 @@
 use crate::contract::{execute, instantiate, query, reply};
 use cosmwasm_std::{Addr, Empty, Uint128};
+use cosmwasm_bignumber::{Decimal256, Uint256};
 use cw20::{Cw20Coin, Cw20ExecuteMsg};
+use bigint::U256;
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use margined_perp::margined_engine::InstantiateMsg;
 use margined_perp::margined_vamm::InstantiateMsg as VammInstantiateMsg;
@@ -95,11 +97,11 @@ pub fn setup() -> TestingEnv {
                 decimals: 9u8,
                 quote_asset: "ETH".to_string(),
                 base_asset: "USD".to_string(),
-                quote_asset_reserve: to_decimals(1_000),
-                base_asset_reserve: to_decimals(100),
+                quote_asset_reserve: to_decimals_256(1_000),
+                base_asset_reserve: to_decimals_256(100),
                 funding_period: 3_600 as u64,
-                toll_ratio: Uint128::zero(),
-                spread_ratio: Uint128::zero(),
+                toll_ratio: Decimal256::zero(),
+                spread_ratio: Decimal256::zero(),
             },
             &[],
             "vamm",
@@ -163,4 +165,12 @@ pub fn setup() -> TestingEnv {
 // takes in a Uint128 and multiplies by the decimals just to make tests more legible
 pub fn to_decimals(input: u64) -> Uint128 {
     return Uint128::from(input) * DECIMAL_MULTIPLIER;
+}
+
+// takes in a Decimal256 and multiplies by the decimals just to make tests more legible
+pub fn to_decimals_256(input: u64) -> Decimal256 {
+    let decimals: U256 = U256([1_000_000_000u64, 0, 0, 0]);
+
+    return Decimal256::from_uint256(Uint256::from(input)) *
+     Decimal256::from_uint256(Uint256(decimals));
 }

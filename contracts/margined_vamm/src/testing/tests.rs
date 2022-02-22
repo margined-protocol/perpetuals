@@ -1,7 +1,8 @@
 use crate::contract::{execute, instantiate, query};
-use crate::testing::setup::{to_decimals, DECIMAL_MULTIPLIER};
+use crate::testing::setup::{to_decimals};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{from_binary, Addr, Uint128};
+use cosmwasm_std::{from_binary, Addr};
+use cosmwasm_bignumber::{Decimal256};
 use margined_perp::margined_vamm::{
     ConfigResponse, Direction, ExecuteMsg, InstantiateMsg, QueryMsg, StateResponse,
 };
@@ -13,11 +14,11 @@ fn test_instantiation() {
         decimals: 9u8,
         quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: Uint128::from(100u128),
-        base_asset_reserve: Uint128::from(10_000u128),
+        quote_asset_reserve: Decimal256::from_ratio(100u64, 1_000_000_000u64),
+        base_asset_reserve: Decimal256::from_ratio(10_000u64, 1_000_000_000u64),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::zero(),
-        spread_ratio: Uint128::zero(),
+        toll_ratio: Decimal256::zero(),
+        spread_ratio: Decimal256::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -31,9 +32,8 @@ fn test_instantiation() {
             owner: info.sender.clone(),
             quote_asset: "ETH".to_string(),
             base_asset: "USD".to_string(),
-            toll_ratio: Uint128::zero(),
-            spread_ratio: Uint128::zero(),
-            decimals: DECIMAL_MULTIPLIER,
+            toll_ratio: Decimal256::zero(),
+            spread_ratio: Decimal256::zero(),
         }
     );
 
@@ -42,9 +42,9 @@ fn test_instantiation() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: Uint128::from(100u128),
-            base_asset_reserve: Uint128::from(10_000u128),
-            funding_rate: Uint128::zero(),
+            quote_asset_reserve: Decimal256::from_ratio(100u64, 1_000_000_000u64),
+            base_asset_reserve: Decimal256::from_ratio(10_000u64, 1_000_000_000u64),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );
@@ -57,11 +57,11 @@ fn test_update_config() {
         decimals: 9u8,
         quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: Uint128::from(100u128),
-        base_asset_reserve: Uint128::from(10_000u128),
+        quote_asset_reserve: Decimal256::from_ratio(100u64, 1_000_000_000u64),
+        base_asset_reserve: Decimal256::from_ratio(10_000u64, 1_000_000_000u64),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::zero(),
-        spread_ratio: Uint128::zero(),
+        toll_ratio: Decimal256::zero(),
+        spread_ratio: Decimal256::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -84,9 +84,8 @@ fn test_update_config() {
             owner: Addr::unchecked("addr0001".to_string()),
             quote_asset: "ETH".to_string(),
             base_asset: "USD".to_string(),
-            toll_ratio: Uint128::zero(),
-            spread_ratio: Uint128::zero(),
-            decimals: DECIMAL_MULTIPLIER,
+            toll_ratio: Decimal256::zero(),
+            spread_ratio: Decimal256::zero(),
         }
     );
 }
@@ -101,8 +100,8 @@ fn test_swap_input_long() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::zero(),
-        spread_ratio: Uint128::zero(),
+        toll_ratio: Decimal256::zero(),
+        spread_ratio: Decimal256::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -121,8 +120,9 @@ fn test_swap_input_long() {
         state,
         StateResponse {
             quote_asset_reserve: to_decimals(1_600),
-            base_asset_reserve: Uint128::from(62_500_000_000u128),
-            funding_rate: Uint128::zero(),
+            base_asset_reserve: Decimal256::from_ratio(625u64, 10u64),
+            // Decimal256e: from_ratiot625u64, 10u64::from(62_500_000_000u128),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );
@@ -138,8 +138,8 @@ fn test_swap_input_short() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::zero(),
-        spread_ratio: Uint128::zero(),
+        toll_ratio: Decimal256::zero(),
+        spread_ratio: Decimal256::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -159,7 +159,7 @@ fn test_swap_input_short() {
         StateResponse {
             quote_asset_reserve: to_decimals(400),
             base_asset_reserve: to_decimals(250),
-            funding_rate: Uint128::zero(),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );
@@ -175,8 +175,8 @@ fn test_swap_output_short() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::zero(),
-        spread_ratio: Uint128::zero(),
+        toll_ratio: Decimal256::zero(),
+        spread_ratio: Decimal256::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -196,7 +196,7 @@ fn test_swap_output_short() {
         StateResponse {
             quote_asset_reserve: to_decimals(400),
             base_asset_reserve: to_decimals(250),
-            funding_rate: Uint128::zero(),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );
@@ -212,8 +212,8 @@ fn test_swap_output_long() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::zero(),
-        spread_ratio: Uint128::zero(),
+        toll_ratio: Decimal256::zero(),
+        spread_ratio: Decimal256::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -233,7 +233,7 @@ fn test_swap_output_long() {
         StateResponse {
             quote_asset_reserve: to_decimals(2_000),
             base_asset_reserve: to_decimals(50),
-            funding_rate: Uint128::zero(),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );
@@ -249,8 +249,8 @@ fn test_swap_input_short_long() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::zero(),
-        spread_ratio: Uint128::zero(),
+        toll_ratio: Decimal256::zero(),
+        spread_ratio: Decimal256::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -270,8 +270,8 @@ fn test_swap_input_short_long() {
         state,
         StateResponse {
             quote_asset_reserve: to_decimals(520),
-            base_asset_reserve: Uint128::from(192_307_692_308u128),
-            funding_rate: Uint128::zero(),
+            base_asset_reserve: Decimal256::from_ratio(192_307_692_308u64, 1_000_000_000u64),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );
@@ -290,8 +290,8 @@ fn test_swap_input_short_long() {
         state,
         StateResponse {
             quote_asset_reserve: to_decimals(1_480),
-            base_asset_reserve: Uint128::from(67_567_567_568u128),
-            funding_rate: Uint128::zero(),
+            base_asset_reserve: Decimal256::from_ratio(67_567_567_568u64, 1_000_000_000u64),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );
@@ -307,8 +307,8 @@ fn test_swap_input_short_long_long() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::zero(),
-        spread_ratio: Uint128::zero(),
+        toll_ratio: Decimal256::zero(),
+        spread_ratio: Decimal256::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -328,7 +328,7 @@ fn test_swap_input_short_long_long() {
         StateResponse {
             quote_asset_reserve: to_decimals(800),
             base_asset_reserve: to_decimals(125),
-            funding_rate: Uint128::zero(),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );
@@ -347,8 +347,8 @@ fn test_swap_input_short_long_long() {
         state,
         StateResponse {
             quote_asset_reserve: to_decimals(900),
-            base_asset_reserve: Uint128::from(111_111_111_112u128),
-            funding_rate: Uint128::zero(),
+            base_asset_reserve: Decimal256::from_ratio(111_111_111_112u64, 1_000_000_000u64),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );
@@ -367,8 +367,8 @@ fn test_swap_input_short_long_long() {
         state,
         StateResponse {
             quote_asset_reserve: to_decimals(1100),
-            base_asset_reserve: Uint128::from(90_909_090_910u128),
-            funding_rate: Uint128::zero(),
+            base_asset_reserve: Decimal256::from_ratio(90_909_090_910u64, 1_000_000_000u64),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );
@@ -384,8 +384,8 @@ fn test_swap_input_short_long_short() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::zero(),
-        spread_ratio: Uint128::zero(),
+        toll_ratio: Decimal256::zero(),
+        spread_ratio: Decimal256::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -405,7 +405,7 @@ fn test_swap_input_short_long_short() {
         StateResponse {
             quote_asset_reserve: to_decimals(800),
             base_asset_reserve: to_decimals(125),
-            funding_rate: Uint128::zero(),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );
@@ -425,7 +425,7 @@ fn test_swap_input_short_long_short() {
         StateResponse {
             quote_asset_reserve: to_decimals(1250),
             base_asset_reserve: to_decimals(80),
-            funding_rate: Uint128::zero(),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );
@@ -445,7 +445,7 @@ fn test_swap_input_short_long_short() {
         StateResponse {
             quote_asset_reserve: to_decimals(1000),
             base_asset_reserve: to_decimals(100),
-            funding_rate: Uint128::zero(),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );
@@ -461,8 +461,8 @@ fn test_swap_input_long_integration_example() {
         quote_asset_reserve: to_decimals(1_000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::zero(),
-        spread_ratio: Uint128::zero(),
+        toll_ratio: Decimal256::zero(),
+        spread_ratio: Decimal256::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -470,7 +470,7 @@ fn test_swap_input_long_integration_example() {
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
-        quote_asset_amount: Uint128::from(600_000_000_000u128), // this is swapping 60 at 10x leverage
+        quote_asset_amount: Decimal256::from_ratio(600u64, 1u64), // this is swapping 60 at 10x leverage
     };
 
     let info = mock_info("addr0000", &[]);
@@ -480,9 +480,10 @@ fn test_swap_input_long_integration_example() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: Uint128::from(1_600_000_000_000u128),
-            base_asset_reserve: Uint128::from(62_500_000_000u128),
-            funding_rate: Uint128::zero(),
+            quote_asset_reserve: Decimal256::from_ratio(1600u64, 1u64),
+            base_asset_reserve: Decimal256::from_ratio(625u64, 10u64),
+            // base_asset_reserve: Uint128::from(62_500_000_000u128),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );
@@ -498,8 +499,8 @@ fn test_swap_input_long_short_integration_example() {
         quote_asset_reserve: to_decimals(1_000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::zero(),
-        spread_ratio: Uint128::zero(),
+        toll_ratio: Decimal256::zero(),
+        spread_ratio: Decimal256::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -507,7 +508,7 @@ fn test_swap_input_long_short_integration_example() {
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
-        quote_asset_amount: Uint128::from(600_000_000_000u128), // this is swapping 60 at 10x leverage
+        quote_asset_amount: Decimal256::from_ratio(600u64, 1u64), // this is swapping 60 at 10x leverage
     };
 
     let info = mock_info("addr0000", &[]);
@@ -517,9 +518,10 @@ fn test_swap_input_long_short_integration_example() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: Uint128::from(1_600_000_000_000u128),
-            base_asset_reserve: Uint128::from(62_500_000_000u128),
-            funding_rate: Uint128::zero(),
+            quote_asset_reserve: Decimal256::from_ratio(1600u64, 1u64),
+            base_asset_reserve: Decimal256::from_ratio(625u64, 10u64),
+            // base_asset_reserve: Uint128::from(62_500_000_000u128),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );
@@ -527,7 +529,7 @@ fn test_swap_input_long_short_integration_example() {
     // Swap in ETH
     let swap_msg = ExecuteMsg::SwapOutput {
         direction: Direction::AddToAmm,
-        base_asset_amount: Uint128::from(37_500_000_000u128), // this is swapping 60 at 10x leverage
+        base_asset_amount: Decimal256::from_ratio(375u64, 10u64), // this is swapping 60 at 10x leverage
     };
 
     let info = mock_info("addr0000", &[]);
@@ -537,9 +539,9 @@ fn test_swap_input_long_short_integration_example() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: Uint128::from(1_000_000_000_000u128),
-            base_asset_reserve: Uint128::from(100_000_000_000u128),
-            funding_rate: Uint128::zero(),
+            quote_asset_reserve: Decimal256::from_ratio(1000u64, 1u64),
+            base_asset_reserve: Decimal256::from_ratio(100u64, 1u64),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );
@@ -555,8 +557,8 @@ fn test_swap_input_twice_short_long() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::zero(),
-        spread_ratio: Uint128::zero(),
+        toll_ratio: Decimal256::zero(),
+        spread_ratio: Decimal256::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -584,8 +586,8 @@ fn test_swap_input_twice_short_long() {
         state,
         StateResponse {
             quote_asset_reserve: to_decimals(1_000),
-            base_asset_reserve: Uint128::from(100_000_000_001u128),
-            funding_rate: Uint128::zero(),
+            base_asset_reserve: Decimal256::from_ratio(100_000_000_001u64, 1_000_000_000u64),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );
@@ -601,8 +603,8 @@ fn test_swap_input_twice_long_short() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::zero(),
-        spread_ratio: Uint128::zero(),
+        toll_ratio: Decimal256::zero(),
+        spread_ratio: Decimal256::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -630,8 +632,8 @@ fn test_swap_input_twice_long_short() {
         state,
         StateResponse {
             quote_asset_reserve: to_decimals(1_000),
-            base_asset_reserve: Uint128::from(100_000_000_001u128),
-            funding_rate: Uint128::zero(),
+            base_asset_reserve: Decimal256::from_ratio(100_000_000_001u64, 1_000_000_000u64),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );
@@ -647,8 +649,8 @@ fn test_swap_output_twice_short_long() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::zero(),
-        spread_ratio: Uint128::zero(),
+        toll_ratio: Decimal256::zero(),
+        spread_ratio: Decimal256::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -675,9 +677,9 @@ fn test_swap_output_twice_short_long() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: Uint128::from(1_000_000_000_001u128),
+            quote_asset_reserve: Decimal256::from_ratio(1_000_000_000_001u64, 1_000_000_000u64),
             base_asset_reserve: to_decimals(100),
-            funding_rate: Uint128::zero(),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );
@@ -693,8 +695,8 @@ fn test_swap_output_twice_long_short() {
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::zero(),
-        spread_ratio: Uint128::zero(),
+        toll_ratio: Decimal256::zero(),
+        spread_ratio: Decimal256::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -721,9 +723,9 @@ fn test_swap_output_twice_long_short() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: Uint128::from(1_000_000_000_001u128),
+            quote_asset_reserve: Decimal256::from_ratio(1_000_000_000_001u64, 1_000_000_000u64),
             base_asset_reserve: to_decimals(100),
-            funding_rate: Uint128::zero(),
+            funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
     );

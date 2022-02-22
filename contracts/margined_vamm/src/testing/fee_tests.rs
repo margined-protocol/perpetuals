@@ -2,7 +2,8 @@ use crate::contract::{execute, instantiate, query};
 use crate::error::ContractError;
 use crate::testing::setup::to_decimals;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{from_binary, Uint128};
+use cosmwasm_std::{from_binary};
+use cosmwasm_bignumber::{Decimal256};
 use margined_perp::margined_vamm::{CalcFeeResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 
 #[test]
@@ -15,8 +16,8 @@ fn test_calc_fee() {
         quote_asset_reserve: to_decimals(100),
         base_asset_reserve: to_decimals(10_000),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::from(10_000_000u128),   // 0.01
-        spread_ratio: Uint128::from(10_000_000u128), // 0.01
+        toll_ratio: Decimal256::permille(10u64),   // 0.01
+        spread_ratio: Decimal256::permille(10u64), // 0.01
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -35,8 +36,8 @@ fn test_calc_fee() {
     assert_eq!(
         state,
         CalcFeeResponse {
-            toll_fee: Uint128::from(100_000_000u128),
-            spread_fee: Uint128::from(100_000_000u128),
+            toll_fee: Decimal256::permille(100u64), //0.1
+            spread_fee: Decimal256::permille(100u64), //0.1 
         }
     );
 }
@@ -51,8 +52,8 @@ fn test_set_diff_fee_ratio() {
         quote_asset_reserve: to_decimals(100),
         base_asset_reserve: to_decimals(10_000),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::from(10_000_000u128),   // 0.01
-        spread_ratio: Uint128::from(10_000_000u128), // 0.01
+        toll_ratio: Decimal256::permille(10u64),   // 0.01
+        spread_ratio: Decimal256::permille(10u64), // 0.01
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -60,8 +61,8 @@ fn test_set_diff_fee_ratio() {
     // Update the config
     let msg = ExecuteMsg::UpdateConfig {
         owner: None,
-        toll_ratio: Some(Uint128::from(100_000_000u128)), // 0.1
-        spread_ratio: Some(Uint128::from(50_000_000u128)), // 0.01
+        toll_ratio: Some(Decimal256::permille(100u64)), // 0.1
+        spread_ratio: Some(Decimal256::permille(50u64)), // 0.05
     };
 
     let info = mock_info("addr0000", &[]);
@@ -97,8 +98,8 @@ fn test_set_fee_ratio_zero() {
         quote_asset_reserve: to_decimals(100),
         base_asset_reserve: to_decimals(10_000),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::zero(),
-        spread_ratio: Uint128::from(50_000_000u128), // 0.05
+        toll_ratio: Decimal256::zero(),
+        spread_ratio: Decimal256::permille(50u64), // 0.05
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -133,8 +134,8 @@ fn test_calc_fee_input_zero() {
         quote_asset_reserve: to_decimals(100),
         base_asset_reserve: to_decimals(10_000),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::from(50_000_000u128), // 0.05,
-        spread_ratio: Uint128::from(50_000_000u128), // 0.05
+        toll_ratio: Decimal256::permille(50u64), // 0.05,
+        spread_ratio: Decimal256::permille(50u64), // 0.05
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -169,8 +170,8 @@ fn test_update_not_owner() {
         quote_asset_reserve: to_decimals(100),
         base_asset_reserve: to_decimals(10_000),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::from(50_000_000u128), // 0.05,
-        spread_ratio: Uint128::from(50_000_000u128), // 0.05
+        toll_ratio: Decimal256::permille(50u64), // 0.05,
+        spread_ratio: Decimal256::permille(50u64), // 0.05
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -178,8 +179,8 @@ fn test_update_not_owner() {
     // Update the config
     let msg = ExecuteMsg::UpdateConfig {
         owner: None,
-        toll_ratio: Some(Uint128::from(100_000_000u128)), // 0.1
-        spread_ratio: Some(Uint128::from(50_000_000u128)), // 0.01
+        toll_ratio: Some(Decimal256::permille(100u64)), // 0.1
+        spread_ratio: Some(Decimal256::permille(50u64)), // 0.05
     };
 
     let info = mock_info("addr0001", &[]);

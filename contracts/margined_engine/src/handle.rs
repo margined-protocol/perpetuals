@@ -2,7 +2,7 @@ use cosmwasm_std::{
     to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError, StdResult,
     Storage, SubMsg, Uint128, WasmMsg,
 };
-
+use cosmwasm_bignumber::{Decimal256, Uint256};
 use crate::{
     contract::{SWAP_DECREASE_REPLY_ID, SWAP_INCREASE_REPLY_ID, SWAP_REVERSE_REPLY_ID},
     querier::query_vamm_output_price,
@@ -109,13 +109,14 @@ pub fn close_position(
 
     let direction: Direction = switch_direction(position.direction.clone());
     let amount = position.size;
+    let amount256:Decimal256 = Decimal256::from_uint256(Uint256::from(position.size));
 
     let swap_msg = WasmMsg::Execute {
         contract_addr: vamm.to_string(),
         funds: vec![],
         msg: to_binary(&ExecuteMsg::SwapOutput {
             direction,
-            base_asset_amount: amount,
+            base_asset_amount: amount256,
         })?,
     };
 
@@ -177,13 +178,14 @@ fn open_reverse_position(
 
 fn swap_input(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdResult<SubMsg> {
     let direction: Direction = side_to_direction(side);
+    let amount256: Decimal256 = Decimal256::from_uint256(Uint256::from(open_notional));
 
     let swap_msg = WasmMsg::Execute {
         contract_addr: vamm.to_string(),
         funds: vec![],
         msg: to_binary(&ExecuteMsg::SwapInput {
             direction,
-            quote_asset_amount: open_notional,
+            quote_asset_amount: amount256,
         })?,
     };
 
@@ -199,13 +201,14 @@ fn swap_input(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdRe
 
 fn swap_output(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdResult<SubMsg> {
     let direction: Direction = side_to_direction(side);
+    let amount256:Decimal256 = Decimal256::from_uint256(Uint256::from(open_notional));
 
     let swap_msg = WasmMsg::Execute {
         contract_addr: vamm.to_string(),
         funds: vec![],
         msg: to_binary(&ExecuteMsg::SwapOutput {
             direction,
-            base_asset_amount: open_notional,
+            base_asset_amount: amount256,
         })?,
     };
 

@@ -3,8 +3,8 @@ use crate::{
     handle::{get_input_price_with_reserves, get_output_price_with_reserves},
     testing::setup::to_decimals,
 };
+use cosmwasm_bignumber::{Decimal256};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::Uint128;
 use margined_perp::margined_vamm::{Direction, InstantiateMsg};
 
 /// Unit tests
@@ -18,8 +18,8 @@ fn test_get_input_and_output_price() {
         quote_asset_reserve: to_decimals(1_000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::zero(),
-        spread_ratio: Uint128::zero(),
+        toll_ratio: Decimal256::zero(),
+        spread_ratio: Decimal256::zero(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -30,7 +30,7 @@ fn test_get_input_and_output_price() {
     let result =
         get_input_price_with_reserves(deps.as_ref(), &Direction::AddToAmm, quote_asset_amount)
             .unwrap();
-    assert_eq!(result, Uint128::from(4761904761u128));
+    assert_eq!(result, Decimal256::from_ratio(4761904761u64, 1_000_000_000u64));
 
     // amount = (100 * 1000) / (1000 - 50) - 100(quote asset reserved) = 5.2631578947368
     // price = 50 / 5.263 = 9.5
@@ -38,7 +38,7 @@ fn test_get_input_and_output_price() {
     let result =
         get_input_price_with_reserves(deps.as_ref(), &Direction::RemoveFromAmm, quote_asset_amount)
             .unwrap();
-    assert_eq!(result, Uint128::from(5263157895u128));
+    assert_eq!(result, Decimal256::from_ratio(5263157895u64, 1_000_000_000u64));
 
     // amount = 1000(base asset reversed) - (100 * 1000) / (100 + 5) = 47.619047619047619048
     // price = 47.619 / 5 = 9.52
@@ -46,7 +46,7 @@ fn test_get_input_and_output_price() {
     let result =
         get_output_price_with_reserves(deps.as_ref(), &Direction::AddToAmm, quote_asset_amount)
             .unwrap();
-    assert_eq!(result, Uint128::from(47619047619u128));
+    assert_eq!(result, Decimal256::from_ratio(47619047619u64, 1_000_000_000u64));
 
     // a dividable number should not plus 1 at mantissa
     let quote_asset_amount = to_decimals(25);
@@ -64,10 +64,11 @@ fn test_get_input_and_output_price() {
         quote_asset_amount,
     )
     .unwrap();
-    assert_eq!(result, Uint128::from(52631578948u128));
+    assert_eq!(result, Decimal256::from_ratio(52631578948u64, 1_000_000_000u64));
 
     // divisable output
-    let quote_asset_amount = Uint128::from(37_500_000_000u128);
+    let quote_asset_amount = Decimal256::from_ratio(375u64, 10u64);
+    // let quote_asset_amount = Decimal256::from_ratio(37_500_000_000u128);
     let result = get_output_price_with_reserves(
         deps.as_ref(),
         &Direction::RemoveFromAmm,
