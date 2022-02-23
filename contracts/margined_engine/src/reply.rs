@@ -134,8 +134,7 @@ pub fn reverse_position_reply(
     } else {
         store_tmp_swap(deps.storage, &swap)?;
 
-        msg = internal_increase_position(swap.vamm, swap.side, open_notional)
-        // msg = internal_increase_position(swap.vamm, switch_side(swap.side), open_notional)
+        msg = internal_increase_position(swap.vamm, swap.side, open_notional)?
     }
 
     store_position(deps.storage, &position)?;

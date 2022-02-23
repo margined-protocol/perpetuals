@@ -11,7 +11,10 @@ use std::str::FromStr;
 use crate::error::ContractError;
 use crate::{
     handle::{close_position, open_position, update_config},
-    query::{query_config, query_position, query_trader_balance_with_funding_payment},
+    query::{
+        query_config, query_position, query_trader_balance_with_funding_payment,
+        query_unrealized_pnl,
+    },
     reply::{decrease_position_reply, increase_position_reply, reverse_position_reply},
     state::{read_config, store_config, store_vamm, Config},
 };
@@ -125,6 +128,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::TraderBalance { trader } => {
             to_binary(&query_trader_balance_with_funding_payment(deps, trader)?)
         }
+        QueryMsg::UnrealizedPnl { vamm, trader } => {
+            to_binary(&query_unrealized_pnl(deps, vamm, trader)?)
+        }
     }
 }
 
@@ -163,6 +169,7 @@ fn parse_swap(response: SubMsgExecutionResponse) -> (Uint128, Uint128) {
     // Find swap inputs and output events
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");
     let wasm = wasm.unwrap();
+
     let input_str = read_event("input".to_string(), wasm).value;
     let input: Uint128 = Uint128::from_str(&input_str).unwrap();
 

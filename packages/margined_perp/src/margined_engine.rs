@@ -13,7 +13,7 @@ pub enum Side {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum PNLCalc {
+pub enum PnlCalcOption {
     SPOTPRICE,
     TWAP,
     ORACLE,
@@ -68,6 +68,7 @@ pub enum QueryMsg {
     Config {},
     Position { vamm: String, trader: String },
     TraderBalance { trader: String },
+    UnrealizedPnl { vamm: String, trader: String },
     // MarginRatio {},
 }
 
@@ -97,4 +98,10 @@ pub struct SwapResponse {
     pub open_notional: Uint128,
     pub input: Uint128,
     pub output: Uint128,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct PositionUnrealizedPnlResponse {
+    pub position_notional: Uint128,
+    pub unrealized_pnl: Uint128,
 }

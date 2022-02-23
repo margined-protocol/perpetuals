@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError, StdResult,
-    Storage, SubMsg, Uint128, WasmMsg,
+    to_binary, Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError,
+    StdResult, Storage, SubMsg, Uint128, WasmMsg,
 };
 
 use crate::{
@@ -9,7 +9,7 @@ use crate::{
     state::{read_config, read_position, store_config, store_tmp_swap, Config, Position, Swap},
     utils::{direction_to_side, require_vamm, side_to_direction, switch_direction},
 };
-use margined_perp::margined_engine::Side;
+use margined_perp::margined_engine::{PnlCalcOption, PositionUnrealizedPnlResponse, Side};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 
 pub fn update_config(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {
@@ -63,7 +63,7 @@ pub fn open_position(
 
     let msg: SubMsg;
     if is_increase {
-        msg = internal_increase_position(vamm.clone(), side.clone(), open_notional);
+        msg = internal_increase_position(vamm.clone(), side.clone(), open_notional).unwrap();
     } else {
         msg = open_reverse_position(
             &deps,
@@ -134,8 +134,12 @@ pub fn close_position(
 }
 
 // Increase the position, just basically wraps swap input though it may do more in the future
-pub fn internal_increase_position(vamm: Addr, side: Side, open_notional: Uint128) -> SubMsg {
-    swap_input(&vamm, side, open_notional, SWAP_INCREASE_REPLY_ID).unwrap()
+pub fn internal_increase_position(
+    vamm: Addr,
+    side: Side,
+    open_notional: Uint128,
+) -> StdResult<SubMsg> {
+    swap_input(&vamm, side, open_notional, SWAP_INCREASE_REPLY_ID)
 }
 
 // Increase the position, just basically wraps swap input though it may do more in the future
@@ -150,7 +154,7 @@ fn open_reverse_position(
     let msg: SubMsg;
     let position: Position = get_position(env, deps.storage, &vamm, &trader, side.clone());
     let current_notional = query_vamm_output_price(
-        deps,
+        &deps.as_ref(),
         vamm.to_string(),
         position.direction.clone(),
         position.size,
@@ -244,6 +248,42 @@ pub fn get_position(
     }
 
     position
+}
+
+pub fn get_position_notional_unrealized_pnl(
+    deps: Deps,
+    position: &Position,
+    calc_option: PnlCalcOption,
+) -> StdResult<PositionUnrealizedPnlResponse> {
+    let mut position_notional = Uint128::zero();
+    let mut unrealized_pnl = Uint128::zero();
+
+    let position_size = position.size;
+    if !position_size.is_zero() {
+        match calc_option {
+            PnlCalcOption::TWAP => {}
+            PnlCalcOption::SPOTPRICE => {
+                position_notional = query_vamm_output_price(
+                    &deps,
+                    position.vamm.to_string(),
+                    position.direction.clone(),
+                    position_size,
+                )?;
+            }
+            PnlCalcOption::ORACLE => {}
+        }
+
+        if position.direction == Direction::RemoveFromAmm {
+            unrealized_pnl = position.notional.checked_sub(position_notional)?;
+        } else {
+            unrealized_pnl = position_notional.checked_sub(position.notional)?;
+        }
+    }
+
+    Ok(PositionUnrealizedPnlResponse {
+        position_notional,
+        unrealized_pnl,
+    })
 }
 
 // this resets the main variables of a position
