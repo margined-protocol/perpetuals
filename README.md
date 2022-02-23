@@ -1,7 +1,8 @@
 # Margined Protocol Perpertuals
 
-[![Continuous Integration](https://github.com/shapeshed/mrgnd-perpetuals/actions/workflows/ci.yml/badge.svg)](https://github.com/shapeshed/mrgnd-perpetuals/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/shapeshed/mrgnd-perpetuals/branch/main/graph/badge.svg?token=OXwMwRifUv)](https://codecov.io/gh/shapeshed/mrgnd-perpetuals)
+[![Continuous Integration](https://github.com/margined-protocol/mrgnd-perpetuals/actions/workflows/ci.yml/badge.svg)](https://github.com/margined-protocol/mrgnd-perpetuals/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/margined-protocol/mrgnd-perpetuals/branch/main/graph/badge.svg?token=FDMKT04UWK)](https://codecov.io/gh/margined-protocol/mrgnd-perpetuals)
+
 
 This repo contains a the Margined Protocol a decentralized perpetual contract protocol on the Terra Blockchain.
 
