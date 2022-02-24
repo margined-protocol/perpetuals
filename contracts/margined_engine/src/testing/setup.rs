@@ -140,6 +140,20 @@ pub fn setup() -> TestingEnv {
         )
         .unwrap();
 
+    // create allowance for alice
+    router
+        .execute_contract(
+            bob.clone(),
+            usdc_addr.clone(),
+            &Cw20ExecuteMsg::IncreaseAllowance {
+                spender: engine_addr.to_string(),
+                amount: to_decimals(2000),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
+
     TestingEnv {
         router,
         owner,

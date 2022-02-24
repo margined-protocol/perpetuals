@@ -11,8 +11,14 @@ use std::str::FromStr;
 use crate::error::ContractError;
 use crate::{
     handle::{close_position, open_position, update_config},
-    query::{query_config, query_position, query_trader_balance_with_funding_payment},
-    reply::{decrease_position_reply, increase_position_reply, reverse_position_reply},
+    query::{
+        query_config, query_position, query_trader_balance_with_funding_payment,
+        query_unrealized_pnl,
+    },
+    reply::{
+        close_position_reply, decrease_position_reply, increase_position_reply,
+        reverse_position_reply,
+    },
     state::{read_config, store_config, store_vamm, Config},
 };
 
@@ -74,14 +80,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         }
         ExecuteMsg::ClosePosition { vamm } => {
             let trader = info.sender.clone();
-            close_position(
-                deps,
-                env,
-                info,
-                vamm,
-                trader.to_string(),
-                SWAP_CLOSE_REPLY_ID,
-            )
+            close_position(deps, env, info, vamm, trader.to_string())
         }
     }
 }
@@ -125,6 +124,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::TraderBalance { trader } => {
             to_binary(&query_trader_balance_with_funding_payment(deps, trader)?)
         }
+        QueryMsg::UnrealizedPnl { vamm, trader } => {
+            to_binary(&query_unrealized_pnl(deps, vamm, trader)?)
+        }
     }
 }
 
@@ -147,6 +149,11 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
                 let response = reverse_position_reply(deps, env, input, output)?;
                 Ok(response)
             }
+            SWAP_CLOSE_REPLY_ID => {
+                let (input, output) = parse_swap(response);
+                let response = close_position_reply(deps, env, input, output)?;
+                Ok(response)
+            }
             _ => Err(StdError::generic_err(format!(
                 "reply (id {:?}) invalid",
                 msg.id
@@ -163,6 +170,7 @@ fn parse_swap(response: SubMsgExecutionResponse) -> (Uint128, Uint128) {
     // Find swap inputs and output events
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");
     let wasm = wasm.unwrap();
+
     let input_str = read_event("input".to_string(), wasm).value;
     let input: Uint128 = Uint128::from_str(&input_str).unwrap();
 

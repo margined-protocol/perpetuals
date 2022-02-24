@@ -1,5 +1,5 @@
-// Contains queries for external contracts
-use cosmwasm_std::{to_binary, DepsMut, QueryRequest, StdResult, Uint128, WasmQuery};
+// Contains queries for external contracts,
+use cosmwasm_std::{to_binary, Deps, DepsMut, QueryRequest, StdResult, Uint128, WasmQuery};
 
 use margined_perp::margined_vamm::{Direction, QueryMsg, StateResponse};
 
@@ -15,7 +15,7 @@ pub fn _query_vamm_state(deps: &DepsMut, address: String) -> StdResult<StateResp
 // returns the state of the request vamm
 // can be used to calculate the input and outputs
 pub fn query_vamm_output_price(
-    deps: &DepsMut,
+    deps: &Deps,
     address: String,
     direction: Direction,
     amount: Uint128,
