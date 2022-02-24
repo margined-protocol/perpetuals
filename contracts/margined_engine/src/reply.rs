@@ -142,6 +142,50 @@ pub fn reverse_position_reply(
     Ok(response.add_submessage(msg))
 }
 
+// Closes position after successful execution of the swap
+pub fn close_position_reply(
+    deps: DepsMut,
+    env: Env,
+    _input: Uint128,
+    output: Uint128,
+) -> StdResult<Response> {
+    let tmp_swap = read_tmp_swap(deps.storage)?;
+    if tmp_swap.is_none() {
+        return Err(StdError::generic_err("no temporary position"));
+    }
+
+    let swap = tmp_swap.unwrap();
+    let mut position = get_position(
+        env.clone(),
+        deps.storage,
+        &swap.vamm,
+        &swap.trader,
+        swap.side.clone(),
+    );
+
+    let margin_returned: Uint128;
+    if output > swap.open_notional {
+        margin_returned = position
+            .margin
+            .checked_sub(output.checked_sub(swap.open_notional)?)?;
+    } else {
+        margin_returned = position
+            .margin
+            .checked_sub(swap.open_notional.checked_sub(output)?)?;
+    }
+
+    position = clear_position(env, position)?;
+
+    store_position(deps.storage, &position)?;
+
+    // create transfer message
+    let msg = execute_transfer(deps.storage, &swap.trader, margin_returned).unwrap();
+
+    remove_tmp_swap(deps.storage);
+
+    Ok(Response::new().add_submessage(msg))
+}
+
 fn execute_transfer_from(
     storage: &dyn Storage,
     owner: &Addr,

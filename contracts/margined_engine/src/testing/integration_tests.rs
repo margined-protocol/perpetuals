@@ -2,8 +2,9 @@ use crate::testing::setup::{self, to_decimals};
 use cosmwasm_std::Uint128;
 use cw20::Cw20Contract;
 use cw_multi_test::Executor;
-use margined_perp::margined_engine::{
-    ConfigResponse, ExecuteMsg, PositionResponse, QueryMsg, Side,
+use margined_perp::{
+    margined_engine::{ConfigResponse, ExecuteMsg, PositionResponse, QueryMsg, Side},
+    margined_vamm::{QueryMsg as VammQueryMsg, StateResponse},
 };
 
 #[test]
@@ -645,4 +646,106 @@ fn test_pnl_zero_no_others_trading() {
         )
         .unwrap();
     assert_eq!(Uint128::zero(), pnl);
+}
+
+#[test]
+fn test_close_safe_position() {
+    let mut env = setup::setup();
+
+    // set up cw20 helpers
+    let usdc = Cw20Contract(env.usdc.addr.clone());
+
+    // verify the engine owner
+    let _config: ConfigResponse = env
+        .router
+        .wrap()
+        .query_wasm_smart(&env.engine.addr, &QueryMsg::Config {})
+        .unwrap();
+
+    let msg = ExecuteMsg::OpenPosition {
+        vamm: env.vamm.addr.to_string(),
+        side: Side::SELL,
+        quote_asset_amount: to_decimals(50u64),
+        leverage: to_decimals(2u64),
+    };
+
+    let _res = env
+        .router
+        .execute_contract(env.alice.clone(), env.engine.addr.clone(), &msg, &[])
+        .unwrap();
+
+    // retrieve the vamm state
+    let position: PositionResponse = env
+        .router
+        .wrap()
+        .query_wasm_smart(
+            &env.engine.addr,
+            &QueryMsg::Position {
+                vamm: env.vamm.addr.to_string(),
+                trader: env.alice.to_string(),
+            },
+        )
+        .unwrap();
+    assert_eq!(Uint128::from(11_111_111_112u128), position.size);
+
+    let msg = ExecuteMsg::OpenPosition {
+        vamm: env.vamm.addr.to_string(),
+        side: Side::BUY,
+        quote_asset_amount: to_decimals(10u64),
+        leverage: to_decimals(6u64),
+    };
+
+    let _res = env
+        .router
+        .execute_contract(env.bob.clone(), env.engine.addr.clone(), &msg, &[])
+        .unwrap();
+
+    let state: StateResponse = env
+        .router
+        .wrap()
+        .query_wasm_smart(&env.vamm.addr, &VammQueryMsg::State {})
+        .unwrap();
+    assert_eq!(state.quote_asset_reserve, to_decimals(960));
+    assert_eq!(state.base_asset_reserve, Uint128::from(104_166_666_668u128));
+
+    let msg = ExecuteMsg::ClosePosition {
+        vamm: env.vamm.addr.to_string(),
+    };
+
+    let _res = env
+        .router
+        .execute_contract(env.alice.clone(), env.engine.addr.clone(), &msg, &[])
+        .unwrap();
+
+    let position: PositionResponse = env
+        .router
+        .wrap()
+        .query_wasm_smart(
+            &env.engine.addr,
+            &QueryMsg::Position {
+                vamm: env.vamm.addr.to_string(),
+                trader: env.alice.to_string(),
+            },
+        )
+        .unwrap();
+    assert_eq!(position.size, Uint128::zero());
+    assert_eq!(position.margin, Uint128::zero());
+    assert_eq!(position.notional, Uint128::zero());
+
+    let state: StateResponse = env
+        .router
+        .wrap()
+        .query_wasm_smart(&env.vamm.addr, &VammQueryMsg::State {})
+        .unwrap();
+    assert_eq!(
+        state.quote_asset_reserve,
+        Uint128::from(1_074_626_865_681u128)
+    );
+    assert_eq!(state.base_asset_reserve, Uint128::from(93_055_555_556u128));
+
+    // alice balance should be 4985.373134319
+    let engine_balance = usdc.balance(&env.router, env.alice.clone()).unwrap();
+    assert_eq!(engine_balance, Uint128::from(4_985_373_134_319u128));
+
+
 }

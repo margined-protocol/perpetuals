@@ -4,10 +4,12 @@ use cosmwasm_std::{
 };
 
 use crate::{
-    contract::{SWAP_DECREASE_REPLY_ID, SWAP_INCREASE_REPLY_ID, SWAP_REVERSE_REPLY_ID},
+    contract::{
+        SWAP_CLOSE_REPLY_ID, SWAP_DECREASE_REPLY_ID, SWAP_INCREASE_REPLY_ID, SWAP_REVERSE_REPLY_ID,
+    },
     querier::query_vamm_output_price,
     state::{read_config, read_position, store_config, store_tmp_swap, Config, Position, Swap},
-    utils::{direction_to_side, require_vamm, side_to_direction, switch_direction},
+    utils::{direction_to_side, require_vamm, side_to_direction},
 };
 use margined_perp::margined_engine::{PnlCalcOption, PositionUnrealizedPnlResponse, Side};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
@@ -98,7 +100,6 @@ pub fn close_position(
     _info: MessageInfo,
     vamm: String,
     trader: String,
-    id: u64,
 ) -> StdResult<Response> {
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
@@ -107,26 +108,33 @@ pub fn close_position(
     // read the position for the trader from vamm
     let position = read_position(deps.storage, &vamm, &trader)?.unwrap();
 
-    let direction: Direction = switch_direction(position.direction.clone());
-    let amount = position.size;
-
     let swap_msg = WasmMsg::Execute {
         contract_addr: vamm.to_string(),
         funds: vec![],
         msg: to_binary(&ExecuteMsg::SwapOutput {
-            direction,
-            base_asset_amount: amount,
+            direction: position.direction.clone(),
+            base_asset_amount: position.size,
         })?,
     };
 
     let msg = SubMsg {
         msg: CosmosMsg::Wasm(swap_msg),
         gas_limit: None, // probably should set a limit in the config
-        id,
+        id: SWAP_CLOSE_REPLY_ID,
         reply_on: ReplyOn::Always,
     };
 
-    // tmp_store_swap(deps.storage, &position)?;
+    store_tmp_swap(
+        deps.storage,
+        &Swap {
+            vamm,
+            trader,
+            side: direction_to_side(position.direction),
+            quote_asset_amount: position.size,
+            leverage: Uint128::zero(),
+            open_notional: position.notional,
+        },
+    )?;
 
     Ok(Response::new()
         .add_attributes(vec![("action", "close_position")])
@@ -182,7 +190,7 @@ fn open_reverse_position(
 fn swap_input(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdResult<SubMsg> {
     let direction: Direction = side_to_direction(side);
 
-    let swap_msg = WasmMsg::Execute {
+    let msg = WasmMsg::Execute {
         contract_addr: vamm.to_string(),
         funds: vec![],
         msg: to_binary(&ExecuteMsg::SwapInput {
@@ -192,7 +200,7 @@ fn swap_input(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdRe
     };
 
     let execute_submsg = SubMsg {
-        msg: CosmosMsg::Wasm(swap_msg),
+        msg: CosmosMsg::Wasm(msg),
         gas_limit: None, // probably should set a limit in the config
         id,
         reply_on: ReplyOn::Always,

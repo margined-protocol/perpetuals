@@ -15,7 +15,10 @@ use crate::{
         query_config, query_position, query_trader_balance_with_funding_payment,
         query_unrealized_pnl,
     },
-    reply::{decrease_position_reply, increase_position_reply, reverse_position_reply},
+    reply::{
+        close_position_reply, decrease_position_reply, increase_position_reply,
+        reverse_position_reply,
+    },
     state::{read_config, store_config, store_vamm, Config},
 };
 
@@ -77,14 +80,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         }
         ExecuteMsg::ClosePosition { vamm } => {
             let trader = info.sender.clone();
-            close_position(
-                deps,
-                env,
-                info,
-                vamm,
-                trader.to_string(),
-                SWAP_CLOSE_REPLY_ID,
-            )
+            close_position(deps, env, info, vamm, trader.to_string())
         }
     }
 }
@@ -151,6 +147,11 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
             SWAP_REVERSE_REPLY_ID => {
                 let (input, output) = parse_swap(response);
                 let response = reverse_position_reply(deps, env, input, output)?;
+                Ok(response)
+            }
+            SWAP_CLOSE_REPLY_ID => {
+                let (input, output) = parse_swap(response);
+                let response = close_position_reply(deps, env, input, output)?;
                 Ok(response)
             }
             _ => Err(StdError::generic_err(format!(
