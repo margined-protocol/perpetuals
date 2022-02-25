@@ -37,11 +37,10 @@ rustup target add wasm32-unknown-unknown
 
 ### Unit / Integration Tests
 
-Each contract contains Rust unit and integration tests embedded within the contract source directories. You can run:
+To run the tests after installing pre-requisites do the following:
 
 ```sh
-cargo unit-test
-cargo integration-test
+cargo test
 ```
 ### Build
 
@@ -51,45 +50,6 @@ git clone git@github.com:margined-protocol/mrgnd-perpetuals.git
 cd mrgnd-perpetuals
 cargo build
 ```
-
-## To Do List
-
-- [ ] vAMM
-    - [ ] Initialise
-        - [x] Owner, assets, etc
-    - [ ] Execute
-        - [x] Init vAMM (define constant product func k)
-            - define the state of the new vAMM
-        - [x] Long / Short
-        - [ ] SettleFunding
-    - [ ] Query
-        - [x] Latest Price
-- [ ] Margin Engine
-    - [x] Initialise
-        - [x] owner, vAMM, etc
-    - [ ] Execute
-        - [x] New position / Close position
-        - [ ] New eligible collateral (maybe? potentially we only allow a single type? would make x-margin easier)
-        - [ ] Update vAmms, i.e. append, remove etc
-        - [ ] Update vAmms, i.e. append, remove etc
-    - [ ] Query
-- [ ] [Oracle](https://github.com/terra-money/tefi-oracle-contracts)
-  - [ ] PriceFeed contract that integrates against TeFi hub
-  - [x] Wrapper for TeFi oracles which do calcs listed below
-  - [x] TWAP
-  - [ ] ???
-- [ ] Decimal Library
-  - General decimal calculation library for use around with my fixed point decimals
-- [ ] Factory
-- [ ] Governance
-- [ ] General
-  - [ ] Testing framework improvements
-    - Wrapper for smart contract functions
-    - Setup files
-    - Better organisation
-  - [ ] Code comment documentation
-  - [x] Code Coverage - cargo-tarpaulin   
-  - [x] Code linting
 
 ## Reading / Docs
 
