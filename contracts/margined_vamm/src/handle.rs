@@ -1,4 +1,5 @@
-use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdResult, Storage, Uint128};
+use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdResult, Storage};
+use cosmwasm_bignumber::{Decimal256};
 
 use crate::{
     decimals::modulo,
@@ -14,8 +15,8 @@ pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,
     owner: Option<String>,
-    toll_ratio: Option<Uint128>,
-    spread_ratio: Option<Uint128>,
+    toll_ratio: Option<Decimal256>,
+    spread_ratio: Option<Decimal256>,
 ) -> Result<Response, ContractError> {
     let mut config: Config = read_config(deps.storage)?;
 
@@ -50,7 +51,7 @@ pub fn swap_input(
     env: Env,
     _info: MessageInfo,
     direction: Direction,
-    quote_asset_amount: Uint128,
+    quote_asset_amount: Decimal256,
 ) -> Result<Response, ContractError> {
     let base_asset_amount =
         get_input_price_with_reserves(deps.as_ref(), &direction, quote_asset_amount)?;
@@ -76,7 +77,7 @@ pub fn swap_output(
     env: Env,
     _info: MessageInfo,
     direction: Direction,
-    base_asset_amount: Uint128,
+    base_asset_amount: Decimal256,
 ) -> Result<Response, ContractError> {
     let quote_asset_amount =
         get_output_price_with_reserves(deps.as_ref(), &direction, base_asset_amount)?;
@@ -107,36 +108,35 @@ pub fn swap_output(
 pub fn get_input_price_with_reserves(
     deps: Deps,
     direction: &Direction,
-    quote_asset_amount: Uint128,
-) -> StdResult<Uint128> {
+    quote_asset_amount: Decimal256,
+) -> StdResult<Decimal256> {
     let state: State = read_state(deps.storage)?;
-    let config: Config = read_config(deps.storage)?;
+    // let config: Config = read_config(deps.storage)?;
 
-    if quote_asset_amount == Uint128::zero() {
-        Uint128::zero();
+    if quote_asset_amount == Decimal256::zero() {
+        Decimal256::zero();
     }
 
     // k = x * y (divided by decimal places)
     let invariant_k = state
         .quote_asset_reserve
-        .checked_mul(state.base_asset_reserve)?
-        .checked_div(config.decimals)?;
+        * state.base_asset_reserve;
+        // .checked_div(config.decimals)?;
 
-    let quote_asset_after: Uint128;
-    let base_asset_after: Uint128;
+    let quote_asset_after: Decimal256;
+    let base_asset_after: Decimal256;
 
     match direction {
         Direction::AddToAmm => {
-            quote_asset_after = state.quote_asset_reserve.checked_add(quote_asset_amount)?;
+            quote_asset_after = state.quote_asset_reserve + quote_asset_amount;
         }
         Direction::RemoveFromAmm => {
-            quote_asset_after = state.quote_asset_reserve.checked_sub(quote_asset_amount)?;
+            quote_asset_after = state.quote_asset_reserve - quote_asset_amount;
         }
     }
 
-    base_asset_after = invariant_k
-        .checked_mul(config.decimals)?
-        .checked_div(quote_asset_after)?;
+    base_asset_after = invariant_k / quote_asset_after;
+        // .checked_mul(config.decimals)?
 
     let mut base_asset_bought = if base_asset_after > state.base_asset_reserve {
         base_asset_after - state.base_asset_reserve
@@ -145,11 +145,13 @@ pub fn get_input_price_with_reserves(
     };
 
     let remainder = modulo(invariant_k, quote_asset_after);
-    if remainder != Uint128::zero() {
+    if remainder != Decimal256::zero() {
         if *direction == Direction::AddToAmm {
-            base_asset_bought = base_asset_bought.checked_sub(Uint128::new(1u128))?;
+            base_asset_bought = base_asset_bought - Decimal256::one();
+            // base_asset_bought = base_asset_bought - Uint128::new(1u128);
         } else {
-            base_asset_bought = base_asset_bought.checked_add(Uint128::from(1u128))?;
+            base_asset_bought = base_asset_bought + Decimal256::one();
+            // base_asset_bought = base_asset_bought + Uint128::from(1u128);
         }
     }
 
@@ -159,33 +161,33 @@ pub fn get_input_price_with_reserves(
 pub fn get_output_price_with_reserves(
     deps: Deps,
     direction: &Direction,
-    base_asset_amount: Uint128,
-) -> StdResult<Uint128> {
+    base_asset_amount: Decimal256,
+) -> StdResult<Decimal256> {
     let state: State = read_state(deps.storage)?;
-    let config: Config = read_config(deps.storage)?;
+    // let config: Config = read_config(deps.storage)?;
 
-    if base_asset_amount == Uint128::zero() {
-        Uint128::zero();
+    if base_asset_amount == Decimal256::zero() {
+        Decimal256::zero();
     }
     let invariant_k = state
         .quote_asset_reserve
-        .checked_mul(state.base_asset_reserve)?
-        .checked_div(config.decimals)?;
+        * state.base_asset_reserve;
+        // .checked_div(config.decimals)?;
 
-    let quote_asset_after: Uint128;
-    let base_asset_after: Uint128;
+    let quote_asset_after: Decimal256;
+    let base_asset_after: Decimal256;
 
     match direction {
         Direction::AddToAmm => {
-            base_asset_after = state.base_asset_reserve.checked_add(base_asset_amount)?;
+            base_asset_after = state.base_asset_reserve + base_asset_amount;
         }
         Direction::RemoveFromAmm => {
-            base_asset_after = state.base_asset_reserve.checked_sub(base_asset_amount)?;
+            base_asset_after = state.base_asset_reserve - base_asset_amount;
         }
     }
-    quote_asset_after = invariant_k
-        .checked_mul(config.decimals)?
-        .checked_div(base_asset_after)?;
+    quote_asset_after = invariant_k / base_asset_after;
+        // .checked_mul(config.decimals)?
+        // .checked_div(base_asset_after)?;
 
     let mut quote_asset_sold = if quote_asset_after > state.quote_asset_reserve {
         quote_asset_after - state.quote_asset_reserve
@@ -194,11 +196,11 @@ pub fn get_output_price_with_reserves(
     };
 
     let remainder = modulo(invariant_k, base_asset_after);
-    if remainder != Uint128::zero() {
+    if remainder != Decimal256::zero() {
         if *direction == Direction::AddToAmm {
-            quote_asset_sold = quote_asset_sold.checked_sub(Uint128::from(1u128))?;
+            quote_asset_sold = quote_asset_sold - Decimal256::one();
         } else {
-            quote_asset_sold = quote_asset_sold.checked_add(Uint128::new(1u128))?;
+            quote_asset_sold = quote_asset_sold + Decimal256::one();
         }
     }
     Ok(quote_asset_sold)
@@ -208,8 +210,8 @@ fn update_reserve(
     storage: &mut dyn Storage,
     env: Env,
     direction: Direction,
-    quote_asset_amount: Uint128,
-    base_asset_amount: Uint128,
+    quote_asset_amount: Decimal256,
+    base_asset_amount: Decimal256,
 ) -> StdResult<Response> {
     let state: State = read_state(storage)?;
     let mut update_state = state.clone();
@@ -218,16 +220,16 @@ fn update_reserve(
         Direction::AddToAmm => {
             update_state.quote_asset_reserve = update_state
                 .quote_asset_reserve
-                .checked_add(quote_asset_amount)?;
+                + quote_asset_amount;
             update_state.base_asset_reserve =
-                state.base_asset_reserve.checked_sub(base_asset_amount)?;
+                state.base_asset_reserve - base_asset_amount;
         }
         Direction::RemoveFromAmm => {
             update_state.base_asset_reserve = update_state
                 .base_asset_reserve
-                .checked_add(base_asset_amount)?;
+                + base_asset_amount;
             update_state.quote_asset_reserve =
-                state.quote_asset_reserve.checked_sub(quote_asset_amount)?;
+                state.quote_asset_reserve - quote_asset_amount;
         }
     }
 
@@ -246,8 +248,8 @@ fn update_reserve(
 fn add_reserve_snapshot(
     storage: &mut dyn Storage,
     env: Env,
-    quote_asset_reserve: Uint128,
-    base_asset_reserve: Uint128,
+    quote_asset_reserve: Decimal256,
+    base_asset_reserve: Decimal256,
 ) -> StdResult<Response> {
     let new_snapshot = ReserveSnapshot {
         quote_asset_reserve,
@@ -259,3 +261,5 @@ fn add_reserve_snapshot(
 
     Ok(Response::default())
 }
+
+

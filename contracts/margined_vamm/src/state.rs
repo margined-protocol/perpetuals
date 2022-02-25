@@ -1,7 +1,8 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, StdResult, Storage, Timestamp, Uint128};
+use cosmwasm_std::{Addr, StdResult, Storage, Timestamp};
+use cosmwasm_bignumber::{Decimal256};
 use cosmwasm_storage::{bucket, bucket_read, singleton, singleton_read};
 
 pub static KEY_CONFIG: &[u8] = b"config";
@@ -14,9 +15,9 @@ pub struct Config {
     pub owner: Addr,
     pub quote_asset: String,
     pub base_asset: String,
-    pub decimals: Uint128,
-    pub toll_ratio: Uint128,
-    pub spread_ratio: Uint128,
+    pub decimals: Decimal256,
+    pub toll_ratio: Decimal256,
+    pub spread_ratio: Decimal256,
 }
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
@@ -29,9 +30,9 @@ pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct State {
-    pub quote_asset_reserve: Uint128,
-    pub base_asset_reserve: Uint128,
-    pub funding_rate: Uint128,
+    pub quote_asset_reserve: Decimal256,
+    pub base_asset_reserve: Decimal256,
+    pub funding_rate: Decimal256,
     pub funding_period: u64,
 }
 
@@ -45,8 +46,8 @@ pub fn read_state(storage: &dyn Storage) -> StdResult<State> {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, Default)]
 pub struct ReserveSnapshot {
-    pub quote_asset_reserve: Uint128,
-    pub base_asset_reserve: Uint128,
+    pub quote_asset_reserve: Decimal256,
+    pub base_asset_reserve: Decimal256,
     pub timestamp: Timestamp,
     pub block_height: u64,
 }

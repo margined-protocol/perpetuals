@@ -5,6 +5,7 @@ use cosmwasm_std::testing::{
 };
 use cosmwasm_std::{from_binary, Env, OwnedDeps, Uint128};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg, InstantiateMsg, QueryMsg};
+use cosmwasm_bignumber::{Decimal256};
 
 pub struct TestingEnv {
     pub deps: OwnedDeps<MockStorage, MockApi, MockQuerier>,
@@ -22,8 +23,8 @@ fn setup() -> TestingEnv {
         quote_asset_reserve: to_decimals(1_000),
         base_asset_reserve: to_decimals(100),
         funding_period: 3_600 as u64,
-        toll_ratio: Uint128::from(10_000_000u128),   // 0.01
-        spread_ratio: Uint128::from(10_000_000u128), // 0.01
+        toll_ratio: Decimal256::from_ratio(10_000_000u64, 1_000_000_000u64),   // 0.01
+        spread_ratio: Decimal256::from_ratio(10_000_000u64, 1_000_000_000u64), // 0.01
     };
 
     let info = mock_info("addr0000", &[]);

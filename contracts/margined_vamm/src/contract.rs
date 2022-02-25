@@ -4,6 +4,7 @@ use cosmwasm_std::{
     to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use cosmwasm_bignumber::{Decimal256};
 
 use crate::error::ContractError;
 use crate::query::{query_calc_fee, query_output_price, query_spot_price, query_twap_price};
@@ -27,7 +28,8 @@ pub fn instantiate(
         base_asset: msg.base_asset,
         toll_ratio: msg.toll_ratio,
         spread_ratio: msg.spread_ratio,
-        decimals: Uint128::from(10u128.pow(msg.decimals as u32)),
+        // decimals: Uint128::from(10u128.pow(msg.decimals as u32)),
+        decimals: Decimal256::one()
     };
 
     store_config(deps.storage, &config)?;
@@ -35,7 +37,7 @@ pub fn instantiate(
     let state = State {
         base_asset_reserve: msg.base_asset_reserve,
         quote_asset_reserve: msg.quote_asset_reserve,
-        funding_rate: Uint128::zero(), // Initialise the funding rate as 0
+        funding_rate: Decimal256::zero(), // Initialise the funding rate as 0
         funding_period: msg.funding_period, // Funding period in seconds
     };
 

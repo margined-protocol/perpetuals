@@ -1,4 +1,5 @@
-use cosmwasm_std::{Deps, Env, StdResult, Uint128};
+use cosmwasm_std::{Deps, Env, StdResult};
+use cosmwasm_bignumber::{Decimal256, Uint256};
 use margined_perp::margined_vamm::{CalcFeeResponse, ConfigResponse, Direction, StateResponse};
 
 use crate::{
@@ -36,53 +37,53 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
 }
 
 /// Queries output price
-pub fn query_output_price(deps: Deps, direction: Direction, amount: Uint128) -> StdResult<Uint128> {
+pub fn query_output_price(deps: Deps, direction: Direction, amount: Decimal256) -> StdResult<Decimal256> {
     let res = get_output_price_with_reserves(deps, &direction, amount)?;
 
     Ok(res)
 }
 
 /// Queries spot price of the vAMM
-pub fn query_spot_price(deps: Deps) -> StdResult<Uint128> {
+pub fn query_spot_price(deps: Deps) -> StdResult<Decimal256> {
     let config: Config = read_config(deps.storage)?;
     let state: State = read_state(deps.storage)?;
 
     let res = state
         .quote_asset_reserve
-        .checked_mul(config.decimals)?
-        .checked_div(state.base_asset_reserve)?;
+        / state.base_asset_reserve;
+        // .checked_mul(config.decimals)?
 
     Ok(res)
 }
 
 /// Queries twap price of the vAMM, using the reserve snapshots
-pub fn query_twap_price(deps: Deps, env: Env, interval: u64) -> StdResult<Uint128> {
+pub fn query_twap_price(deps: Deps, env: Env, interval: u64) -> StdResult<Decimal256> {
     calc_reserve_twap(deps, env, interval)
 }
 
 /// Returns the total (i.e. toll + spread) fees for an amount
-pub fn query_calc_fee(deps: Deps, quote_asset_amount: Uint128) -> StdResult<CalcFeeResponse> {
+pub fn query_calc_fee(deps: Deps, quote_asset_amount: Decimal256) -> StdResult<CalcFeeResponse> {
     let mut res = CalcFeeResponse {
-        toll_fee: Uint128::zero(),
-        spread_fee: Uint128::zero(),
+        toll_fee: Decimal256::zero(),
+        spread_fee: Decimal256::zero(),
     };
 
-    if quote_asset_amount != Uint128::zero() {
+    if quote_asset_amount != Decimal256::zero() {
         let config: Config = read_config(deps.storage)?;
 
         res.toll_fee = quote_asset_amount
-            .checked_mul(config.toll_ratio)?
-            .checked_div(config.decimals)?;
+            * config.toll_ratio;
+            // .checked_div(config.decimals)?;
         res.spread_fee = quote_asset_amount
-            .checked_mul(config.spread_ratio)?
-            .checked_div(config.decimals)?;
+            * config.spread_ratio;
+            // .checked_div(config.decimals)?;
     }
 
     Ok(res)
 }
 
 /// Calculates the TWAP of the AMM reserves
-fn calc_reserve_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Uint128> {
+fn calc_reserve_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Decimal256> {
     let config: Config = read_config(deps.storage)?;
     let mut counter = read_reserve_snapshot_counter(deps.storage).unwrap();
     let current_snapshot = read_reserve_snapshot(deps.storage, counter);
@@ -90,8 +91,8 @@ fn calc_reserve_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Uint128> 
 
     let mut current_price = current_snapshot
         .quote_asset_reserve
-        .checked_mul(config.decimals)?
-        .checked_div(current_snapshot.base_asset_reserve)?;
+        / current_snapshot.base_asset_reserve;
+        // .checked_mul(config.decimals)?
     if interval == 0 {
         return Ok(current_price);
     }
@@ -103,50 +104,46 @@ fn calc_reserve_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Uint128> 
     }
 
     let mut previous_timestamp = current_snapshot.timestamp.seconds();
-    let mut period = Uint128::from(
+    let mut period = Decimal256::from_uint256(Uint256::from(
         env.block
             .time
             .seconds()
             .checked_sub(previous_timestamp)
             .unwrap(),
-    );
-    let mut weighted_price = current_price.checked_mul(period)?;
+    ));
+    // let mut weighted_price = current_price.checked_mul(period)?;
+    let mut weighted_price = current_price * period;
 
     loop {
         counter -= 1;
         // if snapshot history is too short
         if counter == 0 {
-            return Ok(weighted_price.checked_div(period)?);
+            return Ok(weighted_price / period);
         }
         current_snapshot = read_reserve_snapshot(deps.storage, counter).unwrap();
         current_price = current_snapshot
             .quote_asset_reserve
-            .checked_mul(config.decimals)?
-            .checked_div(current_snapshot.base_asset_reserve)?;
+            / current_snapshot.base_asset_reserve;
+            // .checked_mul(config.decimals)?
 
         if current_snapshot.timestamp.seconds() <= base_timestamp {
             let delta_timestamp =
-                Uint128::from(previous_timestamp.checked_sub(base_timestamp).unwrap());
+                previous_timestamp - base_timestamp;
 
-            weighted_price = weighted_price
-                .checked_add(current_price.checked_mul(delta_timestamp).unwrap())
-                .unwrap();
-
+            weighted_price = weighted_price + current_price * Decimal256::from_uint256(Uint256::from(delta_timestamp));
             break;
         }
 
-        let delta_timestamp = Uint128::from(
+        let delta_timestamp = Decimal256::from_uint256(Uint256::from(
             previous_timestamp
                 .checked_sub(current_snapshot.timestamp.seconds())
                 .unwrap(),
-        );
-        weighted_price = weighted_price
-            .checked_add(current_price.checked_mul(delta_timestamp).unwrap())
-            .unwrap();
+        ));
+        weighted_price = weighted_price + (current_price * delta_timestamp);
 
-        period = period.checked_add(delta_timestamp).unwrap();
+        period = period + delta_timestamp;
         previous_timestamp = current_snapshot.timestamp.seconds();
     }
 
-    Ok(weighted_price.checked_div(Uint128::from(interval))?)
+    Ok(weighted_price / Decimal256::from_uint256(Uint256::from(interval)))
 }

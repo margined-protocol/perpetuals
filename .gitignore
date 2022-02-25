@@ -1,6 +1,10 @@
 # Build results
 /target
-
+/contracts/margined_vamm/target
+/contracts/margined_engine/target
+/contracts/margined_pricefeed/target
+/packages/margined_perp/target
+    
 # Cargo+Git helper file (https://github.com/rust-lang/cargo/blob/0.44.1/src/cargo/sources/git/utils.rs#L320-L327)
 .cargo-ok
 

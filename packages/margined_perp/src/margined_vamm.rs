@@ -2,6 +2,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_bignumber::{Decimal256};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -15,11 +16,11 @@ pub struct InstantiateMsg {
     pub decimals: u8,
     pub quote_asset: String,
     pub base_asset: String,
-    pub quote_asset_reserve: Uint128,
-    pub base_asset_reserve: Uint128,
+    pub quote_asset_reserve: Decimal256,
+    pub base_asset_reserve: Decimal256,
     pub funding_period: u64,
-    pub toll_ratio: Uint128,
-    pub spread_ratio: Uint128,
+    pub toll_ratio: Decimal256,
+    pub spread_ratio: Decimal256,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -29,17 +30,17 @@ pub enum ExecuteMsg {
         owner: Option<String>,
         // open: Option<bool>,
         // spot_price_twap_interval: Option<Uint128>,
-        toll_ratio: Option<Uint128>,
-        spread_ratio: Option<Uint128>,
+        toll_ratio: Option<Decimal256>,
+        spread_ratio: Option<Decimal256>,
         // price_feed: Option<String>,
     },
     SwapInput {
         direction: Direction,
-        quote_asset_amount: Uint128,
+        quote_asset_amount: Decimal256,
     },
     SwapOutput {
         direction: Direction,
-        base_asset_amount: Uint128,
+        base_asset_amount: Decimal256,
     },
     // SettleFunding {},
 }
@@ -51,7 +52,7 @@ pub enum QueryMsg {
     State {},
     OutputPrice {
         direction: Direction,
-        amount: Uint128,
+        amount: Decimal256,
     },
     // InputTwap {
     //     direction: Direction,
@@ -68,7 +69,7 @@ pub enum QueryMsg {
         interval: u64,
     },
     CalcFee {
-        quote_asset_amount: Uint128,
+        quote_asset_amount: Decimal256,
     },
 }
 
@@ -77,21 +78,21 @@ pub struct ConfigResponse {
     pub owner: Addr,
     pub quote_asset: String,
     pub base_asset: String,
-    pub toll_ratio: Uint128,
-    pub spread_ratio: Uint128,
-    pub decimals: Uint128,
+    pub toll_ratio: Decimal256,
+    pub spread_ratio: Decimal256,
+    pub decimals: Decimal256,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct StateResponse {
-    pub quote_asset_reserve: Uint128,
-    pub base_asset_reserve: Uint128,
-    pub funding_rate: Uint128,
+    pub quote_asset_reserve: Decimal256,
+    pub base_asset_reserve: Decimal256,
+    pub funding_rate: Decimal256,
     pub funding_period: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct CalcFeeResponse {
-    pub toll_fee: Uint128,
-    pub spread_fee: Uint128,
+    pub toll_fee: Decimal256,
+    pub spread_fee: Decimal256,
 }
