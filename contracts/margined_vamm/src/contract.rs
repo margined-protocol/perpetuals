@@ -1,10 +1,8 @@
+use cosmwasm_bignumber::Decimal256;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
-};
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use cosmwasm_bignumber::{Decimal256};
 
 use crate::error::ContractError;
 use crate::query::{query_calc_fee, query_output_price, query_spot_price, query_twap_price};
@@ -28,7 +26,7 @@ pub fn instantiate(
         base_asset: msg.base_asset,
         toll_ratio: msg.toll_ratio,
         spread_ratio: msg.spread_ratio,
-        decimals: Decimal256::one()
+        decimals: Decimal256::one(),
     };
 
     store_config(deps.storage, &config)?;

@@ -1,5 +1,5 @@
-use cosmwasm_std::{Deps, Env, StdResult};
 use cosmwasm_bignumber::{Decimal256, Uint256};
+use cosmwasm_std::{Deps, Env, StdResult};
 use margined_perp::margined_vamm::{CalcFeeResponse, ConfigResponse, Direction, StateResponse};
 
 use crate::{
@@ -37,7 +37,11 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
 }
 
 /// Queries output price
-pub fn query_output_price(deps: Deps, direction: Direction, amount: Decimal256) -> StdResult<Decimal256> {
+pub fn query_output_price(
+    deps: Deps,
+    direction: Direction,
+    amount: Decimal256,
+) -> StdResult<Decimal256> {
     let res = get_output_price_with_reserves(deps, &direction, amount)?;
 
     Ok(res)
@@ -45,13 +49,9 @@ pub fn query_output_price(deps: Deps, direction: Direction, amount: Decimal256) 
 
 /// Queries spot price of the vAMM
 pub fn query_spot_price(deps: Deps) -> StdResult<Decimal256> {
-    // let config: Config = read_config(deps.storage)?;
     let state: State = read_state(deps.storage)?;
 
-    let res = state
-        .quote_asset_reserve
-        / state.base_asset_reserve;
-        // .checked_mul(config.decimals)?
+    let res = state.quote_asset_reserve / state.base_asset_reserve;
 
     Ok(res)
 }
@@ -71,12 +71,8 @@ pub fn query_calc_fee(deps: Deps, quote_asset_amount: Decimal256) -> StdResult<C
     if quote_asset_amount != Decimal256::zero() {
         let config: Config = read_config(deps.storage)?;
 
-        res.toll_fee = quote_asset_amount
-            * config.toll_ratio;
-            // .checked_div(config.decimals)?;
-        res.spread_fee = quote_asset_amount
-            * config.spread_ratio;
-            // .checked_div(config.decimals)?;
+        res.toll_fee = quote_asset_amount * config.toll_ratio;
+        res.spread_fee = quote_asset_amount * config.spread_ratio;
     }
 
     Ok(res)
@@ -84,15 +80,12 @@ pub fn query_calc_fee(deps: Deps, quote_asset_amount: Decimal256) -> StdResult<C
 
 /// Calculates the TWAP of the AMM reserves
 fn calc_reserve_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Decimal256> {
-    // let config: Config = read_config(deps.storage)?;
     let mut counter = read_reserve_snapshot_counter(deps.storage).unwrap();
     let current_snapshot = read_reserve_snapshot(deps.storage, counter);
     let mut current_snapshot = current_snapshot.unwrap();
 
-    let mut current_price = current_snapshot
-        .quote_asset_reserve
-        / current_snapshot.base_asset_reserve;
-        // .checked_mul(config.decimals)?
+    let mut current_price =
+        current_snapshot.quote_asset_reserve / current_snapshot.base_asset_reserve;
     if interval == 0 {
         return Ok(current_price);
     }
@@ -111,7 +104,6 @@ fn calc_reserve_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Decimal25
             .checked_sub(previous_timestamp)
             .unwrap(),
     ));
-    // let mut weighted_price = current_price.checked_mul(period)?;
     let mut weighted_price = current_price * period;
 
     loop {
@@ -121,16 +113,13 @@ fn calc_reserve_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Decimal25
             return Ok(weighted_price / period);
         }
         current_snapshot = read_reserve_snapshot(deps.storage, counter).unwrap();
-        current_price = current_snapshot
-            .quote_asset_reserve
-            / current_snapshot.base_asset_reserve;
-            // .checked_mul(config.decimals)?
+        current_price = current_snapshot.quote_asset_reserve / current_snapshot.base_asset_reserve;
 
         if current_snapshot.timestamp.seconds() <= base_timestamp {
-            let delta_timestamp =
-                previous_timestamp - base_timestamp;
+            let delta_timestamp = previous_timestamp - base_timestamp;
 
-            weighted_price = weighted_price + current_price * Decimal256::from_uint256(Uint256::from(delta_timestamp));
+            weighted_price +=
+                current_price * Decimal256::from_uint256(Uint256::from(delta_timestamp));
             break;
         }
 
@@ -139,9 +128,9 @@ fn calc_reserve_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Decimal25
                 .checked_sub(current_snapshot.timestamp.seconds())
                 .unwrap(),
         ));
-        weighted_price = weighted_price + (current_price * delta_timestamp);
+        weighted_price += current_price * delta_timestamp;
 
-        period = period + delta_timestamp;
+        period += delta_timestamp;
         previous_timestamp = current_snapshot.timestamp.seconds();
     }
 

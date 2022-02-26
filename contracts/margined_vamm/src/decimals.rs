@@ -1,4 +1,4 @@
-use cosmwasm_bignumber::{Decimal256};
+use cosmwasm_bignumber::Decimal256;
 
 /// However it follows the design of the perpertual protocol decimals
 /// https://github.com/perpetual-protocol/perpetual-protocol/blob/release/v2.1.x/src/utils/Decimal.sol

@@ -572,6 +572,7 @@ dependencies = [
 name = "margined_vamm"
 version = "0.1.0"
 dependencies = [
+ "bigint",
  "cosmwasm-bignumber",
  "cosmwasm-schema",
  "cosmwasm-std",

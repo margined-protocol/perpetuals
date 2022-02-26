@@ -1,8 +1,8 @@
 use crate::contract::{execute, instantiate, query};
-use crate::testing::setup::{to_decimals};
+use crate::testing::setup::to_decimals;
+use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{from_binary, Addr,};
-use cosmwasm_bignumber::{Decimal256};
+use cosmwasm_std::{from_binary, Addr};
 use margined_perp::margined_vamm::{
     ConfigResponse, Direction, ExecuteMsg, InstantiateMsg, QueryMsg, StateResponse,
 };
@@ -14,8 +14,8 @@ fn test_instantiation() {
         decimals: 9u8,
         quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: Decimal256::from_ratio(100u64, 1_000_000_000u64),
-        base_asset_reserve: Decimal256::from_ratio(10_000u64, 1_000_000_000u64),
+        quote_asset_reserve: to_decimals("1000"),
+        base_asset_reserve: to_decimals("100"),
         funding_period: 3_600 as u64,
         toll_ratio: Decimal256::zero(),
         spread_ratio: Decimal256::zero(),
@@ -44,8 +44,8 @@ fn test_instantiation() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: Decimal256::from_ratio(100u64, 1_000_000_000u64),
-            base_asset_reserve: Decimal256::from_ratio(10_000u64, 1_000_000_000u64),
+            quote_asset_reserve: to_decimals("1000"),
+            base_asset_reserve: to_decimals("100"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
@@ -59,8 +59,8 @@ fn test_update_config() {
         decimals: 9u8,
         quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: Decimal256::from_ratio(100u64, 1_000_000_000u64),
-        base_asset_reserve: Decimal256::from_ratio(10_000u64, 1_000_000_000u64),
+        quote_asset_reserve: to_decimals("1000"),
+        base_asset_reserve: to_decimals("100"),
         funding_period: 3_600 as u64,
         toll_ratio: Decimal256::zero(),
         spread_ratio: Decimal256::zero(),
@@ -101,8 +101,8 @@ fn test_swap_input_long() {
         decimals: 9u8,
         quote_asset: "ETH/USD".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: to_decimals(1000),
-        base_asset_reserve: to_decimals(100),
+        quote_asset_reserve: to_decimals("1000"),
+        base_asset_reserve: to_decimals("100"),
         funding_period: 3_600 as u64,
         toll_ratio: Decimal256::zero(),
         spread_ratio: Decimal256::zero(),
@@ -113,7 +113,7 @@ fn test_swap_input_long() {
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
-        quote_asset_amount: to_decimals(600),
+        quote_asset_amount: to_decimals("600"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -123,8 +123,8 @@ fn test_swap_input_long() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: to_decimals(1_600),
-            base_asset_reserve: Decimal256::from_ratio(625u64, 10u64),
+            quote_asset_reserve: to_decimals("1600"),
+            base_asset_reserve: to_decimals("62.5"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
@@ -138,8 +138,8 @@ fn test_swap_input_short() {
         decimals: 9u8,
         quote_asset: "ETH/USD".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: to_decimals(1000),
-        base_asset_reserve: to_decimals(100),
+        quote_asset_reserve: to_decimals("1000"),
+        base_asset_reserve: to_decimals("100"),
         funding_period: 3_600 as u64,
         toll_ratio: Decimal256::zero(),
         spread_ratio: Decimal256::zero(),
@@ -150,7 +150,7 @@ fn test_swap_input_short() {
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::RemoveFromAmm,
-        quote_asset_amount: to_decimals(600),
+        quote_asset_amount: to_decimals("600"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -160,8 +160,8 @@ fn test_swap_input_short() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: to_decimals(400),
-            base_asset_reserve: to_decimals(250),
+            quote_asset_reserve: to_decimals("400"),
+            base_asset_reserve: to_decimals("250"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
@@ -175,8 +175,8 @@ fn test_swap_output_short() {
         decimals: 9u8,
         quote_asset: "ETH/USD".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: to_decimals(1000),
-        base_asset_reserve: to_decimals(100),
+        quote_asset_reserve: to_decimals("1000"),
+        base_asset_reserve: to_decimals("100"),
         funding_period: 3_600 as u64,
         toll_ratio: Decimal256::zero(),
         spread_ratio: Decimal256::zero(),
@@ -187,7 +187,7 @@ fn test_swap_output_short() {
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapOutput {
         direction: Direction::AddToAmm,
-        base_asset_amount: to_decimals(150),
+        base_asset_amount: to_decimals("150"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -197,8 +197,8 @@ fn test_swap_output_short() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: to_decimals(400),
-            base_asset_reserve: to_decimals(250),
+            quote_asset_reserve: to_decimals("400"),
+            base_asset_reserve: to_decimals("250"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
@@ -212,8 +212,8 @@ fn test_swap_output_long() {
         decimals: 9u8,
         quote_asset: "ETH/USD".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: to_decimals(1000),
-        base_asset_reserve: to_decimals(100),
+        quote_asset_reserve: to_decimals("1000"),
+        base_asset_reserve: to_decimals("100"),
         funding_period: 3_600 as u64,
         toll_ratio: Decimal256::zero(),
         spread_ratio: Decimal256::zero(),
@@ -224,7 +224,7 @@ fn test_swap_output_long() {
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapOutput {
         direction: Direction::RemoveFromAmm,
-        base_asset_amount: to_decimals(50),
+        base_asset_amount: to_decimals("50"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -234,8 +234,8 @@ fn test_swap_output_long() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: to_decimals(2_000),
-            base_asset_reserve: to_decimals(50),
+            quote_asset_reserve: to_decimals("2000"),
+            base_asset_reserve: to_decimals("50"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
@@ -249,8 +249,8 @@ fn test_swap_input_short_long() {
         decimals: 9u8,
         quote_asset: "ETH/USD".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: to_decimals(1000),
-        base_asset_reserve: to_decimals(100),
+        quote_asset_reserve: to_decimals("1000"),
+        base_asset_reserve: to_decimals("100"),
         funding_period: 3_600 as u64,
         toll_ratio: Decimal256::zero(),
         spread_ratio: Decimal256::zero(),
@@ -261,7 +261,7 @@ fn test_swap_input_short_long() {
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::RemoveFromAmm,
-        quote_asset_amount: to_decimals(480),
+        quote_asset_amount: to_decimals("480"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -272,8 +272,8 @@ fn test_swap_input_short_long() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: to_decimals(520),
-            base_asset_reserve: Decimal256::from_ratio(192_307_692_308u64, 1_000_000_000u64),
+            quote_asset_reserve: to_decimals("520"),
+            base_asset_reserve: to_decimals("192.307692307692307693"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
@@ -282,7 +282,7 @@ fn test_swap_input_short_long() {
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
-        quote_asset_amount: to_decimals(960),
+        quote_asset_amount: to_decimals("960"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -292,8 +292,8 @@ fn test_swap_input_short_long() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: to_decimals(1_480),
-            base_asset_reserve: Decimal256::from_ratio(67_567_567_568u64, 1_000_000_000u64),
+            quote_asset_reserve: to_decimals("1480"),
+            base_asset_reserve: to_decimals("67.567567567567567568"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
@@ -307,8 +307,8 @@ fn test_swap_input_short_long_long() {
         decimals: 9u8,
         quote_asset: "ETH/USD".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: to_decimals(1000),
-        base_asset_reserve: to_decimals(100),
+        quote_asset_reserve: to_decimals("1000"),
+        base_asset_reserve: to_decimals("100"),
         funding_period: 3_600 as u64,
         toll_ratio: Decimal256::zero(),
         spread_ratio: Decimal256::zero(),
@@ -318,7 +318,7 @@ fn test_swap_input_short_long_long() {
 
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::RemoveFromAmm,
-        quote_asset_amount: to_decimals(200),
+        quote_asset_amount: to_decimals("200"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -329,8 +329,8 @@ fn test_swap_input_short_long_long() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: to_decimals(800),
-            base_asset_reserve: to_decimals(125),
+            quote_asset_reserve: to_decimals("800"),
+            base_asset_reserve: to_decimals("125"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
@@ -338,7 +338,7 @@ fn test_swap_input_short_long_long() {
 
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
-        quote_asset_amount: to_decimals(100),
+        quote_asset_amount: to_decimals("100"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -349,8 +349,8 @@ fn test_swap_input_short_long_long() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: to_decimals(900),
-            base_asset_reserve: Decimal256::from_ratio(111_111_111_112u64, 1_000_000_000u64),
+            quote_asset_reserve: to_decimals("900"),
+            base_asset_reserve: to_decimals("111.111111111111111112"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
@@ -358,7 +358,7 @@ fn test_swap_input_short_long_long() {
 
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
-        quote_asset_amount: to_decimals(200),
+        quote_asset_amount: to_decimals("200"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -369,8 +369,8 @@ fn test_swap_input_short_long_long() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: to_decimals(1100),
-            base_asset_reserve: Decimal256::from_ratio(90_909_090_910u64, 1_000_000_000u64),
+            quote_asset_reserve: to_decimals("1100"),
+            base_asset_reserve: to_decimals("90.909090909090909092"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
@@ -384,8 +384,8 @@ fn test_swap_input_short_long_short() {
         decimals: 9u8,
         quote_asset: "ETH/USD".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: to_decimals(1000),
-        base_asset_reserve: to_decimals(100),
+        quote_asset_reserve: to_decimals("1000"),
+        base_asset_reserve: to_decimals("100"),
         funding_period: 3_600 as u64,
         toll_ratio: Decimal256::zero(),
         spread_ratio: Decimal256::zero(),
@@ -395,7 +395,7 @@ fn test_swap_input_short_long_short() {
 
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::RemoveFromAmm,
-        quote_asset_amount: to_decimals(200),
+        quote_asset_amount: to_decimals("200"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -406,8 +406,8 @@ fn test_swap_input_short_long_short() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: to_decimals(800),
-            base_asset_reserve: to_decimals(125),
+            quote_asset_reserve: to_decimals("800"),
+            base_asset_reserve: to_decimals("125"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
@@ -415,7 +415,7 @@ fn test_swap_input_short_long_short() {
 
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
-        quote_asset_amount: to_decimals(450),
+        quote_asset_amount: to_decimals("450"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -426,8 +426,8 @@ fn test_swap_input_short_long_short() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: to_decimals(1250),
-            base_asset_reserve: to_decimals(80),
+            quote_asset_reserve: to_decimals("1250"),
+            base_asset_reserve: to_decimals("80"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
@@ -435,7 +435,7 @@ fn test_swap_input_short_long_short() {
 
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::RemoveFromAmm,
-        quote_asset_amount: to_decimals(250),
+        quote_asset_amount: to_decimals("250"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -446,8 +446,8 @@ fn test_swap_input_short_long_short() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: to_decimals(1000),
-            base_asset_reserve: to_decimals(100),
+            quote_asset_reserve: to_decimals("1000"),
+            base_asset_reserve: to_decimals("100"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
@@ -461,8 +461,8 @@ fn test_swap_input_long_integration_example() {
         decimals: 9u8,
         quote_asset: "ETH/USD".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: to_decimals(1_000),
-        base_asset_reserve: to_decimals(100),
+        quote_asset_reserve: to_decimals("1000"),
+        base_asset_reserve: to_decimals("100"),
         funding_period: 3_600 as u64,
         toll_ratio: Decimal256::zero(),
         spread_ratio: Decimal256::zero(),
@@ -473,7 +473,7 @@ fn test_swap_input_long_integration_example() {
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
-        quote_asset_amount: to_decimals(600), // this is swapping 60 at 10x leverage
+        quote_asset_amount: to_decimals("600"), // this is swapping 60 at 10x leverage
     };
 
     let info = mock_info("addr0000", &[]);
@@ -483,8 +483,8 @@ fn test_swap_input_long_integration_example() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: to_decimals(1_600),
-            base_asset_reserve: Decimal256::from_ratio(625u64, 10u64),
+            quote_asset_reserve: to_decimals("1600"),
+            base_asset_reserve: to_decimals("62.5"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
@@ -498,8 +498,8 @@ fn test_swap_input_long_short_integration_example() {
         decimals: 9u8,
         quote_asset: "ETH/USD".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: to_decimals(1_000),
-        base_asset_reserve: to_decimals(100),
+        quote_asset_reserve: to_decimals("1000"),
+        base_asset_reserve: to_decimals("100"),
         funding_period: 3_600 as u64,
         toll_ratio: Decimal256::zero(),
         spread_ratio: Decimal256::zero(),
@@ -510,7 +510,7 @@ fn test_swap_input_long_short_integration_example() {
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
-        quote_asset_amount: to_decimals(600), // this is swapping 60 at 10x leverage
+        quote_asset_amount: to_decimals("600"), // this is swapping 60 at 10x leverage
     };
 
     let info = mock_info("addr0000", &[]);
@@ -520,8 +520,8 @@ fn test_swap_input_long_short_integration_example() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: to_decimals(1_600),
-            base_asset_reserve: Decimal256::from_ratio(625u64, 10u64),
+            quote_asset_reserve: to_decimals("1600"),
+            base_asset_reserve: to_decimals("62.5"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
@@ -530,7 +530,7 @@ fn test_swap_input_long_short_integration_example() {
     // Swap in ETH
     let swap_msg = ExecuteMsg::SwapOutput {
         direction: Direction::AddToAmm,
-        base_asset_amount: Decimal256::from_ratio(375u64, 10u64), // this is swapping 60 at 10x leverage
+        base_asset_amount: to_decimals("37.5"), // this is swapping 60 at 10x leverage
     };
 
     let info = mock_info("addr0000", &[]);
@@ -540,8 +540,8 @@ fn test_swap_input_long_short_integration_example() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: to_decimals(1_000),
-            base_asset_reserve: to_decimals(100),
+            quote_asset_reserve: to_decimals("1000"),
+            base_asset_reserve: to_decimals("100"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
@@ -555,8 +555,8 @@ fn test_swap_input_twice_short_long() {
         decimals: 9u8,
         quote_asset: "ETH/USD".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: to_decimals(1000),
-        base_asset_reserve: to_decimals(100),
+        quote_asset_reserve: to_decimals("1000"),
+        base_asset_reserve: to_decimals("100"),
         funding_period: 3_600 as u64,
         toll_ratio: Decimal256::zero(),
         spread_ratio: Decimal256::zero(),
@@ -567,7 +567,7 @@ fn test_swap_input_twice_short_long() {
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::RemoveFromAmm,
-        quote_asset_amount: to_decimals(10),
+        quote_asset_amount: to_decimals("10"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -576,7 +576,7 @@ fn test_swap_input_twice_short_long() {
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
-        quote_asset_amount: to_decimals(10),
+        quote_asset_amount: to_decimals("10"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -586,8 +586,8 @@ fn test_swap_input_twice_short_long() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: to_decimals(1_000),
-            base_asset_reserve: to_decimals(100),
+            quote_asset_reserve: to_decimals("1000"),
+            base_asset_reserve: to_decimals("100.000000000000000001"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
@@ -601,8 +601,8 @@ fn test_swap_input_twice_long_short() {
         decimals: 9u8,
         quote_asset: "ETH/USD".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: to_decimals(1000),
-        base_asset_reserve: to_decimals(100),
+        quote_asset_reserve: to_decimals("1000"),
+        base_asset_reserve: to_decimals("100"),
         funding_period: 3_600 as u64,
         toll_ratio: Decimal256::zero(),
         spread_ratio: Decimal256::zero(),
@@ -613,7 +613,7 @@ fn test_swap_input_twice_long_short() {
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
-        quote_asset_amount: to_decimals(10),
+        quote_asset_amount: to_decimals("10"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -622,7 +622,7 @@ fn test_swap_input_twice_long_short() {
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::RemoveFromAmm,
-        quote_asset_amount: to_decimals(10),
+        quote_asset_amount: to_decimals("10"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -632,8 +632,8 @@ fn test_swap_input_twice_long_short() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: to_decimals(1_000),
-            base_asset_reserve: to_decimals(100),
+            quote_asset_reserve: to_decimals("1000"),
+            base_asset_reserve: to_decimals("100.000000000000000001"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
@@ -647,8 +647,8 @@ fn test_swap_output_twice_short_long() {
         decimals: 9u8,
         quote_asset: "ETH/USD".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: to_decimals(1000),
-        base_asset_reserve: to_decimals(100),
+        quote_asset_reserve: to_decimals("1000"),
+        base_asset_reserve: to_decimals("100"),
         funding_period: 3_600 as u64,
         toll_ratio: Decimal256::zero(),
         spread_ratio: Decimal256::zero(),
@@ -659,7 +659,7 @@ fn test_swap_output_twice_short_long() {
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapOutput {
         direction: Direction::RemoveFromAmm,
-        base_asset_amount: to_decimals(10),
+        base_asset_amount: to_decimals("10"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -668,7 +668,7 @@ fn test_swap_output_twice_short_long() {
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapOutput {
         direction: Direction::AddToAmm,
-        base_asset_amount: to_decimals(10),
+        base_asset_amount: to_decimals("10"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -678,8 +678,8 @@ fn test_swap_output_twice_short_long() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: to_decimals(1_000),
-            base_asset_reserve: to_decimals(100),
+            quote_asset_reserve: to_decimals("1000.000000000000000001"),
+            base_asset_reserve: to_decimals("100"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }
@@ -693,8 +693,8 @@ fn test_swap_output_twice_long_short() {
         decimals: 9u8,
         quote_asset: "ETH/USD".to_string(),
         base_asset: "USD".to_string(),
-        quote_asset_reserve: to_decimals(1000),
-        base_asset_reserve: to_decimals(100),
+        quote_asset_reserve: to_decimals("1000"),
+        base_asset_reserve: to_decimals("100"),
         funding_period: 3_600 as u64,
         toll_ratio: Decimal256::zero(),
         spread_ratio: Decimal256::zero(),
@@ -705,7 +705,7 @@ fn test_swap_output_twice_long_short() {
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapOutput {
         direction: Direction::AddToAmm,
-        base_asset_amount: to_decimals(10),
+        base_asset_amount: to_decimals("10"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -714,7 +714,7 @@ fn test_swap_output_twice_long_short() {
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapOutput {
         direction: Direction::RemoveFromAmm,
-        base_asset_amount: to_decimals(10),
+        base_asset_amount: to_decimals("10"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -724,8 +724,8 @@ fn test_swap_output_twice_long_short() {
     assert_eq!(
         state,
         StateResponse {
-            quote_asset_reserve: to_decimals(1_000),
-            base_asset_reserve: to_decimals(100),
+            quote_asset_reserve: to_decimals("1000.000000000000000001"),
+            base_asset_reserve: to_decimals("100"),
             funding_rate: Decimal256::zero(),
             funding_period: 3_600 as u64,
         }

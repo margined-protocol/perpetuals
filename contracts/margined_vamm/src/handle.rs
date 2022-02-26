@@ -1,5 +1,6 @@
+use bigint::U256;
+use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdResult, Storage};
-use cosmwasm_bignumber::{Decimal256};
 
 use crate::{
     decimals::modulo,
@@ -10,6 +11,8 @@ use crate::{
     },
 };
 use margined_perp::margined_vamm::Direction;
+
+const SMALLEST_DECIMAL_FRACTION: Decimal256 = Decimal256(U256([1, 0, 0, 0]));
 
 pub fn update_config(
     deps: DepsMut,
@@ -111,17 +114,13 @@ pub fn get_input_price_with_reserves(
     quote_asset_amount: Decimal256,
 ) -> StdResult<Decimal256> {
     let state: State = read_state(deps.storage)?;
-    // let config: Config = read_config(deps.storage)?;
 
     if quote_asset_amount == Decimal256::zero() {
         Decimal256::zero();
     }
 
     // k = x * y (divided by decimal places)
-    let invariant_k = state
-        .quote_asset_reserve
-        * state.base_asset_reserve;
-        // .checked_div(config.decimals)?;
+    let invariant_k = state.quote_asset_reserve * state.base_asset_reserve;
 
     let quote_asset_after: Decimal256;
     let base_asset_after: Decimal256;
@@ -136,7 +135,7 @@ pub fn get_input_price_with_reserves(
     }
 
     base_asset_after = invariant_k / quote_asset_after;
-        // .checked_mul(config.decimals)?
+    // .checked_mul(config.decimals)?
 
     let mut base_asset_bought = if base_asset_after > state.base_asset_reserve {
         base_asset_after - state.base_asset_reserve
@@ -147,11 +146,9 @@ pub fn get_input_price_with_reserves(
     let remainder = modulo(invariant_k, quote_asset_after);
     if remainder != Decimal256::zero() {
         if *direction == Direction::AddToAmm {
-            base_asset_bought = base_asset_bought - Decimal256::one();
-            // base_asset_bought = base_asset_bought - Uint128::new(1u128);
+            base_asset_bought = base_asset_bought - SMALLEST_DECIMAL_FRACTION;
         } else {
-            base_asset_bought = base_asset_bought + Decimal256::one();
-            // base_asset_bought = base_asset_bought + Uint128::from(1u128);
+            base_asset_bought += SMALLEST_DECIMAL_FRACTION;
         }
     }
 
@@ -164,15 +161,11 @@ pub fn get_output_price_with_reserves(
     base_asset_amount: Decimal256,
 ) -> StdResult<Decimal256> {
     let state: State = read_state(deps.storage)?;
-    // let config: Config = read_config(deps.storage)?;
 
     if base_asset_amount == Decimal256::zero() {
         Decimal256::zero();
     }
-    let invariant_k = state
-        .quote_asset_reserve
-        * state.base_asset_reserve;
-        // .checked_div(config.decimals)?;
+    let invariant_k = state.quote_asset_reserve * state.base_asset_reserve;
 
     let quote_asset_after: Decimal256;
     let base_asset_after: Decimal256;
@@ -186,8 +179,6 @@ pub fn get_output_price_with_reserves(
         }
     }
     quote_asset_after = invariant_k / base_asset_after;
-        // .checked_mul(config.decimals)?
-        // .checked_div(base_asset_after)?;
 
     let mut quote_asset_sold = if quote_asset_after > state.quote_asset_reserve {
         quote_asset_after - state.quote_asset_reserve
@@ -198,9 +189,9 @@ pub fn get_output_price_with_reserves(
     let remainder = modulo(invariant_k, base_asset_after);
     if remainder != Decimal256::zero() {
         if *direction == Direction::AddToAmm {
-            quote_asset_sold = quote_asset_sold - Decimal256::one();
+            quote_asset_sold = quote_asset_sold - SMALLEST_DECIMAL_FRACTION;
         } else {
-            quote_asset_sold = quote_asset_sold + Decimal256::one();
+            quote_asset_sold += SMALLEST_DECIMAL_FRACTION;
         }
     }
     Ok(quote_asset_sold)
@@ -218,18 +209,12 @@ fn update_reserve(
 
     match direction {
         Direction::AddToAmm => {
-            update_state.quote_asset_reserve = update_state
-                .quote_asset_reserve
-                + quote_asset_amount;
-            update_state.base_asset_reserve =
-                state.base_asset_reserve - base_asset_amount;
+            update_state.quote_asset_reserve += quote_asset_amount;
+            update_state.base_asset_reserve = state.base_asset_reserve - base_asset_amount;
         }
         Direction::RemoveFromAmm => {
-            update_state.base_asset_reserve = update_state
-                .base_asset_reserve
-                + base_asset_amount;
-            update_state.quote_asset_reserve =
-                state.quote_asset_reserve - quote_asset_amount;
+            update_state.base_asset_reserve += base_asset_amount;
+            update_state.quote_asset_reserve = state.quote_asset_reserve - quote_asset_amount;
         }
     }
 
@@ -261,5 +246,3 @@ fn add_reserve_snapshot(
 
     Ok(Response::default())
 }
-
-
