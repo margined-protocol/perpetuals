@@ -1,6 +1,7 @@
 use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{from_binary, Addr, Uint128};
+use cosmwasm_std::{from_binary, Addr, };
+use cosmwasm_bignumber::Decimal256;
 use margined_perp::margined_engine::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 
 const TOKEN: &str = "token";
@@ -12,9 +13,9 @@ fn test_instantiation() {
     let msg = InstantiateMsg {
         decimals: 10u8,
         eligible_collateral: TOKEN.to_string(),
-        initial_margin_ratio: Uint128::from(100u128),
-        maintenance_margin_ratio: Uint128::from(100u128),
-        liquidation_fee: Uint128::from(100u128),
+        initial_margin_ratio: Decimal256::from_ratio(100u64, 1_000_000_000u64),
+        maintenance_margin_ratio: Decimal256::from_ratio(100u64, 1_000_000_000u64),
+        liquidation_fee: Decimal256::from_ratio(100u64, 1_000_000_000u64),
         vamm: vec!["test".to_string()],
     };
     let info = mock_info(OWNER, &[]);
@@ -38,9 +39,9 @@ fn test_update_config() {
     let msg = InstantiateMsg {
         decimals: 10u8,
         eligible_collateral: TOKEN.to_string(),
-        initial_margin_ratio: Uint128::from(100u128),
-        maintenance_margin_ratio: Uint128::from(100u128),
-        liquidation_fee: Uint128::from(100u128),
+        initial_margin_ratio: Decimal256::from_ratio(100u64, 1_000_000_000u64),
+        maintenance_margin_ratio: Decimal256::from_ratio(100u64, 1_000_000_000u64),
+        liquidation_fee: Decimal256::from_ratio(100u64, 1_000_000_000u64),
         vamm: vec!["test".to_string()],
     };
     let info = mock_info(OWNER, &[]);

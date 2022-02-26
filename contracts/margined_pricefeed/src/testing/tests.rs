@@ -2,11 +2,14 @@ use crate::{
     contract::{execute, instantiate, query},
     state::PriceData,
 };
+use crate::testing::setup::{to_decimals};
 use cosmwasm_std::{from_binary, Addr, Uint128};
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
     Timestamp,
 };
+
+use cosmwasm_bignumber::{Decimal256, Uint256};
 use margined_perp::margined_pricefeed::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 
 #[test]
@@ -26,7 +29,7 @@ fn test_instantiation() {
         config,
         ConfigResponse {
             owner: info.sender.clone(),
-            decimals: Uint128::from(1_000_000_000 as u128),
+            decimals: Decimal256::one(),
         }
     );
 }
@@ -55,7 +58,7 @@ fn test_update_config() {
         config,
         ConfigResponse {
             owner: Addr::unchecked("addr0001".to_string()),
-            decimals: Uint128::from(1_000_000_000 as u128),
+            decimals: Decimal256::one(),
         }
     );
 }
@@ -77,14 +80,14 @@ fn test_set_and_get_price() {
         config,
         ConfigResponse {
             owner: info.sender.clone(),
-            decimals: Uint128::from(1_000_000_000 as u128),
+            decimals: Decimal256::one(),
         }
     );
 
     // Set some market data
     let msg = ExecuteMsg::AppendPrice {
         key: "ETHUSD".to_string(),
-        price: Uint128::from(500_000_000u128), // 0.5 I think
+        price: Decimal256::from_ratio(5u64, 10u64), // 0.5 I think
         timestamp: 1_000_000_000,              // 0.5 I think
     };
 
@@ -103,8 +106,8 @@ fn test_set_and_get_price() {
     assert_eq!(
         price,
         PriceData {
-            round_id: Uint128::from(1u64),
-            price: Uint128::from(500_000_000u128),
+            round_id: Decimal256::from_ratio(1u64, 1_000_000_000u64),
+            price: Decimal256::from_ratio(5u64, 10u64),
             timestamp: Timestamp::from_seconds(1_000_000_000),
         }
     );
@@ -112,7 +115,7 @@ fn test_set_and_get_price() {
     // Set some market data
     let msg = ExecuteMsg::AppendPrice {
         key: "ETHUSD".to_string(),
-        price: Uint128::from(600_000_000u128), // 0.5 I think
+        price: Decimal256::from_ratio(6u64, 10u64), // 0.5 I think
         timestamp: 1_000_000_001,              // 0.5 I think
     };
 
@@ -131,8 +134,8 @@ fn test_set_and_get_price() {
     assert_eq!(
         price,
         PriceData {
-            round_id: Uint128::from(2u64),
-            price: Uint128::from(600_000_000u128),
+            round_id: Decimal256::from_ratio(2u64, 1_000_000_000u64),
+            price: Decimal256::from_ratio(6u64, 10u64),
             timestamp: Timestamp::from_seconds(1_000_000_001),
         }
     );
@@ -155,14 +158,14 @@ fn test_set_multiple_price() {
         config,
         ConfigResponse {
             owner: info.sender.clone(),
-            decimals: Uint128::from(1_000_000_000 as u128),
+            decimals: Decimal256::one(),
         }
     );
 
     let prices = vec![
-        Uint128::from(500_000_000u128),
-        Uint128::from(600_000_000u128),
-        Uint128::from(700_000_000u128),
+        Decimal256::from_ratio(5u64, 10u64),
+        Decimal256::from_ratio(6u64, 10u64),
+        Decimal256::from_ratio(7u64, 10u64),
     ];
 
     let timestamps = vec![1_000_000_000, 1_000_000_001, 1_000_000_002];
@@ -189,8 +192,8 @@ fn test_set_multiple_price() {
     assert_eq!(
         price,
         PriceData {
-            round_id: Uint128::from(3u64),
-            price: Uint128::from(700_000_000u128),
+            round_id: Decimal256::from_ratio(3u64, 1_000_000_000u64),
+            price: Decimal256::from_ratio(7u64, 10u64),
             timestamp: Timestamp::from_seconds(1_000_000_002),
         }
     );
@@ -213,17 +216,17 @@ fn test_get_previous_price() {
         config,
         ConfigResponse {
             owner: info.sender.clone(),
-            decimals: Uint128::from(1_000_000_000 as u128),
+            decimals: Decimal256::one(),
         }
     );
 
     let prices = vec![
-        Uint128::from(500_000_000u128),
-        Uint128::from(600_000_000u128),
-        Uint128::from(700_000_000u128),
-        Uint128::from(600_000_000u128),
-        Uint128::from(670_000_000u128),
-        Uint128::from(710_000_000u128),
+        Decimal256::from_ratio(5u64, 10u64),
+        Decimal256::from_ratio(6u64, 10u64),
+        Decimal256::from_ratio(7u64, 10u64),
+        Decimal256::from_ratio(6u64, 10u64),
+        Decimal256::from_ratio(67u64, 100u64),
+        Decimal256::from_ratio(71u64, 100u64),
     ];
 
     let timestamps = vec![
@@ -250,7 +253,7 @@ fn test_get_previous_price() {
         mock_env(),
         QueryMsg::GetPreviousPrice {
             key: "ETHUSD".to_string(),
-            num_round_back: Uint128::from(3u128),
+            num_round_back: Decimal256::from_ratio(3u64, 1_000_000_000u64),
         },
     )
     .unwrap();
@@ -259,8 +262,8 @@ fn test_get_previous_price() {
     assert_eq!(
         price,
         PriceData {
-            round_id: Uint128::from(3u64),
-            price: Uint128::from(700_000_000u128),
+            round_id: Decimal256::from_ratio(3u64, 1_000_000_000u64),
+            price: Decimal256::from_ratio(7u64, 10u64),
             timestamp: Timestamp::from_seconds(1_000_000_002),
         }
     );
@@ -270,7 +273,7 @@ fn test_get_previous_price() {
         mock_env(),
         QueryMsg::GetPreviousPrice {
             key: "ETHUSD".to_string(),
-            num_round_back: Uint128::from(7u128),
+            num_round_back: Decimal256::from_ratio(7u64, 1_000_000_000u64),
         },
     );
     assert!(res.is_err());
@@ -294,14 +297,14 @@ fn test_get_twap_price() {
         config,
         ConfigResponse {
             owner: info.sender.clone(),
-            decimals: Uint128::from(1_000_000_000 as u128),
+            decimals: Decimal256::one(),
         }
     );
 
     let prices = vec![
-        Uint128::from(400_000_000_000u128),
-        Uint128::from(405_000_000_000u128),
-        Uint128::from(410_000_000_000u128),
+        to_decimals(400),
+        to_decimals(405),
+        to_decimals(410),
     ];
 
     let timestamps: Vec<u64> = vec![
@@ -332,8 +335,9 @@ fn test_get_twap_price() {
     )
     .unwrap();
 
-    let twap: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(twap, Uint128::from(405_000_000_000u128));
+    let twap_unwrap: Uint128 = from_binary(&res).unwrap();
+    let twap = Decimal256::from_uint256(Uint256::from(twap_unwrap));
+    assert_eq!(twap, to_decimals(405));
 
     let res = query(
         deps.as_ref(),
@@ -345,8 +349,9 @@ fn test_get_twap_price() {
     )
     .unwrap();
 
-    let twap: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(twap, Uint128::from(405_000_000_000u128));
+    let twap_unwrap: Uint128 = from_binary(&res).unwrap();
+    let twap = Decimal256::from_uint256(Uint256::from(twap_unwrap));
+    assert_eq!(twap, to_decimals(405));
 
     let res = query(
         deps.as_ref(),
@@ -380,15 +385,15 @@ fn test_get_twap_variant_price_period() {
         config,
         ConfigResponse {
             owner: info.sender.clone(),
-            decimals: Uint128::from(1_000_000_000 as u128),
+            decimals: Decimal256::one(),
         }
     );
 
     let prices = vec![
-        Uint128::from(400_000_000_000u128),
-        Uint128::from(405_000_000_000u128),
-        Uint128::from(410_000_000_000u128),
-        Uint128::from(420_000_000_000u128),
+        to_decimals(400),
+        to_decimals(405),
+        to_decimals(410),
+        to_decimals(420),
     ];
 
     let timestamps: Vec<u64> = vec![
@@ -442,14 +447,14 @@ fn test_get_twap_error_zero_interval() {
         config,
         ConfigResponse {
             owner: info.sender.clone(),
-            decimals: Uint128::from(1_000_000_000 as u128),
+            decimals: Decimal256::one(),
         }
     );
 
     let prices = vec![
-        Uint128::from(400_000_000_000u128),
-        Uint128::from(405_000_000_000u128),
-        Uint128::from(410_000_000_000u128),
+        to_decimals(400),
+        to_decimals(405),
+        to_decimals(410),
     ];
 
     let timestamps: Vec<u64> = vec![

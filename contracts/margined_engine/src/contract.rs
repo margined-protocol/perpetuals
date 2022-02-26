@@ -3,12 +3,13 @@ use cosmwasm_std::{
     from_binary, to_binary, Attribute, Binary, ContractResult, Deps, DepsMut, Env, Event,
     MessageInfo, Reply, Response, StdError, StdResult, SubMsgExecutionResponse, Uint128,
 };
+use cosmwasm_bignumber::{Decimal256};
 use cw20::Cw20ReceiveMsg;
 use margined_perp::margined_engine::{Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
 #[cfg(not(feature = "library"))]
 use std::str::FromStr;
-
 use crate::error::ContractError;
+
 use crate::{
     handle::{close_position, open_position, update_config},
     query::{
@@ -27,7 +28,7 @@ pub const SWAP_DECREASE_REPLY_ID: u64 = 2;
 pub const SWAP_REVERSE_REPLY_ID: u64 = 3;
 pub const SWAP_CLOSE_REPLY_ID: u64 = 4;
 
-#[cfg_attr(not(feature = "library"), entry_point)]
+// #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
@@ -41,7 +42,7 @@ pub fn instantiate(
     let config = Config {
         owner: info.sender,
         eligible_collateral,
-        decimals,
+        decimals: Decimal256::one(),
         initial_margin_ratio: msg.initial_margin_ratio,
         maintenance_margin_ratio: msg.maintenance_margin_ratio,
         liquidation_fee: msg.liquidation_fee,
@@ -109,7 +110,8 @@ pub fn receive_cw20(
             vamm,
             cw20_msg.sender,
             side,
-            cw20_msg.amount, // not needed, we should take from deposited amount or validate
+            // Decimal256::from_uint256(Decimal256::FromStr(cw20_msg.amount.to_string())), // not needed, we should take from deposited amount or validate
+            Decimal256::from_str(&cw20_msg.amount.to_string()).unwrap(), // not needed, we should take from deposited amount or validate
             leverage,
         ),
         Err(_) => Err(StdError::generic_err("invalid cw20 hook message")),
@@ -166,16 +168,16 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
     }
 }
 
-fn parse_swap(response: SubMsgExecutionResponse) -> (Uint128, Uint128) {
+fn parse_swap(response: SubMsgExecutionResponse) -> (Decimal256, Decimal256) {
     // Find swap inputs and output events
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");
     let wasm = wasm.unwrap();
 
     let input_str = read_event("input".to_string(), wasm).value;
-    let input: Uint128 = Uint128::from_str(&input_str).unwrap();
+    let input: Decimal256 = Decimal256::from_str(&input_str).unwrap();
 
     let output_str = read_event("output".to_string(), wasm).value;
-    let output: Uint128 = Uint128::from_str(&output_str).unwrap();
+    let output: Decimal256 = Decimal256::from_str(&output_str).unwrap();
 
     (input, output)
 }

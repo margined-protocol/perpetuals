@@ -22,12 +22,12 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     AppendPrice {
         key: String,
-        price: Uint128,
+        price: Decimal256,
         timestamp: u64,
     },
     AppendMultiplePrice {
         key: String,
-        prices: Vec<Uint128>,
+        prices: Vec<Decimal256>,
         timestamps: Vec<u64>,
     },
     UpdateConfig {
@@ -44,7 +44,7 @@ pub enum QueryMsg {
     },
     GetPreviousPrice {
         key: String,
-        num_round_back: Uint128,
+        num_round_back: Decimal256,
     },
     GetTwapPrice {
         key: String,
@@ -55,5 +55,5 @@ pub enum QueryMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: Addr,
-    pub decimals: Uint128,
+    pub decimals: Decimal256,
 }

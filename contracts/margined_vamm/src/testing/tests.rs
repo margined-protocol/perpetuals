@@ -1,7 +1,7 @@
 use crate::contract::{execute, instantiate, query};
-use crate::testing::setup::{to_decimals, DECIMAL_MULTIPLIER};
+use crate::testing::setup::{to_decimals};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{from_binary, Addr, Uint128};
+use cosmwasm_std::{from_binary, Addr,};
 use cosmwasm_bignumber::{Decimal256};
 use margined_perp::margined_vamm::{
     ConfigResponse, Direction, ExecuteMsg, InstantiateMsg, QueryMsg, StateResponse,

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, Timestamp, Uint128};
 use cw20::Cw20ReceiveMsg;
-use cosmwasm_bignumber::{Decimal256};
+use cosmwasm_bignumber::Decimal256;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -24,9 +24,9 @@ pub enum PnlCalcOption {
 pub struct InstantiateMsg {
     pub decimals: u8,
     pub eligible_collateral: String,
-    pub initial_margin_ratio: Uint128,
-    pub maintenance_margin_ratio: Uint128,
-    pub liquidation_fee: Uint128,
+    pub initial_margin_ratio: Decimal256,
+    pub maintenance_margin_ratio: Decimal256,
+    pub liquidation_fee: Decimal256,
     pub vamm: Vec<String>,
 }
 
@@ -40,8 +40,8 @@ pub enum ExecuteMsg {
     OpenPosition {
         vamm: String,
         side: Side,
-        quote_asset_amount: Uint128,
-        leverage: Uint128,
+        quote_asset_amount: Decimal256,
+        leverage: Decimal256,
     },
     ClosePosition {
         vamm: String,
@@ -59,7 +59,7 @@ pub enum Cw20HookMsg {
     OpenPosition {
         vamm: String,
         side: Side,
-        leverage: Uint128,
+        leverage: Decimal256,
     },
 }
 
@@ -81,11 +81,11 @@ pub struct ConfigResponse {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct PositionResponse {
-    pub size: Uint128,
-    pub margin: Uint128,
-    pub notional: Uint128,
-    pub premium_fraction: Uint128,
-    pub liquidity_history_index: Uint128,
+    pub size: Decimal256,
+    pub margin: Decimal256,
+    pub notional: Decimal256,
+    pub premium_fraction: Decimal256,
+    pub liquidity_history_index: Decimal256,
     pub timestamp: Timestamp,
 }
 
@@ -94,15 +94,15 @@ pub struct SwapResponse {
     pub vamm: String,
     pub trader: String,
     pub side: String,
-    pub quote_asset_amount: Uint128,
-    pub leverage: Uint128,
-    pub open_notional: Uint128,
-    pub input: Uint128,
-    pub output: Uint128,
+    pub quote_asset_amount: Decimal256,
+    pub leverage: Decimal256,
+    pub open_notional: Decimal256,
+    pub input: Decimal256,
+    pub output: Decimal256,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct PositionUnrealizedPnlResponse {
-    pub position_notional: Uint128,
-    pub unrealized_pnl: Uint128,
+    pub position_notional: Decimal256,
+    pub unrealized_pnl: Decimal256,
 }

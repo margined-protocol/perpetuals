@@ -1,4 +1,5 @@
-use cosmwasm_std::{Deps, StdResult, Uint128};
+use cosmwasm_std::{Deps, StdResult};
+use cosmwasm_bignumber::Decimal256;
 use margined_perp::margined_engine::{ConfigResponse, PnlCalcOption, PositionResponse};
 
 use crate::{
@@ -37,7 +38,7 @@ pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Pos
 }
 
 /// Queries user position
-pub fn query_unrealized_pnl(deps: Deps, vamm: String, trader: String) -> StdResult<Uint128> {
+pub fn query_unrealized_pnl(deps: Deps, vamm: String, trader: String) -> StdResult<Decimal256> {
     // read the msg.senders position
     let position = read_position(
         deps.storage,
@@ -52,12 +53,12 @@ pub fn query_unrealized_pnl(deps: Deps, vamm: String, trader: String) -> StdResu
 }
 
 /// Queries traders position across all vamms
-pub fn query_trader_balance_with_funding_payment(deps: Deps, trader: String) -> StdResult<Uint128> {
-    let mut margin = Uint128::zero();
+pub fn query_trader_balance_with_funding_payment(deps: Deps, trader: String) -> StdResult<Decimal256> {
+    let mut margin = Decimal256::zero();
     let vamm_list = read_vamm(deps.storage)?;
     for vamm in vamm_list.vamm.iter() {
         let position = query_position(deps, vamm.to_string(), trader.clone())?;
-        margin = margin.checked_add(position.margin)?;
+        margin = margin + position.margin;
     }
 
     Ok(margin)

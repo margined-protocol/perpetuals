@@ -1,5 +1,6 @@
 use crate::contract::{execute, instantiate, query, reply};
 use cosmwasm_std::{Addr, Empty, Uint128};
+use cosmwasm_bignumber::Decimal256;
 use cw20::{Cw20Coin, Cw20ExecuteMsg};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use margined_perp::margined_engine::InstantiateMsg;
@@ -71,11 +72,11 @@ pub fn setup() -> TestingEnv {
                 initial_balances: vec![
                     Cw20Coin {
                         address: alice.to_string(),
-                        amount: to_decimals(5000),
+                        amount: to_decimals_uint128(5000),
                     },
                     Cw20Coin {
                         address: bob.to_string(),
-                        amount: to_decimals(5000),
+                        amount: to_decimals_uint128(5000),
                     },
                 ],
                 mint: None,
@@ -98,8 +99,8 @@ pub fn setup() -> TestingEnv {
                 quote_asset_reserve: to_decimals(1_000),
                 base_asset_reserve: to_decimals(100),
                 funding_period: 3_600 as u64,
-                toll_ratio: Uint128::zero(),
-                spread_ratio: Uint128::zero(),
+                toll_ratio: Decimal256::zero(),
+                spread_ratio: Decimal256::zero(),
             },
             &[],
             "vamm",
@@ -115,9 +116,9 @@ pub fn setup() -> TestingEnv {
             &InstantiateMsg {
                 decimals: 9u8,
                 eligible_collateral: usdc_addr.to_string(),
-                initial_margin_ratio: Uint128::from(100u128),
-                maintenance_margin_ratio: Uint128::from(100u128),
-                liquidation_fee: Uint128::from(100u128),
+                initial_margin_ratio: Decimal256::from_ratio(100u64, 1_000_000_000u64),
+                maintenance_margin_ratio: Decimal256::from_ratio(100u64, 1_000_000_000u64),
+                liquidation_fee: Decimal256::from_ratio(100u64, 1_000_000_000u64),
                 vamm: vec![vamm_addr.to_string()],
             },
             &[],
@@ -133,7 +134,7 @@ pub fn setup() -> TestingEnv {
             usdc_addr.clone(),
             &Cw20ExecuteMsg::IncreaseAllowance {
                 spender: engine_addr.to_string(),
-                amount: to_decimals(2000),
+                amount: to_decimals_uint128(2000),
                 expires: None,
             },
             &[],
@@ -147,7 +148,7 @@ pub fn setup() -> TestingEnv {
             usdc_addr.clone(),
             &Cw20ExecuteMsg::IncreaseAllowance {
                 spender: engine_addr.to_string(),
-                amount: to_decimals(2000),
+                amount: to_decimals_uint128(2000),
                 expires: None,
             },
             &[],
@@ -175,6 +176,11 @@ pub fn setup() -> TestingEnv {
 }
 
 // takes in a Uint128 and multiplies by the decimals just to make tests more legible
-pub fn to_decimals(input: u64) -> Uint128 {
+pub fn to_decimals_uint128(input: u64) -> Uint128 {
     return Uint128::from(input) * DECIMAL_MULTIPLIER;
+}
+
+// takes in a Uint128 and multiplies by the decimals just to make tests more legible
+pub fn to_decimals(input: u64) -> Decimal256 {
+    return Decimal256::from_ratio(input, 1);
 }

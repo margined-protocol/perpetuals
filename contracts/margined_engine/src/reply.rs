@@ -1,21 +1,22 @@
 use cosmwasm_std::{
     to_binary, Addr, CosmosMsg, DepsMut, Env, ReplyOn, Response, StdError, StdResult, Storage,
-    SubMsg, Uint128, WasmMsg,
+    SubMsg, WasmMsg, Uint128,
 };
 use cw20::Cw20ExecuteMsg;
-
+use cosmwasm_bignumber::Decimal256;
 use crate::{
     handle::{clear_position, get_position, internal_increase_position},
     state::{read_config, read_tmp_swap, remove_tmp_swap, store_position, store_tmp_swap},
     utils::side_to_direction,
 };
+use std::str::FromStr;
 
 // Increases position after successful execution of the swap
 pub fn increase_position_reply(
     deps: DepsMut,
     env: Env,
-    _input: Uint128,
-    output: Uint128,
+    _input: Decimal256,
+    output: Decimal256,
 ) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
     let tmp_swap = read_tmp_swap(deps.storage)?;
@@ -33,15 +34,13 @@ pub fn increase_position_reply(
     );
 
     // now update the position
-    position.size = position.size.checked_add(output)?;
-    position.notional = position.notional.checked_add(swap.open_notional)?;
+    position.size = position.size + output;
+    position.notional = position.notional + swap.open_notional;
     position.direction = side_to_direction(swap.side);
 
     // TODO make my own decimal math lib
-    position.margin = position
-        .notional
-        .checked_mul(config.decimals)?
-        .checked_div(swap.leverage)?;
+    position.margin = position.notional / swap.leverage;
+        // .checked_mul(config.decimals)?
 
     store_position(deps.storage, &position)?;
 
@@ -63,8 +62,8 @@ pub fn increase_position_reply(
 pub fn decrease_position_reply(
     deps: DepsMut,
     env: Env,
-    _input: Uint128,
-    output: Uint128,
+    _input: Decimal256,
+    output: Decimal256,
 ) -> StdResult<Response> {
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
@@ -81,8 +80,8 @@ pub fn decrease_position_reply(
     );
 
     // now update the position
-    position.size = position.size.checked_sub(output)?;
-    position.notional = position.notional.checked_sub(swap.open_notional)?;
+    position.size = position.size - output;
+    position.notional = position.notional - swap.open_notional;
 
     store_position(deps.storage, &position)?;
 
@@ -96,8 +95,8 @@ pub fn decrease_position_reply(
 pub fn reverse_position_reply(
     deps: DepsMut,
     env: Env,
-    _input: Uint128,
-    output: Uint128,
+    _input: Decimal256,
+    output: Decimal256,
 ) -> StdResult<Response> {
     let response: Response = Response::new();
     let tmp_swap = read_tmp_swap(deps.storage)?;
@@ -119,15 +118,15 @@ pub fn reverse_position_reply(
 
     let msg: SubMsg;
     // now increase the position again if there is additional position
-    let open_notional: Uint128;
+    let open_notional;
     if swap.open_notional > output {
-        open_notional = swap.open_notional.checked_sub(output)?;
-        swap.open_notional = swap.open_notional.checked_sub(output)?;
+        open_notional = swap.open_notional - output;
+        swap.open_notional = swap.open_notional - output;
     } else {
-        open_notional = output.checked_sub(swap.open_notional)?;
-        swap.open_notional = output.checked_sub(swap.open_notional)?;
+        open_notional = output - swap.open_notional;
+        swap.open_notional = output - swap.open_notional;
     }
-    if open_notional.checked_div(swap.leverage)? == Uint128::zero() {
+    if open_notional / swap.leverage == Decimal256::zero() {
         // create transfer message
         msg = execute_transfer(deps.storage, &swap.trader, margin_amount).unwrap();
         remove_tmp_swap(deps.storage);
@@ -146,8 +145,8 @@ pub fn reverse_position_reply(
 pub fn close_position_reply(
     deps: DepsMut,
     env: Env,
-    _input: Uint128,
-    output: Uint128,
+    _input: Decimal256,
+    output: Decimal256,
 ) -> StdResult<Response> {
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
@@ -163,15 +162,11 @@ pub fn close_position_reply(
         swap.side.clone(),
     );
 
-    let margin_returned: Uint128;
+    let margin_returned: Decimal256;
     if output > swap.open_notional {
-        margin_returned = position
-            .margin
-            .checked_sub(output.checked_sub(swap.open_notional)?)?;
+        margin_returned = position.margin - (output - swap.open_notional);
     } else {
-        margin_returned = position
-            .margin
-            .checked_sub(swap.open_notional.checked_sub(output)?)?;
+        margin_returned = position.margin - (swap.open_notional - output);
     }
 
     position = clear_position(env, position)?;
@@ -190,7 +185,7 @@ fn execute_transfer_from(
     storage: &dyn Storage,
     owner: &Addr,
     receiver: &Addr,
-    amount: Uint128,
+    amount: Decimal256,
 ) -> StdResult<SubMsg> {
     let config = read_config(storage)?;
     let msg = WasmMsg::Execute {
@@ -199,7 +194,7 @@ fn execute_transfer_from(
         msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
             owner: owner.to_string(),
             recipient: receiver.to_string(),
-            amount,
+            amount: Uint128::from(u128::from_str(&amount.to_string()).unwrap()),
         })?,
     };
 
@@ -213,14 +208,15 @@ fn execute_transfer_from(
     Ok(transfer_msg)
 }
 
-fn execute_transfer(storage: &dyn Storage, receiver: &Addr, amount: Uint128) -> StdResult<SubMsg> {
+fn execute_transfer(storage: &dyn Storage, receiver: &Addr, amount: Decimal256) -> StdResult<SubMsg> {
     let config = read_config(storage)?;
+
     let msg = WasmMsg::Execute {
         contract_addr: config.eligible_collateral.to_string(),
         funds: vec![],
         msg: to_binary(&Cw20ExecuteMsg::Transfer {
             recipient: receiver.to_string(),
-            amount,
+            amount: Uint128::from(u128::from_str(&amount.to_string()).unwrap()),
         })?,
     };
 

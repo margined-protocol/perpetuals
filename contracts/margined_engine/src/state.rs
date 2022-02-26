@@ -5,6 +5,7 @@ use cosmwasm_std::{Addr, Api, DepsMut, StdResult, Storage, Timestamp, Uint128};
 use cosmwasm_storage::{
     bucket, bucket_read, singleton, singleton_read, Bucket, ReadonlyBucket, Singleton,
 };
+use cosmwasm_bignumber::Decimal256;
 use cw_storage_plus::Item;
 
 use margined_perp::margined_engine::Side;
@@ -21,10 +22,10 @@ pub const VAMM_LIST: Item<VammList> = Item::new("admin_list");
 pub struct Config {
     pub owner: Addr,
     pub eligible_collateral: Addr,
-    pub decimals: Uint128,
-    pub initial_margin_ratio: Uint128,
-    pub maintenance_margin_ratio: Uint128,
-    pub liquidation_fee: Uint128,
+    pub decimals: Decimal256,
+    pub initial_margin_ratio: Decimal256,
+    pub maintenance_margin_ratio: Decimal256,
+    pub liquidation_fee: Decimal256,
 }
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
@@ -67,11 +68,11 @@ pub struct Position {
     pub vamm: Addr,
     pub trader: Addr,
     pub direction: Direction,
-    pub size: Uint128,
-    pub margin: Uint128,
-    pub notional: Uint128,
-    pub premium_fraction: Uint128,
-    pub liquidity_history_index: Uint128,
+    pub size: Decimal256,
+    pub margin: Decimal256,
+    pub notional: Decimal256,
+    pub premium_fraction: Decimal256,
+    pub liquidity_history_index: Decimal256,
     pub timestamp: Timestamp,
 }
 
@@ -81,11 +82,11 @@ impl Default for Position {
             vamm: Addr::unchecked(""),
             trader: Addr::unchecked(""),
             direction: Direction::AddToAmm,
-            size: Uint128::zero(),
-            margin: Uint128::zero(),
-            notional: Uint128::zero(),
-            premium_fraction: Uint128::zero(),
-            liquidity_history_index: Uint128::zero(),
+            size: Decimal256::zero(),
+            margin: Decimal256::zero(),
+            notional: Decimal256::zero(),
+            premium_fraction: Decimal256::zero(),
+            liquidity_history_index: Decimal256::zero(),
             timestamp: Timestamp::from_seconds(0),
         }
     }
@@ -135,9 +136,9 @@ pub struct Swap {
     pub vamm: Addr,
     pub trader: Addr,
     pub side: Side,
-    pub quote_asset_amount: Uint128,
-    pub leverage: Uint128,
-    pub open_notional: Uint128,
+    pub quote_asset_amount: Decimal256,
+    pub leverage: Decimal256,
+    pub open_notional: Decimal256,
 }
 
 pub fn store_tmp_swap(storage: &mut dyn Storage, swap: &Swap) -> StdResult<()> {

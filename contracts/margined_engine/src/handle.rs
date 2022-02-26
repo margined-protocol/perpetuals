@@ -13,6 +13,7 @@ use crate::{
 };
 use margined_perp::margined_engine::{PnlCalcOption, PositionUnrealizedPnlResponse, Side};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
+use cosmwasm_bignumber::Decimal256;
 
 pub fn update_config(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
@@ -40,8 +41,8 @@ pub fn open_position(
     vamm: String,
     trader: String,
     side: Side,
-    quote_asset_amount: Uint128,
-    leverage: Uint128,
+    quote_asset_amount: Decimal256,
+    leverage: Decimal256,
 ) -> StdResult<Response> {
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = deps.api.addr_validate(&trader)?;
@@ -50,9 +51,7 @@ pub fn open_position(
     let config: Config = read_config(deps.storage)?;
 
     // calc the input amount wrt to leverage and decimals
-    let open_notional = quote_asset_amount
-        .checked_mul(leverage)?
-        .checked_div(config.decimals)?;
+    let open_notional = quote_asset_amount / leverage;
 
     let position: Position = get_position(env.clone(), deps.storage, &vamm, &trader, side.clone());
 
@@ -131,7 +130,7 @@ pub fn close_position(
             trader,
             side: direction_to_side(position.direction),
             quote_asset_amount: position.size,
-            leverage: Uint128::zero(),
+            leverage: Decimal256::zero(),
             open_notional: position.notional,
         },
     )?;
@@ -145,7 +144,7 @@ pub fn close_position(
 pub fn internal_increase_position(
     vamm: Addr,
     side: Side,
-    open_notional: Uint128,
+    open_notional: Decimal256,
 ) -> StdResult<SubMsg> {
     swap_input(&vamm, side, open_notional, SWAP_INCREASE_REPLY_ID)
 }
@@ -157,7 +156,7 @@ fn open_reverse_position(
     vamm: Addr,
     trader: Addr,
     side: Side,
-    open_notional: Uint128,
+    open_notional: Decimal256,
 ) -> SubMsg {
     let msg: SubMsg;
     let position: Position = get_position(env, deps.storage, &vamm, &trader, side.clone());
@@ -187,7 +186,7 @@ fn open_reverse_position(
     msg
 }
 
-fn swap_input(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdResult<SubMsg> {
+fn swap_input(vamm: &Addr, side: Side, open_notional: Decimal256, id: u64) -> StdResult<SubMsg> {
     let direction: Direction = side_to_direction(side);
 
     let msg = WasmMsg::Execute {
@@ -209,7 +208,7 @@ fn swap_input(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdRe
     Ok(execute_submsg)
 }
 
-fn swap_output(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdResult<SubMsg> {
+fn swap_output(vamm: &Addr, side: Side, open_notional: Decimal256, id: u64) -> StdResult<SubMsg> {
     let direction: Direction = side_to_direction(side);
 
     let swap_msg = WasmMsg::Execute {
@@ -263,8 +262,8 @@ pub fn get_position_notional_unrealized_pnl(
     position: &Position,
     calc_option: PnlCalcOption,
 ) -> StdResult<PositionUnrealizedPnlResponse> {
-    let mut position_notional = Uint128::zero();
-    let mut unrealized_pnl = Uint128::zero();
+    let mut position_notional = Decimal256::zero();
+    let mut unrealized_pnl = Decimal256::zero();
 
     let position_size = position.size;
     if !position_size.is_zero() {
@@ -282,9 +281,9 @@ pub fn get_position_notional_unrealized_pnl(
         }
 
         if position.direction == Direction::RemoveFromAmm {
-            unrealized_pnl = position.notional.checked_sub(position_notional)?;
+            unrealized_pnl = position.notional - position_notional;
         } else {
-            unrealized_pnl = position_notional.checked_sub(position.notional)?;
+            unrealized_pnl = position_notional - position.notional;
         }
     }
 
@@ -296,9 +295,9 @@ pub fn get_position_notional_unrealized_pnl(
 
 // this resets the main variables of a position
 pub fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
-    position.size = Uint128::zero();
-    position.margin = Uint128::zero();
-    position.notional = Uint128::zero();
+    position.size = Decimal256::zero();
+    position.margin = Decimal256::zero();
+    position.notional = Decimal256::zero();
     position.timestamp = env.block.time;
 
     Ok(position)

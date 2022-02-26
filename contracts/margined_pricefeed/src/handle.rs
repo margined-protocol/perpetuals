@@ -1,4 +1,5 @@
-use cosmwasm_std::{DepsMut, MessageInfo, Response, Uint128};
+use cosmwasm_std::{DepsMut, MessageInfo, Response};
+use cosmwasm_bignumber::{Decimal256};
 
 use crate::{
     error::ContractError,
@@ -34,7 +35,7 @@ pub fn append_price(
     deps: DepsMut,
     info: MessageInfo,
     key: String,
-    price: Uint128,
+    price: Decimal256,
     timestamp: u64,
 ) -> Result<Response, ContractError> {
     let config: Config = read_config(deps.storage)?;
@@ -56,7 +57,7 @@ pub fn append_multiple_price(
     deps: DepsMut,
     info: MessageInfo,
     key: String,
-    prices: Vec<Uint128>,
+    prices: Vec<Decimal256>,
     timestamps: Vec<u64>,
 ) -> Result<Response, ContractError> {
     let config: Config = read_config(deps.storage)?;

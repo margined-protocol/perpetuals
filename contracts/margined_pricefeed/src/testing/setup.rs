@@ -1,4 +1,3 @@
-// use cosmwasm_std::Uint128;
 use cosmwasm_bignumber::{Decimal256};
 
 // pub const DECIMAL_MULTIPLIER: Uint128 = Uint128::new(1_000_000_000);

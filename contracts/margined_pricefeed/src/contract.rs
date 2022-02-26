@@ -7,8 +7,9 @@ use crate::{
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
+    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
+use cosmwasm_bignumber::{Decimal256};
 use margined_perp::margined_pricefeed::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -20,7 +21,8 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     let config = Config {
         owner: info.sender,
-        decimals: Uint128::from(10u128.pow(msg.decimals as u32)),
+        decimals: Decimal256::one(),
+        // decimals: Uint128::from(10u128.pow(msg.decimals as u32)),
     };
 
     store_config(deps.storage, &config)?;
