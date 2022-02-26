@@ -277,8 +277,8 @@ fn test_open_position_one_long_two_shorts() {
     let msg = ExecuteMsg::OpenPosition {
         vamm: env.vamm.addr.to_string(),
         side: Side::BUY,
-        quote_asset_amount: to_decimals(60u64),
-        leverage: to_decimals(10u64),
+        quote_asset_amount: to_decimals(60),
+        leverage: to_decimals(10),
     };
 
     let _res = env
@@ -289,8 +289,8 @@ fn test_open_position_one_long_two_shorts() {
     let msg = ExecuteMsg::OpenPosition {
         vamm: env.vamm.addr.to_string(),
         side: Side::SELL,
-        quote_asset_amount: to_decimals(20u64),
-        leverage: to_decimals(5u64),
+        quote_asset_amount: to_decimals(20),
+        leverage: to_decimals(5),
     };
 
     let _res = env
@@ -316,8 +316,8 @@ fn test_open_position_one_long_two_shorts() {
     let msg = ExecuteMsg::OpenPosition {
         vamm: env.vamm.addr.to_string(),
         side: Side::SELL,
-        quote_asset_amount: to_decimals(50u64),
-        leverage: to_decimals(10u64),
+        quote_asset_amount: to_decimals(50),
+        leverage: to_decimals(10),
     };
 
     let _res = env
@@ -536,8 +536,8 @@ fn test_open_position_long_short_long() {
     let msg = ExecuteMsg::OpenPosition {
         vamm: env.vamm.addr.to_string(),
         side: Side::BUY,
-        quote_asset_amount: to_decimals(25u64),
-        leverage: to_decimals(10u64),
+        quote_asset_amount: to_decimals(25),
+        leverage: to_decimals(10),
     };
 
     let _res = env
@@ -548,8 +548,8 @@ fn test_open_position_long_short_long() {
     let msg = ExecuteMsg::OpenPosition {
         vamm: env.vamm.addr.to_string(),
         side: Side::SELL,
-        quote_asset_amount: to_decimals(150u64),
-        leverage: to_decimals(3u64),
+        quote_asset_amount: to_decimals(150),
+        leverage: to_decimals(3),
     };
 
     let _res = env
@@ -568,14 +568,14 @@ fn test_open_position_long_short_long() {
             },
         )
         .unwrap();
-    assert_eq!(to_decimals(25u64), position.size);
+    assert_eq!(to_decimals(25), position.size);
     assert_eq!(Decimal256::from_ratio(66_666_666_666u64, 1_000_000_000u64), position.margin);
 
     let msg = ExecuteMsg::OpenPosition {
         vamm: env.vamm.addr.to_string(),
         side: Side::BUY,
-        quote_asset_amount: to_decimals(20u64),
-        leverage: to_decimals(10u64),
+        quote_asset_amount: to_decimals(20),
+        leverage: to_decimals(10),
     };
 
     let _res = env
@@ -666,8 +666,8 @@ fn test_close_safe_position() {
     let msg = ExecuteMsg::OpenPosition {
         vamm: env.vamm.addr.to_string(),
         side: Side::SELL,
-        quote_asset_amount: to_decimals(50u64),
-        leverage: to_decimals(2u64),
+        quote_asset_amount: to_decimals(50),
+        leverage: to_decimals(2),
     };
 
     let _res = env
@@ -692,8 +692,8 @@ fn test_close_safe_position() {
     let msg = ExecuteMsg::OpenPosition {
         vamm: env.vamm.addr.to_string(),
         side: Side::BUY,
-        quote_asset_amount: to_decimals(10u64),
-        leverage: to_decimals(6u64),
+        quote_asset_amount: to_decimals(10),
+        leverage: to_decimals(6),
     };
 
     let _res = env
@@ -757,8 +757,8 @@ fn test_close_position_over_maintenance_margin_ration() {
     let msg = ExecuteMsg::OpenPosition {
         vamm: env.vamm.addr.to_string(),
         side: Side::BUY,
-        quote_asset_amount: to_decimals(25u64),
-        leverage: to_decimals(10u64),
+        quote_asset_amount: to_decimals(25),
+        leverage: to_decimals(10),
     };
 
     let _res = env
@@ -783,7 +783,7 @@ fn test_close_position_over_maintenance_margin_ration() {
         vamm: env.vamm.addr.to_string(),
         side: Side::SELL,
         quote_asset_amount: Decimal256::from_ratio(3508u64, 100u64),
-        leverage: to_decimals(1u64),
+        leverage: to_decimals(1),
     };
 
     let _res = env
