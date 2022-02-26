@@ -9,7 +9,7 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
-use cosmwasm_bignumber::{Decimal256};
+use cosmwasm_bignumber::Decimal256;
 use margined_perp::margined_pricefeed::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 #[cfg_attr(not(feature = "library"), entry_point)]

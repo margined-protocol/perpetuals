@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Timestamp };
 use cw20::Cw20ReceiveMsg;
 use cosmwasm_bignumber::Decimal256;
 

@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     to_binary, Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError,
-    StdResult, Storage, SubMsg, Uint128, WasmMsg,
+    StdResult, Storage, SubMsg, WasmMsg,
 };
 
 use crate::{
@@ -48,7 +48,7 @@ pub fn open_position(
     let trader = deps.api.addr_validate(&trader)?;
     require_vamm(deps.storage, &vamm)?;
 
-    let config: Config = read_config(deps.storage)?;
+    // let config: Config = read_config(deps.storage)?;
 
     // calc the input amount wrt to leverage and decimals
     let open_notional = quote_asset_amount / leverage;

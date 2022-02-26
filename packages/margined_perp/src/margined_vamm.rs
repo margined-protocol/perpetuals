@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::{Addr, };
 use cosmwasm_bignumber::{Decimal256};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

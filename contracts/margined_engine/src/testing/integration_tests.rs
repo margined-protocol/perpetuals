@@ -213,8 +213,8 @@ fn test_open_position_equal_size_opposite_side() {
     let msg = ExecuteMsg::OpenPosition {
         vamm: env.vamm.addr.to_string(),
         side: Side::BUY,
-        quote_asset_amount: to_decimals(60u64),
-        leverage: to_decimals(10u64),
+        quote_asset_amount: to_decimals(60),
+        leverage: to_decimals(10),
     };
 
     let _res = env
@@ -225,8 +225,8 @@ fn test_open_position_equal_size_opposite_side() {
     let msg = ExecuteMsg::OpenPosition {
         vamm: env.vamm.addr.to_string(),
         side: Side::SELL,
-        quote_asset_amount: to_decimals(300u64),
-        leverage: to_decimals(2u64),
+        quote_asset_amount: to_decimals(300),
+        leverage: to_decimals(2),
     };
 
     let _res = env

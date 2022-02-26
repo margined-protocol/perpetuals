@@ -1,7 +1,7 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     from_binary, to_binary, Attribute, Binary, ContractResult, Deps, DepsMut, Env, Event,
-    MessageInfo, Reply, Response, StdError, StdResult, SubMsgExecutionResponse, Uint128,
+    MessageInfo, Reply, Response, StdError, StdResult, SubMsgExecutionResponse, 
 };
 use cosmwasm_bignumber::{Decimal256};
 use cw20::Cw20ReceiveMsg;
@@ -35,7 +35,7 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    let decimals = Uint128::from(10u128.pow(msg.decimals as u32));
+    // let decimals = Uint128::from(10u128.pow(msg.decimals as u32));
     let eligible_collateral = deps.api.addr_validate(&msg.eligible_collateral)?;
 
     // config parameters

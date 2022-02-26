@@ -18,7 +18,7 @@ pub fn increase_position_reply(
     _input: Decimal256,
     output: Decimal256,
 ) -> StdResult<Response> {
-    let config = read_config(deps.storage)?;
+    // let config = read_config(deps.storage)?;
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
         return Err(StdError::generic_err("no temporary position"));

@@ -45,7 +45,7 @@ pub fn query_output_price(deps: Deps, direction: Direction, amount: Decimal256) 
 
 /// Queries spot price of the vAMM
 pub fn query_spot_price(deps: Deps) -> StdResult<Decimal256> {
-    let config: Config = read_config(deps.storage)?;
+    // let config: Config = read_config(deps.storage)?;
     let state: State = read_state(deps.storage)?;
 
     let res = state
@@ -84,7 +84,7 @@ pub fn query_calc_fee(deps: Deps, quote_asset_amount: Decimal256) -> StdResult<C
 
 /// Calculates the TWAP of the AMM reserves
 fn calc_reserve_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Decimal256> {
-    let config: Config = read_config(deps.storage)?;
+    // let config: Config = read_config(deps.storage)?;
     let mut counter = read_reserve_snapshot_counter(deps.storage).unwrap();
     let current_snapshot = read_reserve_snapshot(deps.storage, counter);
     let mut current_snapshot = current_snapshot.unwrap();
