@@ -16,8 +16,8 @@ fn test_calc_fee() {
         quote_asset_reserve: Decimal256::from_ratio(100u64, 1u64),
         base_asset_reserve: Decimal256::from_ratio(10_000u64, 1u64),
         funding_period: 3_600 as u64,
-        toll_ratio: Decimal256::from_ratio(1u64, 10u64),   // 0.01
-        spread_ratio: Decimal256::from_ratio(1u64, 10u64), // 0.01
+        toll_ratio: Decimal256::from_ratio(1u64, 100u64),   // 0.01
+        spread_ratio: Decimal256::from_ratio(1u64, 100u64), // 0.01
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();

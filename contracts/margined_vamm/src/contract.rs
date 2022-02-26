@@ -28,7 +28,6 @@ pub fn instantiate(
         base_asset: msg.base_asset,
         toll_ratio: msg.toll_ratio,
         spread_ratio: msg.spread_ratio,
-        // decimals: Uint128::from(10u128.pow(msg.decimals as u32)),
         decimals: Decimal256::one()
     };
 
