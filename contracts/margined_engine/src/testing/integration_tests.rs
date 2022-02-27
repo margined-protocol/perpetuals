@@ -69,7 +69,7 @@ fn test_open_position_long() {
             },
         )
         .unwrap();
-    assert_eq!(Uint128::new(37500_000_000), position.size);
+    assert_eq!(Uint128::new(37_500_000_000), position.size);
     assert_eq!(to_decimals(60u64), position.margin);
 
     // clearing house token balance should be 60
@@ -440,7 +440,7 @@ fn test_open_position_short_and_two_longs() {
             },
         )
         .unwrap();
-    assert_eq!(Uint128::from(1 as u128), position.size);
+    assert_eq!(Uint128::from(1_u128), position.size);
     assert_eq!(to_decimals(40u64), position.margin);
 }
 
@@ -821,4 +821,86 @@ fn test_close_position_over_maintenance_margin_ration() {
         Uint128::from(977_422_074_621u128)
     );
     assert_eq!(state.base_asset_reserve, Uint128::from(102_309_946_334u128));
+}
+
+#[test]
+fn test_close_under_collateral_position() {
+    let mut env = setup::setup();
+
+    // set up cw20 helpers
+    let usdc = Cw20Contract(env.usdc.addr.clone());
+
+    let msg = ExecuteMsg::OpenPosition {
+        vamm: env.vamm.addr.to_string(),
+        side: Side::BUY,
+        quote_asset_amount: to_decimals(25u64),
+        leverage: to_decimals(10u64),
+    };
+
+    let _res = env
+        .router
+        .execute_contract(env.alice.clone(), env.engine.addr.clone(), &msg, &[])
+        .unwrap();
+
+    let position: PositionResponse = env
+        .router
+        .wrap()
+        .query_wasm_smart(
+            &env.engine.addr,
+            &QueryMsg::Position {
+                vamm: env.vamm.addr.to_string(),
+                trader: env.alice.to_string(),
+            },
+        )
+        .unwrap();
+    assert_eq!(position.size, to_decimals(20));
+
+    let msg = ExecuteMsg::OpenPosition {
+        vamm: env.vamm.addr.to_string(),
+        side: Side::SELL,
+        quote_asset_amount: to_decimals(250),
+        leverage: to_decimals(1u64),
+    };
+
+    let _res = env
+        .router
+        .execute_contract(env.bob.clone(), env.engine.addr.clone(), &msg, &[])
+        .unwrap();
+
+    // Now Alice's position is {balance: 20, margin: 25}
+    // positionValue of 20 quoteAsset is 166.67 now
+    // marginRatio = (margin(25) + unrealizedPnl(166.67-250)) / openNotionalSize(250) = -23%
+    let msg = ExecuteMsg::ClosePosition {
+        vamm: env.vamm.addr.to_string(),
+    };
+
+    let _res = env
+        .router
+        .execute_contract(env.alice.clone(), env.engine.addr.clone(), &msg, &[])
+        .unwrap();
+
+    // Alice's realizedPnl = 166.66 - 250 = -83.33, she lost all her margin(25)
+    // alice.balance = all(5000) - margin(25) = 4975
+    // insuranceFund.balance = 5000 + realizedPnl(-58.33) = 4941.66...
+    // clearingHouse.balance = 250 + +25 + 58.33(pnl from insuranceFund) = 333.33
+    let position: PositionResponse = env
+        .router
+        .wrap()
+        .query_wasm_smart(
+            &env.engine.addr,
+            &QueryMsg::Position {
+                vamm: env.vamm.addr.to_string(),
+                trader: env.alice.to_string(),
+            },
+        )
+        .unwrap();
+    assert_eq!(position.size, Uint128::zero());
+
+    // alice balance should be 4975
+    let engine_balance = usdc.balance(&env.router, env.alice.clone()).unwrap();
+    assert_eq!(engine_balance, Uint128::from(4_975_000_000_000u128));
+
+    // TODO see here: https://github.com/margined-protocol/mrgnd-perpetuals/issues/21
+    // need to implement the insurance fund and test that the amount required is
+    // taken to cover shortfall in funding payment
 }

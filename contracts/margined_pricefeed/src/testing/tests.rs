@@ -25,8 +25,8 @@ fn test_instantiation() {
     assert_eq!(
         config,
         ConfigResponse {
-            owner: info.sender.clone(),
-            decimals: Uint128::from(1_000_000_000 as u128),
+            owner: info.sender,
+            decimals: Uint128::from(1_000_000_000_u128),
         }
     );
 }
@@ -55,7 +55,7 @@ fn test_update_config() {
         config,
         ConfigResponse {
             owner: Addr::unchecked("addr0001".to_string()),
-            decimals: Uint128::from(1_000_000_000 as u128),
+            decimals: Uint128::from(1_000_000_000_u128),
         }
     );
 }
@@ -76,8 +76,8 @@ fn test_set_and_get_price() {
     assert_eq!(
         config,
         ConfigResponse {
-            owner: info.sender.clone(),
-            decimals: Uint128::from(1_000_000_000 as u128),
+            owner: info.sender,
+            decimals: Uint128::from(1_000_000_000_u128),
         }
     );
 
@@ -154,8 +154,8 @@ fn test_set_multiple_price() {
     assert_eq!(
         config,
         ConfigResponse {
-            owner: info.sender.clone(),
-            decimals: Uint128::from(1_000_000_000 as u128),
+            owner: info.sender,
+            decimals: Uint128::from(1_000_000_000_u128),
         }
     );
 
@@ -212,8 +212,8 @@ fn test_get_previous_price() {
     assert_eq!(
         config,
         ConfigResponse {
-            owner: info.sender.clone(),
-            decimals: Uint128::from(1_000_000_000 as u128),
+            owner: info.sender,
+            decimals: Uint128::from(1_000_000_000_u128),
         }
     );
 
@@ -293,8 +293,8 @@ fn test_get_twap_price() {
     assert_eq!(
         config,
         ConfigResponse {
-            owner: info.sender.clone(),
-            decimals: Uint128::from(1_000_000_000 as u128),
+            owner: info.sender,
+            decimals: Uint128::from(1_000_000_000_u128),
         }
     );
 
@@ -350,7 +350,7 @@ fn test_get_twap_price() {
 
     let res = query(
         deps.as_ref(),
-        env.clone(),
+        env,
         QueryMsg::GetTwapPrice {
             key: "ETHUSD".to_string(),
             interval: 44,
@@ -379,8 +379,8 @@ fn test_get_twap_variant_price_period() {
     assert_eq!(
         config,
         ConfigResponse {
-            owner: info.sender.clone(),
-            decimals: Uint128::from(1_000_000_000 as u128),
+            owner: info.sender,
+            decimals: Uint128::from(1_000_000_000_u128),
         }
     );
 
@@ -412,7 +412,7 @@ fn test_get_twap_variant_price_period() {
 
     let res = query(
         deps.as_ref(),
-        env.clone(),
+        env,
         QueryMsg::GetTwapPrice {
             key: "ETHUSD".to_string(),
             interval: 95,
@@ -441,8 +441,8 @@ fn test_get_twap_error_zero_interval() {
     assert_eq!(
         config,
         ConfigResponse {
-            owner: info.sender.clone(),
-            decimals: Uint128::from(1_000_000_000 as u128),
+            owner: info.sender,
+            decimals: Uint128::from(1_000_000_000_u128),
         }
     );
 
@@ -472,7 +472,7 @@ fn test_get_twap_error_zero_interval() {
 
     let res = query(
         deps.as_ref(),
-        env.clone(),
+        env,
         QueryMsg::GetTwapPrice {
             key: "ETHUSD".to_string(),
             interval: 0,

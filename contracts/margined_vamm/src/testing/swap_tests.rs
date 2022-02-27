@@ -17,7 +17,7 @@ fn test_get_input_and_output_price() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1_000),
         base_asset_reserve: to_decimals(100),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
     };

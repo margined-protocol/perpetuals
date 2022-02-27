@@ -7,7 +7,7 @@ use margined_perp::margined_vamm::Direction;
 pub fn require_vamm(storage: &dyn Storage, vamm: &Addr) -> StdResult<Response> {
     // check that it is a registered vamm
     let vamm_list: VammList = read_vamm(storage)?;
-    if !vamm_list.is_vamm(&vamm.to_string()) {
+    if !vamm_list.is_vamm(vamm.as_ref()) {
         return Err(StdError::generic_err("vAMM is not registered"));
     }
 

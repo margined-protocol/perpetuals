@@ -163,27 +163,42 @@ pub fn close_position_reply(
         swap.side.clone(),
     );
 
-    let margin_returned: Uint128;
-    if output > swap.open_notional {
-        margin_returned = position
-            .margin
-            .checked_sub(output.checked_sub(swap.open_notional)?)?;
+    // calculate delta from the trade
+    let delta: Uint128 = if output > swap.open_notional {
+        output.checked_sub(swap.open_notional)?
     } else {
-        margin_returned = position
-            .margin
-            .checked_sub(swap.open_notional.checked_sub(output)?)?;
+        swap.open_notional.checked_sub(output)?
+    };
+
+    let mut response = Response::new();
+
+    // now calculate the margin to return and a potential shortfall is the
+    // position is undercollateralised (note this may be taken from the insurance fund)
+    let margin_returned: Uint128;
+    // let mut shortfall = Uint128::zero();
+    if delta < position.margin {
+        margin_returned = position.margin.checked_sub(delta)?;
+
+        // create transfer message
+        let msg = execute_transfer(deps.storage, &swap.trader, margin_returned).unwrap();
+
+        response = response.add_submessage(msg);
     }
+    // TODO This should do something with the shortfall if there is insufficient collateral
+    // probably transfer it from the insurance fund idk
+    // else {
+    //     margin_returned = Uint128::zero();
+    //     // shortfall = delta.checked_sub(position.margin)?;
+    // }
 
     position = clear_position(env, position)?;
 
+    // remove_position(deps.storage, &position)?;
     store_position(deps.storage, &position)?;
-
-    // create transfer message
-    let msg = execute_transfer(deps.storage, &swap.trader, margin_returned).unwrap();
 
     remove_tmp_swap(deps.storage);
 
-    Ok(Response::new().add_submessage(msg))
+    Ok(response)
 }
 
 fn execute_transfer_from(

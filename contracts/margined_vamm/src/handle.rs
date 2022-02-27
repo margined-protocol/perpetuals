@@ -122,19 +122,12 @@ pub fn get_input_price_with_reserves(
         .checked_mul(state.base_asset_reserve)?
         .checked_div(config.decimals)?;
 
-    let quote_asset_after: Uint128;
-    let base_asset_after: Uint128;
+    let quote_asset_after: Uint128 = match direction {
+        Direction::AddToAmm => state.quote_asset_reserve.checked_add(quote_asset_amount)?,
+        Direction::RemoveFromAmm => state.quote_asset_reserve.checked_sub(quote_asset_amount)?,
+    };
 
-    match direction {
-        Direction::AddToAmm => {
-            quote_asset_after = state.quote_asset_reserve.checked_add(quote_asset_amount)?;
-        }
-        Direction::RemoveFromAmm => {
-            quote_asset_after = state.quote_asset_reserve.checked_sub(quote_asset_amount)?;
-        }
-    }
-
-    base_asset_after = invariant_k
+    let base_asset_after: Uint128 = invariant_k
         .checked_mul(config.decimals)?
         .checked_div(quote_asset_after)?;
 
@@ -172,18 +165,12 @@ pub fn get_output_price_with_reserves(
         .checked_mul(state.base_asset_reserve)?
         .checked_div(config.decimals)?;
 
-    let quote_asset_after: Uint128;
-    let base_asset_after: Uint128;
+    let base_asset_after: Uint128 = match direction {
+        Direction::AddToAmm => state.base_asset_reserve.checked_add(base_asset_amount)?,
+        Direction::RemoveFromAmm => state.base_asset_reserve.checked_sub(base_asset_amount)?,
+    };
 
-    match direction {
-        Direction::AddToAmm => {
-            base_asset_after = state.base_asset_reserve.checked_add(base_asset_amount)?;
-        }
-        Direction::RemoveFromAmm => {
-            base_asset_after = state.base_asset_reserve.checked_sub(base_asset_amount)?;
-        }
-    }
-    quote_asset_after = invariant_k
+    let quote_asset_after: Uint128 = invariant_k
         .checked_mul(config.decimals)?
         .checked_div(base_asset_after)?;
 

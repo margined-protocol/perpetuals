@@ -14,7 +14,7 @@ fn test_calc_fee() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(100),
         base_asset_reserve: to_decimals(10_000),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::from(10_000_000u128),   // 0.01
         spread_ratio: Uint128::from(10_000_000u128), // 0.01
     };
@@ -50,7 +50,7 @@ fn test_set_diff_fee_ratio() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(100),
         base_asset_reserve: to_decimals(10_000),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::from(10_000_000u128),   // 0.01
         spread_ratio: Uint128::from(10_000_000u128), // 0.01
     };
@@ -96,7 +96,7 @@ fn test_set_fee_ratio_zero() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(100),
         base_asset_reserve: to_decimals(10_000),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::from(50_000_000u128), // 0.05
     };
@@ -132,7 +132,7 @@ fn test_calc_fee_input_zero() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(100),
         base_asset_reserve: to_decimals(10_000),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::from(50_000_000u128), // 0.05,
         spread_ratio: Uint128::from(50_000_000u128), // 0.05
     };
@@ -168,7 +168,7 @@ fn test_update_not_owner() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(100),
         base_asset_reserve: to_decimals(10_000),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::from(50_000_000u128), // 0.05,
         spread_ratio: Uint128::from(50_000_000u128), // 0.05
     };

@@ -15,7 +15,7 @@ fn test_instantiation() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: Uint128::from(100u128),
         base_asset_reserve: Uint128::from(10_000u128),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
     };
@@ -28,7 +28,7 @@ fn test_instantiation() {
     assert_eq!(
         config,
         ConfigResponse {
-            owner: info.sender.clone(),
+            owner: info.sender,
             quote_asset: "ETH".to_string(),
             base_asset: "USD".to_string(),
             toll_ratio: Uint128::zero(),
@@ -45,7 +45,7 @@ fn test_instantiation() {
             quote_asset_reserve: Uint128::from(100u128),
             base_asset_reserve: Uint128::from(10_000u128),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 }
@@ -59,7 +59,7 @@ fn test_update_config() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: Uint128::from(100u128),
         base_asset_reserve: Uint128::from(10_000u128),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
     };
@@ -100,7 +100,7 @@ fn test_swap_input_long() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
     };
@@ -123,7 +123,7 @@ fn test_swap_input_long() {
             quote_asset_reserve: to_decimals(1_600),
             base_asset_reserve: Uint128::from(62_500_000_000u128),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 }
@@ -137,7 +137,7 @@ fn test_swap_input_short() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
     };
@@ -160,7 +160,7 @@ fn test_swap_input_short() {
             quote_asset_reserve: to_decimals(400),
             base_asset_reserve: to_decimals(250),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 }
@@ -174,7 +174,7 @@ fn test_swap_output_short() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
     };
@@ -197,7 +197,7 @@ fn test_swap_output_short() {
             quote_asset_reserve: to_decimals(400),
             base_asset_reserve: to_decimals(250),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 }
@@ -211,7 +211,7 @@ fn test_swap_output_long() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
     };
@@ -234,7 +234,7 @@ fn test_swap_output_long() {
             quote_asset_reserve: to_decimals(2_000),
             base_asset_reserve: to_decimals(50),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 }
@@ -248,7 +248,7 @@ fn test_swap_input_short_long() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
     };
@@ -272,7 +272,7 @@ fn test_swap_input_short_long() {
             quote_asset_reserve: to_decimals(520),
             base_asset_reserve: Uint128::from(192_307_692_308u128),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 
@@ -292,7 +292,7 @@ fn test_swap_input_short_long() {
             quote_asset_reserve: to_decimals(1_480),
             base_asset_reserve: Uint128::from(67_567_567_568u128),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 }
@@ -306,7 +306,7 @@ fn test_swap_input_short_long_long() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
     };
@@ -329,7 +329,7 @@ fn test_swap_input_short_long_long() {
             quote_asset_reserve: to_decimals(800),
             base_asset_reserve: to_decimals(125),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 
@@ -349,7 +349,7 @@ fn test_swap_input_short_long_long() {
             quote_asset_reserve: to_decimals(900),
             base_asset_reserve: Uint128::from(111_111_111_112u128),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 
@@ -369,7 +369,7 @@ fn test_swap_input_short_long_long() {
             quote_asset_reserve: to_decimals(1100),
             base_asset_reserve: Uint128::from(90_909_090_910u128),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 }
@@ -383,7 +383,7 @@ fn test_swap_input_short_long_short() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
     };
@@ -406,7 +406,7 @@ fn test_swap_input_short_long_short() {
             quote_asset_reserve: to_decimals(800),
             base_asset_reserve: to_decimals(125),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 
@@ -426,7 +426,7 @@ fn test_swap_input_short_long_short() {
             quote_asset_reserve: to_decimals(1250),
             base_asset_reserve: to_decimals(80),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 
@@ -446,7 +446,7 @@ fn test_swap_input_short_long_short() {
             quote_asset_reserve: to_decimals(1000),
             base_asset_reserve: to_decimals(100),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 }
@@ -460,7 +460,7 @@ fn test_swap_input_long_integration_example() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1_000),
         base_asset_reserve: to_decimals(100),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
     };
@@ -483,7 +483,7 @@ fn test_swap_input_long_integration_example() {
             quote_asset_reserve: Uint128::from(1_600_000_000_000u128),
             base_asset_reserve: Uint128::from(62_500_000_000u128),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 }
@@ -497,7 +497,7 @@ fn test_swap_input_long_short_integration_example() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1_000),
         base_asset_reserve: to_decimals(100),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
     };
@@ -520,7 +520,7 @@ fn test_swap_input_long_short_integration_example() {
             quote_asset_reserve: Uint128::from(1_600_000_000_000u128),
             base_asset_reserve: Uint128::from(62_500_000_000u128),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 
@@ -540,7 +540,7 @@ fn test_swap_input_long_short_integration_example() {
             quote_asset_reserve: Uint128::from(1_000_000_000_000u128),
             base_asset_reserve: Uint128::from(100_000_000_000u128),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 }
@@ -554,7 +554,7 @@ fn test_swap_input_twice_short_long() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
     };
@@ -586,7 +586,7 @@ fn test_swap_input_twice_short_long() {
             quote_asset_reserve: to_decimals(1_000),
             base_asset_reserve: Uint128::from(100_000_000_001u128),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 }
@@ -600,7 +600,7 @@ fn test_swap_input_twice_long_short() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
     };
@@ -632,7 +632,7 @@ fn test_swap_input_twice_long_short() {
             quote_asset_reserve: to_decimals(1_000),
             base_asset_reserve: Uint128::from(100_000_000_001u128),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 }
@@ -646,7 +646,7 @@ fn test_swap_output_twice_short_long() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
     };
@@ -678,7 +678,7 @@ fn test_swap_output_twice_short_long() {
             quote_asset_reserve: Uint128::from(1_000_000_000_001u128),
             base_asset_reserve: to_decimals(100),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 }
@@ -692,7 +692,7 @@ fn test_swap_output_twice_long_short() {
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
-        funding_period: 3_600 as u64,
+        funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
     };
@@ -724,7 +724,7 @@ fn test_swap_output_twice_long_short() {
             quote_asset_reserve: Uint128::from(1_000_000_000_001u128),
             base_asset_reserve: to_decimals(100),
             funding_rate: Uint128::zero(),
-            funding_period: 3_600 as u64,
+            funding_period: 3_600_u64,
         }
     );
 }
