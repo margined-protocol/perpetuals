@@ -1,6 +1,6 @@
 // Contains queries for external contracts,
-use cosmwasm_std::{to_binary, Deps, DepsMut, QueryRequest, StdResult, WasmQuery};
 use cosmwasm_bignumber::Decimal256;
+use cosmwasm_std::{to_binary, Deps, DepsMut, QueryRequest, StdResult, WasmQuery};
 use margined_perp::margined_vamm::{Direction, QueryMsg, StateResponse};
 
 // returns the state of the request vamm

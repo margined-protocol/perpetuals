@@ -1,6 +1,6 @@
 use crate::contract::{execute, instantiate, query, reply};
-use cosmwasm_std::{Addr, Empty, Uint128};
 use cosmwasm_bignumber::Decimal256;
+use cosmwasm_std::{Addr, Empty, Uint128};
 use cw20::{Cw20Coin, Cw20ExecuteMsg};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use margined_perp::margined_engine::InstantiateMsg;

@@ -1,11 +1,11 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Api, DepsMut, StdResult, Storage, Timestamp, };
+use cosmwasm_bignumber::Decimal256;
+use cosmwasm_std::{Addr, Api, DepsMut, StdResult, Storage, Timestamp};
 use cosmwasm_storage::{
     bucket, bucket_read, singleton, singleton_read, Bucket, ReadonlyBucket, Singleton,
 };
-use cosmwasm_bignumber::Decimal256;
 use cw_storage_plus::Item;
 
 use margined_perp::margined_engine::Side;

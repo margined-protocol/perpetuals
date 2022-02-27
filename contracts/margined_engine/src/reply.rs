@@ -1,14 +1,14 @@
-use cosmwasm_std::{
-    to_binary, Addr, CosmosMsg, DepsMut, Env, ReplyOn, Response, StdError, StdResult, Storage,
-    SubMsg, WasmMsg, Uint128,
-};
-use cw20::Cw20ExecuteMsg;
-use cosmwasm_bignumber::Decimal256;
 use crate::{
     handle::{clear_position, get_position, internal_increase_position},
     state::{read_config, read_tmp_swap, remove_tmp_swap, store_position, store_tmp_swap},
     utils::side_to_direction,
 };
+use cosmwasm_bignumber::Decimal256;
+use cosmwasm_std::{
+    to_binary, Addr, CosmosMsg, DepsMut, Env, ReplyOn, Response, StdError, StdResult, Storage,
+    SubMsg, Uint128, WasmMsg,
+};
+use cw20::Cw20ExecuteMsg;
 use std::str::FromStr;
 
 // Increases position after successful execution of the swap
@@ -40,7 +40,7 @@ pub fn increase_position_reply(
 
     // TODO make my own decimal math lib
     position.margin = position.notional / swap.leverage;
-        // .checked_mul(config.decimals)?
+    // .checked_mul(config.decimals)?
 
     store_position(deps.storage, &position)?;
 
@@ -208,7 +208,11 @@ fn execute_transfer_from(
     Ok(transfer_msg)
 }
 
-fn execute_transfer(storage: &dyn Storage, receiver: &Addr, amount: Decimal256) -> StdResult<SubMsg> {
+fn execute_transfer(
+    storage: &dyn Storage,
+    receiver: &Addr,
+    amount: Decimal256,
+) -> StdResult<SubMsg> {
     let config = read_config(storage)?;
 
     let msg = WasmMsg::Execute {

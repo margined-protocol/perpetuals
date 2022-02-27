@@ -1,5 +1,5 @@
-use cosmwasm_std::{Deps, StdResult};
 use cosmwasm_bignumber::Decimal256;
+use cosmwasm_std::{Deps, StdResult};
 use margined_perp::margined_engine::{ConfigResponse, PnlCalcOption, PositionResponse};
 
 use crate::{
@@ -53,7 +53,10 @@ pub fn query_unrealized_pnl(deps: Deps, vamm: String, trader: String) -> StdResu
 }
 
 /// Queries traders position across all vamms
-pub fn query_trader_balance_with_funding_payment(deps: Deps, trader: String) -> StdResult<Decimal256> {
+pub fn query_trader_balance_with_funding_payment(
+    deps: Deps,
+    trader: String,
+) -> StdResult<Decimal256> {
     let mut margin = Decimal256::zero();
     let vamm_list = read_vamm(deps.storage)?;
     for vamm in vamm_list.vamm.iter() {

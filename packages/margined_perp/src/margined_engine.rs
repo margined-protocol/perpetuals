@@ -1,9 +1,9 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Timestamp };
-use cw20::Cw20ReceiveMsg;
 use cosmwasm_bignumber::Decimal256;
+use cosmwasm_std::{Addr, Timestamp};
+use cw20::Cw20ReceiveMsg;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]

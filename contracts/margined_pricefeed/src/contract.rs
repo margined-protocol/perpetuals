@@ -4,12 +4,9 @@ use crate::{
     query::{query_config, query_get_previous_price, query_get_price, query_get_twap_price},
     state::{store_config, Config},
 };
-#[cfg(not(feature = "library"))]
+
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
-};
-use cosmwasm_bignumber::Decimal256;
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use margined_perp::margined_pricefeed::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -17,13 +14,9 @@ pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    msg: InstantiateMsg,
+    _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    let config = Config {
-        owner: info.sender,
-        decimals: Decimal256::one(),
-        // decimals: Uint128::from(10u128.pow(msg.decimals as u32)),
-    };
+    let config = Config { owner: info.sender };
 
     store_config(deps.storage, &config)?;
 

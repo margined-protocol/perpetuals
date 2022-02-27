@@ -1,6 +1,6 @@
 use crate::testing::setup::{self, to_decimals};
-use cosmwasm_std::Uint128;
 use cosmwasm_bignumber::{Decimal256, Uint256};
+use cosmwasm_std::Uint128;
 use cw20::Cw20Contract;
 use cw_multi_test::Executor;
 use margined_perp::{
@@ -75,7 +75,10 @@ fn test_open_position_long() {
 
     // clearing house token balance should be 60
     let engine_balance = usdc.balance(&env.router, env.engine.addr.clone()).unwrap();
-    assert_eq!(Decimal256::from_uint256(Uint256::from(engine_balance)), to_decimals(60));
+    assert_eq!(
+        Decimal256::from_uint256(Uint256::from(engine_balance)),
+        to_decimals(60)
+    );
 }
 
 #[test]
@@ -131,7 +134,10 @@ fn test_open_position_two_longs() {
             },
         )
         .unwrap();
-    assert_eq!(Decimal256::from_ratio(54_545_454_545u64, 1_000_000_000u64), position.size);
+    assert_eq!(
+        Decimal256::from_ratio(54_545_454_545u64, 1_000_000_000u64),
+        position.size
+    );
     assert_eq!(to_decimals(120), position.margin);
 }
 
@@ -195,7 +201,10 @@ fn test_open_position_two_shorts() {
             },
         )
         .unwrap();
-    assert_eq!(Decimal256::from_ratio(66_666_666_667u64, 1_000_000_000u64), position.size);
+    assert_eq!(
+        Decimal256::from_ratio(66_666_666_667u64, 1_000_000_000u64),
+        position.size
+    );
     assert_eq!(to_decimals(80), position.margin);
 }
 
@@ -310,7 +319,10 @@ fn test_open_position_one_long_two_shorts() {
             },
         )
         .unwrap();
-    assert_eq!(Decimal256::from_ratio(33_333_333_333u64, 1_000_000_000u64), position.size);
+    assert_eq!(
+        Decimal256::from_ratio(33_333_333_333u64, 1_000_000_000u64),
+        position.size
+    );
     assert_eq!(to_decimals(60), position.margin);
 
     let msg = ExecuteMsg::OpenPosition {
@@ -414,7 +426,10 @@ fn test_open_position_short_and_two_longs() {
             },
         )
         .unwrap();
-    assert_eq!(Decimal256::from_ratio(11_111_111_112u64, 1_000_000_000u64), position.size);
+    assert_eq!(
+        Decimal256::from_ratio(11_111_111_112u64, 1_000_000_000u64),
+        position.size
+    );
     assert_eq!(to_decimals(40), position.margin);
 
     let msg = ExecuteMsg::OpenPosition {
@@ -441,7 +456,10 @@ fn test_open_position_short_and_two_longs() {
             },
         )
         .unwrap();
-    assert_eq!(Decimal256::from_ratio(1u64, 1_000_000_000u64), position.size);
+    assert_eq!(
+        Decimal256::from_ratio(1u64, 1_000_000_000u64),
+        position.size
+    );
     assert_eq!(to_decimals(40u64), position.margin);
 }
 
@@ -492,7 +510,10 @@ fn test_open_position_short_long_short() {
         )
         .unwrap();
     assert_eq!(to_decimals(20u64), position.size);
-    assert_eq!(Decimal256::from_ratio(83_333_333_333u64, 1_000_000_000u64), position.margin);
+    assert_eq!(
+        Decimal256::from_ratio(83_333_333_333u64, 1_000_000_000u64),
+        position.margin
+    );
 
     let msg = ExecuteMsg::OpenPosition {
         vamm: env.vamm.addr.to_string(),
@@ -569,7 +590,10 @@ fn test_open_position_long_short_long() {
         )
         .unwrap();
     assert_eq!(to_decimals(25), position.size);
-    assert_eq!(Decimal256::from_ratio(66_666_666_666u64, 1_000_000_000u64), position.margin);
+    assert_eq!(
+        Decimal256::from_ratio(66_666_666_666u64, 1_000_000_000u64),
+        position.margin
+    );
 
     let msg = ExecuteMsg::OpenPosition {
         vamm: env.vamm.addr.to_string(),
@@ -687,7 +711,10 @@ fn test_close_safe_position() {
             },
         )
         .unwrap();
-    assert_eq!(Decimal256::from_ratio(11_111_111_112u64, 1_000_000_000u64), position.size);
+    assert_eq!(
+        Decimal256::from_ratio(11_111_111_112u64, 1_000_000_000u64),
+        position.size
+    );
 
     let msg = ExecuteMsg::OpenPosition {
         vamm: env.vamm.addr.to_string(),
@@ -707,7 +734,10 @@ fn test_close_safe_position() {
         .query_wasm_smart(&env.vamm.addr, &VammQueryMsg::State {})
         .unwrap();
     assert_eq!(state.quote_asset_reserve, to_decimals(960));
-    assert_eq!(state.base_asset_reserve, Decimal256::from_ratio(104_166_666_668u64, 1_000_000_000u64));
+    assert_eq!(
+        state.base_asset_reserve,
+        Decimal256::from_ratio(104_166_666_668u64, 1_000_000_000u64)
+    );
 
     let msg = ExecuteMsg::ClosePosition {
         vamm: env.vamm.addr.to_string(),
@@ -743,7 +773,10 @@ fn test_close_safe_position() {
         Decimal256::from_ratio(1_074_626_865_681u64, 1_000_000_000u64),
         // Uint128::from(1_074_626_865_681u128)
     );
-    assert_eq!(state.base_asset_reserve, Decimal256::from_ratio(93_055_555_556u64, 1_000_000_000u64));
+    assert_eq!(
+        state.base_asset_reserve,
+        Decimal256::from_ratio(93_055_555_556u64, 1_000_000_000u64)
+    );
 
     // alice balance should be 4985.373134319
     let engine_balance = usdc.balance(&env.router, env.alice.clone()).unwrap();
@@ -822,5 +855,8 @@ fn test_close_position_over_maintenance_margin_ration() {
         state.quote_asset_reserve,
         Decimal256::from_ratio(977_422_074_621u64, 1_000_000_000u64),
     );
-    assert_eq!(state.base_asset_reserve, Decimal256::from_ratio(102_309_946_334u64, 1_000_000_000u64));
+    assert_eq!(
+        state.base_asset_reserve,
+        Decimal256::from_ratio(102_309_946_334u64, 1_000_000_000u64)
+    );
 }

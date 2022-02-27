@@ -1,7 +1,7 @@
 use crate::contract::{execute, instantiate, query};
-use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{from_binary, Addr, };
 use cosmwasm_bignumber::Decimal256;
+use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+use cosmwasm_std::{from_binary, Addr};
 use margined_perp::margined_engine::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 
 const TOKEN: &str = "token";

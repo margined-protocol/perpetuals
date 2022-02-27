@@ -1,14 +1,14 @@
+use crate::error::ContractError;
+use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     from_binary, to_binary, Attribute, Binary, ContractResult, Deps, DepsMut, Env, Event,
-    MessageInfo, Reply, Response, StdError, StdResult, SubMsgExecutionResponse, 
+    MessageInfo, Reply, Response, StdError, StdResult, SubMsgExecutionResponse,
 };
-use cosmwasm_bignumber::{Decimal256};
 use cw20::Cw20ReceiveMsg;
 use margined_perp::margined_engine::{Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
 #[cfg(not(feature = "library"))]
 use std::str::FromStr;
-use crate::error::ContractError;
 
 use crate::{
     handle::{close_position, open_position, update_config},

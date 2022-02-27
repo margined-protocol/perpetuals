@@ -1,8 +1,8 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, StdResult, Storage, Timestamp};
-use cosmwasm_bignumber::{Decimal256, Uint256};
+use cosmwasm_bignumber::Decimal256;
+use cosmwasm_std::{Addr, StdResult, Storage, Timestamp, Uint128};
 use cosmwasm_storage::{singleton, singleton_read};
 use cw_storage_plus::Map;
 
@@ -13,7 +13,6 @@ pub const PRICES: Map<String, Vec<PriceData>> = Map::new("prices");
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
-    pub decimals: Decimal256,
 }
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
@@ -26,7 +25,7 @@ pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
 
 #[derive(Serialize, Default, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct PriceData {
-    pub round_id: Decimal256,
+    pub round_id: Uint128,
     pub price: Decimal256,
     pub timestamp: Timestamp,
 }
@@ -41,7 +40,7 @@ pub fn store_price_data(
     let mut prices = read_price_data(storage, key.clone()).unwrap();
 
     let price_data: PriceData = PriceData {
-        round_id: Decimal256::from_uint256(Uint256::from(prices.len() as u64)),
+        round_id: Uint128::from(prices.len() as u64),
         price,
         timestamp: Timestamp::from_seconds(timestamp),
     };

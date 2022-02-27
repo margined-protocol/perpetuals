@@ -1,5 +1,5 @@
+use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::{DepsMut, MessageInfo, Response};
-use cosmwasm_bignumber::{Decimal256};
 
 use crate::{
     error::ContractError,
