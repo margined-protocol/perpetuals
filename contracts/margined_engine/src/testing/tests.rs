@@ -26,7 +26,7 @@ fn test_instantiation() {
     assert_eq!(
         config,
         ConfigResponse {
-            owner: info.sender.clone(),
+            owner: info.sender,
             eligible_collateral: Addr::unchecked(TOKEN),
         }
     );

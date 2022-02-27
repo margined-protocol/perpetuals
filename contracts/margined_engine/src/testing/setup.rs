@@ -97,7 +97,7 @@ pub fn setup() -> TestingEnv {
                 base_asset: "USD".to_string(),
                 quote_asset_reserve: to_decimals(1_000),
                 base_asset_reserve: to_decimals(100),
-                funding_period: 3_600 as u64,
+                funding_period: 3_600_u64,
                 toll_ratio: Uint128::zero(),
                 spread_ratio: Uint128::zero(),
             },
@@ -176,5 +176,5 @@ pub fn setup() -> TestingEnv {
 
 // takes in a Uint128 and multiplies by the decimals just to make tests more legible
 pub fn to_decimals(input: u64) -> Uint128 {
-    return Uint128::from(input) * DECIMAL_MULTIPLIER;
+    Uint128::from(input) * DECIMAL_MULTIPLIER
 }

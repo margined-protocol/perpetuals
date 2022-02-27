@@ -69,7 +69,7 @@ fn test_open_position_long() {
             },
         )
         .unwrap();
-    assert_eq!(Uint128::new(37500_000_000), position.size);
+    assert_eq!(Uint128::new(37_500_000_000), position.size);
     assert_eq!(to_decimals(60u64), position.margin);
 
     // clearing house token balance should be 60
@@ -440,7 +440,7 @@ fn test_open_position_short_and_two_longs() {
             },
         )
         .unwrap();
-    assert_eq!(Uint128::from(1 as u128), position.size);
+    assert_eq!(Uint128::from(1_u128), position.size);
     assert_eq!(to_decimals(40u64), position.margin);
 }
 
