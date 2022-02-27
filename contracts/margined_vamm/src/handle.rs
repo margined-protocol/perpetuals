@@ -112,6 +112,8 @@ pub fn get_input_price_with_reserves(
     let state: State = read_state(deps.storage)?;
     let config: Config = read_config(deps.storage)?;
 
+
+
     if quote_asset_amount == Uint128::zero() {
         Uint128::zero();
     }
@@ -122,19 +124,16 @@ pub fn get_input_price_with_reserves(
         .checked_mul(state.base_asset_reserve)?
         .checked_div(config.decimals)?;
 
-    let quote_asset_after: Uint128;
-    let base_asset_after: Uint128;
-
-    match direction {
+    let quote_asset_after: Uint128 = match direction {
         Direction::AddToAmm => {
-            quote_asset_after = state.quote_asset_reserve.checked_add(quote_asset_amount)?;
+            state.quote_asset_reserve.checked_add(quote_asset_amount)?
         }
         Direction::RemoveFromAmm => {
-            quote_asset_after = state.quote_asset_reserve.checked_sub(quote_asset_amount)?;
+            state.quote_asset_reserve.checked_sub(quote_asset_amount)?
         }
-    }
+    };
 
-    base_asset_after = invariant_k
+    let base_asset_after: Uint128 = invariant_k
         .checked_mul(config.decimals)?
         .checked_div(quote_asset_after)?;
 
