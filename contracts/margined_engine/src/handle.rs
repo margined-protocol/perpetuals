@@ -63,19 +63,18 @@ pub fn open_position(
         is_increase = false;
     }
 
-    let msg: SubMsg;
-    if is_increase {
-        msg = internal_increase_position(vamm.clone(), side.clone(), open_notional).unwrap();
+    let msg: SubMsg = if is_increase {
+        internal_increase_position(vamm.clone(), side.clone(), open_notional).unwrap()
     } else {
-        msg = open_reverse_position(
+        open_reverse_position(
             &deps,
             env,
             vamm.clone(),
             trader.clone(),
             side.clone(),
             open_notional,
-        );
-    }
+        )
+    };
 
     store_tmp_swap(
         deps.storage,
@@ -159,7 +158,6 @@ fn open_reverse_position(
     side: Side,
     open_notional: Uint128,
 ) -> SubMsg {
-    let msg: SubMsg;
     let position: Position = get_position(env, deps.storage, &vamm, &trader, side.clone());
     let current_notional = query_vamm_output_price(
         &deps.as_ref(),
@@ -170,19 +168,19 @@ fn open_reverse_position(
     .unwrap();
 
     // if position.notional > open_notional {
-    if current_notional > open_notional {
+    let msg: SubMsg = if current_notional > open_notional {
         // then we are opening a new position or adding to an existing
-        msg = swap_input(&vamm, side, open_notional, SWAP_DECREASE_REPLY_ID).unwrap();
+        swap_input(&vamm, side, open_notional, SWAP_DECREASE_REPLY_ID).unwrap()
     } else {
         // first close position swap out the entire position
-        msg = swap_output(
+        swap_output(
             &vamm,
             direction_to_side(position.direction.clone()),
             position.size,
             SWAP_REVERSE_REPLY_ID,
         )
-        .unwrap();
-    }
+        .unwrap()
+    };
 
     msg
 }

@@ -171,18 +171,16 @@ pub fn get_output_price_with_reserves(
         .checked_mul(state.base_asset_reserve)?
         .checked_div(config.decimals)?;
 
-    let quote_asset_after: Uint128;
-    let base_asset_after: Uint128;
-
-    match direction {
+    let base_asset_after: Uint128 = match direction {
         Direction::AddToAmm => {
-            base_asset_after = state.base_asset_reserve.checked_add(base_asset_amount)?;
+            state.base_asset_reserve.checked_add(base_asset_amount)?
         }
         Direction::RemoveFromAmm => {
-            base_asset_after = state.base_asset_reserve.checked_sub(base_asset_amount)?;
+            state.base_asset_reserve.checked_sub(base_asset_amount)?
         }
-    }
-    quote_asset_after = invariant_k
+    };
+    
+    let quote_asset_after: Uint128 = invariant_k
         .checked_mul(config.decimals)?
         .checked_div(base_asset_after)?;
 

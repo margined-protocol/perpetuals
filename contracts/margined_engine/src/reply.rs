@@ -164,12 +164,11 @@ pub fn close_position_reply(
     );
 
     // calculate delta from the trade
-    let delta: Uint128;
-    if output > swap.open_notional {
-        delta = output.checked_sub(swap.open_notional)?;
+    let delta: Uint128 = if output > swap.open_notional {
+        output.checked_sub(swap.open_notional)?
     } else {
-        delta = swap.open_notional.checked_sub(output)?;
-    }
+        swap.open_notional.checked_sub(output)?
+    };
 
     let mut response = Response::new();
 
