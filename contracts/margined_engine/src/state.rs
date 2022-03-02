@@ -20,6 +20,7 @@ pub const VAMM_LIST: Item<VammList> = Item::new("admin_list");
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
+    pub insurance_fund: Addr,
     pub eligible_collateral: Addr,
     pub decimals: Uint128,
     pub initial_margin_ratio: Uint128,

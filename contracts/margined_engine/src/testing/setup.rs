@@ -15,6 +15,7 @@ pub struct TestingEnv {
     pub owner: Addr,
     pub alice: Addr,
     pub bob: Addr,
+    pub insurance: Addr,
     pub usdc: ContractInfo,
     pub vamm: ContractInfo,
     pub engine: ContractInfo,
@@ -55,6 +56,7 @@ pub fn setup() -> TestingEnv {
     let owner = Addr::unchecked("owner");
     let alice = Addr::unchecked("alice");
     let bob = Addr::unchecked("bob");
+    let insurance_fund = Addr::unchecked("insurance_fund");
 
     let usdc_id = router.store_code(contract_cw20());
     let engine_id = router.store_code(contract_engine());
@@ -114,6 +116,7 @@ pub fn setup() -> TestingEnv {
             owner.clone(),
             &InstantiateMsg {
                 decimals: 9u8,
+                insurance_fund: insurance_fund.to_string(),
                 eligible_collateral: usdc_addr.to_string(),
                 initial_margin_ratio: Uint128::from(100u128),
                 maintenance_margin_ratio: Uint128::from(100u128),
@@ -159,6 +162,7 @@ pub fn setup() -> TestingEnv {
         owner,
         alice,
         bob,
+        insurance: insurance_fund,
         usdc: ContractInfo {
             addr: usdc_addr,
             id: usdc_id,

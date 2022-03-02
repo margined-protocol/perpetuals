@@ -4,7 +4,7 @@ use cw20::Cw20Contract;
 use cw_multi_test::Executor;
 use margined_perp::{
     margined_engine::{ConfigResponse, ExecuteMsg, PositionResponse, QueryMsg, Side},
-    margined_vamm::{QueryMsg as VammQueryMsg, StateResponse},
+    margined_vamm::{ExecuteMsg as VammExecuteMsg, QueryMsg as VammQueryMsg, StateResponse},
 };
 
 #[test]
@@ -897,10 +897,63 @@ fn test_close_under_collateral_position() {
     assert_eq!(position.size, Uint128::zero());
 
     // alice balance should be 4975
-    let engine_balance = usdc.balance(&env.router, env.alice.clone()).unwrap();
-    assert_eq!(engine_balance, Uint128::from(4_975_000_000_000u128));
+    let alice_balance = usdc.balance(&env.router, env.alice.clone()).unwrap();
+    assert_eq!(alice_balance, Uint128::from(4_975_000_000_000u128));
 
     // TODO see here: https://github.com/margined-protocol/mrgnd-perpetuals/issues/21
     // need to implement the insurance fund and test that the amount required is
     // taken to cover shortfall in funding payment
+}
+
+// TODO
+// #[test]
+// fn test_close_zero_position() {}
+
+#[test]
+fn test_openclose_position_to_check_fee_is_charged() {
+    let mut env = setup::setup();
+
+    // set up cw20 helpers
+    let usdc = Cw20Contract(env.usdc.addr.clone());
+
+    let msg = VammExecuteMsg::UpdateConfig {
+        owner: None,
+        toll_ratio: Some(Uint128::from(10_000_000u128)), // 0.01
+        spread_ratio: Some(Uint128::from(20_000_000u128)), // 0.01
+    };
+
+    let _res = env
+        .router
+        .execute_contract(env.owner.clone(), env.vamm.addr.clone(), &msg, &[])
+        .unwrap();
+
+    let msg = ExecuteMsg::OpenPosition {
+        vamm: env.vamm.addr.to_string(),
+        side: Side::BUY,
+        quote_asset_amount: to_decimals(60u64),
+        leverage: to_decimals(10u64),
+    };
+
+    let _res = env
+        .router
+        .execute_contract(env.alice.clone(), env.engine.addr.clone(), &msg, &[])
+        .unwrap();
+
+    let engine_balance = usdc.balance(&env.router, env.engine.addr.clone()).unwrap();
+    assert_eq!(engine_balance, to_decimals(60u64));
+
+    let msg = ExecuteMsg::ClosePosition {
+        vamm: env.vamm.addr.to_string(),
+    };
+
+    let engine_balance = usdc.balance(&env.router, env.engine.addr.clone()).unwrap();
+    assert_eq!(engine_balance, to_decimals(0u64));
+
+    let _res = env
+        .router
+        .execute_contract(env.alice.clone(), env.engine.addr.clone(), &msg, &[])
+        .unwrap();
+
+    let insurance = usdc.balance(&env.router, env.insurance.clone()).unwrap();
+    assert_eq!(insurance, to_decimals(36u64));
 }

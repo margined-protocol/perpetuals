@@ -7,11 +7,12 @@ use crate::{
     contract::{
         SWAP_CLOSE_REPLY_ID, SWAP_DECREASE_REPLY_ID, SWAP_INCREASE_REPLY_ID, SWAP_REVERSE_REPLY_ID,
     },
-    querier::query_vamm_output_price,
+    querier::{query_vamm_output_price},
     state::{read_config, read_position, store_config, store_tmp_swap, Config, Position, Swap},
     utils::{direction_to_side, require_vamm, side_to_direction},
 };
-use margined_perp::margined_engine::{PnlCalcOption, PositionUnrealizedPnlResponse, Side};
+use margined_perp::{
+    margined_engine::{PnlCalcOption, PositionUnrealizedPnlResponse, Side}, margined_vamm::CalcFeeResponse};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 
 pub fn update_config(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {

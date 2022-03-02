@@ -5,12 +5,14 @@ use margined_perp::margined_engine::{ConfigResponse, ExecuteMsg, InstantiateMsg,
 
 const TOKEN: &str = "token";
 const OWNER: &str = "owner";
+const INSURANCE_FUND: &str = "insurance_fund";
 
 #[test]
 fn test_instantiation() {
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {
         decimals: 10u8,
+        insurance_fund: INSURANCE_FUND.to_string(),
         eligible_collateral: TOKEN.to_string(),
         initial_margin_ratio: Uint128::from(100u128),
         maintenance_margin_ratio: Uint128::from(100u128),
@@ -37,6 +39,7 @@ fn test_update_config() {
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {
         decimals: 10u8,
+        insurance_fund: INSURANCE_FUND.to_string(),
         eligible_collateral: TOKEN.to_string(),
         initial_margin_ratio: Uint128::from(100u128),
         maintenance_margin_ratio: Uint128::from(100u128),
