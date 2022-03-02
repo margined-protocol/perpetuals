@@ -1,0 +1,20 @@
+@startuml
+component TO as "Token"
+component GO as "Governance"
+component FA as "Factory"
+component PF as "Price Feeds"
+component VA as "vAMM(s)"
+component ME as "Margin Engine(s)"
+component IN as "Insurance Fund"
+
+TO -right- GO
+GO -down- FA
+FA -down- VA
+FA -down- PF
+FA -down- ME
+PF -right- ME
+FA -down- IN
+VA -- ME
+ME -- IN
+
+@enduml
