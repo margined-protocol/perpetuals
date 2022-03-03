@@ -946,13 +946,13 @@ fn test_openclose_position_to_check_fee_is_charged() {
         vamm: env.vamm.addr.to_string(),
     };
 
-    let engine_balance = usdc.balance(&env.router, env.engine.addr.clone()).unwrap();
-    assert_eq!(engine_balance, to_decimals(0u64));
-
     let _res = env
         .router
         .execute_contract(env.alice.clone(), env.engine.addr.clone(), &msg, &[])
         .unwrap();
+
+    let engine_balance = usdc.balance(&env.router, env.engine.addr.clone()).unwrap();
+    assert_eq!(engine_balance, to_decimals(0u64));
 
     let insurance = usdc.balance(&env.router, env.insurance.clone()).unwrap();
     assert_eq!(insurance, to_decimals(36u64));

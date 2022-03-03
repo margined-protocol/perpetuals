@@ -36,7 +36,7 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     let decimals = Uint128::from(10u128.pow(msg.decimals as u32));
     let eligible_collateral = deps.api.addr_validate(&msg.eligible_collateral)?;
-    let insurance_fund =deps.api.addr_validate(&msg.insurance_fund)?;
+    let insurance_fund = deps.api.addr_validate(&msg.insurance_fund)?;
 
     // config parameters
     let config = Config {

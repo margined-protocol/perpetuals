@@ -1,14 +1,14 @@
 use cosmwasm_std::{
-    to_binary, Addr, CosmosMsg, Deps, DepsMut, Env, ReplyOn, Response, StdError, StdResult, Storage,
-    SubMsg, Uint128, WasmMsg,
+    to_binary, Addr, CosmosMsg, Deps, DepsMut, Env, ReplyOn, Response, StdError, StdResult,
+    Storage, SubMsg, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 
 use crate::{
     handle::{clear_position, get_position, internal_increase_position},
+    querier::query_vamm_calc_fee,
     state::{read_config, read_tmp_swap, remove_tmp_swap, store_position, store_tmp_swap},
     utils::side_to_direction,
-    querier::query_vamm_calc_fee,
 };
 
 use margined_perp::margined_vamm::CalcFeeResponse;
@@ -57,20 +57,12 @@ pub fn increase_position_reply(
     )
     .unwrap();
 
-    // pay for the fees also
-    let fee_msgs = transfer_fee(
-        deps.as_ref(),
-        swap.trader,
-        swap.vamm,
-        position.notional,
-    ).unwrap();
+    // create messages to pay for toll and spread fees
+    let fee_msgs = transfer_fee(deps.as_ref(), swap.trader, swap.vamm, position.notional).unwrap();
 
     remove_tmp_swap(deps.storage);
 
-    Ok(Response::new()
-        .add_submessage(msg)
-        .add_messages(fee_msgs)
-    )
+    Ok(Response::new().add_submessage(msg).add_messages(fee_msgs))
 }
 
 // Decreases position after successful execution of the swap
@@ -204,6 +196,10 @@ pub fn close_position_reply(
     //     margin_returned = Uint128::zero();
     //     // shortfall = delta.checked_sub(position.margin)?;
     // }
+
+    // create messages to pay for toll and spread fees
+    let fee_msgs = transfer_fee(deps.as_ref(), swap.trader, swap.vamm, position.notional).unwrap();
+    response = response.add_messages(fee_msgs);
 
     position = clear_position(env, position)?;
 
