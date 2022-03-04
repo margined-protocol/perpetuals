@@ -585,6 +585,7 @@ dependencies = [
  "margined_vamm",
  "schemars",
  "serde",
+ "terra-cosmwasm",
  "terraswap",
 ]
 

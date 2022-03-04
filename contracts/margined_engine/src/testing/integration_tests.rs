@@ -1,16 +1,23 @@
 // use crate::testing::setup::{self, to_decimals};
 use cosmwasm_std::Uint128;
 use cw20::Cw20Contract;
-// use cw_multi_test::Executor;
+use cw_multi_test::Executor;
 use margined_perp::{
     margined_engine::{ConfigResponse, ExecuteMsg, PositionResponse, QueryMsg, Side},
     margined_vamm::{ExecuteMsg as VammExecuteMsg, QueryMsg as VammQueryMsg, StateResponse},
 };
 use margined_utils::scenarios::TestingEnv;
 
+pub const DECIMAL_MULTIPLIER: Uint128 = Uint128::new(1_000_000_000);
+
+// takes in a Uint128 and multiplies by the decimals just to make tests more legible
+pub fn to_decimals(input: u64) -> Uint128 {
+    Uint128::from(input) * DECIMAL_MULTIPLIER
+}
+
+
 #[test]
 fn test_initialization() {
-    // let env = secnarios::setup();
     let TestingEnv {
         router,
         owner,
@@ -35,57 +42,63 @@ fn test_initialization() {
     assert_eq!(engine_balance, Uint128::zero());
 }
 
-// #[test]
-// fn test_open_position_long() {
-//     let mut env = setup::setup();
+#[test]
+fn test_open_position_long() {
+    let TestingEnv {
+        mut router,
+        owner,
+        alice,
+        bob,
+        usdc,
+        engine,
+        vamm,
+        ..
+    } = TestingEnv::new();
 
-//     // set up cw20 helpers
-//     let usdc = Cw20Contract(env.usdc.addr.clone());
+    // set up cw20 helpers
+    let usdc = Cw20Contract(usdc.addr.clone());
 
-//     let msg = ExecuteMsg::OpenPosition {
-//         vamm: env.vamm.addr.to_string(),
-//         side: Side::BUY,
-//         quote_asset_amount: to_decimals(60u64),
-//         leverage: to_decimals(10u64),
-//     };
+    let msg = ExecuteMsg::OpenPosition {
+        vamm: vamm.addr.to_string(),
+        side: Side::BUY,
+        quote_asset_amount: to_decimals(60u64),
+        leverage: to_decimals(10u64),
+    };
 
-//     let _res = env
-//         .router
-//         .execute_contract(env.alice.clone(), env.engine.addr.clone(), &msg, &[])
-//         .unwrap();
+    let _res = &router
+        .execute_contract(alice.clone(), engine.addr.clone(), &msg, &[])
+        .unwrap();
 
-//     // expect to be 60
-//     let margin = env
-//         .router
-//         .wrap()
-//         .query_wasm_smart(
-//             &env.engine.addr,
-//             &QueryMsg::TraderBalance {
-//                 trader: env.alice.to_string(),
-//             },
-//         )
-//         .unwrap();
-//     assert_eq!(to_decimals(60), margin);
+    // // expect to be 60
+    // let margin = router
+    //     .wrap()
+    //     .query_wasm_smart(
+    //         &engine.addr,
+    //         &QueryMsg::TraderBalance {
+    //             trader: alice.to_string(),
+    //         },
+    //     )
+    //     .unwrap();
+    // assert_eq!(to_decimals(60), margin);
 
-//     // personal position should be 37.5
-//     let position: PositionResponse = env
-//         .router
-//         .wrap()
-//         .query_wasm_smart(
-//             &env.engine.addr,
-//             &QueryMsg::Position {
-//                 vamm: env.vamm.addr.to_string(),
-//                 trader: env.alice.to_string(),
-//             },
-//         )
-//         .unwrap();
-//     assert_eq!(Uint128::new(37_500_000_000), position.size);
-//     assert_eq!(to_decimals(60u64), position.margin);
+    // // personal position should be 37.5
+    // let position: PositionResponse = router
+    //     .wrap()
+    //     .query_wasm_smart(
+    //         &engine.addr,
+    //         &QueryMsg::Position {
+    //             vamm: vamm.addr.to_string(),
+    //             trader: alice.to_string(),
+    //         },
+    //     )
+    //     .unwrap();
+    // assert_eq!(Uint128::new(37_500_000_000), position.size);
+    // assert_eq!(to_decimals(60u64), position.margin);
 
-//     // clearing house token balance should be 60
-//     let engine_balance = usdc.balance(&env.router, env.engine.addr.clone()).unwrap();
-//     assert_eq!(engine_balance, to_decimals(60));
-// }
+    // // clearing house token balance should be 60
+    // let engine_balance = usdc.balance(&router, engine.addr.clone()).unwrap();
+    // assert_eq!(engine_balance, to_decimals(60));
+}
 
 // #[test]
 // fn test_open_position_two_longs() {

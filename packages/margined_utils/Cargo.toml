@@ -22,6 +22,7 @@ cw-multi-test = "0.9.1"
 margined-perp = { version = "0.1.0", path = "../margined_perp"}
 margined_vamm = { version = "0.1.0", path = "../../contracts/margined_vamm" }
 margined_engine = { version = "0.1.0", path = "../../contracts/margined_engine" }
+terra-cosmwasm = "2.2.0"
 terraswap = { version = "2.4.0" }
 schemars = "0.8.1"
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
