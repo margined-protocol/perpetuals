@@ -11,10 +11,8 @@ use crate::{
     state::{read_config, read_position, store_config, store_tmp_swap, Config, Position, Swap},
     utils::{direction_to_side, require_vamm, side_to_direction},
 };
+use margined_perp::margined_engine::{PnlCalcOption, PositionUnrealizedPnlResponse, Side};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
-use margined_perp::{
-    margined_engine::{PnlCalcOption, PositionUnrealizedPnlResponse, Side},
-};
 
 pub fn update_config(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {
     let config = read_config(deps.storage)?;

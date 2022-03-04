@@ -21,6 +21,7 @@ pub const VAMM_LIST: Item<VammList> = Item::new("admin_list");
 pub struct Config {
     pub owner: Addr,
     pub insurance_fund: Addr,
+    pub fee_pool: Addr,
     pub eligible_collateral: Addr,
     pub decimals: Uint128,
     pub initial_margin_ratio: Uint128,

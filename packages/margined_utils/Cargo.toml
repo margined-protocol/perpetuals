@@ -1,9 +1,9 @@
 [package]
-name = "margined-perp"
+name = "margined_utils"
 version = "0.1.0"
 authors = ["Margined Protocol"]
 edition = "2018"
-description = ""
+description = "Common helpers for margin protocol contracts"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -14,9 +14,14 @@ backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
 cw20 = { version = "0.9.1" }
+cw20-base = { version = "0.9.1", features = ["library"] }
 cosmwasm-bignumber = "2.2.0"
 cosmwasm-std = { version = "0.16.3" }
 cosmwasm-storage = { version = "0.16.3" }
+cw-multi-test = "0.9.1"
+margined-perp = { version = "0.1.0", path = "../margined_perp"}
+margined_vamm = { version = "0.1.0", path = "../../contracts/margined_vamm" }
+margined_engine = { version = "0.1.0", path = "../../contracts/margined_engine" }
 terraswap = { version = "2.4.0" }
 schemars = "0.8.1"
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }

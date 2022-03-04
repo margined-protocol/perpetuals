@@ -6,6 +6,7 @@ use margined_perp::margined_engine::{ConfigResponse, ExecuteMsg, InstantiateMsg,
 const TOKEN: &str = "token";
 const OWNER: &str = "owner";
 const INSURANCE_FUND: &str = "insurance_fund";
+const FEE_POOL: &str = "fee_pool";
 
 #[test]
 fn test_instantiation() {
@@ -13,6 +14,7 @@ fn test_instantiation() {
     let msg = InstantiateMsg {
         decimals: 10u8,
         insurance_fund: INSURANCE_FUND.to_string(),
+        fee_pool: FEE_POOL.to_string(),
         eligible_collateral: TOKEN.to_string(),
         initial_margin_ratio: Uint128::from(100u128),
         maintenance_margin_ratio: Uint128::from(100u128),
@@ -40,6 +42,7 @@ fn test_update_config() {
     let msg = InstantiateMsg {
         decimals: 10u8,
         insurance_fund: INSURANCE_FUND.to_string(),
+        fee_pool: FEE_POOL.to_string(),
         eligible_collateral: TOKEN.to_string(),
         initial_margin_ratio: Uint128::from(100u128),
         maintenance_margin_ratio: Uint128::from(100u128),
