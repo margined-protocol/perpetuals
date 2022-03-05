@@ -6,6 +6,8 @@ use margined_perp::margined_vamm::InstantiateMsg as VammInstantiateMsg;
 
 use terra_cosmwasm::{TerraMsgWrapper, TerraQueryWrapper};
 
+use crate::contracts::helpers::margined_engine::EngineController;
+
 pub struct ContractInfo {
     pub addr: Addr,
     pub id: u64,
@@ -20,7 +22,7 @@ pub struct TestingEnv {
     pub fee_pool: Addr,
     pub usdc: ContractInfo,
     pub vamm: ContractInfo,
-    pub engine: ContractInfo,
+    pub engine: EngineController,
 }
 
 impl TestingEnv {
@@ -104,6 +106,7 @@ impl TestingEnv {
                 None,
             )
             .unwrap();
+        let engine = EngineController(engine_addr.clone());
 
         // create allowance for alice
         router
@@ -148,10 +151,7 @@ impl TestingEnv {
                 addr: vamm_addr,
                 id: vamm_id,
             },
-            engine: ContractInfo {
-                addr: engine_addr,
-                id: engine_id,
-            },
+            engine,
         }
     }
 }

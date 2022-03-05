@@ -15,7 +15,6 @@ pub fn to_decimals(input: u64) -> Uint128 {
     Uint128::from(input) * DECIMAL_MULTIPLIER
 }
 
-
 #[test]
 fn test_initialization() {
     let TestingEnv {
@@ -38,7 +37,7 @@ fn test_initialization() {
     assert_eq!(alice_balance, Uint128::new(5_000_000_000_000));
     let bob_balance = usdc.balance(&router, bob.clone()).unwrap();
     assert_eq!(bob_balance, Uint128::new(5_000_000_000_000));
-    let engine_balance = usdc.balance(&router, engine.addr.clone()).unwrap();
+    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::zero());
 }
 
@@ -58,46 +57,34 @@ fn test_open_position_long() {
     // set up cw20 helpers
     let usdc = Cw20Contract(usdc.addr.clone());
 
-    let msg = ExecuteMsg::OpenPosition {
-        vamm: vamm.addr.to_string(),
-        side: Side::BUY,
-        quote_asset_amount: to_decimals(60u64),
-        leverage: to_decimals(10u64),
-    };
-
-    let _res = &router
-        .execute_contract(alice.clone(), engine.addr.clone(), &msg, &[])
+    router
+        .execute(
+            alice.clone(),
+            engine
+                .open_position(
+                    vamm.addr.to_string(),
+                    Side::BUY,
+                    to_decimals(60u64),
+                    to_decimals(10u64),
+                )
+                .unwrap(),
+        )
         .unwrap();
 
-    // // expect to be 60
-    // let margin = router
-    //     .wrap()
-    //     .query_wasm_smart(
-    //         &engine.addr,
-    //         &QueryMsg::TraderBalance {
-    //             trader: alice.to_string(),
-    //         },
-    //     )
-    //     .unwrap();
-    // assert_eq!(to_decimals(60), margin);
+    // expect to be 60
+    let margin = engine.trader_balance(&router, alice.to_string()).unwrap();
+    assert_eq!(to_decimals(60), margin);
 
-    // // personal position should be 37.5
-    // let position: PositionResponse = router
-    //     .wrap()
-    //     .query_wasm_smart(
-    //         &engine.addr,
-    //         &QueryMsg::Position {
-    //             vamm: vamm.addr.to_string(),
-    //             trader: alice.to_string(),
-    //         },
-    //     )
-    //     .unwrap();
-    // assert_eq!(Uint128::new(37_500_000_000), position.size);
-    // assert_eq!(to_decimals(60u64), position.margin);
+    // personal position should be 37.5
+    let position: PositionResponse = engine
+        .position(&router, vamm.addr.to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Uint128::new(37_500_000_000));
+    assert_eq!(position.margin, to_decimals(60u64));
 
-    // // clearing house token balance should be 60
-    // let engine_balance = usdc.balance(&router, engine.addr.clone()).unwrap();
-    // assert_eq!(engine_balance, to_decimals(60));
+    // clearing house token balance should be 60
+    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    assert_eq!(engine_balance, to_decimals(60));
 }
 
 // #[test]
