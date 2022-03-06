@@ -293,7 +293,7 @@ pub fn transfer_fee(
             funds: vec![],
             msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
                 owner: from.to_string(),
-                recipient: config.insurance_fund.to_string(),
+                recipient: config.fee_pool.to_string(),
                 amount: toll_fee,
             })?,
         };

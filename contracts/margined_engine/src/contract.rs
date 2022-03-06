@@ -39,7 +39,7 @@ pub fn instantiate(
     // verify message addresses
     let eligible_collateral = deps.api.addr_validate(&msg.eligible_collateral)?;
     let insurance_fund = deps.api.addr_validate(&msg.insurance_fund)?;
-    let fee_pool = deps.api.addr_validate(&msg.insurance_fund)?;
+    let fee_pool = deps.api.addr_validate(&msg.fee_pool)?;
 
     // config parameters
     let config = Config {

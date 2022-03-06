@@ -660,6 +660,7 @@ fn test_openclose_position_to_check_fee_is_charged() {
         alice,
         owner,
         insurance,
+        fee_pool,
         engine,
         vamm,
         usdc,
@@ -697,6 +698,9 @@ fn test_openclose_position_to_check_fee_is_charged() {
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, to_decimals(0u64));
 
-    let insurance = usdc.balance(&router, insurance.clone()).unwrap();
-    assert_eq!(insurance, to_decimals(36u64));
+    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    assert_eq!(insurance_balance, to_decimals(24u64));
+
+    let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
+    assert_eq!(fee_pool_balance, to_decimals(12u64));
 }
