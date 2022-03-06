@@ -71,7 +71,7 @@ pub enum QueryMsg {
     Position { vamm: String, trader: String },
     TraderBalance { trader: String },
     UnrealizedPnl { vamm: String, trader: String },
-    // MarginRatio {},
+    MarginRatio { vamm: String, trader: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

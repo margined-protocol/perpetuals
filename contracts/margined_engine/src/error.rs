@@ -11,4 +11,7 @@ pub enum ContractError {
 
     #[error("User account is unhealthy")]
     UserAccountUnhealthy,
+
+    #[error("User position is zero")]
+    UserPositionZero,
 }

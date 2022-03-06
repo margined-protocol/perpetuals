@@ -229,6 +229,9 @@ fn swap_output(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdR
     Ok(execute_submsg)
 }
 
+
+// reads position from storage but also handles the case where there is no
+// previously stored position, i.e. a new position
 pub fn get_position(
     env: Env,
     storage: &dyn Storage,

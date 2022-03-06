@@ -18,7 +18,6 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 
 /// Queries user position
 pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<PositionResponse> {
-    // read the msg.senders position
     let position = read_position(
         deps.storage,
         &deps.api.addr_validate(&vamm)?,
@@ -62,3 +61,29 @@ pub fn query_trader_balance_with_funding_payment(deps: Deps, trader: String) -> 
 
     Ok(margin)
 }
+
+/// Queries the margin ratio of a trader
+pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult<Uint128> {
+    // retrieve the latest position
+    let position = read_position(
+        deps.storage,
+        &deps.api.addr_validate(&vamm)?,
+        &deps.api.addr_validate(&trader)?,
+    )?
+    .unwrap();
+
+    if position.size.is_zero() {
+        return Ok(Uint128::zero());
+    }
+
+
+    let mut margin = Uint128::zero();
+    let vamm_list = read_vamm(deps.storage)?;
+    for vamm in vamm_list.vamm.iter() {
+        let position = query_position(deps, vamm.to_string(), trader.clone())?;
+        margin = margin.checked_add(position.margin)?;
+    }
+
+    Ok(margin)
+}
+
