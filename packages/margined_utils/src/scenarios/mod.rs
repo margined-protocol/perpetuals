@@ -152,6 +152,12 @@ impl SimpleScenario {
     }
 }
 
+impl Default for SimpleScenario {
+    fn default() -> Self {
+        SimpleScenario::new()
+    }
+}
+
 pub const DECIMAL_MULTIPLIER: Uint128 = Uint128::new(1_000_000_000);
 
 fn contract_cw20() -> Box<dyn Contract<Empty>> {
