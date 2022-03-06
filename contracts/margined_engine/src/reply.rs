@@ -61,7 +61,6 @@ pub fn increase_position_reply(
     let fee_msgs = transfer_fee(deps.as_ref(), swap.trader, swap.vamm, position.notional).unwrap();
 
     remove_tmp_swap(deps.storage);
-
     Ok(Response::new().add_submessage(msg).add_messages(fee_msgs))
 }
 

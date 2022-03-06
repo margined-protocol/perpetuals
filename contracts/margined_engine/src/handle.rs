@@ -279,7 +279,7 @@ pub fn get_position_notional_unrealized_pnl(
             PnlCalcOption::ORACLE => {}
         }
 
-        if position.direction == Direction::RemoveFromAmm {
+        if position.notional > position_notional {
             unrealized_pnl = position.notional.checked_sub(position_notional)?;
         } else {
             unrealized_pnl = position_notional.checked_sub(position.notional)?;

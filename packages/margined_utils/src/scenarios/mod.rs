@@ -121,7 +121,7 @@ impl SimpleScenario {
             )
             .unwrap();
 
-        // create allowance for alice
+        // create allowance for bob
         router
             .execute_contract(
                 bob.clone(),
