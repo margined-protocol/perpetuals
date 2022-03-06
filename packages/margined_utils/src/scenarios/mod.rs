@@ -4,16 +4,14 @@ use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use margined_perp::margined_engine::InstantiateMsg;
 use margined_perp::margined_vamm::InstantiateMsg as VammInstantiateMsg;
 
-use terra_cosmwasm::{TerraMsgWrapper, TerraQueryWrapper};
-
-use crate::contracts::helpers::margined_engine::EngineController;
+use crate::contracts::helpers::{margined_engine::EngineController, margined_vamm::VammController};
 
 pub struct ContractInfo {
     pub addr: Addr,
     pub id: u64,
 }
 
-pub struct TestingEnv {
+pub struct SimpleScenario {
     pub router: App,
     pub owner: Addr,
     pub alice: Addr,
@@ -21,11 +19,11 @@ pub struct TestingEnv {
     pub insurance: Addr,
     pub fee_pool: Addr,
     pub usdc: ContractInfo,
-    pub vamm: ContractInfo,
+    pub vamm: VammController,
     pub engine: EngineController,
 }
 
-impl TestingEnv {
+impl SimpleScenario {
     pub fn new() -> Self {
         let mut router: App = AppBuilder::new().build();
 
@@ -85,6 +83,7 @@ impl TestingEnv {
                 None,
             )
             .unwrap();
+        let vamm = VammController(vamm_addr.clone());
 
         // set up margined engine contract
         let engine_addr = router
@@ -147,10 +146,7 @@ impl TestingEnv {
                 addr: usdc_addr,
                 id: usdc_id,
             },
-            vamm: ContractInfo {
-                addr: vamm_addr,
-                id: vamm_id,
-            },
+            vamm,
             engine,
         }
     }
