@@ -1,14 +1,17 @@
 use cosmwasm_std::{
-    to_binary, Addr, CosmosMsg, DepsMut, Env, ReplyOn, Response, StdError, StdResult, Storage,
-    SubMsg, Uint128, WasmMsg,
+    to_binary, Addr, CosmosMsg, Deps, DepsMut, Env, ReplyOn, Response, StdError, StdResult,
+    Storage, SubMsg, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 
 use crate::{
     handle::{clear_position, get_position, internal_increase_position},
+    querier::query_vamm_calc_fee,
     state::{read_config, read_tmp_swap, remove_tmp_swap, store_position, store_tmp_swap},
     utils::side_to_direction,
 };
+
+use margined_perp::margined_vamm::CalcFeeResponse;
 
 // Increases position after successful execution of the swap
 pub fn increase_position_reply(
@@ -54,9 +57,12 @@ pub fn increase_position_reply(
     )
     .unwrap();
 
+    // create messages to pay for toll and spread fees
+    let fee_msgs = transfer_fee(deps.as_ref(), swap.trader, swap.vamm, position.notional).unwrap();
+
     remove_tmp_swap(deps.storage);
 
-    Ok(Response::new().add_submessage(msg))
+    Ok(Response::new().add_submessage(msg).add_messages(fee_msgs))
 }
 
 // Decreases position after successful execution of the swap
@@ -191,6 +197,10 @@ pub fn close_position_reply(
     //     // shortfall = delta.checked_sub(position.margin)?;
     // }
 
+    // create messages to pay for toll and spread fees
+    let fee_msgs = transfer_fee(deps.as_ref(), swap.trader, swap.vamm, position.notional).unwrap();
+    response = response.add_messages(fee_msgs);
+
     position = clear_position(env, position)?;
 
     // remove_position(deps.storage, &position)?;
@@ -247,4 +257,48 @@ fn execute_transfer(storage: &dyn Storage, receiver: &Addr, amount: Uint128) -> 
     };
 
     Ok(transfer_msg)
+}
+
+// Transfers the toll and spread fees to the the insurance fund and fee pool
+pub fn transfer_fee(
+    deps: Deps,
+    from: Addr,
+    vamm: Addr,
+    notional: Uint128,
+) -> StdResult<Vec<WasmMsg>> {
+    let config = read_config(deps.storage)?;
+    let CalcFeeResponse {
+        spread_fee,
+        toll_fee,
+    } = query_vamm_calc_fee(&deps, vamm.into_string(), notional)?;
+
+    let mut messages: Vec<WasmMsg> = vec![];
+
+    if !spread_fee.is_zero() {
+        let msg = WasmMsg::Execute {
+            contract_addr: config.eligible_collateral.to_string(),
+            funds: vec![],
+            msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
+                owner: from.to_string(),
+                recipient: config.insurance_fund.to_string(),
+                amount: spread_fee,
+            })?,
+        };
+        messages.push(msg);
+    };
+
+    if !toll_fee.is_zero() {
+        let msg = WasmMsg::Execute {
+            contract_addr: config.eligible_collateral.to_string(),
+            funds: vec![],
+            msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
+                owner: from.to_string(),
+                recipient: config.fee_pool.to_string(),
+                amount: toll_fee,
+            })?,
+        };
+        messages.push(msg);
+    };
+
+    Ok(messages)
 }

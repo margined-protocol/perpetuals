@@ -35,11 +35,17 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     let decimals = Uint128::from(10u128.pow(msg.decimals as u32));
+
+    // verify message addresses
     let eligible_collateral = deps.api.addr_validate(&msg.eligible_collateral)?;
+    let insurance_fund = deps.api.addr_validate(&msg.insurance_fund)?;
+    let fee_pool = deps.api.addr_validate(&msg.fee_pool)?;
 
     // config parameters
     let config = Config {
         owner: info.sender,
+        insurance_fund,
+        fee_pool,
         eligible_collateral,
         decimals,
         initial_margin_ratio: msg.initial_margin_ratio,
