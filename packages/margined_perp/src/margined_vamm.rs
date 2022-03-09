@@ -53,14 +53,14 @@ pub enum QueryMsg {
         direction: Direction,
         amount: Uint128,
     },
-    // InputTwap {
-    //     direction: Direction,
-    //     amount: Uint128,
-    // },
-    // OutputTwap {
-    //     direction: Direction,
-    //     amount: Uint128,
-    // },
+    InputTwap {
+        direction: Direction,
+        amount: Uint128,
+    },
+    OutputTwap {
+        direction: Direction,
+        amount: Uint128,
+    },
     // UnderlyingPrice {},
     // UnderlyingTwapPrice {},
     SpotPrice {},
