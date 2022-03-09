@@ -6,7 +6,10 @@ use cosmwasm_std::{
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
-use crate::query::{query_calc_fee, query_output_price, query_spot_price, query_twap_price};
+use crate::query::{
+    query_calc_fee, query_input_twap, query_output_price, query_output_twap, query_spot_price,
+    query_twap_price,
+};
 use crate::state::{store_reserve_snapshot, ReserveSnapshot};
 use crate::{
     handle::{swap_input, swap_output, update_config},
@@ -84,6 +87,12 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::State {} => to_binary(&query_state(deps)?),
         QueryMsg::OutputPrice { direction, amount } => {
             to_binary(&query_output_price(deps, direction, amount)?)
+        }
+        QueryMsg::InputTwap { direction, amount } => {
+            to_binary(&query_input_twap(deps, env, direction, amount)?)
+        }
+        QueryMsg::OutputTwap { direction, amount } => {
+            to_binary(&query_output_twap(deps, env, direction, amount)?)
         }
         QueryMsg::CalcFee { quote_asset_amount } => {
             to_binary(&query_calc_fee(deps, quote_asset_amount)?)
