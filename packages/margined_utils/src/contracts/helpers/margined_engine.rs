@@ -116,4 +116,22 @@ impl EngineController {
         let res: Uint128 = QuerierWrapper::new(querier).query(&query)?;
         Ok(res)
     }
+
+    /// get margin ratio
+    pub fn get_margin_ratio<Q: Querier>(
+        &self,
+        querier: &Q,
+        vamm: String,
+        trader: String,
+    ) -> StdResult<Uint128> {
+        let msg = QueryMsg::MarginRatio { vamm, trader };
+        let query = WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&msg)?,
+        }
+        .into();
+
+        let res: Uint128 = QuerierWrapper::new(querier).query(&query)?;
+        Ok(res)
+    }
 }

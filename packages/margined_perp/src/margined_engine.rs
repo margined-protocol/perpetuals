@@ -19,6 +19,14 @@ pub enum PnlCalcOption {
     ORACLE,
 }
 
+// This enum is used to say if Pnl is a profit or loss
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Pnl {
+    ITM, // In-The-Money
+    OTM, // Out-The-Money
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub decimals: u8,
@@ -106,4 +114,5 @@ pub struct SwapResponse {
 pub struct PositionUnrealizedPnlResponse {
     pub position_notional: Uint128,
     pub unrealized_pnl: Uint128,
+    pub side: Pnl,
 }

@@ -1,5 +1,7 @@
 use cosmwasm_std::{Deps, StdResult, Uint128};
-use margined_perp::margined_engine::{ConfigResponse, PnlCalcOption, PositionResponse};
+use margined_perp::margined_engine::{
+    ConfigResponse, Pnl, PnlCalcOption, PositionResponse, PositionUnrealizedPnlResponse,
+};
 
 use crate::{
     handle::get_position_notional_unrealized_pnl,
@@ -64,6 +66,8 @@ pub fn query_trader_balance_with_funding_payment(deps: Deps, trader: String) -> 
 
 /// Queries the margin ratio of a trader
 pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult<Uint128> {
+    let config: Config = read_config(deps.storage)?;
+
     // retrieve the latest position
     let position = read_position(
         deps.storage,
@@ -76,14 +80,36 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
         return Ok(Uint128::zero());
     }
 
+    println!("HERE");
 
-    let mut margin = Uint128::zero();
-    let vamm_list = read_vamm(deps.storage)?;
-    for vamm in vamm_list.vamm.iter() {
-        let position = query_position(deps, vamm.to_string(), trader.clone())?;
-        margin = margin.checked_add(position.margin)?;
+    let PositionUnrealizedPnlResponse {
+        position_notional: mut notional,
+        unrealized_pnl: mut pnl,
+        mut side,
+    } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::SPOTPRICE)?;
+    let PositionUnrealizedPnlResponse {
+        position_notional: twap_notional,
+        unrealized_pnl: twap_pnl,
+        side: twap_side,
+    } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::TWAP)?;
+
+    // calculate and return margin
+    if twap_pnl > pnl {
+        pnl = twap_pnl;
+        notional = twap_notional;
+        side = twap_side;
     }
+
+    let update_margin = if side == Pnl::ITM {
+        position.margin.checked_add(pnl)?
+    } else {
+        position.margin.checked_sub(pnl)?
+    };
+    println!("{}", notional);
+
+    let margin = update_margin
+        .checked_mul(config.decimals)?
+        .checked_div(notional)?;
 
     Ok(margin)
 }
-

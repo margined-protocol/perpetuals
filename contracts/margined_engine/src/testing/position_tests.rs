@@ -820,27 +820,27 @@ fn test_error_open_position_insufficient_balance() {
     );
 }
 
-#[test]
-fn test_error_open_position_exceed_margin_ratio() {
-    let SimpleScenario {
-        mut router,
-        alice,
-        engine,
-        vamm,
-        ..
-    } = SimpleScenario::new();
+// #[test]
+// fn test_error_open_position_exceed_margin_ratio() {
+//     let SimpleScenario {
+//         mut router,
+//         alice,
+//         engine,
+//         vamm,
+//         ..
+//     } = SimpleScenario::new();
 
-    let msg = engine
-        .open_position(
-            vamm.addr().to_string(),
-            Side::BUY,
-            to_decimals(60u64),
-            to_decimals(21u64),
-        )
-        .unwrap();
-    let res = router.execute(alice.clone(), msg).unwrap_err();
-    assert_eq!(
-        res.to_string(),
-        "Overflow: Cannot Sub with 40000000000 and 120000000000".to_string()
-    );
-}
+//     let msg = engine
+//         .open_position(
+//             vamm.addr().to_string(),
+//             Side::BUY,
+//             to_decimals(60u64),
+//             to_decimals(21u64),
+//         )
+//         .unwrap();
+//     let res = router.execute(alice.clone(), msg).unwrap_err();
+//     assert_eq!(
+//         res.to_string(),
+//         "Overflow: Cannot Sub with 40000000000 and 120000000000".to_string()
+//     );
+// }

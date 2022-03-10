@@ -26,6 +26,20 @@ pub fn query_vamm_output_price(
     }))
 }
 
+// returns the state of the request vamm
+// can be used to calculate the input and outputs
+pub fn query_vamm_output_twap(
+    deps: &Deps,
+    address: String,
+    direction: Direction,
+    amount: Uint128,
+) -> StdResult<Uint128> {
+    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: address,
+        msg: to_binary(&QueryMsg::OutputTwap { direction, amount })?,
+    }))
+}
+
 // returns the spread and toll fees
 pub fn query_vamm_calc_fee(
     deps: &Deps,
