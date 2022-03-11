@@ -80,8 +80,6 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
         return Ok(Uint128::zero());
     }
 
-    println!("HERE");
-
     let PositionUnrealizedPnlResponse {
         position_notional: mut notional,
         unrealized_pnl: mut pnl,
@@ -100,12 +98,11 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
         side = twap_side;
     }
 
-    let update_margin = if side == Pnl::ITM {
+    let update_margin = if side == Pnl::OTM {
         position.margin.checked_add(pnl)?
     } else {
         position.margin.checked_sub(pnl)?
     };
-    println!("{}", notional);
 
     let margin = update_margin
         .checked_mul(config.decimals)?

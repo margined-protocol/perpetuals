@@ -102,7 +102,6 @@ pub fn query_output_twap(
     direction: Direction,
     amount: Uint128,
 ) -> StdResult<Uint128> {
-    println!("query_output_twap");
     calc_twap_input_asset(deps, env, amount, false, &direction, FIFTEEN_MINUTES)
 }
 
@@ -129,7 +128,6 @@ pub fn query_calc_fee(deps: Deps, quote_asset_amount: Uint128) -> StdResult<Calc
 
 /// Calculates the TWAP of the AMM reserves
 fn calc_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Uint128> {
-    println!("calc_twap");
     let config: Config = read_config(deps.storage)?;
     let mut counter = read_reserve_snapshot_counter(deps.storage).unwrap();
     let current_snapshot = read_reserve_snapshot(deps.storage, counter);
@@ -191,9 +189,7 @@ fn calc_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Uint128> {
             .checked_add(current_price.checked_mul(delta_timestamp).unwrap())
             .unwrap();
 
-        println!("period: {}", period);
         period = period.checked_add(delta_timestamp).unwrap();
-        println!("period: {}", period);
         previous_timestamp = current_snapshot.timestamp.seconds();
     }
 
@@ -212,7 +208,6 @@ fn calc_twap_input_asset(
     direction: &Direction,
     interval: u64,
 ) -> StdResult<Uint128> {
-    println!("calc_twap_input_asset");
     let state: State = read_state(deps.storage)?;
     let mut counter = read_reserve_snapshot_counter(deps.storage).unwrap();
     let current_snapshot = read_reserve_snapshot(deps.storage, counter);
@@ -255,12 +250,9 @@ fn calc_twap_input_asset(
             .unwrap(),
     );
 
-    println!("prev timestamp: {}", previous_timestamp);
-    println!("period: {}", period);
     let mut weighted_price = current_price.checked_mul(period)?;
 
     loop {
-        println!("counter: {}", counter);
         counter -= 1;
         // if snapshot history is too short
         if counter == 0 {
@@ -276,7 +268,6 @@ fn calc_twap_input_asset(
                 current_snapshot.base_asset_reserve,
             )?;
         } else {
-            println!("output");
             current_price = get_output_price_with_reserves(
                 deps,
                 direction,
@@ -285,7 +276,6 @@ fn calc_twap_input_asset(
                 current_snapshot.base_asset_reserve,
             )?;
         }
-        println!("Here?");
         if current_snapshot.timestamp.seconds() <= base_timestamp {
             let delta_timestamp =
                 Uint128::from(previous_timestamp.checked_sub(base_timestamp).unwrap());
@@ -306,9 +296,7 @@ fn calc_twap_input_asset(
             .checked_add(current_price.checked_mul(delta_timestamp).unwrap())
             .unwrap();
 
-        println!("period: {}", period);
         period = period.checked_add(delta_timestamp).unwrap();
-        println!("period: {}", period);
         previous_timestamp = current_snapshot.timestamp.seconds();
     }
 

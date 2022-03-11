@@ -271,7 +271,6 @@ pub fn get_position_notional_unrealized_pnl(
     if !position_size.is_zero() {
         match calc_option {
             PnlCalcOption::TWAP => {
-                println!("TWAP");
                 position_notional = query_vamm_output_twap(
                     &deps,
                     position.vamm.to_string(),
@@ -280,7 +279,6 @@ pub fn get_position_notional_unrealized_pnl(
                 )?;
             }
             PnlCalcOption::SPOTPRICE => {
-                println!("SPOTPRICE");
                 position_notional = query_vamm_output_price(
                     &deps,
                     position.vamm.to_string(),
@@ -290,7 +288,6 @@ pub fn get_position_notional_unrealized_pnl(
             }
             PnlCalcOption::ORACLE => {}
         }
-        println!("Do we get herew?");
 
         side = if position.notional > position_notional {
             unrealized_pnl = position.notional.checked_sub(position_notional)?;

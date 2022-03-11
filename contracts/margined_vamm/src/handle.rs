@@ -4,7 +4,8 @@ use crate::{
     decimals::modulo,
     error::ContractError,
     state::{
-        read_config, read_state, store_config, store_reserve_snapshot, store_state, Config,
+        read_config, read_reserve_snapshot, read_reserve_snapshot_counter, read_state,
+        store_config, store_reserve_snapshot, store_state, update_reserve_snapshot, Config,
         ReserveSnapshot, State,
     },
 };
@@ -250,13 +251,29 @@ fn add_reserve_snapshot(
     quote_asset_reserve: Uint128,
     base_asset_reserve: Uint128,
 ) -> StdResult<Response> {
-    let new_snapshot = ReserveSnapshot {
-        quote_asset_reserve,
-        base_asset_reserve,
-        timestamp: env.block.time,
-        block_height: env.block.height,
-    };
-    store_reserve_snapshot(storage, &new_snapshot)?;
+    let height = read_reserve_snapshot_counter(storage)?;
+    println!("{}", height);
+    let current_snapshot = read_reserve_snapshot(storage, height)?;
+
+    if current_snapshot.block_height == env.block.height {
+        let new_snapshot = ReserveSnapshot {
+            quote_asset_reserve,
+            base_asset_reserve,
+            timestamp: current_snapshot.timestamp,
+            block_height: current_snapshot.block_height,
+        };
+
+        update_reserve_snapshot(storage, &new_snapshot)?;
+    } else {
+        let new_snapshot = ReserveSnapshot {
+            quote_asset_reserve,
+            base_asset_reserve,
+            timestamp: env.block.time,
+            block_height: env.block.height,
+        };
+
+        store_reserve_snapshot(storage, &new_snapshot)?;
+    }
 
     Ok(Response::default())
 }
