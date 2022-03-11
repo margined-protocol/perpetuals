@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Response, StdError, StdResult, Storage};
+use cosmwasm_std::{Addr, Response, StdError, StdResult, Storage, Uint128};
 
 use crate::state::{read_vamm, VammList};
 use margined_perp::margined_engine::Side;
@@ -46,4 +46,12 @@ pub fn _switch_side(dir: Side) -> Side {
         Side::BUY => Side::SELL,
         Side::SELL => Side::BUY,
     }
+}
+
+pub fn require_margin(base_margin: Uint128, margin_ratio: Uint128) -> StdResult<Response> {
+    if margin_ratio < base_margin {
+        return Err(StdError::generic_err("Leverage is too high"));
+    }
+
+    Ok(Response::new())
 }

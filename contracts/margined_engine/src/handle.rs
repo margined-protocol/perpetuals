@@ -9,7 +9,7 @@ use crate::{
     },
     querier::{query_vamm_output_price, query_vamm_output_twap},
     state::{read_config, read_position, store_config, store_tmp_swap, Config, Position, Swap},
-    utils::{direction_to_side, require_vamm, side_to_direction},
+    utils::{direction_to_side, require_margin, require_vamm, side_to_direction},
 };
 use margined_perp::margined_engine::{Pnl, PnlCalcOption, PositionUnrealizedPnlResponse, Side};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
@@ -43,11 +43,19 @@ pub fn open_position(
     quote_asset_amount: Uint128,
     leverage: Uint128,
 ) -> StdResult<Response> {
+    let config: Config = read_config(deps.storage)?;
+
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = deps.api.addr_validate(&trader)?;
+    // println!("{} {}", config.initial_margin_ratio, leverage);
+    // println!("{} {}", config.initial_margin_ratio, config.decimals);
+    let margin_ratio = Uint128::from(1_000_000_000u64)
+        .checked_mul(config.decimals)?
+        .checked_div(leverage)?;
+    println!("{} {}", config.initial_margin_ratio, margin_ratio);
+    // _047_619_047
     require_vamm(deps.storage, &vamm)?;
-
-    let config: Config = read_config(deps.storage)?;
+    require_margin(config.initial_margin_ratio, margin_ratio)?;
 
     // calc the input amount wrt to leverage and decimals
     let open_notional = quote_asset_amount

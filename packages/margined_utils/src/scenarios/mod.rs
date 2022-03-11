@@ -95,9 +95,9 @@ impl SimpleScenario {
                     insurance_fund: insurance_fund.to_string(),
                     fee_pool: fee_pool.to_string(),
                     eligible_collateral: usdc_addr.to_string(),
-                    initial_margin_ratio: Uint128::from(100u128),
-                    maintenance_margin_ratio: Uint128::from(100u128),
-                    liquidation_fee: Uint128::from(100u128),
+                    initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
+                    maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
+                    liquidation_fee: Uint128::from(50_000_000u128),      // 0.05
                     vamm: vec![vamm_addr.to_string()],
                 },
                 &[],
