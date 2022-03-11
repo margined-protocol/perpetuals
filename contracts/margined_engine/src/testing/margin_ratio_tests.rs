@@ -1,4 +1,4 @@
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{BlockInfo, Uint128};
 use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::SimpleScenario;
@@ -10,8 +10,13 @@ pub fn to_decimals(input: u64) -> Uint128 {
     Uint128::from(input) * DECIMAL_MULTIPLIER
 }
 
-// pub fn next_block(block: &mut BlockInfo) {
-//     block.time = block.time.plus_seconds(10);
+// pub fn next_block_15(block: &mut BlockInfo) {
+//     block.time = block.time.plus_seconds(15);
+//     block.height += 1;
+// }
+
+// pub fn next_block_15(block: &mut BlockInfo) {
+//     block.time = block.time.plus_seconds(15);
 //     block.height += 1;
 // }
 
@@ -119,3 +124,61 @@ fn test_get_margin_ratio_short() {
         .unwrap();
     assert_eq!(margin_ratio, Uint128::from(287_037_037u128));
 }
+
+#[test]
+fn test_get_margin_higher_twap() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    // moves block forward 1 and 15 secs timestamp
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            to_decimals(25u64),
+            to_decimals(10u64),
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15 * 62);
+        block.height += 62;
+    });
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            to_decimals(15u64),
+            to_decimals(10u64),
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    // moves block forward 1 and 15 secs timestamp
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
+
+
+    // expect to be 0.09689093601
+    // need to show a direction also probably
+    let margin_ratio = engine
+        .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(margin_ratio, Uint128::from(96_890_936u128));
+}
+

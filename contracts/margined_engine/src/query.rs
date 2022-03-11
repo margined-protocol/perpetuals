@@ -95,7 +95,7 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
     } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::TWAP)?;
 
     // calculate and return margin
-    if twap_pnl > pnl {
+    if pnl > twap_pnl {
         pnl = twap_pnl;
         notional = twap_notional;
     }
