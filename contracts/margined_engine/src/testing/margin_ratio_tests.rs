@@ -41,3 +41,81 @@ fn test_get_margin_ratio() {
         .unwrap();
     assert_eq!(margin_ratio, Uint128::from(100_000_000u128));
 }
+
+#[test]
+fn test_get_margin_ratio_long() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            to_decimals(25u64),
+            to_decimals(10u64),
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            to_decimals(15u64),
+            to_decimals(10u64),
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    // expect to be 0.13429752
+    // need to show a direction also probably
+    let margin_ratio = engine
+        .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(margin_ratio, Uint128::from(134_297_520u128));
+}
+
+#[test]
+fn test_get_margin_ratio_short() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            to_decimals(25u64),
+            to_decimals(10u64),
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            to_decimals(15u64),
+            to_decimals(10u64),
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    // expect to be 0.287037037
+    // need to show a direction also probably
+    let margin_ratio = engine
+        .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(margin_ratio, Uint128::from(287_037_037u128));
+}

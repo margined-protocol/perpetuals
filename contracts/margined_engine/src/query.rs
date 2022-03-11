@@ -1,6 +1,6 @@
 use cosmwasm_std::{Deps, StdResult, Uint128};
 use margined_perp::margined_engine::{
-    ConfigResponse, Pnl, PnlCalcOption, PositionResponse, PositionUnrealizedPnlResponse,
+    ConfigResponse, PnlCalcOption, PositionResponse, PositionUnrealizedPnlResponse,
 };
 
 use crate::{
@@ -80,28 +80,30 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
         return Ok(Uint128::zero());
     }
 
+    // TODO think how the side can be used
+    // currently it seems only losses have been
+    // tested but it cant be like that forever...
     let PositionUnrealizedPnlResponse {
         position_notional: mut notional,
         unrealized_pnl: mut pnl,
-        mut side,
+        side: _side,
     } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::SPOTPRICE)?;
     let PositionUnrealizedPnlResponse {
         position_notional: twap_notional,
         unrealized_pnl: twap_pnl,
-        side: twap_side,
+        side: _twap_side,
     } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::TWAP)?;
 
     // calculate and return margin
     if twap_pnl > pnl {
         pnl = twap_pnl;
         notional = twap_notional;
-        side = twap_side;
     }
 
-    let update_margin = if side == Pnl::OTM {
-        position.margin.checked_add(pnl)?
-    } else {
+    let update_margin = if position.margin > pnl {
         position.margin.checked_sub(pnl)?
+    } else {
+        pnl.checked_sub(position.margin)?
     };
 
     let margin = update_margin
