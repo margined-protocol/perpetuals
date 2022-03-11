@@ -93,7 +93,6 @@ pub fn query_input_twap(
     amount: Uint128,
 ) -> StdResult<Uint128> {
     calc_twap_input_asset(deps, env, amount, true, &direction, FIFTEEN_MINUTES)
-    // Ok(Uint128::zero())
 }
 
 /// Queries twap price of the vAMM, using the reserve snapshots
@@ -104,7 +103,6 @@ pub fn query_output_twap(
     amount: Uint128,
 ) -> StdResult<Uint128> {
     calc_twap_input_asset(deps, env, amount, false, &direction, FIFTEEN_MINUTES)
-    // Ok(Uint128::zero())
 }
 
 /// Returns the total (i.e. toll + spread) fees for an amount
@@ -251,6 +249,7 @@ fn calc_twap_input_asset(
             .checked_sub(previous_timestamp)
             .unwrap(),
     );
+
     let mut weighted_price = current_price.checked_mul(period)?;
 
     loop {
@@ -277,7 +276,6 @@ fn calc_twap_input_asset(
                 current_snapshot.base_asset_reserve,
             )?;
         }
-
         if current_snapshot.timestamp.seconds() <= base_timestamp {
             let delta_timestamp =
                 Uint128::from(previous_timestamp.checked_sub(base_timestamp).unwrap());

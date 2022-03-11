@@ -68,6 +68,17 @@ pub fn store_reserve_snapshot(
     Ok(())
 }
 
+pub fn update_reserve_snapshot(
+    storage: &mut dyn Storage,
+    reserve_snapshot: &ReserveSnapshot,
+) -> StdResult<()> {
+    let height = read_reserve_snapshot_counter(storage)?;
+
+    bucket(storage, KEY_RESERVE_SNAPSHOT).save(&height.to_be_bytes(), reserve_snapshot)?;
+
+    Ok(())
+}
+
 pub fn read_reserve_snapshot_counter(storage: &dyn Storage) -> StdResult<u64> {
     Ok(singleton_read(storage, KEY_RESERVE_SNAPSHOT_COUNTER)
         .may_load()?

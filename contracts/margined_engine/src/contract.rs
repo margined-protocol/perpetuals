@@ -12,8 +12,8 @@ use crate::error::ContractError;
 use crate::{
     handle::{close_position, open_position, update_config},
     query::{
-        query_config, query_position, query_trader_balance_with_funding_payment,
-        query_unrealized_pnl,
+        query_config, query_margin_ratio, query_position,
+        query_trader_balance_with_funding_payment, query_unrealized_pnl,
     },
     reply::{
         close_position_reply, decrease_position_reply, increase_position_reply,
@@ -127,6 +127,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::Position { vamm, trader } => to_binary(&query_position(deps, vamm, trader)?),
+        QueryMsg::MarginRatio { vamm, trader } => {
+            to_binary(&query_margin_ratio(deps, vamm, trader)?)
+        }
         QueryMsg::TraderBalance { trader } => {
             to_binary(&query_trader_balance_with_funding_payment(deps, trader)?)
         }

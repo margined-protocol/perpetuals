@@ -7,11 +7,11 @@ use crate::{
     contract::{
         SWAP_CLOSE_REPLY_ID, SWAP_DECREASE_REPLY_ID, SWAP_INCREASE_REPLY_ID, SWAP_REVERSE_REPLY_ID,
     },
-    querier::query_vamm_output_price,
+    querier::{query_vamm_output_price, query_vamm_output_twap},
     state::{read_config, read_position, store_config, store_tmp_swap, Config, Position, Swap},
     utils::{direction_to_side, require_vamm, side_to_direction},
 };
-use margined_perp::margined_engine::{PnlCalcOption, PositionUnrealizedPnlResponse, Side};
+use margined_perp::margined_engine::{Pnl, PnlCalcOption, PositionUnrealizedPnlResponse, Side};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 
 pub fn update_config(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {
@@ -229,6 +229,8 @@ fn swap_output(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdR
     Ok(execute_submsg)
 }
 
+// reads position from storage but also handles the case where there is no
+// previously stored position, i.e. a new position
 pub fn get_position(
     env: Env,
     storage: &dyn Storage,
@@ -263,11 +265,19 @@ pub fn get_position_notional_unrealized_pnl(
 ) -> StdResult<PositionUnrealizedPnlResponse> {
     let mut position_notional = Uint128::zero();
     let mut unrealized_pnl = Uint128::zero();
+    let mut side = Pnl::ITM; // doesn't matter the direction if zero
 
     let position_size = position.size;
     if !position_size.is_zero() {
         match calc_option {
-            PnlCalcOption::TWAP => {}
+            PnlCalcOption::TWAP => {
+                position_notional = query_vamm_output_twap(
+                    &deps,
+                    position.vamm.to_string(),
+                    position.direction.clone(),
+                    position_size,
+                )?;
+            }
             PnlCalcOption::SPOTPRICE => {
                 position_notional = query_vamm_output_price(
                     &deps,
@@ -279,16 +289,19 @@ pub fn get_position_notional_unrealized_pnl(
             PnlCalcOption::ORACLE => {}
         }
 
-        if position.direction == Direction::RemoveFromAmm {
+        side = if position.notional > position_notional {
             unrealized_pnl = position.notional.checked_sub(position_notional)?;
+            Pnl::OTM
         } else {
             unrealized_pnl = position_notional.checked_sub(position.notional)?;
+            Pnl::ITM
         }
     }
 
     Ok(PositionUnrealizedPnlResponse {
         position_notional,
         unrealized_pnl,
+        side,
     })
 }
 

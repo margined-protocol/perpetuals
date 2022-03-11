@@ -30,6 +30,7 @@ fn setup() -> TestingEnv {
     instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
 
     env.block.time = env.block.time.plus_seconds(14);
+    env.block.height += 1;
 
     for i in 0..30 {
         if i % 3 == 0 {
@@ -50,6 +51,7 @@ fn setup() -> TestingEnv {
             execute(deps.as_mut(), env.clone(), info, swap_msg).unwrap();
         }
         env.block.time = env.block.time.plus_seconds(14);
+        env.block.height += 1;
     }
 
     TestingEnv { deps, env }
@@ -171,6 +173,7 @@ fn test_input_twap_get_twap_price() {
         }
 
         app.env.block.time = app.env.block.time.plus_seconds(14);
+        app.env.block.height += 1;
     }
 
     let res = query(
@@ -210,6 +213,7 @@ fn test_input_twap_if_snapshot_is_now_no_effect() {
         }
 
         app.env.block.time = app.env.block.time.plus_seconds(14);
+        app.env.block.height += 1;
     }
 
     let swap_msg = ExecuteMsg::SwapInput {
@@ -291,6 +295,7 @@ fn test_output_twap_get_twap_price() {
         }
 
         app.env.block.time = app.env.block.time.plus_seconds(14);
+        app.env.block.height += 1;
     }
 
     let res = query(

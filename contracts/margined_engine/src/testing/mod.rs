@@ -1,2 +1,4 @@
-mod integration_tests;
+#[cfg(test)]
+mod margin_ratio_tests;
+mod position_tests;
 mod tests;

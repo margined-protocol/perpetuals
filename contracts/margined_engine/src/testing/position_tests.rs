@@ -1,6 +1,6 @@
 // use crate::testing::setup::{self, to_decimals};
 use cosmwasm_std::Uint128;
-use cw20::Cw20Contract;
+use cw20::{Cw20Contract, Cw20ExecuteMsg};
 use cw_multi_test::Executor;
 use margined_perp::margined_engine::{PositionResponse, Side};
 use margined_utils::scenarios::SimpleScenario;
@@ -704,3 +704,143 @@ fn test_openclose_position_to_check_fee_is_charged() {
     let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
     assert_eq!(fee_pool_balance, to_decimals(12u64));
 }
+
+#[test]
+fn test_pnl_unrealized() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    // Alice long by 25 base token with leverage 10x to get 20 ptoken
+    // 25 * 10 = 250 which is x
+    // (1000 + 250) * (100 + y) = 1000 * 100
+    // so y = -20
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            to_decimals(25u64),
+            to_decimals(10u64),
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    // Bob's balance in clearingHouse: 2000
+    // current equation is:
+    // (1250 + x) * (80 + y) = 1000 * 100
+    // Bob short by 100 base token with leverage 10x to get -320 ptoken
+    // 100 * 10 = 1000 which is x
+    // (1250 - 1000) * (80 + y) = 1000 * 100
+    // so y = 320
+    //
+    // and current equation is :
+    // (250 + x) * (400 + y) = 1000 * 100
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            to_decimals(100u64),
+            to_decimals(10u64),
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    let position: PositionResponse = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, to_decimals(20u64));
+
+    // calculate Alice's unrealized PNL:
+    // Alice has position 20 ptoken, so
+    // (250 + x) * (400 + 20) = 1000 * 100
+    // x = -11.9047619048
+    // alice will get 11.9047619048 if she close position
+    // since Alice use 250 to buy
+    // 11.9047619048 - 250 = -238.0952380952 which is unrealized PNL.
+    let pnl = engine
+        .unrealized_pnl(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(pnl, Uint128::from(238_095_238_096u64));
+
+    // TODO return indication where it is Profit or Loss
+}
+
+#[test]
+fn test_error_open_position_insufficient_balance() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        engine,
+        vamm,
+        usdc,
+        ..
+    } = SimpleScenario::new();
+
+    // reduce the allowance
+    router
+        .execute_contract(
+            alice.clone(),
+            usdc.addr.clone(),
+            &Cw20ExecuteMsg::DecreaseAllowance {
+                spender: engine.addr().to_string(),
+                amount: to_decimals(1900),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            to_decimals(60u64),
+            to_decimals(10u64),
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            to_decimals(60u64),
+            to_decimals(10u64),
+        )
+        .unwrap();
+    let res = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        res.to_string(),
+        "Overflow: Cannot Sub with 40000000000 and 120000000000".to_string()
+    );
+}
+
+// #[test]
+// fn test_error_open_position_exceed_margin_ratio() {
+//     let SimpleScenario {
+//         mut router,
+//         alice,
+//         engine,
+//         vamm,
+//         ..
+//     } = SimpleScenario::new();
+
+//     let msg = engine
+//         .open_position(
+//             vamm.addr().to_string(),
+//             Side::BUY,
+//             to_decimals(60u64),
+//             to_decimals(21u64),
+//         )
+//         .unwrap();
+//     let res = router.execute(alice.clone(), msg).unwrap_err();
+//     assert_eq!(
+//         res.to_string(),
+//         "Overflow: Cannot Sub with 40000000000 and 120000000000".to_string()
+//     );
+// }
