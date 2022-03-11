@@ -173,7 +173,6 @@ fn test_get_margin_higher_twap() {
         block.height += 1;
     });
 
-
     // expect to be 0.09689093601
     // need to show a direction also probably
     let margin_ratio = engine
@@ -181,4 +180,3 @@ fn test_get_margin_higher_twap() {
         .unwrap();
     assert_eq!(margin_ratio, Uint128::from(96_890_936u128));
 }
-
