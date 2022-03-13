@@ -1,4 +1,4 @@
-use cosmwasm_std::{BlockInfo, Uint128};
+use cosmwasm_std::Uint128;
 use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::SimpleScenario;
@@ -10,12 +10,7 @@ pub fn to_decimals(input: u64) -> Uint128 {
     Uint128::from(input) * DECIMAL_MULTIPLIER
 }
 
-// pub fn next_block_15(block: &mut BlockInfo) {
-//     block.time = block.time.plus_seconds(15);
-//     block.height += 1;
-// }
-
-// pub fn next_block_15(block: &mut BlockInfo) {
+// pub fn next_block(block: &mut BlockInfo) {
 //     block.time = block.time.plus_seconds(15);
 //     block.height += 1;
 // }

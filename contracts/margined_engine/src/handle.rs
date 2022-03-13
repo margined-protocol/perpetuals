@@ -299,10 +299,10 @@ pub fn get_position_notional_unrealized_pnl(
 
         side = if position.notional > position_notional {
             unrealized_pnl = position.notional.checked_sub(position_notional)?;
-            Pnl::OTM
+            Pnl::ITM
         } else {
             unrealized_pnl = position_notional.checked_sub(position.notional)?;
-            Pnl::ITM
+            Pnl::OTM
         }
     }
 
