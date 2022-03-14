@@ -931,5 +931,4 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
 
     let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
     assert_eq!(insurance_balance, Uint128::from(4_925_882_352_941u128));
-
 }

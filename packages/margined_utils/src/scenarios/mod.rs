@@ -145,7 +145,7 @@ impl SimpleScenario {
         router
             .execute_contract(
                 insurance_fund.clone(),
-                usdc_addr.clone(),
+                usdc_addr,
                 &Cw20ExecuteMsg::IncreaseAllowance {
                     spender: engine_addr.to_string(),
                     amount: to_decimals(2000),

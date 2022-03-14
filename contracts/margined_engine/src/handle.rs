@@ -12,7 +12,7 @@ use crate::{
     utils::{direction_to_side, require_margin, require_vamm, side_to_direction},
 };
 use margined_perp::margined_engine::{
-    Pnl, PnlCalcOption, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
+    Pnl, PnlCalcOption, PnlResponse, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
 };
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 
@@ -49,13 +49,11 @@ pub fn open_position(
 
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = deps.api.addr_validate(&trader)?;
-    // println!("{} {}", config.initial_margin_ratio, leverage);
-    // println!("{} {}", config.initial_margin_ratio, config.decimals);
+
     let margin_ratio = Uint128::from(1_000_000_000u64)
         .checked_mul(config.decimals)?
         .checked_div(leverage)?;
-    println!("{} {}", config.initial_margin_ratio, margin_ratio);
-    // _047_619_047
+
     require_vamm(deps.storage, &vamm)?;
     require_margin(config.initial_margin_ratio, margin_ratio)?;
 
@@ -297,8 +295,6 @@ pub fn get_position_notional_unrealized_pnl(
             }
             PnlCalcOption::ORACLE => {}
         }
-        println!("Direction: {:?}", position.direction);
-        println!("Before: {}, After: {}", position.notional, position_notional);
         if position.notional > position_notional {
             unrealized_pnl = position.notional.checked_sub(position_notional)?;
         } else {
@@ -312,6 +308,32 @@ pub fn get_position_notional_unrealized_pnl(
     })
 }
 
+pub fn calc_pnl(
+    output: Uint128,
+    previous_notional: Uint128,
+    direction: Direction,
+) -> StdResult<PnlResponse> {
+    // calculate delta from the trade
+    let profit_loss: Pnl;
+    let value: Uint128 = if output > previous_notional {
+        if direction == Direction::AddToAmm {
+            profit_loss = Pnl::Profit;
+        } else {
+            profit_loss = Pnl::Loss;
+        }
+        output.checked_sub(previous_notional)?
+    } else {
+        if direction == Direction::AddToAmm {
+            profit_loss = Pnl::Loss;
+        } else {
+            profit_loss = Pnl::Profit;
+        }
+        previous_notional.checked_sub(output)?
+    };
+
+    Ok(PnlResponse { value, profit_loss })
+}
+
 pub fn calc_remain_margin_with_funding_payment(
     position: &Position,
     margin_delta: Uint128,
@@ -323,16 +345,14 @@ pub fn calc_remain_margin_with_funding_payment(
     let mut bad_debt = Uint128::zero();
     let remaining_margin: Uint128 = if pnl == Pnl::Profit {
         position.margin.checked_add(margin_delta)?
+    } else if margin_delta < position.margin {
+        position.margin.checked_sub(margin_delta)?
     } else {
-        if margin_delta < position.margin {
-            position.margin.checked_sub(margin_delta)?
-        } else {
-            // if the delta is bigger than margin we
-            // will have some bad debt and margin out is gonna
-            // be zero
-            bad_debt = margin_delta.checked_sub(position.margin)?;
-            Uint128::zero()
-        }
+        // if the delta is bigger than margin we
+        // will have some bad debt and margin out is gonna
+        // be zero
+        bad_debt = margin_delta.checked_sub(position.margin)?;
+        Uint128::zero()
     };
 
     // if the remain is negative, set it to zero

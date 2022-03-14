@@ -252,7 +252,6 @@ fn add_reserve_snapshot(
     base_asset_reserve: Uint128,
 ) -> StdResult<Response> {
     let height = read_reserve_snapshot_counter(storage)?;
-    println!("{}", height);
     let current_snapshot = read_reserve_snapshot(storage, height)?;
 
     if current_snapshot.block_height == env.block.height {
