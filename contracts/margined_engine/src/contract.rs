@@ -19,7 +19,7 @@ use crate::{
         close_position_reply, decrease_position_reply, increase_position_reply,
         reverse_position_reply,
     },
-    state::{read_config, store_config, store_vamm, Config},
+    state::{read_config, store_config, store_state, store_vamm, Config, State},
 };
 
 pub const SWAP_INCREASE_REPLY_ID: u64 = 1;
@@ -54,6 +54,14 @@ pub fn instantiate(
     };
 
     store_config(deps.storage, &config)?;
+
+    // store default state
+    store_state(
+        deps.storage,
+        &State {
+            bad_debt: Uint128::zero(),
+        },
+    )?;
 
     // store default vamms
     store_vamm(deps, &msg.vamm)?;

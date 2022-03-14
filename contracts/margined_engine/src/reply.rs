@@ -5,13 +5,21 @@ use cosmwasm_std::{
 use cw20::Cw20ExecuteMsg;
 
 use crate::{
-    handle::{clear_position, get_position, internal_increase_position},
+    handle::{
+        calc_pnl, calc_remain_margin_with_funding_payment, clear_position, get_position,
+        get_position_notional_unrealized_pnl, internal_increase_position,
+    },
     querier::query_vamm_calc_fee,
-    state::{read_config, read_tmp_swap, remove_tmp_swap, store_position, store_tmp_swap},
+    state::{
+        read_config, read_state, read_tmp_swap, remove_tmp_swap, store_position, store_state,
+        store_tmp_swap,
+    },
     utils::side_to_direction,
 };
 
+use margined_perp::margined_engine::{Pnl, PnlCalcOption};
 use margined_perp::margined_vamm::CalcFeeResponse;
+use margined_perp::querier::query_token_balance;
 
 // Increases position after successful execution of the swap
 pub fn increase_position_reply(
@@ -154,6 +162,8 @@ pub fn close_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    let config = read_config(deps.storage)?;
+
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
         return Err(StdError::generic_err("no temporary position"));
@@ -168,33 +178,76 @@ pub fn close_position_reply(
         swap.side.clone(),
     );
 
-    // calculate delta from the trade
-    let delta: Uint128 = if output > swap.open_notional {
-        output.checked_sub(swap.open_notional)?
+    let _position_pnl =
+        get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)?;
+
+    // calculate delta from trade and whether it was profitable or a loss
+    let pnl = calc_pnl(output, swap.open_notional, position.direction.clone())?;
+
+    let remain_margin =
+        calc_remain_margin_with_funding_payment(&position, pnl.value, pnl.profit_loss.clone())?;
+
+    let mut messages: Vec<SubMsg> = vec![];
+
+    if pnl.profit_loss == Pnl::Profit {
+        let token_balance = query_token_balance(
+            deps.as_ref(),
+            config.eligible_collateral,
+            env.contract.address.clone(),
+        )?;
+        if remain_margin.remaining_margin <= token_balance {
+            messages.push(
+                execute_transfer(deps.storage, &swap.trader, remain_margin.remaining_margin)
+                    .unwrap(),
+            );
+        } else {
+            let short_fall = remain_margin.remaining_margin.checked_sub(token_balance)?;
+
+            let mut state = read_state(deps.storage)?;
+
+            messages.push(execute_transfer(deps.storage, &swap.trader, token_balance).unwrap());
+            messages.push(
+                execute_transfer_from(
+                    deps.storage,
+                    &config.insurance_fund,
+                    &swap.trader,
+                    short_fall,
+                )
+                .unwrap(),
+            );
+            state.bad_debt = short_fall;
+            store_state(deps.storage, &state)?;
+        }
+    } else if pnl.value < position.margin {
+        // create transfer message
+        messages.push(
+            execute_transfer(deps.storage, &swap.trader, remain_margin.remaining_margin).unwrap(),
+        );
     } else {
-        swap.open_notional.checked_sub(output)?
+        // TODO probably log prepaidBadDebt here
+        let mut state = read_state(deps.storage)?;
+
+        if state.bad_debt.is_zero() {
+            // create transfer from message
+            messages.push(
+                execute_transfer_from(
+                    deps.storage,
+                    &config.insurance_fund,
+                    &env.contract.address,
+                    remain_margin.bad_debt,
+                )
+                .unwrap(),
+            );
+            state.bad_debt = remain_margin.bad_debt;
+        } else {
+            state.bad_debt = Uint128::zero();
+        }
+        store_state(deps.storage, &state)?;
     };
 
+    // now start putting the response together
     let mut response = Response::new();
-
-    // now calculate the margin to return and a potential shortfall is the
-    // position is undercollateralised (note this may be taken from the insurance fund)
-    let margin_returned: Uint128;
-    // let mut shortfall = Uint128::zero();
-    if delta < position.margin {
-        margin_returned = position.margin.checked_sub(delta)?;
-
-        // create transfer message
-        let msg = execute_transfer(deps.storage, &swap.trader, margin_returned).unwrap();
-
-        response = response.add_submessage(msg);
-    }
-    // TODO This should do something with the shortfall if there is insufficient collateral
-    // probably transfer it from the insurance fund idk
-    // else {
-    //     margin_returned = Uint128::zero();
-    //     // shortfall = delta.checked_sub(position.margin)?;
-    // }
+    response = response.add_submessages(messages);
 
     // create messages to pay for toll and spread fees
     let fee_msgs = transfer_fee(deps.as_ref(), swap.trader, swap.vamm, position.notional).unwrap();

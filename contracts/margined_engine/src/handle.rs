@@ -9,9 +9,11 @@ use crate::{
     },
     querier::{query_vamm_output_price, query_vamm_output_twap},
     state::{read_config, read_position, store_config, store_tmp_swap, Config, Position, Swap},
-    utils::{direction_to_side, require_vamm, side_to_direction},
+    utils::{direction_to_side, require_margin, require_vamm, side_to_direction},
 };
-use margined_perp::margined_engine::{Pnl, PnlCalcOption, PositionUnrealizedPnlResponse, Side};
+use margined_perp::margined_engine::{
+    Pnl, PnlCalcOption, PnlResponse, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
+};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 
 pub fn update_config(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {
@@ -43,11 +45,17 @@ pub fn open_position(
     quote_asset_amount: Uint128,
     leverage: Uint128,
 ) -> StdResult<Response> {
+    let config: Config = read_config(deps.storage)?;
+
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = deps.api.addr_validate(&trader)?;
-    require_vamm(deps.storage, &vamm)?;
 
-    let config: Config = read_config(deps.storage)?;
+    let margin_ratio = Uint128::from(1_000_000_000u64)
+        .checked_mul(config.decimals)?
+        .checked_div(leverage)?;
+
+    require_vamm(deps.storage, &vamm)?;
+    require_margin(config.initial_margin_ratio, margin_ratio)?;
 
     // calc the input amount wrt to leverage and decimals
     let open_notional = quote_asset_amount
@@ -265,7 +273,6 @@ pub fn get_position_notional_unrealized_pnl(
 ) -> StdResult<PositionUnrealizedPnlResponse> {
     let mut position_notional = Uint128::zero();
     let mut unrealized_pnl = Uint128::zero();
-    let mut side = Pnl::ITM; // doesn't matter the direction if zero
 
     let position_size = position.size;
     if !position_size.is_zero() {
@@ -288,20 +295,72 @@ pub fn get_position_notional_unrealized_pnl(
             }
             PnlCalcOption::ORACLE => {}
         }
-
-        side = if position.notional > position_notional {
+        if position.notional > position_notional {
             unrealized_pnl = position.notional.checked_sub(position_notional)?;
-            Pnl::OTM
         } else {
             unrealized_pnl = position_notional.checked_sub(position.notional)?;
-            Pnl::ITM
         }
     }
 
     Ok(PositionUnrealizedPnlResponse {
         position_notional,
         unrealized_pnl,
-        side,
+    })
+}
+
+pub fn calc_pnl(
+    output: Uint128,
+    previous_notional: Uint128,
+    direction: Direction,
+) -> StdResult<PnlResponse> {
+    // calculate delta from the trade
+    let profit_loss: Pnl;
+    let value: Uint128 = if output > previous_notional {
+        if direction == Direction::AddToAmm {
+            profit_loss = Pnl::Profit;
+        } else {
+            profit_loss = Pnl::Loss;
+        }
+        output.checked_sub(previous_notional)?
+    } else {
+        if direction == Direction::AddToAmm {
+            profit_loss = Pnl::Loss;
+        } else {
+            profit_loss = Pnl::Profit;
+        }
+        previous_notional.checked_sub(output)?
+    };
+
+    Ok(PnlResponse { value, profit_loss })
+}
+
+pub fn calc_remain_margin_with_funding_payment(
+    position: &Position,
+    margin_delta: Uint128,
+    pnl: Pnl,
+) -> StdResult<RemainMarginResponse> {
+    // calculate the funding payment
+
+    // calculate the remaining margin
+    let mut bad_debt = Uint128::zero();
+    let remaining_margin: Uint128 = if pnl == Pnl::Profit {
+        position.margin.checked_add(margin_delta)?
+    } else if margin_delta < position.margin {
+        position.margin.checked_sub(margin_delta)?
+    } else {
+        // if the delta is bigger than margin we
+        // will have some bad debt and margin out is gonna
+        // be zero
+        bad_debt = margin_delta.checked_sub(position.margin)?;
+        Uint128::zero()
+    };
+
+    // if the remain is negative, set it to zero
+    // and set the rest to
+    Ok(RemainMarginResponse {
+        funding_payment: Uint128::zero(),
+        remaining_margin,
+        bad_debt,
     })
 }
 

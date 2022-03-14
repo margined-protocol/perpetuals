@@ -14,6 +14,7 @@ use sha3::{Digest, Sha3_256};
 
 pub static KEY_CONFIG: &[u8] = b"config";
 pub static KEY_POSITION: &[u8] = b"position";
+pub static KEY_STATE: &[u8] = b"state";
 pub static KEY_TMP_SWAP: &[u8] = b"tmp-position";
 pub const VAMM_LIST: Item<VammList> = Item::new("admin_list");
 
@@ -35,6 +36,19 @@ pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()>
 
 pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
     singleton_read(storage, KEY_CONFIG).load()
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct State {
+    pub bad_debt: Uint128,
+}
+
+pub fn store_state(storage: &mut dyn Storage, state: &State) -> StdResult<()> {
+    singleton(storage, KEY_STATE).save(state)
+}
+
+pub fn read_state(storage: &dyn Storage) -> StdResult<State> {
+    singleton_read(storage, KEY_STATE).load()
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

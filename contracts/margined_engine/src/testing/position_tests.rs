@@ -24,9 +24,6 @@ fn test_initialization() {
         ..
     } = SimpleScenario::new();
 
-    // set up cw20 helpers
-    let usdc = Cw20Contract(usdc.addr.clone());
-
     // verfiy the balances
     let owner_balance = usdc.balance(&router, owner.clone()).unwrap();
     assert_eq!(owner_balance, Uint128::zero());
@@ -48,9 +45,6 @@ fn test_open_position_long() {
         vamm,
         ..
     } = SimpleScenario::new();
-
-    // set up cw20 helpers
-    let usdc = Cw20Contract(usdc.addr.clone());
 
     let msg = engine
         .open_position(
@@ -478,9 +472,6 @@ fn test_close_safe_position() {
         ..
     } = SimpleScenario::new();
 
-    // set up cw20 helpers
-    let usdc = Cw20Contract(usdc.addr.clone());
-
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
@@ -591,14 +582,12 @@ fn test_close_under_collateral_position() {
         mut router,
         alice,
         bob,
+        insurance,
         engine,
         vamm,
         usdc,
         ..
     } = SimpleScenario::new();
-
-    // set up cw20 helpers
-    let usdc = Cw20Contract(usdc.addr.clone());
 
     let msg = engine
         .open_position(
@@ -644,14 +633,29 @@ fn test_close_under_collateral_position() {
     let alice_balance = usdc.balance(&router, alice.clone()).unwrap();
     assert_eq!(alice_balance, Uint128::from(4_975_000_000_000u128));
 
-    // TODO see here: https://github.com/margined-protocol/mrgnd-perpetuals/issues/21
-    // need to implement the insurance fund and test that the amount required is
-    // taken to cover shortfall in funding payment
+    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    assert_eq!(insurance_balance, Uint128::from(4_941_666_666_666u128));
+
+    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    assert_eq!(engine_balance, Uint128::from(333_333_333_334u128));
 }
 
-// TODO
 // #[test]
-// fn test_close_zero_position() {}
+// fn test_close_zero_position() {
+//     let SimpleScenario {
+//         mut router,
+//         alice,
+//         bob,
+//         engine,
+//         vamm,
+//         usdc,
+//         ..
+//     } = SimpleScenario::new();
+
+//     let msg = engine.close_position(vamm.addr().to_string()).unwrap();
+//     router.execute(alice.clone(), msg).unwrap();
+
+// }
 
 #[test]
 fn test_openclose_position_to_check_fee_is_charged() {
@@ -666,9 +670,6 @@ fn test_openclose_position_to_check_fee_is_charged() {
         usdc,
         ..
     } = SimpleScenario::new();
-
-    // set up cw20 helpers
-    let usdc = Cw20Contract(usdc.addr.clone());
 
     let msg = vamm
         .update_config(
@@ -699,7 +700,7 @@ fn test_openclose_position_to_check_fee_is_charged() {
     assert_eq!(engine_balance, to_decimals(0u64));
 
     let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
-    assert_eq!(insurance_balance, to_decimals(24u64));
+    assert_eq!(insurance_balance, to_decimals(5024u64));
 
     let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
     assert_eq!(fee_pool_balance, to_decimals(12u64));
@@ -785,7 +786,7 @@ fn test_error_open_position_insufficient_balance() {
     router
         .execute_contract(
             alice.clone(),
-            usdc.addr.clone(),
+            usdc.addr().clone(),
             &Cw20ExecuteMsg::DecreaseAllowance {
                 spender: engine.addr().to_string(),
                 amount: to_decimals(1900),
@@ -820,27 +821,114 @@ fn test_error_open_position_insufficient_balance() {
     );
 }
 
-// #[test]
-// fn test_error_open_position_exceed_margin_ratio() {
-//     let SimpleScenario {
-//         mut router,
-//         alice,
-//         engine,
-//         vamm,
-//         ..
-//     } = SimpleScenario::new();
+#[test]
+fn test_error_open_position_exceed_margin_ratio() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = SimpleScenario::new();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::BUY,
-//             to_decimals(60u64),
-//             to_decimals(21u64),
-//         )
-//         .unwrap();
-//     let res = router.execute(alice.clone(), msg).unwrap_err();
-//     assert_eq!(
-//         res.to_string(),
-//         "Overflow: Cannot Sub with 40000000000 and 120000000000".to_string()
-//     );
-// }
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            to_decimals(60u64),
+            to_decimals(21u64),
+        )
+        .unwrap();
+    let res = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        res.to_string(),
+        "Generic error: Leverage is too high".to_string()
+    );
+}
+
+#[test]
+fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_closes() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        insurance,
+        engine,
+        usdc,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    // reduce the allowance
+    router
+        .execute_contract(
+            alice.clone(),
+            usdc.addr().clone(),
+            &Cw20ExecuteMsg::DecreaseAllowance {
+                spender: engine.addr().to_string(),
+                amount: to_decimals(1980),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
+
+    // reduce the allowance
+    router
+        .execute_contract(
+            bob.clone(),
+            usdc.addr().clone(),
+            &Cw20ExecuteMsg::DecreaseAllowance {
+                spender: engine.addr().to_string(),
+                amount: to_decimals(1980),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            to_decimals(20u64),
+            to_decimals(10u64),
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            to_decimals(20u64),
+            to_decimals(10u64),
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    // alice close position, pnl = 200 -105.88 ~= 94.12
+    // receive pnl + margin = 114.12
+    let msg = engine.close_position(vamm.addr().to_string()).unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let alice_balance = usdc.balance(&router, alice.clone()).unwrap();
+    assert_eq!(alice_balance, Uint128::from(5_094_117_647_059u128));
+
+    // bob close her under collateral position, positionValue is -294.11
+    // bob's pnl = 200 - 294.11 ~= -94.12
+    // bob loss all his margin (20) with additional 74.12 badDebt
+    // which is already prepaid by insurance fund when alice close the position before
+    // clearing house doesn't need to ask insurance fund for covering the bad debt
+    let msg = engine.close_position(vamm.addr().to_string()).unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    let bob_balance = usdc.balance(&router, bob.clone()).unwrap();
+    assert_eq!(bob_balance, Uint128::from(4_980_000_000_000u128));
+
+    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    assert_eq!(engine_balance, to_decimals(0u64));
+
+    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    assert_eq!(insurance_balance, Uint128::from(4_925_882_352_941u128));
+}

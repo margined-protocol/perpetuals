@@ -1,5 +1,5 @@
 use cosmwasm_std::{Addr, Empty, Uint128};
-use cw20::{Cw20Coin, Cw20ExecuteMsg};
+use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use margined_perp::margined_engine::InstantiateMsg;
 use margined_perp::margined_vamm::InstantiateMsg as VammInstantiateMsg;
@@ -18,7 +18,7 @@ pub struct SimpleScenario {
     pub bob: Addr,
     pub insurance: Addr,
     pub fee_pool: Addr,
-    pub usdc: ContractInfo,
+    pub usdc: Cw20Contract,
     pub vamm: VammController,
     pub engine: EngineController,
 }
@@ -54,6 +54,10 @@ impl SimpleScenario {
                             address: bob.to_string(),
                             amount: to_decimals(5000),
                         },
+                        Cw20Coin {
+                            address: insurance_fund.to_string(),
+                            amount: to_decimals(5000),
+                        },
                     ],
                     mint: None,
                     marketing: None,
@@ -63,6 +67,8 @@ impl SimpleScenario {
                 None,
             )
             .unwrap();
+
+        let usdc = Cw20Contract(usdc_addr.clone());
 
         let vamm_addr = router
             .instantiate_contract(
@@ -95,9 +101,9 @@ impl SimpleScenario {
                     insurance_fund: insurance_fund.to_string(),
                     fee_pool: fee_pool.to_string(),
                     eligible_collateral: usdc_addr.to_string(),
-                    initial_margin_ratio: Uint128::from(100u128),
-                    maintenance_margin_ratio: Uint128::from(100u128),
-                    liquidation_fee: Uint128::from(100u128),
+                    initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
+                    maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
+                    liquidation_fee: Uint128::from(50_000_000u128),      // 0.05
                     vamm: vec![vamm_addr.to_string()],
                 },
                 &[],
@@ -135,6 +141,20 @@ impl SimpleScenario {
             )
             .unwrap();
 
+        // create allowance for insurance_fund
+        router
+            .execute_contract(
+                insurance_fund.clone(),
+                usdc_addr,
+                &Cw20ExecuteMsg::IncreaseAllowance {
+                    spender: engine_addr.to_string(),
+                    amount: to_decimals(2000),
+                    expires: None,
+                },
+                &[],
+            )
+            .unwrap();
+
         Self {
             router,
             owner,
@@ -142,10 +162,7 @@ impl SimpleScenario {
             bob,
             insurance: insurance_fund,
             fee_pool,
-            usdc: ContractInfo {
-                addr: usdc_addr,
-                id: usdc_id,
-            },
+            usdc,
             vamm,
             engine,
         }
