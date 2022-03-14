@@ -23,8 +23,8 @@ pub enum PnlCalcOption {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Pnl {
-    ITM, // In-The-Money
-    OTM, // Out-The-Money
+    Profit, // In-The-Money
+    Loss, // Out-The-Money
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -114,5 +114,11 @@ pub struct SwapResponse {
 pub struct PositionUnrealizedPnlResponse {
     pub position_notional: Uint128,
     pub unrealized_pnl: Uint128,
-    pub side: Pnl,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct RemainMarginResponse {
+    pub funding_payment: Uint128,
+    pub remaining_margin: Uint128,
+    pub bad_debt: Uint128,
 }

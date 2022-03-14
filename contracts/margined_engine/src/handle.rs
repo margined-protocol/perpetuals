@@ -11,7 +11,9 @@ use crate::{
     state::{read_config, read_position, store_config, store_tmp_swap, Config, Position, Swap},
     utils::{direction_to_side, require_margin, require_vamm, side_to_direction},
 };
-use margined_perp::margined_engine::{Pnl, PnlCalcOption, PositionUnrealizedPnlResponse, Side};
+use margined_perp::margined_engine::{
+    Pnl, PnlCalcOption, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
+};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 
 pub fn update_config(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {
@@ -273,7 +275,6 @@ pub fn get_position_notional_unrealized_pnl(
 ) -> StdResult<PositionUnrealizedPnlResponse> {
     let mut position_notional = Uint128::zero();
     let mut unrealized_pnl = Uint128::zero();
-    let mut side = Pnl::ITM; // doesn't matter the direction if zero
 
     let position_size = position.size;
     if !position_size.is_zero() {
@@ -296,20 +297,50 @@ pub fn get_position_notional_unrealized_pnl(
             }
             PnlCalcOption::ORACLE => {}
         }
-
-        side = if position.notional > position_notional {
+        println!("Direction: {:?}", position.direction);
+        println!("Before: {}, After: {}", position.notional, position_notional);
+        if position.notional > position_notional {
             unrealized_pnl = position.notional.checked_sub(position_notional)?;
-            Pnl::ITM
         } else {
             unrealized_pnl = position_notional.checked_sub(position.notional)?;
-            Pnl::OTM
         }
     }
 
     Ok(PositionUnrealizedPnlResponse {
         position_notional,
         unrealized_pnl,
-        side,
+    })
+}
+
+pub fn calc_remain_margin_with_funding_payment(
+    position: &Position,
+    margin_delta: Uint128,
+    pnl: Pnl,
+) -> StdResult<RemainMarginResponse> {
+    // calculate the funding payment
+
+    // calculate the remaining margin
+    let mut bad_debt = Uint128::zero();
+    let remaining_margin: Uint128 = if pnl == Pnl::Profit {
+        position.margin.checked_add(margin_delta)?
+    } else {
+        if margin_delta < position.margin {
+            position.margin.checked_sub(margin_delta)?
+        } else {
+            // if the delta is bigger than margin we
+            // will have some bad debt and margin out is gonna
+            // be zero
+            bad_debt = margin_delta.checked_sub(position.margin)?;
+            Uint128::zero()
+        }
+    };
+
+    // if the remain is negative, set it to zero
+    // and set the rest to
+    Ok(RemainMarginResponse {
+        funding_payment: Uint128::zero(),
+        remaining_margin,
+        bad_debt,
     })
 }
 

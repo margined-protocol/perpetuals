@@ -852,6 +852,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
         mut router,
         alice,
         bob,
+        insurance,
         engine,
         usdc,
         vamm,
@@ -911,14 +912,24 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     let msg = engine.close_position(vamm.addr().to_string()).unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
+    let alice_balance = usdc.balance(&router, alice.clone()).unwrap();
+    assert_eq!(alice_balance, Uint128::from(5_094_117_647_059u128));
+
+    // bob close her under collateral position, positionValue is -294.11
+    // bob's pnl = 200 - 294.11 ~= -94.12
+    // bob loss all his margin (20) with additional 74.12 badDebt
+    // which is already prepaid by insurance fund when alice close the position before
+    // clearing house doesn't need to ask insurance fund for covering the bad debt
+    let msg = engine.close_position(vamm.addr().to_string()).unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    let bob_balance = usdc.balance(&router, bob.clone()).unwrap();
+    assert_eq!(bob_balance, Uint128::from(4_980_000_000_000u128));
+
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, to_decimals(0u64));
 
-    // let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
-    // assert_eq!(insurance_balance, to_decimals(5024u64));
+    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    assert_eq!(insurance_balance, Uint128::from(4_925_882_352_941u128));
 
-    // let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
-    // assert_eq!(fee_pool_balance, to_decimals(12u64));
-
-    assert_eq!(1, 2);
 }

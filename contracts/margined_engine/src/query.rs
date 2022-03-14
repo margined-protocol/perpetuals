@@ -86,12 +86,10 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
     let PositionUnrealizedPnlResponse {
         position_notional: mut notional,
         unrealized_pnl: mut pnl,
-        side: _side,
     } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::SPOTPRICE)?;
     let PositionUnrealizedPnlResponse {
         position_notional: twap_notional,
         unrealized_pnl: twap_pnl,
-        side: _twap_side,
     } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::TWAP)?;
 
     // calculate and return margin
