@@ -189,6 +189,7 @@ pub fn close_position_reply(
 
     let mut messages: Vec<SubMsg> = vec![];
 
+    // TODO Make this less ugly
     if pnl.profit_loss == Pnl::Profit {
         let token_balance = query_token_balance(
             deps.as_ref(),
@@ -224,7 +225,6 @@ pub fn close_position_reply(
             execute_transfer(deps.storage, &swap.trader, remain_margin.remaining_margin).unwrap(),
         );
     } else {
-        // TODO probably log prepaidBadDebt here
         let mut state = read_state(deps.storage)?;
 
         if state.bad_debt.is_zero() {

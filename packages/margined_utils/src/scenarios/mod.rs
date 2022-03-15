@@ -103,6 +103,7 @@ impl SimpleScenario {
                     eligible_collateral: usdc_addr.to_string(),
                     initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
+                    partial_liquidation_margin_ratio: Uint128::from(50_000_000u128), // 0.05
                     liquidation_fee: Uint128::from(50_000_000u128),      // 0.05
                     vamm: vec![vamm_addr.to_string()],
                 },

@@ -1,6 +1,6 @@
 // use crate::testing::setup::{self, to_decimals};
 use cosmwasm_std::Uint128;
-use cw20::{Cw20Contract, Cw20ExecuteMsg};
+use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
 use margined_perp::margined_engine::{PositionResponse, Side};
 use margined_utils::scenarios::SimpleScenario;
@@ -848,6 +848,93 @@ fn test_error_open_position_exceed_margin_ratio() {
 
 #[test]
 fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_closes() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        insurance,
+        engine,
+        usdc,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    // reduce the allowance
+    router
+        .execute_contract(
+            alice.clone(),
+            usdc.addr().clone(),
+            &Cw20ExecuteMsg::DecreaseAllowance {
+                spender: engine.addr().to_string(),
+                amount: to_decimals(1980),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
+
+    // reduce the allowance
+    router
+        .execute_contract(
+            bob.clone(),
+            usdc.addr().clone(),
+            &Cw20ExecuteMsg::DecreaseAllowance {
+                spender: engine.addr().to_string(),
+                amount: to_decimals(1980),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            to_decimals(20u64),
+            to_decimals(10u64),
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            to_decimals(20u64),
+            to_decimals(10u64),
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    // alice close position, pnl = 200 -105.88 ~= 94.12
+    // receive pnl + margin = 114.12
+    let msg = engine.close_position(vamm.addr().to_string()).unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let alice_balance = usdc.balance(&router, alice.clone()).unwrap();
+    assert_eq!(alice_balance, Uint128::from(5_094_117_647_059u128));
+
+    // bob close her under collateral position, positionValue is -294.11
+    // bob's pnl = 200 - 294.11 ~= -94.12
+    // bob loss all his margin (20) with additional 74.12 badDebt
+    // which is already prepaid by insurance fund when alice close the position before
+    // clearing house doesn't need to ask insurance fund for covering the bad debt
+    let msg = engine.close_position(vamm.addr().to_string()).unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    let bob_balance = usdc.balance(&router, bob.clone()).unwrap();
+    assert_eq!(bob_balance, Uint128::from(4_980_000_000_000u128));
+
+    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    assert_eq!(engine_balance, to_decimals(0u64));
+
+    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    assert_eq!(insurance_balance, Uint128::from(4_925_882_352_941u128));
+}
+
+#[test]
+fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_liquidated() {
     let SimpleScenario {
         mut router,
         alice,
