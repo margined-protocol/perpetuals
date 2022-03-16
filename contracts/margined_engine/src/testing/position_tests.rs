@@ -941,7 +941,6 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
         alice,
         bob,
         carol,
-        insurance,
         engine,
         usdc,
         vamm,

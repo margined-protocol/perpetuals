@@ -159,7 +159,6 @@ pub fn close_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    println!("CLOSE POSITION REPLY:\n\n\n\n");
     let config = read_config(deps.storage)?;
 
     let tmp_swap = read_tmp_swap(deps.storage)?;
@@ -276,18 +275,13 @@ pub fn liquidate_reply(
     let pnl = calc_pnl(output, swap.open_notional, position.direction.clone())?;
 
     let mut remain_margin =
-        calc_remain_margin_with_funding_payment(&position, pnl.value, pnl.profit_loss.clone())?;
+        calc_remain_margin_with_funding_payment(&position, pnl.value, pnl.profit_loss)?;
 
-    println!("PNL: {:?}", position);
-    println!("PNL: {:?}", pnl);
-    println!("remain margin: {:?}", remain_margin);
 
-    println!("base asset exchanges: {}", output);
     let liquidation_fee: Uint128 = output
         .checked_mul(config.liquidation_fee)?
         .checked_div(config.decimals)?
         .checked_div(Uint128::from(2u64))?;
-    println!("liquidation fee: {}", liquidation_fee);
     if liquidation_fee > remain_margin.margin {
         let bad_debt = liquidation_fee.checked_sub(remain_margin.margin)?;
         remain_margin.bad_debt = remain_margin.bad_debt.checked_add(bad_debt)?;
@@ -295,7 +289,6 @@ pub fn liquidate_reply(
         remain_margin.margin = remain_margin.margin.checked_sub(liquidation_fee)?;
     }
 
-    println!("remain margin: {:?}", remain_margin);
 
     let mut messages: Vec<SubMsg> = vec![];
     if remain_margin.bad_debt > Uint128::zero() {
@@ -318,11 +311,9 @@ pub fn liquidate_reply(
         let short_fall = liquidation_fee.checked_sub(token_balance)?;
 
         let mut state = read_state(deps.storage)?;
-        println!("token {}", token_balance);
-        println!("shortfall {}", short_fall);
         if !token_balance.is_zero() {
             messages
-                .push(execute_transfer(deps.storage, &liquidator.clone(), token_balance).unwrap());
+                .push(execute_transfer(deps.storage, &liquidator, token_balance).unwrap());
         }
         messages.push(
             execute_transfer_from(
@@ -338,17 +329,14 @@ pub fn liquidate_reply(
     } else {
         messages.push(execute_transfer(deps.storage, &liquidator, liquidation_fee).unwrap());
     }
-    println!("DOWEGETHERE");
 
     if remain_margin.margin > liquidation_fee {
-        println!("DOWEGETHERE");
 
         // transfer to the insurance fund
         messages.push(
             execute_transfer(deps.storage, &config.insurance_fund, remain_margin.margin).unwrap(),
         );
     }
-    println!("DOWEGETHERE");
 
     position = clear_position(env, position)?;
 
