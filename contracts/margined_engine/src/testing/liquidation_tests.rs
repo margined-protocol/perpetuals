@@ -259,3 +259,81 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
         Uint128::from(278_761_061_950u128).to_string()
     ); // pnl (unsigned)
 }
+
+#[test]
+fn test_alice_long_position_underwater_oracle_price_activated_doesnt_get_liquidated() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        carol,
+        engine,
+        usdc,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    router
+        .execute_contract(
+            alice.clone(),
+            usdc.addr().clone(),
+            &Cw20ExecuteMsg::DecreaseAllowance {
+                spender: engine.addr().to_string(),
+                amount: to_decimals(1850),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
+
+    router
+        .execute_contract(
+            bob.clone(),
+            usdc.addr().clone(),
+            &Cw20ExecuteMsg::DecreaseAllowance {
+                spender: engine.addr().to_string(),
+                amount: to_decimals(1500),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            to_decimals(150u64),
+            to_decimals(4u64),
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let spot_price = vamm.spot_price(&router).unwrap();
+    println!("{}", spot_price);
+    assert_eq!(1, 2);
+
+    // let msg = engine
+    //     .open_position(
+    //         vamm.addr().to_string(),
+    //         Side::SELL,
+    //         to_decimals(500u64),
+    //         to_decimals(1u64),
+    //     )
+    //     .unwrap();
+    // router.execute(bob.clone(), msg).unwrap();
+
+    // // alice's margin ratio = (margin + unrealizedPnl) / openNotional = (150 + (-278.77)) / 600 = -21.46%
+    // let msg = engine
+    //     .liquidate(vamm.addr().to_string(), alice.to_string())
+    //     .unwrap();
+    // let response = router.execute(carol.clone(), msg).unwrap();
+    // assert_eq!(
+    //     response.events[4].attributes[2].value,
+    //     Uint128::from(8_030_973_451u128).to_string()
+    // ); // liquidation fee
+    // assert_eq!(
+    //     response.events[4].attributes[3].value,
+    //     Uint128::from(278_761_061_950u128).to_string()
+    // ); // pnl (unsigned)
+}

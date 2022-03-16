@@ -582,6 +582,7 @@ dependencies = [
  "cw20-base",
  "margined-perp",
  "margined_engine",
+ "margined_pricefeed",
  "margined_vamm",
  "schemars",
  "serde",

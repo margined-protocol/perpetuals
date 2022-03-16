@@ -2,9 +2,13 @@ use cosmwasm_std::{Addr, Empty, Uint128};
 use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use margined_perp::margined_engine::InstantiateMsg;
+use margined_perp::margined_pricefeed::InstantiateMsg as PricefeedInstantiateMsg;
 use margined_perp::margined_vamm::InstantiateMsg as VammInstantiateMsg;
 
-use crate::contracts::helpers::{margined_engine::EngineController, margined_vamm::VammController};
+use crate::contracts::helpers::{
+    margined_engine::EngineController, margined_pricefeed::PricefeedController,
+    margined_vamm::VammController,
+};
 
 pub struct ContractInfo {
     pub addr: Addr,
@@ -22,6 +26,7 @@ pub struct SimpleScenario {
     pub usdc: Cw20Contract,
     pub vamm: VammController,
     pub engine: EngineController,
+    pub pricefeed: PricefeedController,
 }
 
 impl SimpleScenario {
@@ -38,6 +43,7 @@ impl SimpleScenario {
         let usdc_id = router.store_code(contract_cw20());
         let engine_id = router.store_code(contract_engine());
         let vamm_id = router.store_code(contract_vamm());
+        let pricefeed_id = router.store_code(contract_pricefeed());
 
         let usdc_addr = router
             .instantiate_contract(
@@ -75,6 +81,21 @@ impl SimpleScenario {
             .unwrap();
 
         let usdc = Cw20Contract(usdc_addr.clone());
+
+        let pricefeed_addr = router
+            .instantiate_contract(
+                pricefeed_id,
+                owner.clone(),
+                &PricefeedInstantiateMsg {
+                    decimals: 9u8,
+                    oracle_hub_contract: "oracle_hub0000".to_string(),
+                },
+                &[],
+                "pricefeed",
+                None,
+            )
+            .unwrap();
+        let pricefeed = PricefeedController(pricefeed_addr.clone());
 
         let vamm_addr = router
             .instantiate_contract(
@@ -170,6 +191,7 @@ impl SimpleScenario {
             insurance: insurance_fund,
             fee_pool,
             usdc,
+            pricefeed,
             vamm,
             engine,
         }
@@ -209,6 +231,15 @@ fn contract_engine() -> Box<dyn Contract<Empty>> {
         margined_engine::contract::query,
     )
     .with_reply(margined_engine::contract::reply);
+    Box::new(contract)
+}
+
+fn contract_pricefeed() -> Box<dyn Contract<Empty>> {
+    let contract = ContractWrapper::new_with_empty(
+        margined_pricefeed::contract::execute,
+        margined_pricefeed::contract::instantiate,
+        margined_pricefeed::contract::query,
+    );
     Box::new(contract)
 }
 
