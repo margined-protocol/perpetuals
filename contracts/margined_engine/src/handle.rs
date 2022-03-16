@@ -357,22 +357,21 @@ pub fn calc_pnl(
 
 pub fn calc_remain_margin_with_funding_payment(
     position: &Position,
-    margin_delta: Uint128,
-    pnl: Pnl,
+    pnl: PnlResponse,
 ) -> StdResult<RemainMarginResponse> {
     // calculate the funding payment
 
     // calculate the remaining margin
     let mut bad_debt = Uint128::zero();
-    let remaining_margin: Uint128 = if pnl == Pnl::Profit {
-        position.margin.checked_add(margin_delta)?
-    } else if margin_delta < position.margin {
-        position.margin.checked_sub(margin_delta)?
+    let remaining_margin: Uint128 = if pnl.profit_loss == Pnl::Profit {
+        position.margin.checked_add(pnl.value)?
+    } else if pnl.value < position.margin {
+        position.margin.checked_sub(pnl.value)?
     } else {
         // if the delta is bigger than margin we
         // will have some bad debt and margin out is gonna
         // be zero
-        bad_debt = margin_delta.checked_sub(position.margin)?;
+        bad_debt = pnl.value.checked_sub(position.margin)?;
         Uint128::zero()
     };
 
