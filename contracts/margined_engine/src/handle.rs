@@ -125,9 +125,7 @@ pub fn close_position(
 
     let msg = internal_close_position(deps, &position, SWAP_CLOSE_REPLY_ID)?;
 
-    Ok(Response::new()
-        .add_attributes(vec![("action", "close_position")])
-        .add_submessage(msg))
+    Ok(Response::new().add_submessage(msg))
 }
 
 pub fn liquidate(
@@ -169,7 +167,7 @@ pub fn liquidate(
         response = response.add_submessage(msg);
     }
 
-    Ok(response.add_attributes(vec![("action", "liquidate")]))
+    Ok(response)
 }
 
 // Increase the position, just basically wraps swap input though it may do more in the future

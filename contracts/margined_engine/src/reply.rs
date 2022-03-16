@@ -25,6 +25,7 @@ pub fn increase_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    println!("HERE?");
     let config = read_config(deps.storage)?;
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
@@ -66,7 +67,10 @@ pub fn increase_position_reply(
     let fee_msgs = transfer_fee(deps.as_ref(), swap.trader, swap.vamm, position.notional).unwrap();
 
     remove_tmp_swap(deps.storage);
-    Ok(Response::new().add_submessage(msg).add_messages(fee_msgs))
+    Ok(Response::new()
+        .add_submessage(msg)
+        .add_messages(fee_msgs)
+        .add_attributes(vec![("action", "increase_position")]))
 }
 
 // Decreases position after successful execution of the swap
@@ -99,7 +103,7 @@ pub fn decrease_position_reply(
     // remove the tmp position
     remove_tmp_swap(deps.storage);
 
-    Ok(Response::new())
+    Ok(Response::new().add_attributes(vec![("action", "decrease_position")]))
 }
 
 // Decreases position after successful execution of the swap
@@ -149,7 +153,9 @@ pub fn reverse_position_reply(
 
     store_position(deps.storage, &position)?;
 
-    Ok(response.add_submessage(msg))
+    Ok(response
+        .add_submessage(msg)
+        .add_attributes(vec![("action", "reverse_position")]))
 }
 
 // Closes position after successful execution of the swap
@@ -248,6 +254,7 @@ pub fn liquidate_reply(
     output: Uint128,
 ) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
+    let mut state = read_state(deps.storage)?;
 
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
@@ -267,9 +274,6 @@ pub fn liquidate_reply(
         &swap.trader,
         swap.side.clone(),
     );
-
-    let _position_pnl =
-        get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)?;
 
     // calculate delta from trade and whether it was profitable or a loss
     let pnl = calc_pnl(output, swap.open_notional, position.direction.clone())?;
@@ -297,18 +301,32 @@ pub fn liquidate_reply(
             &mut messages,
         )?;
     }
+    let mut fee_to_insurance = Uint128::zero();
+    if !remain_margin.margin.is_zero() {
+        fee_to_insurance = remain_margin.margin;
+    }
+
+    if !fee_to_insurance.is_zero() {
+        messages.push(
+            execute_transfer(deps.storage, &config.insurance_fund, fee_to_insurance).unwrap(),
+        );
+    }
 
     // pay liquidation fees
     let liquidator = liquidator.unwrap();
+
+    // calculate token balance that should be remaining once
+    // insurance fees have been paid
     let token_balance = query_token_balance(
         deps.as_ref(),
         config.eligible_collateral,
         env.contract.address.clone(),
-    )?;
+    )?
+    .checked_sub(fee_to_insurance)?;
+
     if token_balance < liquidation_fee {
         let short_fall = liquidation_fee.checked_sub(token_balance)?;
 
-        let mut state = read_state(deps.storage)?;
         if !token_balance.is_zero() {
             messages.push(execute_transfer(deps.storage, &liquidator, token_balance).unwrap());
         }
@@ -322,16 +340,10 @@ pub fn liquidate_reply(
             .unwrap(),
         );
         state.bad_debt = short_fall;
+
         store_state(deps.storage, &state)?;
     } else {
         messages.push(execute_transfer(deps.storage, &liquidator, liquidation_fee).unwrap());
-    }
-
-    if remain_margin.margin > liquidation_fee {
-        // transfer to the insurance fund
-        messages.push(
-            execute_transfer(deps.storage, &config.insurance_fund, remain_margin.margin).unwrap(),
-        );
     }
 
     position = clear_position(env, position)?;
@@ -341,5 +353,11 @@ pub fn liquidate_reply(
 
     remove_tmp_swap(deps.storage);
     remove_tmp_liquidator(deps.storage);
-    Ok(Response::new().add_submessages(messages))
+    Ok(Response::new()
+        .add_submessages(messages)
+        .add_attributes(vec![
+            ("action", "liquidate_reply"),
+            ("liquidation_fee", &liquidation_fee.to_string()),
+            ("pnl", &pnl.value.to_string()),
+        ]))
 }
