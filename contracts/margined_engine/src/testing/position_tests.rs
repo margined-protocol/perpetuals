@@ -842,7 +842,7 @@ fn test_error_open_position_exceed_margin_ratio() {
     let res = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         res.to_string(),
-        "Generic error: Leverage is too high".to_string()
+        "Generic error: Position is undercollateralized".to_string()
     );
 }
 
@@ -927,7 +927,8 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     assert_eq!(bob_balance, Uint128::from(4_980_000_000_000u128));
 
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
-    assert_eq!(engine_balance, to_decimals(0u64));
+    // TODO should be zero but the is slight rounding error will investigate later
+    assert_eq!(engine_balance, Uint128::zero());
 
     let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
     assert_eq!(insurance_balance, Uint128::from(4_925_882_352_941u128));
@@ -939,6 +940,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
         mut router,
         alice,
         bob,
+        carol,
         insurance,
         engine,
         usdc,
@@ -1002,20 +1004,29 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
     let alice_balance = usdc.balance(&router, alice.clone()).unwrap();
     assert_eq!(alice_balance, Uint128::from(5_094_117_647_059u128));
 
+    // keeper liquidate bob's under collateral position, bob's positionValue is -294.11
+    // bob's pnl = 200 - 294.11 ~= -94.12
+    // bob loss all his margin (20) and there's 74.12 badDebt
+    // which is already prepaid by insurance fund when alice close the position
+    let margin_ratio = engine
+        .get_margin_ratio(&router, vamm.addr().to_string(), bob.to_string())
+        .unwrap();
+    assert_eq!(margin_ratio.ratio, Uint128::from(252_000_000u128));
+    assert_eq!(margin_ratio.polarity, false);
+
     // bob close her under collateral position, positionValue is -294.11
     // bob's pnl = 200 - 294.11 ~= -94.12
     // bob loss all his margin (20) with additional 74.12 badDebt
     // which is already prepaid by insurance fund when alice close the position before
     // clearing house doesn't need to ask insurance fund for covering the bad debt
-    let msg = engine.close_position(vamm.addr().to_string()).unwrap();
-    router.execute(bob.clone(), msg).unwrap();
+    let msg = engine
+        .liquidate(vamm.addr().to_string(), bob.to_string())
+        .unwrap();
+    router.execute(carol.clone(), msg).unwrap();
 
-    let bob_balance = usdc.balance(&router, bob.clone()).unwrap();
-    assert_eq!(bob_balance, Uint128::from(4_980_000_000_000u128));
+    let carol_balance = usdc.balance(&router, carol.clone()).unwrap();
+    assert_eq!(carol_balance, Uint128::from(5_007_352_941_176u128));
 
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, to_decimals(0u64));
-
-    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
-    assert_eq!(insurance_balance, Uint128::from(4_925_882_352_941u128));
 }

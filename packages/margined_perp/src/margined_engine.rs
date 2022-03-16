@@ -35,7 +35,6 @@ pub struct InstantiateMsg {
     pub eligible_collateral: String,
     pub initial_margin_ratio: Uint128,
     pub maintenance_margin_ratio: Uint128,
-    pub partial_liquidation_margin_ratio: Uint128,
     pub liquidation_fee: Uint128,
     pub vamm: Vec<String>,
 }
@@ -56,7 +55,10 @@ pub enum ExecuteMsg {
     ClosePosition {
         vamm: String,
     },
-    // Liquidate {},
+    Liquidate {
+        vamm: String,
+        trader: String,
+    },
     // PayFunding {},
     // DepositMargin {},
     // WithdrawMargin {},
@@ -87,6 +89,14 @@ pub enum QueryMsg {
 pub struct ConfigResponse {
     pub owner: Addr,
     pub eligible_collateral: Addr,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct MarginRatioResponse {
+    pub ratio: Uint128,
+    // TODO think if i128 should be used or
+    // if there is a better solution to this
+    pub polarity: bool, // true = positive, false = negative
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -126,6 +136,6 @@ pub struct PnlResponse {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct RemainMarginResponse {
     pub funding_payment: Uint128,
-    pub remaining_margin: Uint128,
+    pub margin: Uint128,
     pub bad_debt: Uint128,
 }

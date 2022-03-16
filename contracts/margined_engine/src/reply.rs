@@ -1,24 +1,21 @@
-use cosmwasm_std::{
-    to_binary, Addr, CosmosMsg, Deps, DepsMut, Env, ReplyOn, Response, StdError, StdResult,
-    Storage, SubMsg, Uint128, WasmMsg,
-};
-use cw20::Cw20ExecuteMsg;
+use cosmwasm_std::{DepsMut, Env, Response, StdError, StdResult, SubMsg, Uint128};
 
 use crate::{
     handle::{
-        calc_pnl, calc_remain_margin_with_funding_payment, clear_position, get_position,
+        calc_pnl, calc_remain_margin_with_funding_payment, clear_position,
         get_position_notional_unrealized_pnl, internal_increase_position,
     },
-    querier::query_vamm_calc_fee,
     state::{
-        read_config, read_state, read_tmp_swap, remove_tmp_swap, store_position, store_state,
-        store_tmp_swap,
+        read_config, read_state, read_tmp_liquidator, read_tmp_swap, remove_tmp_liquidator,
+        remove_tmp_swap, store_position, store_state, store_tmp_swap,
     },
-    utils::side_to_direction,
+    utils::{
+        execute_transfer, execute_transfer_from, get_position, realize_bad_debt, side_to_direction,
+        transfer_fee,
+    },
 };
 
 use margined_perp::margined_engine::{Pnl, PnlCalcOption};
-use margined_perp::margined_vamm::CalcFeeResponse;
 use margined_perp::querier::query_token_balance;
 
 // Increases position after successful execution of the swap
@@ -162,6 +159,7 @@ pub fn close_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    println!("CLOSE POSITION REPLY:\n\n\n\n");
     let config = read_config(deps.storage)?;
 
     let tmp_swap = read_tmp_swap(deps.storage)?;
@@ -178,10 +176,6 @@ pub fn close_position_reply(
         swap.side.clone(),
     );
 
-    let _position_pnl =
-        get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)?;
-
-    // calculate delta from trade and whether it was profitable or a loss
     let pnl = calc_pnl(output, swap.open_notional, position.direction.clone())?;
 
     let remain_margin =
@@ -196,13 +190,11 @@ pub fn close_position_reply(
             config.eligible_collateral,
             env.contract.address.clone(),
         )?;
-        if remain_margin.remaining_margin <= token_balance {
-            messages.push(
-                execute_transfer(deps.storage, &swap.trader, remain_margin.remaining_margin)
-                    .unwrap(),
-            );
+        if remain_margin.margin <= token_balance {
+            messages
+                .push(execute_transfer(deps.storage, &swap.trader, remain_margin.margin).unwrap());
         } else {
-            let short_fall = remain_margin.remaining_margin.checked_sub(token_balance)?;
+            let short_fall = remain_margin.margin.checked_sub(token_balance)?;
 
             let mut state = read_state(deps.storage)?;
 
@@ -221,28 +213,14 @@ pub fn close_position_reply(
         }
     } else if pnl.value < position.margin {
         // create transfer message
-        messages.push(
-            execute_transfer(deps.storage, &swap.trader, remain_margin.remaining_margin).unwrap(),
-        );
+        messages.push(execute_transfer(deps.storage, &swap.trader, remain_margin.margin).unwrap());
     } else {
-        let mut state = read_state(deps.storage)?;
-
-        if state.bad_debt.is_zero() {
-            // create transfer from message
-            messages.push(
-                execute_transfer_from(
-                    deps.storage,
-                    &config.insurance_fund,
-                    &env.contract.address,
-                    remain_margin.bad_debt,
-                )
-                .unwrap(),
-            );
-            state.bad_debt = remain_margin.bad_debt;
-        } else {
-            state.bad_debt = Uint128::zero();
-        }
-        store_state(deps.storage, &state)?;
+        realize_bad_debt(
+            deps.storage,
+            env.contract.address.clone(),
+            remain_margin.bad_debt,
+            &mut messages,
+        )?;
     };
 
     // now start putting the response together
@@ -263,94 +241,121 @@ pub fn close_position_reply(
     Ok(response)
 }
 
-fn execute_transfer_from(
-    storage: &dyn Storage,
-    owner: &Addr,
-    receiver: &Addr,
-    amount: Uint128,
-) -> StdResult<SubMsg> {
-    let config = read_config(storage)?;
-    let msg = WasmMsg::Execute {
-        contract_addr: config.eligible_collateral.to_string(),
-        funds: vec![],
-        msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
-            owner: owner.to_string(),
-            recipient: receiver.to_string(),
-            amount,
-        })?,
-    };
-
-    let transfer_msg = SubMsg {
-        msg: CosmosMsg::Wasm(msg),
-        gas_limit: None, // probably should set a limit in the config
-        id: 0u64,
-        reply_on: ReplyOn::Never,
-    };
-
-    Ok(transfer_msg)
-}
-
-fn execute_transfer(storage: &dyn Storage, receiver: &Addr, amount: Uint128) -> StdResult<SubMsg> {
-    let config = read_config(storage)?;
-    let msg = WasmMsg::Execute {
-        contract_addr: config.eligible_collateral.to_string(),
-        funds: vec![],
-        msg: to_binary(&Cw20ExecuteMsg::Transfer {
-            recipient: receiver.to_string(),
-            amount,
-        })?,
-    };
-
-    let transfer_msg = SubMsg {
-        msg: CosmosMsg::Wasm(msg),
-        gas_limit: None, // probably should set a limit in the config
-        id: 0u64,
-        reply_on: ReplyOn::Never,
-    };
-
-    Ok(transfer_msg)
-}
-
-// Transfers the toll and spread fees to the the insurance fund and fee pool
-pub fn transfer_fee(
-    deps: Deps,
-    from: Addr,
-    vamm: Addr,
-    notional: Uint128,
-) -> StdResult<Vec<WasmMsg>> {
+// Liquidates position after successful execution of the swap
+pub fn liquidate_reply(
+    deps: DepsMut,
+    env: Env,
+    _input: Uint128,
+    output: Uint128,
+) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
-    let CalcFeeResponse {
-        spread_fee,
-        toll_fee,
-    } = query_vamm_calc_fee(&deps, vamm.into_string(), notional)?;
 
-    let mut messages: Vec<WasmMsg> = vec![];
+    let tmp_swap = read_tmp_swap(deps.storage)?;
+    if tmp_swap.is_none() {
+        return Err(StdError::generic_err("no temporary position"));
+    }
 
-    if !spread_fee.is_zero() {
-        let msg = WasmMsg::Execute {
-            contract_addr: config.eligible_collateral.to_string(),
-            funds: vec![],
-            msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
-                owner: from.to_string(),
-                recipient: config.insurance_fund.to_string(),
-                amount: spread_fee,
-            })?,
-        };
-        messages.push(msg);
-    };
+    let liquidator = read_tmp_liquidator(deps.storage)?;
+    if liquidator.is_none() {
+        return Err(StdError::generic_err("no liquidator"));
+    }
 
-    if !toll_fee.is_zero() {
-        let msg = WasmMsg::Execute {
-            contract_addr: config.eligible_collateral.to_string(),
-            funds: vec![],
-            msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
-                owner: from.to_string(),
-                recipient: config.fee_pool.to_string(),
-                amount: toll_fee,
-            })?,
-        };
-        messages.push(msg);
-    };
+    let swap = tmp_swap.unwrap();
+    let mut position = get_position(
+        env.clone(),
+        deps.storage,
+        &swap.vamm,
+        &swap.trader,
+        swap.side.clone(),
+    );
 
-    Ok(messages)
+    let _position_pnl =
+        get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)?;
+
+    // calculate delta from trade and whether it was profitable or a loss
+    let pnl = calc_pnl(output, swap.open_notional, position.direction.clone())?;
+
+    let mut remain_margin =
+        calc_remain_margin_with_funding_payment(&position, pnl.value, pnl.profit_loss.clone())?;
+
+    println!("PNL: {:?}", position);
+    println!("PNL: {:?}", pnl);
+    println!("remain margin: {:?}", remain_margin);
+
+    println!("base asset exchanges: {}", output);
+    let liquidation_fee: Uint128 = output
+        .checked_mul(config.liquidation_fee)?
+        .checked_div(config.decimals)?
+        .checked_div(Uint128::from(2u64))?;
+    println!("liquidation fee: {}", liquidation_fee);
+    if liquidation_fee > remain_margin.margin {
+        let bad_debt = liquidation_fee.checked_sub(remain_margin.margin)?;
+        remain_margin.bad_debt = remain_margin.bad_debt.checked_add(bad_debt)?;
+    } else {
+        remain_margin.margin = remain_margin.margin.checked_sub(liquidation_fee)?;
+    }
+
+    println!("remain margin: {:?}", remain_margin);
+
+    let mut messages: Vec<SubMsg> = vec![];
+    if remain_margin.bad_debt > Uint128::zero() {
+        realize_bad_debt(
+            deps.storage,
+            env.contract.address.clone(),
+            remain_margin.bad_debt,
+            &mut messages,
+        )?;
+    }
+
+    // pay liquidation fees
+    let liquidator = liquidator.unwrap();
+    let token_balance = query_token_balance(
+        deps.as_ref(),
+        config.eligible_collateral,
+        env.contract.address.clone(),
+    )?;
+    if token_balance < liquidation_fee {
+        let short_fall = liquidation_fee.checked_sub(token_balance)?;
+
+        let mut state = read_state(deps.storage)?;
+        println!("token {}", token_balance);
+        println!("shortfall {}", short_fall);
+        if !token_balance.is_zero() {
+            messages
+                .push(execute_transfer(deps.storage, &liquidator.clone(), token_balance).unwrap());
+        }
+        messages.push(
+            execute_transfer_from(
+                deps.storage,
+                &config.insurance_fund,
+                &liquidator,
+                short_fall,
+            )
+            .unwrap(),
+        );
+        state.bad_debt = short_fall;
+        store_state(deps.storage, &state)?;
+    } else {
+        messages.push(execute_transfer(deps.storage, &liquidator, liquidation_fee).unwrap());
+    }
+    println!("DOWEGETHERE");
+
+    if remain_margin.margin > liquidation_fee {
+        println!("DOWEGETHERE");
+
+        // transfer to the insurance fund
+        messages.push(
+            execute_transfer(deps.storage, &config.insurance_fund, remain_margin.margin).unwrap(),
+        );
+    }
+    println!("DOWEGETHERE");
+
+    position = clear_position(env, position)?;
+
+    // remove_position(deps.storage, &position)?;
+    store_position(deps.storage, &position)?;
+
+    remove_tmp_swap(deps.storage);
+    remove_tmp_liquidator(deps.storage);
+    Ok(Response::new().add_submessages(messages))
 }

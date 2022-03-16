@@ -16,6 +16,7 @@ pub struct SimpleScenario {
     pub owner: Addr,
     pub alice: Addr,
     pub bob: Addr,
+    pub carol: Addr,
     pub insurance: Addr,
     pub fee_pool: Addr,
     pub usdc: Cw20Contract,
@@ -30,6 +31,7 @@ impl SimpleScenario {
         let owner = Addr::unchecked("owner");
         let alice = Addr::unchecked("alice");
         let bob = Addr::unchecked("bob");
+        let carol = Addr::unchecked("carol");
         let insurance_fund = Addr::unchecked("insurance_fund");
         let fee_pool = Addr::unchecked("fee_pool");
 
@@ -52,6 +54,10 @@ impl SimpleScenario {
                         },
                         Cw20Coin {
                             address: bob.to_string(),
+                            amount: to_decimals(5000),
+                        },
+                        Cw20Coin {
+                            address: carol.to_string(),
                             amount: to_decimals(5000),
                         },
                         Cw20Coin {
@@ -103,7 +109,6 @@ impl SimpleScenario {
                     eligible_collateral: usdc_addr.to_string(),
                     initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
-                    partial_liquidation_margin_ratio: Uint128::from(50_000_000u128), // 0.05
                     liquidation_fee: Uint128::from(50_000_000u128),      // 0.05
                     vamm: vec![vamm_addr.to_string()],
                 },
@@ -161,6 +166,7 @@ impl SimpleScenario {
             owner,
             alice,
             bob,
+            carol,
             insurance: insurance_fund,
             fee_pool,
             usdc,

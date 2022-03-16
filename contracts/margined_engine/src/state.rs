@@ -15,7 +15,8 @@ use sha3::{Digest, Sha3_256};
 pub static KEY_CONFIG: &[u8] = b"config";
 pub static KEY_POSITION: &[u8] = b"position";
 pub static KEY_STATE: &[u8] = b"state";
-pub static KEY_TMP_SWAP: &[u8] = b"tmp-position";
+pub static KEY_TMP_SWAP: &[u8] = b"tmp-swap";
+pub static KEY_TMP_LIQUIDATOR: &[u8] = b"tmp-liquidator";
 pub const VAMM_LIST: Item<VammList> = Item::new("admin_list");
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -130,11 +131,7 @@ pub fn store_position(storage: &mut dyn Storage, position: &Position) -> StdResu
     position_bucket(storage).save(&hash, position)
 }
 
-pub fn read_position(
-    storage: &dyn Storage,
-    vamm: &Addr,
-    trader: &Addr,
-) -> StdResult<Option<Position>> {
+pub fn read_position(storage: &dyn Storage, vamm: &Addr, trader: &Addr) -> StdResult<Position> {
     // hash the vAMM and trader together to get a unique position key
     let mut hasher = Sha3_256::new();
 
@@ -144,7 +141,11 @@ pub fn read_position(
 
     // read hash digest
     let hash = hasher.finalize();
-    position_bucket_read(storage).may_load(&hash)
+    let result = position_bucket_read(storage)
+        .may_load(&hash)?
+        .unwrap_or_default();
+
+    Ok(result)
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -168,4 +169,17 @@ pub fn remove_tmp_swap(storage: &mut dyn Storage) {
 
 pub fn read_tmp_swap(storage: &dyn Storage) -> StdResult<Option<Swap>> {
     singleton_read(storage, KEY_TMP_SWAP).load()
+}
+
+pub fn store_tmp_liquidator(storage: &mut dyn Storage, liquidator: &Addr) -> StdResult<()> {
+    singleton(storage, KEY_TMP_LIQUIDATOR).save(liquidator)
+}
+
+pub fn remove_tmp_liquidator(storage: &mut dyn Storage) {
+    let mut store: Singleton<Addr> = singleton(storage, KEY_TMP_LIQUIDATOR);
+    store.remove()
+}
+
+pub fn read_tmp_liquidator(storage: &dyn Storage) -> StdResult<Option<Addr>> {
+    singleton_read(storage, KEY_TMP_LIQUIDATOR).load()
 }

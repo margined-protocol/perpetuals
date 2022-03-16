@@ -18,7 +18,6 @@ fn test_instantiation() {
         eligible_collateral: TOKEN.to_string(),
         initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
         maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
-        partial_liquidation_margin_ratio: Uint128::from(50_000_000u128), // 0.05
         liquidation_fee: Uint128::from(100u128),
         vamm: vec!["test".to_string()],
     };
@@ -47,7 +46,6 @@ fn test_update_config() {
         eligible_collateral: TOKEN.to_string(),
         initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
         maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
-        partial_liquidation_margin_ratio: Uint128::from(50_000_000u128), // 0.05
         liquidation_fee: Uint128::from(100u128),
         vamm: vec!["test".to_string()],
     };

@@ -39,7 +39,7 @@ fn test_get_margin_ratio() {
     let margin_ratio = engine
         .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(margin_ratio, Uint128::from(100_000_000u128));
+    assert_eq!(margin_ratio.ratio, Uint128::from(100_000_000u128));
 }
 
 #[test]
@@ -73,12 +73,12 @@ fn test_get_margin_ratio_long() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    // expect to be 0.13429752
-    // need to show a direction also probably
+    // expect to be -0.13429752
     let margin_ratio = engine
         .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(margin_ratio, Uint128::from(134_297_520u128));
+    assert_eq!(margin_ratio.ratio, Uint128::from(134_297_520u128));
+    assert_eq!(margin_ratio.polarity, false);
 }
 
 #[test]
@@ -113,11 +113,11 @@ fn test_get_margin_ratio_short() {
     router.execute(bob.clone(), msg).unwrap();
 
     // expect to be 0.287037037
-    // need to show a direction also probably
     let margin_ratio = engine
         .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(margin_ratio, Uint128::from(287_037_037u128));
+    assert_eq!(margin_ratio.ratio, Uint128::from(287_037_037u128));
+    assert_eq!(margin_ratio.polarity, false);
 }
 
 #[test]
@@ -169,9 +169,9 @@ fn test_get_margin_higher_twap() {
     });
 
     // expect to be 0.09689093601
-    // need to show a direction also probably
     let margin_ratio = engine
         .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(margin_ratio, Uint128::from(96_890_936u128));
+    assert_eq!(margin_ratio.ratio, Uint128::from(96_890_936u128));
+    assert_eq!(margin_ratio.polarity, true);
 }

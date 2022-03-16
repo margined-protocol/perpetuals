@@ -1,15 +1,23 @@
 use cosmwasm_std::{
     to_binary, Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError,
-    StdResult, Storage, SubMsg, Uint128, WasmMsg,
+    StdResult, SubMsg, Uint128, WasmMsg,
 };
 
 use crate::{
     contract::{
-        SWAP_CLOSE_REPLY_ID, SWAP_DECREASE_REPLY_ID, SWAP_INCREASE_REPLY_ID, SWAP_REVERSE_REPLY_ID,
+        SWAP_CLOSE_REPLY_ID, SWAP_DECREASE_REPLY_ID, SWAP_INCREASE_REPLY_ID,
+        SWAP_LIQUIDATE_REPLY_ID, SWAP_REVERSE_REPLY_ID,
     },
     querier::{query_vamm_output_price, query_vamm_output_twap},
-    state::{read_config, read_position, store_config, store_tmp_swap, Config, Position, Swap},
-    utils::{direction_to_side, require_margin, require_vamm, side_to_direction},
+    query::query_margin_ratio,
+    state::{
+        read_config, read_position, store_config, store_tmp_liquidator, store_tmp_swap, Config,
+        Position, Swap,
+    },
+    utils::{
+        direction_to_side, get_position, require_insufficient_margin, require_margin, require_vamm,
+        side_to_direction,
+    },
 };
 use margined_perp::margined_engine::{
     Pnl, PnlCalcOption, PnlResponse, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
@@ -113,39 +121,55 @@ pub fn close_position(
     let trader = deps.api.addr_validate(&trader)?;
 
     // read the position for the trader from vamm
-    let position = read_position(deps.storage, &vamm, &trader)?.unwrap();
+    let position = read_position(deps.storage, &vamm, &trader).unwrap();
 
-    let swap_msg = WasmMsg::Execute {
-        contract_addr: vamm.to_string(),
-        funds: vec![],
-        msg: to_binary(&ExecuteMsg::SwapOutput {
-            direction: position.direction.clone(),
-            base_asset_amount: position.size,
-        })?,
-    };
-
-    let msg = SubMsg {
-        msg: CosmosMsg::Wasm(swap_msg),
-        gas_limit: None, // probably should set a limit in the config
-        id: SWAP_CLOSE_REPLY_ID,
-        reply_on: ReplyOn::Always,
-    };
-
-    store_tmp_swap(
-        deps.storage,
-        &Swap {
-            vamm,
-            trader,
-            side: direction_to_side(position.direction),
-            quote_asset_amount: position.size,
-            leverage: Uint128::zero(),
-            open_notional: position.notional,
-        },
-    )?;
+    let msg = internal_close_position(deps, &position, SWAP_CLOSE_REPLY_ID)?;
 
     Ok(Response::new()
         .add_attributes(vec![("action", "close_position")])
         .add_submessage(msg))
+}
+
+pub fn liquidate(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    vamm: String,
+    trader: String,
+) -> StdResult<Response> {
+    let config: Config = read_config(deps.storage)?;
+
+    // validate address inputs
+    let vamm = deps.api.addr_validate(&vamm)?;
+    let trader = deps.api.addr_validate(&trader)?;
+
+    // store the liquidator
+    store_tmp_liquidator(deps.storage, &info.sender)?;
+
+    // check if margin ratio has been
+    let margin = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
+
+    require_vamm(deps.storage, &vamm)?;
+    require_insufficient_margin(
+        config.maintenance_margin_ratio,
+        margin.ratio,
+        margin.polarity,
+    )?;
+
+    // read the position for the trader from vamm
+    let position = read_position(deps.storage, &vamm, &trader).unwrap();
+
+    // TODO First we should see if it is a partial or full liqudiation, but not today
+    let msg: SubMsg;
+    let mut response = Response::default();
+    if false {
+        // NOTHING in future this condition will be there to see if the liquidation is partial
+    } else {
+        msg = internal_close_position(deps, &position, SWAP_LIQUIDATE_REPLY_ID)?;
+        response = response.add_submessage(msg);
+    }
+
+    Ok(response.add_attributes(vec![("action", "liquidate")]))
 }
 
 // Increase the position, just basically wraps swap input though it may do more in the future
@@ -156,7 +180,35 @@ pub fn internal_increase_position(
 ) -> StdResult<SubMsg> {
     swap_input(&vamm, side, open_notional, SWAP_INCREASE_REPLY_ID)
 }
+pub fn internal_close_position(deps: DepsMut, position: &Position, id: u64) -> StdResult<SubMsg> {
+    let swap_msg = WasmMsg::Execute {
+        contract_addr: position.vamm.to_string(),
+        funds: vec![],
+        msg: to_binary(&ExecuteMsg::SwapOutput {
+            direction: position.direction.clone(),
+            base_asset_amount: position.size,
+        })?,
+    };
 
+    store_tmp_swap(
+        deps.storage,
+        &Swap {
+            vamm: position.vamm.clone(),
+            trader: position.trader.clone(),
+            side: direction_to_side(position.direction.clone()),
+            quote_asset_amount: position.size,
+            leverage: Uint128::zero(),
+            open_notional: position.notional,
+        },
+    )?;
+
+    Ok(SubMsg {
+        msg: CosmosMsg::Wasm(swap_msg),
+        gas_limit: None, // probably should set a limit in the config
+        id,
+        reply_on: ReplyOn::Always,
+    })
+}
 // Increase the position, just basically wraps swap input though it may do more in the future
 fn open_reverse_position(
     deps: &DepsMut,
@@ -235,35 +287,6 @@ fn swap_output(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdR
     };
 
     Ok(execute_submsg)
-}
-
-// reads position from storage but also handles the case where there is no
-// previously stored position, i.e. a new position
-pub fn get_position(
-    env: Env,
-    storage: &dyn Storage,
-    vamm: &Addr,
-    trader: &Addr,
-    side: Side,
-) -> Position {
-    // read the position for the trader from vamm
-    let current_position = read_position(storage, vamm, trader).unwrap();
-    let mut position = Position::default();
-
-    // so if the position returned is None then its new
-    if let Some(current_position) = current_position {
-        position = current_position;
-    } else {
-        let direction: Direction = side_to_direction(side);
-
-        // update the default position
-        position.vamm = vamm.clone();
-        position.trader = trader.clone();
-        position.direction = direction;
-        position.timestamp = env.block.time;
-    }
-
-    position
 }
 
 pub fn get_position_notional_unrealized_pnl(
@@ -359,7 +382,7 @@ pub fn calc_remain_margin_with_funding_payment(
     // and set the rest to
     Ok(RemainMarginResponse {
         funding_payment: Uint128::zero(),
-        remaining_margin,
+        margin: remaining_margin,
         bad_debt,
     })
 }
