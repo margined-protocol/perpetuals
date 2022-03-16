@@ -10,13 +10,13 @@ use std::str::FromStr;
 
 use crate::error::ContractError;
 use crate::{
-    handle::{close_position, open_position, update_config},
+    handle::{close_position, liquidate, open_position, update_config},
     query::{
         query_config, query_margin_ratio, query_position,
         query_trader_balance_with_funding_payment, query_unrealized_pnl,
     },
     reply::{
-        close_position_reply, decrease_position_reply, increase_position_reply,
+        close_position_reply, decrease_position_reply, increase_position_reply, liquidate_reply,
         reverse_position_reply,
     },
     state::{read_config, store_config, store_state, store_vamm, Config, State},
@@ -26,6 +26,7 @@ pub const SWAP_INCREASE_REPLY_ID: u64 = 1;
 pub const SWAP_DECREASE_REPLY_ID: u64 = 2;
 pub const SWAP_REVERSE_REPLY_ID: u64 = 3;
 pub const SWAP_CLOSE_REPLY_ID: u64 = 4;
+pub const SWAP_LIQUIDATE_REPLY_ID: u64 = 5;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -50,6 +51,7 @@ pub fn instantiate(
         decimals,
         initial_margin_ratio: msg.initial_margin_ratio,
         maintenance_margin_ratio: msg.maintenance_margin_ratio,
+        partial_liquidation_margin_ratio: Uint128::zero(), // set as zero by default
         liquidation_fee: msg.liquidation_fee,
     };
 
@@ -96,6 +98,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             let trader = info.sender.clone();
             close_position(deps, env, info, vamm, trader.to_string())
         }
+        ExecuteMsg::Liquidate { vamm, trader } => liquidate(deps, env, info, vamm, trader),
     }
 }
 
@@ -169,6 +172,11 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
             SWAP_CLOSE_REPLY_ID => {
                 let (input, output) = parse_swap(response);
                 let response = close_position_reply(deps, env, input, output)?;
+                Ok(response)
+            }
+            SWAP_LIQUIDATE_REPLY_ID => {
+                let (input, output) = parse_swap(response);
+                let response = liquidate_reply(deps, env, input, output)?;
                 Ok(response)
             }
             _ => Err(StdError::generic_err(format!(

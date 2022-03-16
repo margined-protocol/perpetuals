@@ -1,6 +1,7 @@
 use cosmwasm_std::{Deps, StdResult, Uint128};
 use margined_perp::margined_engine::{
-    ConfigResponse, PnlCalcOption, PositionResponse, PositionUnrealizedPnlResponse,
+    ConfigResponse, MarginRatioResponse, PnlCalcOption, PositionResponse,
+    PositionUnrealizedPnlResponse,
 };
 
 use crate::{
@@ -24,7 +25,7 @@ pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Pos
         deps.storage,
         &deps.api.addr_validate(&vamm)?,
         &deps.api.addr_validate(&trader)?,
-    )?
+    )
     .unwrap();
 
     Ok(PositionResponse {
@@ -44,7 +45,7 @@ pub fn query_unrealized_pnl(deps: Deps, vamm: String, trader: String) -> StdResu
         deps.storage,
         &deps.api.addr_validate(&vamm)?,
         &deps.api.addr_validate(&trader)?,
-    )?
+    )
     .unwrap();
 
     let result = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::SPOTPRICE)?;
@@ -65,7 +66,11 @@ pub fn query_trader_balance_with_funding_payment(deps: Deps, trader: String) -> 
 }
 
 /// Queries the margin ratio of a trader
-pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult<Uint128> {
+pub fn query_margin_ratio(
+    deps: Deps,
+    vamm: String,
+    trader: String,
+) -> StdResult<MarginRatioResponse> {
     let config: Config = read_config(deps.storage)?;
 
     // retrieve the latest position
@@ -73,11 +78,14 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
         deps.storage,
         &deps.api.addr_validate(&vamm)?,
         &deps.api.addr_validate(&trader)?,
-    )?
+    )
     .unwrap();
 
     if position.size.is_zero() {
-        return Ok(Uint128::zero());
+        return Ok(MarginRatioResponse {
+            ratio: Uint128::zero(),
+            polarity: true,
+        });
     }
 
     // TODO think how the side can be used
@@ -98,15 +106,23 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
         notional = twap_notional;
     }
 
-    let update_margin = if position.margin > pnl {
-        position.margin.checked_sub(pnl)?
+    let mut response = if position.margin > pnl {
+        MarginRatioResponse {
+            ratio: position.margin.checked_sub(pnl)?,
+            polarity: true,
+        }
     } else {
-        pnl.checked_sub(position.margin)?
+        MarginRatioResponse {
+            ratio: pnl.checked_sub(position.margin)?,
+            polarity: false,
+        }
     };
 
-    let margin = update_margin
+    // divide by the margin that is deposited
+    response.ratio = response
+        .ratio
         .checked_mul(config.decimals)?
         .checked_div(notional)?;
 
-    Ok(margin)
+    Ok(response)
 }

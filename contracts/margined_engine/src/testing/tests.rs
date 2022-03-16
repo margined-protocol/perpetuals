@@ -12,12 +12,12 @@ const FEE_POOL: &str = "fee_pool";
 fn test_instantiation() {
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {
-        decimals: 10u8,
+        decimals: 9u8,
         insurance_fund: INSURANCE_FUND.to_string(),
         fee_pool: FEE_POOL.to_string(),
         eligible_collateral: TOKEN.to_string(),
-        initial_margin_ratio: Uint128::from(100u128),
-        maintenance_margin_ratio: Uint128::from(100u128),
+        initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
+        maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
         liquidation_fee: Uint128::from(100u128),
         vamm: vec!["test".to_string()],
     };
@@ -40,12 +40,12 @@ fn test_instantiation() {
 fn test_update_config() {
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {
-        decimals: 10u8,
+        decimals: 9u8,
         insurance_fund: INSURANCE_FUND.to_string(),
         fee_pool: FEE_POOL.to_string(),
         eligible_collateral: TOKEN.to_string(),
-        initial_margin_ratio: Uint128::from(100u128),
-        maintenance_margin_ratio: Uint128::from(100u128),
+        initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
+        maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
         liquidation_fee: Uint128::from(100u128),
         vamm: vec!["test".to_string()],
     };

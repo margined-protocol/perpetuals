@@ -1,5 +1,5 @@
 use margined_perp::margined_engine::{
-    ConfigResponse, ExecuteMsg, PositionResponse, QueryMsg, Side,
+    ConfigResponse, ExecuteMsg, MarginRatioResponse, PositionResponse, QueryMsg, Side,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -52,6 +52,11 @@ impl EngineController {
 
     pub fn close_position(&self, vamm: String) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::ClosePosition { vamm };
+        self.call(msg, vec![])
+    }
+
+    pub fn liquidate(&self, vamm: String, trader: String) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::Liquidate { vamm, trader };
         self.call(msg, vec![])
     }
 
@@ -123,7 +128,7 @@ impl EngineController {
         querier: &Q,
         vamm: String,
         trader: String,
-    ) -> StdResult<Uint128> {
+    ) -> StdResult<MarginRatioResponse> {
         let msg = QueryMsg::MarginRatio { vamm, trader };
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -131,7 +136,7 @@ impl EngineController {
         }
         .into();
 
-        let res: Uint128 = QuerierWrapper::new(querier).query(&query)?;
+        let res: MarginRatioResponse = QuerierWrapper::new(querier).query(&query)?;
         Ok(res)
     }
 }
