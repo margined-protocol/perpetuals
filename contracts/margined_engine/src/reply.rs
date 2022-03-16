@@ -277,7 +277,6 @@ pub fn liquidate_reply(
     let mut remain_margin =
         calc_remain_margin_with_funding_payment(&position, pnl.value, pnl.profit_loss)?;
 
-
     let liquidation_fee: Uint128 = output
         .checked_mul(config.liquidation_fee)?
         .checked_div(config.decimals)?
@@ -288,7 +287,6 @@ pub fn liquidate_reply(
     } else {
         remain_margin.margin = remain_margin.margin.checked_sub(liquidation_fee)?;
     }
-
 
     let mut messages: Vec<SubMsg> = vec![];
     if remain_margin.bad_debt > Uint128::zero() {
@@ -312,8 +310,7 @@ pub fn liquidate_reply(
 
         let mut state = read_state(deps.storage)?;
         if !token_balance.is_zero() {
-            messages
-                .push(execute_transfer(deps.storage, &liquidator, token_balance).unwrap());
+            messages.push(execute_transfer(deps.storage, &liquidator, token_balance).unwrap());
         }
         messages.push(
             execute_transfer_from(
@@ -331,7 +328,6 @@ pub fn liquidate_reply(
     }
 
     if remain_margin.margin > liquidation_fee {
-
         // transfer to the insurance fund
         messages.push(
             execute_transfer(deps.storage, &config.insurance_fund, remain_margin.margin).unwrap(),

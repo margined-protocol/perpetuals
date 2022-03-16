@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    to_binary, Addr, CosmosMsg, Deps, Env, ReplyOn, Response, StdError, StdResult,
-    Storage, SubMsg, Uint128, WasmMsg,
+    to_binary, Addr, CosmosMsg, Deps, Env, ReplyOn, Response, StdError, StdResult, Storage, SubMsg,
+    Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 
