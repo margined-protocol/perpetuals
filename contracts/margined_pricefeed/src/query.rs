@@ -66,7 +66,9 @@ pub fn query_get_twap_price(
     }
 
     let base_timestamp = env.block.time.seconds().checked_sub(interval).unwrap();
+    println!("{}", key);
     let prices_response = read_price_data(deps.storage, key);
+    println!("{:?}", prices_response);
 
     // get the current data
     let mut prices = prices_response.unwrap();
@@ -79,6 +81,7 @@ pub fn query_get_twap_price(
     let mut weighted_price = latest_round.price.checked_mul(cumulative_time)?;
 
     loop {
+        println!("HELLOOO");
         if latest_round.round_id == Uint128::from(1u128) {
             let twap = weighted_price.checked_div(cumulative_time).unwrap();
             return Ok(twap);

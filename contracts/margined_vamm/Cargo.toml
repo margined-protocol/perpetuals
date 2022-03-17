@@ -40,19 +40,21 @@ optimize = """docker run --rm -v "$(pwd)":/code \
 """
 
 [dependencies]
+cw20 = { version = "0.9.1" } 
 cosmwasm-std = { version = "0.16.3" }
 cosmwasm-storage = { version = "0.16.3" }
 cosmwasm-bignumber = "2.2.0"
-cw20 = { version = "0.9.1" } 
 cw-storage-plus = "0.8.0"
 margined-perp = { version = "0.1.0", path = "../../packages/margined_perp" }
 schemars = "0.8"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
+terraswap = "2.4.0"
 thiserror = { version = "1.0" }
 
 [dev-dependencies]
 cosmwasm-schema = { version = "1.0.0-beta" }
 cw20-base = { version = "0.9.1", features = ["library"] }
 margined_utils = { version = "0.1.0", path = "../../packages/margined_utils" }
-margined_vamm = { version = "0.1.0", path = "../../contracts/margined_vamm" }
+margined_engine = { version = "0.1.0", path = "../../contracts/margined_engine" }
+margined_pricefeed = { version = "0.1.0", path = "../../contracts/margined_pricefeed" }
 cw-multi-test = "0.9.1"

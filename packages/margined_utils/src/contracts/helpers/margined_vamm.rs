@@ -69,6 +69,13 @@ impl VammController {
         self.call(msg, vec![])
     }
 
+    pub fn settle_funding(
+        &self,
+    ) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::SettleFunding {};
+        self.call(msg, vec![])
+    }
+
     /// get margin vamm configuration
     pub fn config<Q: Querier>(&self, querier: &Q) -> StdResult<ConfigResponse> {
         let msg = QueryMsg::Config {};

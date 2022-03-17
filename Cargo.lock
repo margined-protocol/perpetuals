@@ -602,10 +602,12 @@ dependencies = [
  "cw20 0.9.1",
  "cw20-base",
  "margined-perp",
+ "margined_engine",
+ "margined_pricefeed",
  "margined_utils",
- "margined_vamm",
  "schemars",
  "serde",
+ "terraswap",
  "thiserror",
 ]
 
