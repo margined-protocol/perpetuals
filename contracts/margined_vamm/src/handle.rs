@@ -129,7 +129,8 @@ pub fn swap_output(
     ]))
 }
 
-pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<Response> {
+pub fn settle_funding(deps: DepsMut, env: Env, _info: MessageInfo) -> StdResult<Response> {
+    // TODO check that only the registered clearing house / owner can call
     let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
 
@@ -159,8 +160,8 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
     let min_next_funding_time = env.block.time.plus_seconds(config.funding_buffer_period);
 
     // floor((nextFundingTime + fundingPeriod) / 3600) * 3600
-    let next_funding_time = env.block.time.seconds()
-        + config.funding_period / ONE_HOUR_IN_SECONDS * ONE_HOUR_IN_SECONDS;
+    let next_funding_time = (env.block.time.seconds()
+        + config.funding_period) / ONE_HOUR_IN_SECONDS * ONE_HOUR_IN_SECONDS;
 
     // max(nextFundingTimeOnHourStart, minNextValidFundingTime)
     state.next_funding_time = if next_funding_time > min_next_funding_time.seconds() {
@@ -168,6 +169,8 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
     } else {
         min_next_funding_time.seconds()
     };
+
+    store_state(deps.storage, &state)?;
 
     Ok(Response::new().add_attributes(vec![
         ("action", "settle_funding"),
