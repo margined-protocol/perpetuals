@@ -77,7 +77,6 @@ fn test_settle_funding_delay_after_buffer_period_ends_before_next_funding_time()
     assert_eq!(state.next_funding_time, expected_funding_time);
 }
 
-
 #[test]
 fn test_force_error_caller_is_not_couterparty_or_owner() {
     let SimpleScenario {
@@ -99,10 +98,7 @@ fn test_force_error_caller_is_not_couterparty_or_owner() {
 
     let msg = vamm.settle_funding().unwrap();
     let res = router.execute(alice.clone(), msg).unwrap_err();
-    assert_eq!(
-        res.to_string(),
-        "Generic error: unauthorized".to_string()
-    );
+    assert_eq!(res.to_string(), "Generic error: unauthorized".to_string());
 }
 
 #[test]
@@ -136,4 +132,3 @@ fn test_cant_settle_funding_multiple_times_at_once_even_settle_funding_delay() {
         "Generic error: settle funding called too early".to_string()
     );
 }
-

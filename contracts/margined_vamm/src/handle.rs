@@ -164,8 +164,9 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
     let min_next_funding_time = env.block.time.plus_seconds(config.funding_buffer_period);
 
     // floor((nextFundingTime + fundingPeriod) / 3600) * 3600
-    let next_funding_time = (env.block.time.seconds()
-        + config.funding_period) / ONE_HOUR_IN_SECONDS * ONE_HOUR_IN_SECONDS;
+    let next_funding_time = (env.block.time.seconds() + config.funding_period)
+        / ONE_HOUR_IN_SECONDS
+        * ONE_HOUR_IN_SECONDS;
 
     // max(nextFundingTimeOnHourStart, minNextValidFundingTime)
     state.next_funding_time = if next_funding_time > min_next_funding_time.seconds() {
