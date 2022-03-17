@@ -11,8 +11,16 @@ pub enum Direction {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum LongShort {
+    Long,
+    Short,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub decimals: u8,
+    pub pricefeed: String,
     pub quote_asset: String,
     pub base_asset: String,
     pub quote_asset_reserve: Uint128,
@@ -31,7 +39,7 @@ pub enum ExecuteMsg {
         // spot_price_twap_interval: Option<Uint128>,
         toll_ratio: Option<Uint128>,
         spread_ratio: Option<Uint128>,
-        // price_feed: Option<String>,
+        pricefeed: Option<String>,
     },
     SwapInput {
         direction: Direction,
@@ -41,7 +49,7 @@ pub enum ExecuteMsg {
         direction: Direction,
         base_asset_amount: Uint128,
     },
-    // SettleFunding {},
+    SettleFunding {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -75,11 +83,13 @@ pub enum QueryMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: Addr,
+    pub pricefeed: Addr,
     pub quote_asset: String,
     pub base_asset: String,
     pub toll_ratio: Uint128,
     pub spread_ratio: Uint128,
     pub decimals: Uint128,
+    pub funding_period: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -87,11 +97,17 @@ pub struct StateResponse {
     pub quote_asset_reserve: Uint128,
     pub base_asset_reserve: Uint128,
     pub funding_rate: Uint128,
-    pub funding_period: u64,
+    pub next_funding_time: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct CalcFeeResponse {
     pub toll_fee: Uint128,
     pub spread_fee: Uint128,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct PremiumResponse {
+    pub value: Uint128,
+    pub payer: LongShort, // are the longs paying or the shorts?
 }

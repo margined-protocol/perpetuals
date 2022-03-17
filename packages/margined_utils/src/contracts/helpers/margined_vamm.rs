@@ -34,11 +34,13 @@ impl VammController {
         owner: Option<String>,
         toll_ratio: Option<Uint128>,
         spread_ratio: Option<Uint128>,
+        pricefeed: Option<String>,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
             owner,
             toll_ratio,
             spread_ratio,
+            pricefeed,
         };
         self.call(msg, vec![])
     }

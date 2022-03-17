@@ -22,6 +22,8 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         toll_ratio: config.toll_ratio,
         spread_ratio: config.spread_ratio,
         decimals: config.decimals,
+        pricefeed: config.pricefeed,
+        funding_period: config.funding_period,
     })
 }
 
@@ -33,7 +35,7 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
         quote_asset_reserve: state.quote_asset_reserve,
         base_asset_reserve: state.base_asset_reserve,
         funding_rate: state.funding_rate,
-        funding_period: state.funding_period,
+        next_funding_time: state.next_funding_time,
     })
 }
 

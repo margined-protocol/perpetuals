@@ -110,6 +110,7 @@ impl SimpleScenario {
                     funding_period: 3_600_u64,
                     toll_ratio: Uint128::zero(),
                     spread_ratio: Uint128::zero(),
+                    pricefeed: pricefeed_addr.to_string(),
                 },
                 &[],
                 "vamm",

@@ -12,11 +12,15 @@ pub static KEY_RESERVE_SNAPSHOT_COUNTER: &[u8] = b"reserve_snapshot_counter";
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
+    pub pricefeed: Addr,
     pub quote_asset: String,
     pub base_asset: String,
     pub decimals: Uint128,
     pub toll_ratio: Uint128,
     pub spread_ratio: Uint128,
+    pub spot_price_twap_interval: u64,
+    pub funding_period: u64,
+    pub funding_buffer_period: u64,
 }
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
@@ -32,7 +36,7 @@ pub struct State {
     pub quote_asset_reserve: Uint128,
     pub base_asset_reserve: Uint128,
     pub funding_rate: Uint128,
-    pub funding_period: u64,
+    pub next_funding_time: u64,
 }
 
 pub fn store_state(storage: &mut dyn Storage, state: &State) -> StdResult<()> {

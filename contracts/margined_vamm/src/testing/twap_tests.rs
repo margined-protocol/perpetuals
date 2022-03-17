@@ -24,6 +24,7 @@ fn setup() -> TestingEnv {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::from(10_000_000u128),   // 0.01
         spread_ratio: Uint128::from(10_000_000u128), // 0.01
+        pricefeed: "oracle".to_string(),
     };
 
     let info = mock_info("addr0000", &[]);

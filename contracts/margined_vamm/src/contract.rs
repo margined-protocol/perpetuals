@@ -12,10 +12,13 @@ use crate::query::{
 };
 use crate::state::{store_reserve_snapshot, ReserveSnapshot};
 use crate::{
-    handle::{swap_input, swap_output, update_config},
+    handle::{settle_funding, swap_input, swap_output, update_config},
     query::{query_config, query_state},
     state::{store_config, store_state, Config, State},
 };
+
+pub const ONE_HOUR_IN_SECONDS: u64 = 60 * 60;
+pub const ONE_DAY_IN_SECONDS: u64 = 24 * 60 * 60;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -30,7 +33,11 @@ pub fn instantiate(
         base_asset: msg.base_asset,
         toll_ratio: msg.toll_ratio,
         spread_ratio: msg.spread_ratio,
+        pricefeed: deps.api.addr_validate(&msg.pricefeed).unwrap(),
         decimals: Uint128::from(10u128.pow(msg.decimals as u32)),
+        spot_price_twap_interval: ONE_HOUR_IN_SECONDS, // default 1 hr
+        funding_period: msg.funding_period,            // Funding period in seconds
+        funding_buffer_period: msg.funding_period / 2u64,
     };
 
     store_config(deps.storage, &config)?;
@@ -39,7 +46,8 @@ pub fn instantiate(
         base_asset_reserve: msg.base_asset_reserve,
         quote_asset_reserve: msg.quote_asset_reserve,
         funding_rate: Uint128::zero(), // Initialise the funding rate as 0
-        funding_period: msg.funding_period, // Funding period in seconds
+        next_funding_time: env.block.time.seconds()
+            + msg.funding_period / ONE_HOUR_IN_SECONDS * ONE_HOUR_IN_SECONDS,
     };
 
     store_state(deps.storage, &state)?;
@@ -57,18 +65,14 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn execute(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    msg: ExecuteMsg,
-) -> Result<Response, ContractError> {
+pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
         ExecuteMsg::UpdateConfig {
             owner,
             toll_ratio,
             spread_ratio,
-        } => update_config(deps, info, owner, toll_ratio, spread_ratio),
+            pricefeed,
+        } => update_config(deps, info, owner, toll_ratio, spread_ratio, pricefeed),
         ExecuteMsg::SwapInput {
             direction,
             quote_asset_amount,
@@ -77,6 +81,7 @@ pub fn execute(
             direction,
             base_asset_amount,
         } => swap_output(deps, env, info, direction, base_asset_amount),
+        ExecuteMsg::SettleFunding {} => settle_funding(deps, env, info),
     }
 }
 

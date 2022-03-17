@@ -153,6 +153,7 @@ pub fn realize_bad_debt(
     };
 
     // TODO think some more why this logic is incorrect
+    // when I did it this way I always had some dust left over
     // if state.bad_debt > bad_debt {
     //     state.bad_debt = state.bad_debt.checked_sub(bad_debt)?;
     // } else {
