@@ -1,5 +1,11 @@
 [workspace]
-members = ["packages/*", "contracts/*"]
+members = [
+    "packages/*",
+    "contracts/margined_engine",
+    "contracts/margined_pricefeed",
+    "contracts/margined_vamm",
+    "contracts/mocks/*",
+]
 
 [profile.release]
 opt-level = 3

@@ -584,6 +584,7 @@ dependencies = [
  "margined_perp",
  "margined_pricefeed",
  "margined_vamm",
+ "mock_pricefeed",
  "schemars",
  "serde",
  "terraswap",

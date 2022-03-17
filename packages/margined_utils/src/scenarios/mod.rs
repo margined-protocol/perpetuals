@@ -43,7 +43,7 @@ impl SimpleScenario {
         let usdc_id = router.store_code(contract_cw20());
         let engine_id = router.store_code(contract_engine());
         let vamm_id = router.store_code(contract_vamm());
-        let pricefeed_id = router.store_code(contract_pricefeed());
+        let pricefeed_id = router.store_code(contract_mock_pricefeed());
 
         let usdc_addr = router
             .instantiate_contract(
@@ -235,11 +235,21 @@ fn contract_engine() -> Box<dyn Contract<Empty>> {
     Box::new(contract)
 }
 
-fn contract_pricefeed() -> Box<dyn Contract<Empty>> {
+// note this is unused as it will take a lot of work to have the pricefeed full of data
+fn _contract_pricefeed() -> Box<dyn Contract<Empty>> {
     let contract = ContractWrapper::new_with_empty(
         margined_pricefeed::contract::execute,
         margined_pricefeed::contract::instantiate,
         margined_pricefeed::contract::query,
+    );
+    Box::new(contract)
+}
+
+fn contract_mock_pricefeed() -> Box<dyn Contract<Empty>> {
+    let contract = ContractWrapper::new_with_empty(
+        mock_pricefeed::contract::execute,
+        mock_pricefeed::contract::instantiate,
+        mock_pricefeed::contract::query,
     );
     Box::new(contract)
 }
