@@ -2,7 +2,7 @@
 use cosmwasm_std::Uint128;
 use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
-use margined_perp::margined_engine::{PositionResponse, Side};
+use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::SimpleScenario;
 
 pub const DECIMAL_MULTIPLIER: Uint128 = Uint128::new(1_000_000_000);

@@ -6,7 +6,6 @@ use margined_utils::scenarios::SimpleScenario;
 fn test_settle_funding_delay_before_buffer_period_ends() {
     let SimpleScenario {
         mut router,
-        alice,
         owner,
         vamm,
         pricefeed,
@@ -33,7 +32,7 @@ fn test_settle_funding_delay_before_buffer_period_ends() {
     });
 
     let msg = vamm.settle_funding().unwrap();
-    router.execute(alice.clone(), msg).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
     let state = vamm.state(&router).unwrap();
     let expected_funding_time = original_next_funding_time + 3_600u64;
@@ -44,7 +43,6 @@ fn test_settle_funding_delay_before_buffer_period_ends() {
 fn test_settle_funding_delay_after_buffer_period_ends_before_next_funding_time() {
     let SimpleScenario {
         mut router,
-        alice,
         owner,
         vamm,
         pricefeed,
@@ -72,10 +70,70 @@ fn test_settle_funding_delay_after_buffer_period_ends_before_next_funding_time()
     });
 
     let msg = vamm.settle_funding().unwrap();
-    router.execute(alice.clone(), msg).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
     let state = vamm.state(&router).unwrap();
     let expected_funding_time = settle_funding_time + 1_800u64;
     assert_eq!(state.next_funding_time, expected_funding_time);
+}
+
+
+#[test]
+fn test_force_error_caller_is_not_couterparty_or_owner() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        owner,
+        vamm,
+        pricefeed,
+        ..
+    } = SimpleScenario::new();
+
+    let price: Uint128 = Uint128::from(500_000_000u128);
+    let timestamp: u64 = 1_000_000_000;
+
+    let msg = pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm.settle_funding().unwrap();
+    let res = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        res.to_string(),
+        "Generic error: unauthorized".to_string()
+    );
+}
+
+#[test]
+fn test_cant_settle_funding_multiple_times_at_once_even_settle_funding_delay() {
+    let SimpleScenario {
+        mut router,
+        owner,
+        vamm,
+        pricefeed,
+        ..
+    } = SimpleScenario::new();
+
+    let price: Uint128 = Uint128::from(500_000_000u128);
+    let timestamp: u64 = 1_000_000_000;
+
+    let msg = pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // moves block forward 1 and 15 secs timestamp
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(1_800u64); // funding_period / 2
+        block.height += 1;
+    });
+
+    let msg = vamm.settle_funding().unwrap();
+    let res = router.execute(owner.clone(), msg).unwrap_err();
+    assert_eq!(
+        res.to_string(),
+        "Generic error: settle funding called too early".to_string()
+    );
 }
 

@@ -129,10 +129,14 @@ pub fn swap_output(
     ]))
 }
 
-pub fn settle_funding(deps: DepsMut, env: Env, _info: MessageInfo) -> StdResult<Response> {
-    // TODO check that only the registered clearing house / owner can call
+pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
+
+    // check permission TODO add in the concept of counterparty
+    if info.sender != config.owner {
+        return Err(StdError::generic_err("unauthorized"));
+    }
 
     if env.block.time.seconds() < state.next_funding_time {
         return Err(StdError::generic_err("settle funding called too early"));
