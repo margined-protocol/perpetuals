@@ -69,9 +69,7 @@ impl VammController {
         self.call(msg, vec![])
     }
 
-    pub fn settle_funding(
-        &self,
-    ) -> StdResult<CosmosMsg> {
+    pub fn settle_funding(&self) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::SettleFunding {};
         self.call(msg, vec![])
     }

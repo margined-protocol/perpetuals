@@ -1,5 +1,5 @@
 [package]
-name = "margined-perp"
+name = "margined_perp"
 version = "0.1.0"
 authors = ["Margined Protocol"]
 edition = "2018"

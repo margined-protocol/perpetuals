@@ -25,17 +25,11 @@ fn test_settle_funding_delay_before_buffer_period_ends() {
     let timestamps: Vec<u64> = vec![1_000_000_000, 1_000_000_001, 1_000_000_002];
 
     let msg = pricefeed
-        .append_multiple_price(
-            "ETH".to_string(),
-            prices,
-            timestamps,
-        ).unwrap();
+        .append_multiple_price("ETH".to_string(), prices, timestamps)
+        .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-
-    let state = vamm
-        .state(&router)
-        .unwrap();
+    let state = vamm.state(&router).unwrap();
     let expected_funding_time = router.block_info().time.plus_seconds(3_600u64);
     assert_eq!(state.next_funding_time, expected_funding_time.seconds());
 
@@ -45,13 +39,10 @@ fn test_settle_funding_delay_before_buffer_period_ends() {
         block.height += 1;
     });
 
-    let msg = vamm
-        .settle_funding().unwrap();
+    let msg = vamm.settle_funding().unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let state = vamm
-        .state(&router)
-        .unwrap();
+    let state = vamm.state(&router).unwrap();
     let expected_funding_time = expected_funding_time.plus_seconds(3_600u64);
     assert_eq!(state.next_funding_time, expected_funding_time.seconds());
 
