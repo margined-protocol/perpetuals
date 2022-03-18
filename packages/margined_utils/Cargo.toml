@@ -27,6 +27,7 @@ mock_pricefeed = { version = "0.1.0", path = "../../contracts/mocks/mock_pricefe
 terraswap = { version = "2.4.0" }
 schemars = "0.8.1"
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
+serde_json = "^1.0"
 
 [profile.release]
 overflow-checks = true

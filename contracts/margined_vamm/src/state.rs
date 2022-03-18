@@ -35,6 +35,7 @@ pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
 pub struct State {
     pub quote_asset_reserve: Uint128,
     pub base_asset_reserve: Uint128,
+    pub total_position_size: i128,
     pub funding_rate: Uint128,
     pub next_funding_time: u64,
 }

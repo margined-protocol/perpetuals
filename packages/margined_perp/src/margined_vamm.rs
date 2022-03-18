@@ -96,6 +96,7 @@ pub struct ConfigResponse {
 pub struct StateResponse {
     pub quote_asset_reserve: Uint128,
     pub base_asset_reserve: Uint128,
+    pub total_position_size: i128,
     pub funding_rate: Uint128,
     pub next_funding_time: u64,
 }
@@ -110,4 +111,13 @@ pub struct CalcFeeResponse {
 pub struct PremiumResponse {
     pub value: Uint128,
     pub payer: LongShort, // are the longs paying or the shorts?
+}
+
+impl Default for PremiumResponse {
+    fn default() -> Self {
+        PremiumResponse {
+            value: Uint128::zero(),
+            payer: LongShort::Long,
+        }
+    }
 }

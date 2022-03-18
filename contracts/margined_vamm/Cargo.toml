@@ -48,6 +48,7 @@ cw-storage-plus = "0.8.0"
 margined_perp = { version = "0.1.0", path = "../../packages/margined_perp" }
 schemars = "0.8"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
+serde-json-wasm = { version = "0.3.2" }
 terraswap = "2.4.0"
 thiserror = { version = "1.0" }
 

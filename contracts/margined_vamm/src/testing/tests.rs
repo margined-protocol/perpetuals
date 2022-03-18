@@ -47,6 +47,7 @@ fn test_instantiation() {
         StateResponse {
             quote_asset_reserve: Uint128::from(100u128),
             base_asset_reserve: Uint128::from(10_000u128),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }
@@ -130,6 +131,7 @@ fn test_swap_input_long() {
         StateResponse {
             quote_asset_reserve: to_decimals(1_600),
             base_asset_reserve: Uint128::from(62_500_000_000u128),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }
@@ -168,6 +170,7 @@ fn test_swap_input_short() {
         StateResponse {
             quote_asset_reserve: to_decimals(400),
             base_asset_reserve: to_decimals(250),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }
@@ -206,6 +209,7 @@ fn test_swap_output_short() {
         StateResponse {
             quote_asset_reserve: to_decimals(400),
             base_asset_reserve: to_decimals(250),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }
@@ -244,6 +248,7 @@ fn test_swap_output_long() {
         StateResponse {
             quote_asset_reserve: to_decimals(2_000),
             base_asset_reserve: to_decimals(50),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }
@@ -283,6 +288,7 @@ fn test_swap_input_short_long() {
         StateResponse {
             quote_asset_reserve: to_decimals(520),
             base_asset_reserve: Uint128::from(192_307_692_308u128),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }
@@ -303,6 +309,7 @@ fn test_swap_input_short_long() {
         StateResponse {
             quote_asset_reserve: to_decimals(1_480),
             base_asset_reserve: Uint128::from(67_567_567_568u128),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }
@@ -341,6 +348,7 @@ fn test_swap_input_short_long_long() {
         StateResponse {
             quote_asset_reserve: to_decimals(800),
             base_asset_reserve: to_decimals(125),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }
@@ -361,6 +369,7 @@ fn test_swap_input_short_long_long() {
         StateResponse {
             quote_asset_reserve: to_decimals(900),
             base_asset_reserve: Uint128::from(111_111_111_112u128),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }
@@ -381,6 +390,7 @@ fn test_swap_input_short_long_long() {
         StateResponse {
             quote_asset_reserve: to_decimals(1100),
             base_asset_reserve: Uint128::from(90_909_090_910u128),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }
@@ -419,6 +429,7 @@ fn test_swap_input_short_long_short() {
         StateResponse {
             quote_asset_reserve: to_decimals(800),
             base_asset_reserve: to_decimals(125),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }
@@ -439,6 +450,7 @@ fn test_swap_input_short_long_short() {
         StateResponse {
             quote_asset_reserve: to_decimals(1250),
             base_asset_reserve: to_decimals(80),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }
@@ -459,6 +471,7 @@ fn test_swap_input_short_long_short() {
         StateResponse {
             quote_asset_reserve: to_decimals(1000),
             base_asset_reserve: to_decimals(100),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }
@@ -497,6 +510,7 @@ fn test_swap_input_long_integration_example() {
         StateResponse {
             quote_asset_reserve: Uint128::from(1_600_000_000_000u128),
             base_asset_reserve: Uint128::from(62_500_000_000u128),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }
@@ -535,6 +549,7 @@ fn test_swap_input_long_short_integration_example() {
         StateResponse {
             quote_asset_reserve: Uint128::from(1_600_000_000_000u128),
             base_asset_reserve: Uint128::from(62_500_000_000u128),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }
@@ -555,6 +570,7 @@ fn test_swap_input_long_short_integration_example() {
         StateResponse {
             quote_asset_reserve: Uint128::from(1_000_000_000_000u128),
             base_asset_reserve: Uint128::from(100_000_000_000u128),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }
@@ -602,6 +618,7 @@ fn test_swap_input_twice_short_long() {
         StateResponse {
             quote_asset_reserve: to_decimals(1_000),
             base_asset_reserve: Uint128::from(100_000_000_001u128),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }
@@ -649,6 +666,7 @@ fn test_swap_input_twice_long_short() {
         StateResponse {
             quote_asset_reserve: to_decimals(1_000),
             base_asset_reserve: Uint128::from(100_000_000_001u128),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }
@@ -696,6 +714,7 @@ fn test_swap_output_twice_short_long() {
         StateResponse {
             quote_asset_reserve: Uint128::from(1_000_000_000_001u128),
             base_asset_reserve: to_decimals(100),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }
@@ -743,6 +762,7 @@ fn test_swap_output_twice_long_short() {
         StateResponse {
             quote_asset_reserve: Uint128::from(1_000_000_000_001u128),
             base_asset_reserve: to_decimals(100),
+            total_position_size: 0i128,
             funding_rate: Uint128::zero(),
             next_funding_time: 1_571_801_019u64,
         }

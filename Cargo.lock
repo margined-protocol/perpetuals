@@ -587,6 +587,7 @@ dependencies = [
  "mock_pricefeed",
  "schemars",
  "serde",
+ "serde_json",
  "terraswap",
 ]
 
@@ -608,6 +609,7 @@ dependencies = [
  "margined_utils",
  "schemars",
  "serde",
+ "serde-json-wasm",
  "terraswap",
  "thiserror",
 ]

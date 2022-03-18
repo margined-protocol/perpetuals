@@ -1,3 +1,5 @@
+use std::{convert::TryInto, path::Prefix};
+
 use cosmwasm_std::{
     Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, Uint128,
 };
@@ -184,7 +186,9 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
 }
 
 pub fn calculate_premium(underlying: Uint128, index: Uint128) -> StdResult<PremiumResponse> {
-    // calculate bloody premium
+    // if premium is positive: long pay short, amm get positive funding payment
+    // if premium is negative: short pay long, amm get negative funding payment
+    // if totalPositionSize.side * premiumFraction > 0, funding payment is positive which means profit
     let value: Uint128;
     let payer: LongShort;
     if index > underlying {
@@ -302,6 +306,12 @@ pub fn update_reserve(
                 .checked_add(quote_asset_amount)?;
             update_state.base_asset_reserve =
                 state.base_asset_reserve.checked_sub(base_asset_amount)?;
+
+            // TODO think whether this is a very very bad idea or not
+            update_state.total_position_size = state
+                .total_position_size
+                .checked_add(base_asset_amount.u128().try_into().unwrap())
+                .unwrap();
         }
         Direction::RemoveFromAmm => {
             update_state.base_asset_reserve = update_state
@@ -309,6 +319,10 @@ pub fn update_reserve(
                 .checked_add(base_asset_amount)?;
             update_state.quote_asset_reserve =
                 state.quote_asset_reserve.checked_sub(quote_asset_amount)?;
+            update_state.total_position_size = state
+                .total_position_size
+                .checked_sub(base_asset_amount.u128().try_into().unwrap())
+                .unwrap();
         }
     }
 
