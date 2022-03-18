@@ -3,7 +3,7 @@ use cosmwasm_std::{DepsMut, Env, Response, StdError, StdResult, SubMsg, Uint128}
 use crate::{
     handle::{
         calc_pnl, calc_remain_margin_with_funding_payment, clear_position,
-        get_position_notional_unrealized_pnl, internal_increase_position,
+        internal_increase_position,
     },
     state::{
         read_config, read_state, read_tmp_liquidator, read_tmp_swap, remove_tmp_liquidator,
@@ -15,7 +15,7 @@ use crate::{
     },
 };
 
-use margined_perp::margined_engine::{Pnl, PnlCalcOption};
+use margined_perp::margined_engine::Pnl;
 use margined_perp::querier::query_token_balance;
 
 // Increases position after successful execution of the swap

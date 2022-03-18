@@ -46,6 +46,7 @@ cosmwasm-storage = { version = "0.16.3" }
 cosmwasm-bignumber = "2.2.0"
 cw-storage-plus = "0.8.0"
 margined_perp = { version = "0.1.0", path = "../../packages/margined_perp" }
+margined_common = { version = "0.1.0", path = "../../packages/margined_common" }
 schemars = "0.8"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde-json-wasm = { version = "0.3.2" }

@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, Uint128};
 
+use margined_common::integer::Integer;
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Direction {
@@ -96,7 +98,7 @@ pub struct ConfigResponse {
 pub struct StateResponse {
     pub quote_asset_reserve: Uint128,
     pub base_asset_reserve: Uint128,
-    pub total_position_size: i128,
+    pub total_position_size: Integer,
     pub funding_rate: Uint128,
     pub next_funding_time: u64,
 }

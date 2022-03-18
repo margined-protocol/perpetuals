@@ -1,8 +1,9 @@
-use std::{convert::TryInto, path::Prefix};
-
 use cosmwasm_std::{
     Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, Uint128,
 };
+
+use margined_common::integer::Integer;
+use margined_perp::margined_vamm::{Direction, LongShort, PremiumResponse};
 
 use crate::{
     contract::{ONE_DAY_IN_SECONDS, ONE_HOUR_IN_SECONDS},
@@ -15,7 +16,6 @@ use crate::{
         ReserveSnapshot, State,
     },
 };
-use margined_perp::margined_vamm::{Direction, LongShort, PremiumResponse};
 
 pub fn update_config(
     deps: DepsMut,
@@ -308,10 +308,8 @@ pub fn update_reserve(
                 state.base_asset_reserve.checked_sub(base_asset_amount)?;
 
             // TODO think whether this is a very very bad idea or not
-            update_state.total_position_size = state
-                .total_position_size
-                .checked_add(base_asset_amount.u128().try_into().unwrap())
-                .unwrap();
+            update_state.total_position_size =
+                state.total_position_size + Integer::from(base_asset_amount);
         }
         Direction::RemoveFromAmm => {
             update_state.base_asset_reserve = update_state
@@ -319,10 +317,8 @@ pub fn update_reserve(
                 .checked_add(base_asset_amount)?;
             update_state.quote_asset_reserve =
                 state.quote_asset_reserve.checked_sub(quote_asset_amount)?;
-            update_state.total_position_size = state
-                .total_position_size
-                .checked_sub(base_asset_amount.u128().try_into().unwrap())
-                .unwrap();
+            update_state.total_position_size =
+                state.total_position_size - Integer::from(base_asset_amount);
         }
     }
 

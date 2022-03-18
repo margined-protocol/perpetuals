@@ -1,20 +1,20 @@
 use cosmwasm_std::{StdError, Uint128};
-use std::{fmt, cmp::Ordering};
+use schemars::JsonSchema;
+use serde::{de, ser, Deserialize, Deserializer, Serialize};
 use std::fmt::Write;
 use std::str::FromStr;
-use serde::{de, ser, Deserialize, Deserializer, Serialize};
+use std::{cmp::Ordering, fmt};
 
 /// Signed wrapper of Uint128
 /// very minimalist only has bare minimum functions for
 /// basic signed arithmetic
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, JsonSchema)]
 pub struct Integer {
     value: Uint128,
     negative: bool,
 }
 
 impl Integer {
-
     /// The maximum allowed
     pub const MAX: Integer = Integer {
         value: Uint128::MAX,
@@ -84,25 +84,15 @@ impl Default for Integer {
     }
 }
 
-
-impl From<u128> for Integer {
-    fn from(val: u128) -> Self {
+impl From<Uint128> for Integer {
+    fn from(val: Uint128) -> Self {
         Self::new_positive(val)
     }
 }
 
-impl std::fmt::Display for Integer {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let whole = self.value;
-
-        if self.negative && !whole.is_zero() {
-            f.write_char('-')?;
-        }
-
-
-        f.write_str(&whole.to_string())?;
-        Ok(())
-
+impl From<u128> for Integer {
+    fn from(val: u128) -> Self {
+        Self::new_positive(val)
     }
 }
 
@@ -125,7 +115,7 @@ impl FromStr for Integer {
         fn u128_from_str(input: &str) -> Result<u128, StdError> {
             match input.parse::<u128>() {
                 Ok(u) => Ok(u),
-                _ => Err(StdError::generic_err(format!("Parsing u128"))),
+                _ => Err(StdError::generic_err("Parsing u128".to_string())),
             }
         }
 
@@ -135,10 +125,25 @@ impl FromStr for Integer {
                 Ok(Integer::new_negative(value))
             }
             _ => {
-                let value = u128_from_str(&input)?;
+                let value = u128_from_str(input)?;
                 Ok(Integer::new_positive(value))
             }
         }
+    }
+}
+
+// Display
+
+impl std::fmt::Display for Integer {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let whole = self.value;
+
+        if self.negative && !whole.is_zero() {
+            f.write_char('-')?;
+        }
+
+        f.write_str(&whole.to_string())?;
+        Ok(())
     }
 }
 
@@ -308,21 +313,12 @@ mod test {
         let res = a / b;
 
         assert_eq!(serde_json::to_value(&res).unwrap(), "42");
-        assert_eq!(
-            serde_json::from_str::<Integer>("\"42\"").unwrap(),
-            res
-        );
+        assert_eq!(serde_json::from_str::<Integer>("\"42\"").unwrap(), res);
 
         let res = res.invert_sign();
 
-        assert_eq!(
-            serde_json::to_value(&res).unwrap(),
-            "-42"
-        );
-        assert_eq!(
-            serde_json::from_str::<Integer>("\"-42\"").unwrap(),
-            res
-        );
+        assert_eq!(serde_json::to_value(&res).unwrap(), "-42");
+        assert_eq!(serde_json::from_str::<Integer>("\"-42\"").unwrap(), res);
     }
 
     #[test]

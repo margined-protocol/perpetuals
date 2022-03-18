@@ -3,7 +3,8 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
-use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, PremiumResponse, QueryMsg};
+use margined_common::integer::Integer;
+use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
 use crate::query::{
@@ -45,8 +46,8 @@ pub fn instantiate(
     let state = State {
         base_asset_reserve: msg.base_asset_reserve,
         quote_asset_reserve: msg.quote_asset_reserve,
-        total_position_size: 0i128,
-        funding_rate: Uint128::zero(), // Initialise the funding rate as 0
+        total_position_size: Integer::default(), // it's 0 btw
+        funding_rate: Uint128::zero(),           // Initialise the funding rate as 0
         next_funding_time: env.block.time.seconds()
             + msg.funding_period / ONE_HOUR_IN_SECONDS * ONE_HOUR_IN_SECONDS,
     };
