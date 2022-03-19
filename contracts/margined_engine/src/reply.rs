@@ -358,3 +358,14 @@ pub fn liquidate_reply(
             ("pnl", &pnl.value.to_string()),
         ]))
 }
+
+/// pays funding, if funding rate is positive, traders with long position
+///  pay traders with short position and vice versa.
+pub fn pay_funding_reply(
+    deps: DepsMut,
+    env: Env,
+    _input: Uint128,
+    output: Uint128,
+) -> StdResult<Response> {
+    Ok(Response::new())
+}
