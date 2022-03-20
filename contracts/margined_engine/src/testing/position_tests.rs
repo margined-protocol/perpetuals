@@ -106,7 +106,6 @@ fn test_open_position_two_longs() {
     let margin = engine.trader_balance(&router, alice.to_string()).unwrap();
     assert_eq!(margin, to_decimals(120));
 
-    // retrieve the vamm state
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();

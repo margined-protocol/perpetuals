@@ -182,8 +182,8 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
                 Ok(response)
             }
             PAY_FUNDING_REPLY_ID => {
-                let premium_fraction = parse_pay_funding(response);
-                let response = pay_funding_reply(deps, env, premium_fraction)?;
+                let (premium_fraction, sender) = parse_pay_funding(response);
+                let response = pay_funding_reply(deps, env, premium_fraction, sender)?;
                 Ok(response)
             }
             _ => Err(StdError::generic_err(format!(
@@ -212,8 +212,8 @@ fn parse_swap(response: SubMsgExecutionResponse) -> (Uint128, Uint128) {
     (input, output)
 }
 
-fn parse_pay_funding(response: SubMsgExecutionResponse) -> Uint128 {
-    println!("{:?}", response);
+fn parse_pay_funding(response: SubMsgExecutionResponse) -> (Uint128, String) {
+    // println!("{:?}", response);
     // Find swap inputs and output events
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");
     let wasm = wasm.unwrap();
@@ -221,7 +221,9 @@ fn parse_pay_funding(response: SubMsgExecutionResponse) -> Uint128 {
     let premium_str = read_event("premium fraction".to_string(), wasm).value;
     let premium: Uint128 = Uint128::from_str(&premium_str).unwrap();
 
-    premium
+    let sender = read_event("_contract_addr".to_string(), wasm).value;
+
+    (premium, sender)
 }
 
 fn read_event(key: String, event: &Event) -> Attribute {

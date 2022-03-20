@@ -10,8 +10,8 @@ use std::{cmp::Ordering, fmt};
 /// basic signed arithmetic
 #[derive(Clone, Copy, Debug, PartialEq, Eq, JsonSchema)]
 pub struct Integer {
-    value: Uint128,
-    negative: bool,
+    pub value: Uint128,
+    pub negative: bool,
 }
 
 impl Integer {

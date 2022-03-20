@@ -109,7 +109,7 @@ impl SimpleScenario {
                     base_asset: "USD".to_string(),
                     quote_asset_reserve: to_decimals(1_000),
                     base_asset_reserve: to_decimals(100),
-                    funding_period: 3_600_u64,
+                    funding_period: 86_400_u64, // funding period is 1 day to make calcs easier
                     toll_ratio: Uint128::zero(),
                     spread_ratio: Uint128::zero(),
                     pricefeed: pricefeed_addr.to_string(),
@@ -306,7 +306,7 @@ impl VammScenario {
                     base_asset: "USD".to_string(),
                     quote_asset_reserve: to_decimals(1_000),
                     base_asset_reserve: to_decimals(100),
-                    funding_period: 3_600_u64,
+                    funding_period: 3_600_u64, // funding period is 1 day to make calcs easier
                     toll_ratio: Uint128::zero(),
                     spread_ratio: Uint128::zero(),
                     pricefeed: pricefeed_addr.to_string(),

@@ -15,7 +15,7 @@ use crate::query::{
 use crate::{
     handle::{settle_funding, swap_input, swap_output, update_config},
     query::{query_config, query_state},
-    state::{store_config, store_state, Config, State, store_reserve_snapshot, ReserveSnapshot},
+    state::{store_config, store_reserve_snapshot, store_state, Config, ReserveSnapshot, State},
 };
 
 pub const ONE_HOUR_IN_SECONDS: u64 = 60 * 60;

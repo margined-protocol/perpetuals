@@ -158,12 +158,18 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
     let index_price: Uint128 =
         query_twap_price(deps.as_ref(), env.clone(), config.spot_price_twap_interval)?;
 
+    println!("Underlying: {}\t Index: {}", underlying_price, index_price);
+
     let premium = calculate_premium(underlying_price, index_price)?;
+
+    println!("Premium: {:?}", premium);
 
     let premium_fraction = premium
         .value
         .checked_mul(Uint128::from(config.funding_period))?
         .checked_div(Uint128::from(ONE_DAY_IN_SECONDS))?;
+
+    println!("Premium Fraction: {}", premium_fraction);
 
     // update funding rate = premiumFraction / twapIndexPrice
     state.funding_rate = premium_fraction.checked_div(underlying_price)?;
