@@ -17,6 +17,7 @@ fn test_calc_fee() {
         toll_ratio: Uint128::from(10_000_000u128),   // 0.01
         spread_ratio: Uint128::from(10_000_000u128), // 0.01
         pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string())
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -54,6 +55,7 @@ fn test_set_diff_fee_ratio() {
         toll_ratio: Uint128::from(10_000_000u128),   // 0.01
         spread_ratio: Uint128::from(10_000_000u128), // 0.01
         pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string())
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -103,6 +105,7 @@ fn test_set_fee_ratio_zero() {
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::from(50_000_000u128), // 0.05
         pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string())
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -140,6 +143,7 @@ fn test_calc_fee_input_zero() {
         toll_ratio: Uint128::from(50_000_000u128), // 0.05,
         spread_ratio: Uint128::from(50_000_000u128), // 0.05
         pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string())
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -177,6 +181,7 @@ fn test_update_not_owner() {
         toll_ratio: Uint128::from(50_000_000u128), // 0.05,
         spread_ratio: Uint128::from(50_000_000u128), // 0.05
         pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string())
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();

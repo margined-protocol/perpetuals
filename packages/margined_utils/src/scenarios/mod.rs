@@ -113,6 +113,7 @@ impl SimpleScenario {
                     toll_ratio: Uint128::zero(),
                     spread_ratio: Uint128::zero(),
                     pricefeed: pricefeed_addr.to_string(),
+                    margin_engine: None,
                 },
                 &[],
                 "vamm",
@@ -220,6 +221,120 @@ impl SimpleScenario {
 impl Default for SimpleScenario {
     fn default() -> Self {
         SimpleScenario::new()
+    }
+}
+
+pub struct VammScenario {
+    pub router: App,
+    pub owner: Addr,
+    pub alice: Addr,
+    pub bob: Addr,
+    pub carol: Addr,
+    pub usdc: Cw20Contract,
+    pub vamm: VammController,
+    pub pricefeed: PricefeedController,
+}
+
+impl VammScenario {
+    pub fn new() -> Self {
+        let mut router: App = AppBuilder::new().build();
+
+        let owner = Addr::unchecked("owner");
+        let alice = Addr::unchecked("alice");
+        let bob = Addr::unchecked("bob");
+        let carol = Addr::unchecked("carol");
+
+        let usdc_id = router.store_code(contract_cw20());
+        let vamm_id = router.store_code(contract_vamm());
+        let pricefeed_id = router.store_code(contract_mock_pricefeed());
+
+        let usdc_addr = router
+            .instantiate_contract(
+                usdc_id,
+                owner.clone(),
+                &cw20_base::msg::InstantiateMsg {
+                    name: "USDC".to_string(),
+                    symbol: "USDC".to_string(),
+                    decimals: 9,
+                    initial_balances: vec![
+                        Cw20Coin {
+                            address: alice.to_string(),
+                            amount: to_decimals(5000),
+                        },
+                        Cw20Coin {
+                            address: bob.to_string(),
+                            amount: to_decimals(5000),
+                        },
+                        Cw20Coin {
+                            address: carol.to_string(),
+                            amount: to_decimals(5000),
+                        },
+                    ],
+                    mint: None,
+                    marketing: None,
+                },
+                &[],
+                "cw20",
+                None,
+            )
+            .unwrap();
+
+        let usdc = Cw20Contract(usdc_addr.clone());
+
+        let pricefeed_addr = router
+            .instantiate_contract(
+                pricefeed_id,
+                owner.clone(),
+                &PricefeedInstantiateMsg {
+                    decimals: 9u8,
+                    oracle_hub_contract: "oracle_hub0000".to_string(),
+                },
+                &[],
+                "pricefeed",
+                None,
+            )
+            .unwrap();
+        let pricefeed = PricefeedController(pricefeed_addr.clone());
+
+        let vamm_addr = router
+            .instantiate_contract(
+                vamm_id,
+                owner.clone(),
+                &VammInstantiateMsg {
+                    decimals: 9u8,
+                    quote_asset: "ETH".to_string(),
+                    base_asset: "USD".to_string(),
+                    quote_asset_reserve: to_decimals(1_000),
+                    base_asset_reserve: to_decimals(100),
+                    funding_period: 3_600_u64,
+                    toll_ratio: Uint128::zero(),
+                    spread_ratio: Uint128::zero(),
+                    pricefeed: pricefeed_addr.to_string(),
+                    margin_engine: Some(owner.to_string()),
+                },
+                &[],
+                "vamm",
+                None,
+            )
+            .unwrap();
+        let vamm = VammController(vamm_addr.clone());
+
+        Self {
+            router,
+            owner,
+            alice,
+            bob,
+            carol,
+            usdc,
+            pricefeed,
+            vamm,
+        }
+    }
+}
+
+impl Default for VammScenario {
+    fn default() -> Self {
+        VammScenario::new()
     }
 }
 

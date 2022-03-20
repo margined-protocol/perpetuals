@@ -213,11 +213,12 @@ fn parse_swap(response: SubMsgExecutionResponse) -> (Uint128, Uint128) {
 }
 
 fn parse_pay_funding(response: SubMsgExecutionResponse) -> Uint128 {
+    println!("{:?}", response);
     // Find swap inputs and output events
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");
     let wasm = wasm.unwrap();
 
-    let premium_str = read_event("premium_fraction".to_string(), wasm).value;
+    let premium_str = read_event("premium fraction".to_string(), wasm).value;
     let premium: Uint128 = Uint128::from_str(&premium_str).unwrap();
 
     premium

@@ -4,6 +4,7 @@ use cosmwasm_std::{
     to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
 use margined_common::integer::Integer;
+use margined_perp::margined_engine;
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
@@ -11,11 +12,10 @@ use crate::query::{
     query_calc_fee, query_input_twap, query_output_price, query_output_twap, query_spot_price,
     query_twap_price,
 };
-use crate::state::{store_reserve_snapshot, ReserveSnapshot};
 use crate::{
     handle::{settle_funding, swap_input, swap_output, update_config},
     query::{query_config, query_state},
-    state::{store_config, store_state, Config, State},
+    state::{store_config, store_state, Config, State, store_reserve_snapshot, ReserveSnapshot},
 };
 
 pub const ONE_HOUR_IN_SECONDS: u64 = 60 * 60;
@@ -28,7 +28,7 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    let config = Config {
+    let mut config = Config {
         owner: info.sender,
         margin_engine: Addr::unchecked("".to_string()), // default to nothing, must be set
         quote_asset: msg.quote_asset,
@@ -41,6 +41,12 @@ pub fn instantiate(
         funding_period: msg.funding_period,            // Funding period in seconds
         funding_buffer_period: msg.funding_period / 2u64,
     };
+
+    // set and update margin engine
+    let margin_engine = msg.margin_engine;
+    if let Some(margin_engine) = margin_engine {
+        config.margin_engine = deps.api.addr_validate(margin_engine.as_str())?;
+    }
 
     store_config(deps.storage, &config)?;
 

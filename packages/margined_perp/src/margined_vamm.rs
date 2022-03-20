@@ -23,6 +23,7 @@ pub enum LongShort {
 pub struct InstantiateMsg {
     pub decimals: u8,
     pub pricefeed: String,
+    pub margin_engine: Option<String>,
     pub quote_asset: String,
     pub base_asset: String,
     pub quote_asset_reserve: Uint128,

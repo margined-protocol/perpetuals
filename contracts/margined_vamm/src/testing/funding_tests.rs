@@ -1,16 +1,16 @@
 use cosmwasm_std::Uint128;
 use cw_multi_test::Executor;
-use margined_utils::scenarios::SimpleScenario;
+use margined_utils::scenarios::VammScenario;
 
 #[test]
 fn test_settle_funding_delay_before_buffer_period_ends() {
-    let SimpleScenario {
+    let VammScenario {
         mut router,
         owner,
         vamm,
         pricefeed,
         ..
-    } = SimpleScenario::new();
+    } = VammScenario::new();
 
     let price: Uint128 = Uint128::from(500_000_000u128);
     let timestamp: u64 = 1_000_000_000;
@@ -41,13 +41,13 @@ fn test_settle_funding_delay_before_buffer_period_ends() {
 
 #[test]
 fn test_settle_funding_delay_after_buffer_period_ends_before_next_funding_time() {
-    let SimpleScenario {
+    let VammScenario {
         mut router,
         owner,
         vamm,
         pricefeed,
         ..
-    } = SimpleScenario::new();
+    } = VammScenario::new();
 
     let price: Uint128 = Uint128::from(500_000_000u128);
     let timestamp: u64 = 1_000_000_000;
@@ -79,14 +79,14 @@ fn test_settle_funding_delay_after_buffer_period_ends_before_next_funding_time()
 
 #[test]
 fn test_force_error_caller_is_not_couterparty_or_owner() {
-    let SimpleScenario {
+    let VammScenario {
         mut router,
         alice,
         owner,
         vamm,
         pricefeed,
         ..
-    } = SimpleScenario::new();
+    } = VammScenario::new();
 
     let price: Uint128 = Uint128::from(500_000_000u128);
     let timestamp: u64 = 1_000_000_000;
@@ -103,13 +103,13 @@ fn test_force_error_caller_is_not_couterparty_or_owner() {
 
 #[test]
 fn test_cant_settle_funding_multiple_times_at_once_even_settle_funding_delay() {
-    let SimpleScenario {
+    let VammScenario {
         mut router,
         owner,
         vamm,
         pricefeed,
         ..
-    } = SimpleScenario::new();
+    } = VammScenario::new();
 
     let price: Uint128 = Uint128::from(500_000_000u128);
     let timestamp: u64 = 1_000_000_000;

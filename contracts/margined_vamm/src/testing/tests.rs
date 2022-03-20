@@ -19,6 +19,7 @@ fn test_instantiation() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        margin_engine: Some("addr0000".to_string()),
         pricefeed: "oracle".to_string(),
     };
     let info = mock_info("addr0000", &[]);
@@ -36,7 +37,7 @@ fn test_instantiation() {
             toll_ratio: Uint128::zero(),
             spread_ratio: Uint128::zero(),
             decimals: DECIMAL_MULTIPLIER,
-            margin_engine: Addr::unchecked("".to_string()),
+            margin_engine: Addr::unchecked("addr0000".to_string()),
             pricefeed: Addr::unchecked("oracle".to_string()),
             funding_period: 3_600u64,
         }
@@ -69,6 +70,7 @@ fn test_update_config() {
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -116,6 +118,7 @@ fn test_swap_input_long() {
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -155,6 +158,7 @@ fn test_swap_input_short() {
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -194,6 +198,7 @@ fn test_swap_output_short() {
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -233,6 +238,7 @@ fn test_swap_output_long() {
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -272,6 +278,7 @@ fn test_swap_input_short_long() {
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -333,6 +340,7 @@ fn test_swap_input_short_long_long() {
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -414,6 +422,7 @@ fn test_swap_input_short_long_short() {
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -495,6 +504,7 @@ fn test_swap_input_long_integration_example() {
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -534,6 +544,7 @@ fn test_swap_input_long_short_integration_example() {
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -594,6 +605,7 @@ fn test_swap_input_twice_short_long() {
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -642,6 +654,7 @@ fn test_swap_input_twice_long_short() {
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -690,6 +703,7 @@ fn test_swap_output_twice_short_long() {
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -738,6 +752,7 @@ fn test_swap_output_twice_long_short() {
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
