@@ -10,11 +10,6 @@ pub fn to_decimals(input: u64) -> Uint128 {
     Uint128::from(input) * DECIMAL_MULTIPLIER
 }
 
-// pub fn next_block(block: &mut BlockInfo) {
-//     block.time = block.time.plus_seconds(15);
-//     block.height += 1;
-// }
-
 #[test]
 fn test_get_margin_ratio() {
     let SimpleScenario {

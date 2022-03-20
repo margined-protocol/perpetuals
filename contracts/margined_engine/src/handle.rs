@@ -5,7 +5,7 @@ use cosmwasm_std::{
 
 use crate::{
     contract::{
-        SWAP_CLOSE_REPLY_ID, SWAP_DECREASE_REPLY_ID, SWAP_INCREASE_REPLY_ID,
+        PAY_FUNDING_REPLY_ID, SWAP_CLOSE_REPLY_ID, SWAP_DECREASE_REPLY_ID, SWAP_INCREASE_REPLY_ID,
         SWAP_LIQUIDATE_REPLY_ID, SWAP_REVERSE_REPLY_ID,
     },
     querier::{query_vamm_output_price, query_vamm_output_twap},
@@ -125,9 +125,7 @@ pub fn close_position(
 
     let msg = internal_close_position(deps, &position, SWAP_CLOSE_REPLY_ID)?;
 
-    Ok(Response::new()
-        .add_attributes(vec![("action", "close_position")])
-        .add_submessage(msg))
+    Ok(Response::new().add_submessage(msg))
 }
 
 pub fn liquidate(
@@ -169,7 +167,33 @@ pub fn liquidate(
         response = response.add_submessage(msg);
     }
 
-    Ok(response.add_attributes(vec![("action", "liquidate")]))
+    Ok(response)
+}
+
+pub fn pay_funding(
+    deps: DepsMut,
+    _env: Env,
+    _info: MessageInfo,
+    vamm: String,
+) -> StdResult<Response> {
+    // validate address inputs
+    let vamm = deps.api.addr_validate(&vamm)?;
+
+    // check its a valid vamm
+    require_vamm(deps.storage, &vamm)?;
+
+    let funding_msg = SubMsg {
+        msg: CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: vamm.to_string(),
+            funds: vec![],
+            msg: to_binary(&ExecuteMsg::SettleFunding {})?,
+        }),
+        gas_limit: None, // probably should set a limit in the config
+        id: PAY_FUNDING_REPLY_ID,
+        reply_on: ReplyOn::Always,
+    };
+
+    Ok(Response::new().add_submessage(funding_msg))
 }
 
 // Increase the position, just basically wraps swap input though it may do more in the future
@@ -209,6 +233,7 @@ pub fn internal_close_position(deps: DepsMut, position: &Position, id: u64) -> S
         reply_on: ReplyOn::Always,
     })
 }
+
 // Increase the position, just basically wraps swap input though it may do more in the future
 fn open_reverse_position(
     deps: &DepsMut,
@@ -359,22 +384,21 @@ pub fn calc_pnl(
 
 pub fn calc_remain_margin_with_funding_payment(
     position: &Position,
-    margin_delta: Uint128,
-    pnl: Pnl,
+    pnl: PnlResponse,
 ) -> StdResult<RemainMarginResponse> {
     // calculate the funding payment
 
     // calculate the remaining margin
     let mut bad_debt = Uint128::zero();
-    let remaining_margin: Uint128 = if pnl == Pnl::Profit {
-        position.margin.checked_add(margin_delta)?
-    } else if margin_delta < position.margin {
-        position.margin.checked_sub(margin_delta)?
+    let remaining_margin: Uint128 = if pnl.profit_loss == Pnl::Profit {
+        position.margin.checked_add(pnl.value)?
+    } else if pnl.value < position.margin {
+        position.margin.checked_sub(pnl.value)?
     } else {
         // if the delta is bigger than margin we
         // will have some bad debt and margin out is gonna
         // be zero
-        bad_debt = margin_delta.checked_sub(position.margin)?;
+        bad_debt = pnl.value.checked_sub(position.margin)?;
         Uint128::zero()
     };
 

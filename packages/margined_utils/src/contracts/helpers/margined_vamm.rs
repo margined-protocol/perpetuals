@@ -34,11 +34,15 @@ impl VammController {
         owner: Option<String>,
         toll_ratio: Option<Uint128>,
         spread_ratio: Option<Uint128>,
+        margin_engine: Option<String>,
+        pricefeed: Option<String>,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
             owner,
             toll_ratio,
             spread_ratio,
+            margin_engine,
+            pricefeed,
         };
         self.call(msg, vec![])
     }
@@ -64,6 +68,11 @@ impl VammController {
             direction,
             base_asset_amount,
         };
+        self.call(msg, vec![])
+    }
+
+    pub fn settle_funding(&self) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::SettleFunding {};
         self.call(msg, vec![])
     }
 

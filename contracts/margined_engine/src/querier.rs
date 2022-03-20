@@ -5,7 +5,7 @@ use margined_perp::margined_vamm::{CalcFeeResponse, Direction, QueryMsg, StateRe
 
 // returns the state of the request vamm
 // can be used to calculate the input and outputs
-pub fn _query_vamm_state(deps: &DepsMut, address: String) -> StdResult<StateResponse> {
+pub fn query_vamm_state(deps: &DepsMut, address: String) -> StdResult<StateResponse> {
     deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: address,
         msg: to_binary(&QueryMsg::State {})?,

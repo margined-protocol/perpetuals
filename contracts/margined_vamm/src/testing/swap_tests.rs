@@ -20,6 +20,8 @@ fn test_get_input_and_output_price() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        margin_engine: Some("addr0000".to_string()),
+        pricefeed: "oracle".to_string(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();

@@ -10,14 +10,14 @@ use std::str::FromStr;
 
 use crate::error::ContractError;
 use crate::{
-    handle::{close_position, liquidate, open_position, update_config},
+    handle::{close_position, liquidate, open_position, pay_funding, update_config},
     query::{
         query_config, query_margin_ratio, query_position,
         query_trader_balance_with_funding_payment, query_unrealized_pnl,
     },
     reply::{
         close_position_reply, decrease_position_reply, increase_position_reply, liquidate_reply,
-        reverse_position_reply,
+        pay_funding_reply, reverse_position_reply,
     },
     state::{read_config, store_config, store_state, store_vamm, Config, State},
 };
@@ -27,6 +27,7 @@ pub const SWAP_DECREASE_REPLY_ID: u64 = 2;
 pub const SWAP_REVERSE_REPLY_ID: u64 = 3;
 pub const SWAP_CLOSE_REPLY_ID: u64 = 4;
 pub const SWAP_LIQUIDATE_REPLY_ID: u64 = 5;
+pub const PAY_FUNDING_REPLY_ID: u64 = 6;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -99,6 +100,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             close_position(deps, env, info, vamm, trader.to_string())
         }
         ExecuteMsg::Liquidate { vamm, trader } => liquidate(deps, env, info, vamm, trader),
+        ExecuteMsg::PayFunding { vamm } => pay_funding(deps, env, info, vamm),
     }
 }
 
@@ -179,6 +181,11 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
                 let response = liquidate_reply(deps, env, input, output)?;
                 Ok(response)
             }
+            PAY_FUNDING_REPLY_ID => {
+                let (premium_fraction, sender) = parse_pay_funding(response);
+                let response = pay_funding_reply(deps, env, premium_fraction, sender)?;
+                Ok(response)
+            }
             _ => Err(StdError::generic_err(format!(
                 "reply (id {:?}) invalid",
                 msg.id
@@ -203,6 +210,20 @@ fn parse_swap(response: SubMsgExecutionResponse) -> (Uint128, Uint128) {
     let output: Uint128 = Uint128::from_str(&output_str).unwrap();
 
     (input, output)
+}
+
+fn parse_pay_funding(response: SubMsgExecutionResponse) -> (Uint128, String) {
+    // println!("{:?}", response);
+    // Find swap inputs and output events
+    let wasm = response.events.iter().find(|&e| e.ty == "wasm");
+    let wasm = wasm.unwrap();
+
+    let premium_str = read_event("premium fraction".to_string(), wasm).value;
+    let premium: Uint128 = Uint128::from_str(&premium_str).unwrap();
+
+    let sender = read_event("_contract_addr".to_string(), wasm).value;
+
+    (premium, sender)
 }
 
 fn read_event(key: String, event: &Event) -> Attribute {

@@ -1,8 +1,7 @@
 use crate::contract::{execute, instantiate, query};
-use crate::error::ContractError;
 use crate::testing::setup::to_decimals;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{from_binary, Uint128};
+use cosmwasm_std::{from_binary, StdError, Uint128};
 use margined_perp::margined_vamm::{CalcFeeResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 
 #[test]
@@ -17,6 +16,8 @@ fn test_calc_fee() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::from(10_000_000u128),   // 0.01
         spread_ratio: Uint128::from(10_000_000u128), // 0.01
+        pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -53,6 +54,8 @@ fn test_set_diff_fee_ratio() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::from(10_000_000u128),   // 0.01
         spread_ratio: Uint128::from(10_000_000u128), // 0.01
+        pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -62,6 +65,8 @@ fn test_set_diff_fee_ratio() {
         owner: None,
         toll_ratio: Some(Uint128::from(100_000_000u128)), // 0.1
         spread_ratio: Some(Uint128::from(50_000_000u128)), // 0.01
+        margin_engine: None,
+        pricefeed: None,
     };
 
     let info = mock_info("addr0000", &[]);
@@ -99,6 +104,8 @@ fn test_set_fee_ratio_zero() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::from(50_000_000u128), // 0.05
+        pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -135,6 +142,8 @@ fn test_calc_fee_input_zero() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::from(50_000_000u128), // 0.05,
         spread_ratio: Uint128::from(50_000_000u128), // 0.05
+        pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -171,6 +180,8 @@ fn test_update_not_owner() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::from(50_000_000u128), // 0.05,
         spread_ratio: Uint128::from(50_000_000u128), // 0.05
+        pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -180,12 +191,14 @@ fn test_update_not_owner() {
         owner: None,
         toll_ratio: Some(Uint128::from(100_000_000u128)), // 0.1
         spread_ratio: Some(Uint128::from(50_000_000u128)), // 0.01
+        margin_engine: None,
+        pricefeed: None,
     };
 
     let info = mock_info("addr0001", &[]);
-    let result = execute(deps.as_mut(), mock_env(), info, msg);
-    match result {
-        Err(ContractError::Unauthorized {}) => {}
-        _ => panic!("DO NOT ENTER HERE"),
-    }
+    let result = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+    assert_eq!(
+        result.to_string(),
+        "Generic error: unauthorized".to_string()
+    );
 }

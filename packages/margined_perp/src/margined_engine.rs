@@ -59,7 +59,9 @@ pub enum ExecuteMsg {
         vamm: String,
         trader: String,
     },
-    // PayFunding {},
+    PayFunding {
+        vamm: String,
+    },
     // DepositMargin {},
     // WithdrawMargin {},
 }
