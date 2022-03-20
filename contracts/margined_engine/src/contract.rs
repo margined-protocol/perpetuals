@@ -17,7 +17,7 @@ use crate::{
     },
     reply::{
         close_position_reply, decrease_position_reply, increase_position_reply, liquidate_reply,
-        reverse_position_reply,
+        pay_funding_reply, reverse_position_reply,
     },
     state::{read_config, store_config, store_state, store_vamm, Config, State},
 };
@@ -100,9 +100,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             close_position(deps, env, info, vamm, trader.to_string())
         }
         ExecuteMsg::Liquidate { vamm, trader } => liquidate(deps, env, info, vamm, trader),
-        ExecuteMsg::PayFunding { vamm } => {
-            pay_funding(deps, env, info, vamm)
-        }
+        ExecuteMsg::PayFunding { vamm } => pay_funding(deps, env, info, vamm),
     }
 }
 
@@ -162,32 +160,32 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
                 let (input, output) = parse_swap(response);
                 let response = increase_position_reply(deps, env, input, output)?;
                 Ok(response)
-            },
+            }
             SWAP_DECREASE_REPLY_ID => {
                 let (input, output) = parse_swap(response);
                 let response = decrease_position_reply(deps, env, input, output)?;
                 Ok(response)
-            },
+            }
             SWAP_REVERSE_REPLY_ID => {
                 let (input, output) = parse_swap(response);
                 let response = reverse_position_reply(deps, env, input, output)?;
                 Ok(response)
-            },
+            }
             SWAP_CLOSE_REPLY_ID => {
                 let (input, output) = parse_swap(response);
                 let response = close_position_reply(deps, env, input, output)?;
                 Ok(response)
-            },
+            }
             SWAP_LIQUIDATE_REPLY_ID => {
                 let (input, output) = parse_swap(response);
                 let response = liquidate_reply(deps, env, input, output)?;
                 Ok(response)
-            },
+            }
             PAY_FUNDING_REPLY_ID => {
                 let premium_fraction = parse_pay_funding(response);
                 let response = pay_funding_reply(deps, env, premium_fraction)?;
                 Ok(response)
-            },
+            }
             _ => Err(StdError::generic_err(format!(
                 "reply (id {:?}) invalid",
                 msg.id
@@ -214,7 +212,7 @@ fn parse_swap(response: SubMsgExecutionResponse) -> (Uint128, Uint128) {
     (input, output)
 }
 
-fn parse_pay_funding(response: SubMsgExecutionResponse) -> (Uint128) {
+fn parse_pay_funding(response: SubMsgExecutionResponse) -> Uint128 {
     // Find swap inputs and output events
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");
     let wasm = wasm.unwrap();

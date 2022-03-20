@@ -60,6 +60,11 @@ impl EngineController {
         self.call(msg, vec![])
     }
 
+    pub fn pay_funding(&self, vamm: String) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::PayFunding { vamm };
+        self.call(msg, vec![])
+    }
+
     /// get margin engine configuration
     pub fn config<Q: Querier>(&self, querier: &Q) -> StdResult<ConfigResponse> {
         let msg = QueryMsg::Config {};
