@@ -148,7 +148,7 @@ impl SimpleScenario {
         router
             .execute_contract(
                 owner.clone(),
-                vamm_addr.clone(),
+                vamm_addr,
                 &VammExecuteMsg::UpdateConfig {
                     owner: None,
                     toll_ratio: None,
@@ -279,7 +279,7 @@ impl VammScenario {
             )
             .unwrap();
 
-        let usdc = Cw20Contract(usdc_addr.clone());
+        let usdc = Cw20Contract(usdc_addr);
 
         let pricefeed_addr = router
             .instantiate_contract(
@@ -317,7 +317,7 @@ impl VammScenario {
                 None,
             )
             .unwrap();
-        let vamm = VammController(vamm_addr.clone());
+        let vamm = VammController(vamm_addr);
 
         Self {
             router,
