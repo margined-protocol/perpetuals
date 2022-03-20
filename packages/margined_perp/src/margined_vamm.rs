@@ -41,6 +41,7 @@ pub enum ExecuteMsg {
         // spot_price_twap_interval: Option<Uint128>,
         toll_ratio: Option<Uint128>,
         spread_ratio: Option<Uint128>,
+        margin_engine: Option<String>,
         pricefeed: Option<String>,
     },
     SwapInput {
@@ -85,6 +86,7 @@ pub enum QueryMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: Addr,
+    pub margin_engine: Addr,
     pub pricefeed: Addr,
     pub quote_asset: String,
     pub base_asset: String,

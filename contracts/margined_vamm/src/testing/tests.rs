@@ -36,6 +36,7 @@ fn test_instantiation() {
             toll_ratio: Uint128::zero(),
             spread_ratio: Uint128::zero(),
             decimals: DECIMAL_MULTIPLIER,
+            margin_engine: Addr::unchecked("".to_string()),
             pricefeed: Addr::unchecked("oracle".to_string()),
             funding_period: 3_600u64,
         }
@@ -74,9 +75,10 @@ fn test_update_config() {
 
     // Update the config
     let msg = ExecuteMsg::UpdateConfig {
-        owner: Some("addr0001".to_string()),
+        owner: None,
         toll_ratio: None,
         spread_ratio: None,
+        margin_engine: Some("addr0001".to_string()),
         pricefeed: None,
     };
 
@@ -88,12 +90,13 @@ fn test_update_config() {
     assert_eq!(
         config,
         ConfigResponse {
-            owner: Addr::unchecked("addr0001".to_string()),
+            owner: Addr::unchecked("addr0000".to_string()),
             quote_asset: "ETH".to_string(),
             base_asset: "USD".to_string(),
             toll_ratio: Uint128::zero(),
             spread_ratio: Uint128::zero(),
             decimals: DECIMAL_MULTIPLIER,
+            margin_engine: Addr::unchecked("addr0001".to_string()),
             pricefeed: Addr::unchecked("oracle".to_string()),
             funding_period: 3_600u64,
         }

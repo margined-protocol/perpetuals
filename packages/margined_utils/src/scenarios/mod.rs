@@ -3,7 +3,9 @@ use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use margined_perp::margined_engine::InstantiateMsg;
 use margined_perp::margined_pricefeed::InstantiateMsg as PricefeedInstantiateMsg;
-use margined_perp::margined_vamm::InstantiateMsg as VammInstantiateMsg;
+use margined_perp::margined_vamm::{
+    ExecuteMsg as VammExecuteMsg, InstantiateMsg as VammInstantiateMsg,
+};
 
 use crate::contracts::helpers::{
     margined_engine::EngineController, margined_pricefeed::PricefeedController,
@@ -140,6 +142,22 @@ impl SimpleScenario {
             )
             .unwrap();
         let engine = EngineController(engine_addr.clone());
+
+        // set margin engine in vamm
+        router
+            .execute_contract(
+                owner.clone(),
+                vamm_addr.clone(),
+                &VammExecuteMsg::UpdateConfig {
+                    owner: None,
+                    toll_ratio: None,
+                    spread_ratio: None,
+                    margin_engine: Some(engine_addr.to_string()),
+                    pricefeed: None,
+                },
+                &[],
+            )
+            .unwrap();
 
         // create allowance for alice
         router

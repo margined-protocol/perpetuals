@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
+    to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
 use margined_common::integer::Integer;
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
@@ -30,6 +30,7 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     let config = Config {
         owner: info.sender,
+        margin_engine: Addr::unchecked("".to_string()), // default to nothing, must be set
         quote_asset: msg.quote_asset,
         base_asset: msg.base_asset,
         toll_ratio: msg.toll_ratio,
@@ -73,8 +74,17 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             owner,
             toll_ratio,
             spread_ratio,
+            margin_engine,
             pricefeed,
-        } => update_config(deps, info, owner, toll_ratio, spread_ratio, pricefeed),
+        } => update_config(
+            deps,
+            info,
+            owner,
+            toll_ratio,
+            spread_ratio,
+            margin_engine,
+            pricefeed,
+        ),
         ExecuteMsg::SwapInput {
             direction,
             quote_asset_amount,

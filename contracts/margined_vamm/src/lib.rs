@@ -5,6 +5,7 @@ mod handle;
 mod querier;
 mod query;
 mod state;
+mod utils;
 
 #[cfg(test)]
 mod testing;

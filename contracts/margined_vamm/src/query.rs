@@ -22,6 +22,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         toll_ratio: config.toll_ratio,
         spread_ratio: config.spread_ratio,
         decimals: config.decimals,
+        margin_engine: config.margin_engine,
         pricefeed: config.pricefeed,
         funding_period: config.funding_period,
     })

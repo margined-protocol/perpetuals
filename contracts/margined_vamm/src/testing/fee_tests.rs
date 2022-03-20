@@ -63,6 +63,7 @@ fn test_set_diff_fee_ratio() {
         owner: None,
         toll_ratio: Some(Uint128::from(100_000_000u128)), // 0.1
         spread_ratio: Some(Uint128::from(50_000_000u128)), // 0.01
+        margin_engine: None,
         pricefeed: None,
     };
 
@@ -185,6 +186,7 @@ fn test_update_not_owner() {
         owner: None,
         toll_ratio: Some(Uint128::from(100_000_000u128)), // 0.1
         spread_ratio: Some(Uint128::from(50_000_000u128)), // 0.01
+        margin_engine: None,
         pricefeed: None,
     };
 

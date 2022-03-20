@@ -677,6 +677,7 @@ fn test_openclose_position_to_check_fee_is_charged() {
             Some(Uint128::from(10_000_000u128)), // 0.01
             Some(Uint128::from(20_000_000u128)), // 0.01
             None,
+            None,
         )
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();

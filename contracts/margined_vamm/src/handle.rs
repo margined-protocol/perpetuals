@@ -10,11 +10,8 @@ use crate::{
     decimals::modulo,
     querier::query_underlying_twap_price,
     query::query_twap_price,
-    state::{
-        read_config, read_reserve_snapshot, read_reserve_snapshot_counter, read_state,
-        store_config, store_reserve_snapshot, store_state, update_reserve_snapshot, Config,
-        ReserveSnapshot, State,
-    },
+    state::{read_config, read_state, store_config, store_state, Config, State},
+    utils::{add_reserve_snapshot, require_margin_engine},
 };
 
 pub fn update_config(
@@ -23,6 +20,7 @@ pub fn update_config(
     owner: Option<String>,
     toll_ratio: Option<Uint128>,
     spread_ratio: Option<Uint128>,
+    margin_engine: Option<String>,
     pricefeed: Option<String>,
 ) -> StdResult<Response> {
     let mut config: Config = read_config(deps.storage)?;
@@ -35,6 +33,11 @@ pub fn update_config(
     // change owner of amm
     if let Some(owner) = owner {
         config.owner = deps.api.addr_validate(owner.as_str())?;
+    }
+
+    // set and update margin engine
+    if let Some(margin_engine) = margin_engine {
+        config.margin_engine = deps.api.addr_validate(margin_engine.as_str())?;
     }
 
     // change toll ratio
@@ -61,11 +64,14 @@ pub fn update_config(
 pub fn swap_input(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     direction: Direction,
     quote_asset_amount: Uint128,
 ) -> StdResult<Response> {
     let state: State = read_state(deps.storage)?;
+    let config: Config = read_config(deps.storage)?;
+
+    require_margin_engine(info.sender, config.margin_engine)?;
 
     let base_asset_amount = get_input_price_with_reserves(
         deps.as_ref(),
@@ -94,11 +100,14 @@ pub fn swap_input(
 pub fn swap_output(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     direction: Direction,
     base_asset_amount: Uint128,
 ) -> StdResult<Response> {
     let state: State = read_state(deps.storage)?;
+    let config: Config = read_config(deps.storage)?;
+
+    require_margin_engine(info.sender, config.margin_engine)?;
 
     let quote_asset_amount = get_output_price_with_reserves(
         deps.as_ref(),
@@ -135,10 +144,7 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
     let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
 
-    // check permission TODO add in the concept of counterparty
-    if info.sender != config.owner {
-        return Err(StdError::generic_err("unauthorized"));
-    }
+    require_margin_engine(info.sender, config.margin_engine)?;
 
     if env.block.time.seconds() < state.next_funding_time {
         return Err(StdError::generic_err("settle funding called too early"));
@@ -332,36 +338,4 @@ pub fn update_reserve(
     )?;
 
     Ok(Response::new().add_attributes(vec![("action", "update_reserve")]))
-}
-
-fn add_reserve_snapshot(
-    storage: &mut dyn Storage,
-    env: Env,
-    quote_asset_reserve: Uint128,
-    base_asset_reserve: Uint128,
-) -> StdResult<Response> {
-    let height = read_reserve_snapshot_counter(storage)?;
-    let current_snapshot = read_reserve_snapshot(storage, height)?;
-
-    if current_snapshot.block_height == env.block.height {
-        let new_snapshot = ReserveSnapshot {
-            quote_asset_reserve,
-            base_asset_reserve,
-            timestamp: current_snapshot.timestamp,
-            block_height: current_snapshot.block_height,
-        };
-
-        update_reserve_snapshot(storage, &new_snapshot)?;
-    } else {
-        let new_snapshot = ReserveSnapshot {
-            quote_asset_reserve,
-            base_asset_reserve,
-            timestamp: env.block.time,
-            block_height: env.block.height,
-        };
-
-        store_reserve_snapshot(storage, &new_snapshot)?;
-    }
-
-    Ok(Response::default())
 }
