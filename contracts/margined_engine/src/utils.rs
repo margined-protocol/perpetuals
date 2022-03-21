@@ -339,6 +339,26 @@ pub fn calc_remain_margin_with_funding_payment(
     })
 }
 
+// negative means trader pays and vice versa
+pub fn calc_funding_payment(
+    storage: &dyn Storage,
+    position: Position,
+    latest_premium_fraction: Uint128,
+) -> Uint128 {
+    let config = read_config(storage).unwrap();
+    if position.size.is_zero() {
+        Uint128::zero()
+    } else {
+        latest_premium_fraction
+            .checked_sub(position.last_updated_premium_fraction)
+            .unwrap()
+            .checked_mul(position.size)
+            .unwrap()
+            .checked_div(config.decimals)
+            .unwrap()
+    }
+}
+
 // this resets the main variables of a position
 pub fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
     position.size = Uint128::zero();

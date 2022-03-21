@@ -4,8 +4,9 @@ use crate::{
     handle::internal_increase_position,
     querier::query_vamm_state,
     state::{
-        read_config, read_state, read_tmp_liquidator, read_tmp_swap, remove_tmp_liquidator,
-        remove_tmp_swap, store_position, store_state, store_tmp_swap,
+        append_cumulative_premium_fraction, read_config, read_state, read_tmp_liquidator,
+        read_tmp_swap, remove_tmp_liquidator, remove_tmp_swap, store_position, store_state,
+        store_tmp_swap,
     },
     utils::{
         calc_pnl, calc_remain_margin_with_funding_payment, clear_position, execute_transfer,
@@ -368,14 +369,14 @@ pub fn pay_funding_reply(
 ) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
     let vamm = deps.api.addr_validate(&sender)?;
-    println!("premium fraction: {}", premium_fraction);
-    println!("vamm: {}", vamm);
+
+    // update the cumulative premium fraction
+    append_cumulative_premium_fraction(deps.storage, vamm.clone(), premium_fraction)?;
+
     let total_position_size = query_vamm_state(&deps, vamm.to_string())?.total_position_size;
-    println!("total position size: {}", total_position_size);
 
     let funding_payment = total_position_size * Integer::new_positive(premium_fraction)
         / Integer::new_positive(config.decimals);
-    println!("funding payment: {}", funding_payment);
 
     let msg: SubMsg = if funding_payment.is_negative() {
         execute_transfer_from(
@@ -388,5 +389,7 @@ pub fn pay_funding_reply(
         execute_transfer(deps.storage, &config.insurance_fund, funding_payment.value)?
     };
 
-    Ok(Response::new().add_submessage(msg))
+    Ok(Response::new()
+        .add_submessage(msg)
+        .add_attributes(vec![("action", "pay_funding_reply")]))
 }

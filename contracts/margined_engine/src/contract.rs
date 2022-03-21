@@ -13,7 +13,8 @@ use crate::{
     handle::{close_position, liquidate, open_position, pay_funding, update_config},
     query::{
         query_config, query_margin_ratio, query_position,
-        query_trader_balance_with_funding_payment, query_unrealized_pnl,
+        query_trader_balance_with_funding_payment, query_trader_position_with_funding_payment,
+        query_unrealized_pnl,
     },
     reply::{
         close_position_reply, decrease_position_reply, increase_position_reply, liquidate_reply,
@@ -149,6 +150,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::UnrealizedPnl { vamm, trader } => {
             to_binary(&query_unrealized_pnl(deps, vamm, trader)?)
         }
+        QueryMsg::PersonalBalanceWithFundingPayment { vamm, trader } => to_binary(
+            &query_trader_position_with_funding_payment(deps, vamm, trader)?,
+        ),
     }
 }
 

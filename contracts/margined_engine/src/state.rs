@@ -17,7 +17,8 @@ pub static KEY_POSITION: &[u8] = b"position";
 pub static KEY_STATE: &[u8] = b"state";
 pub static KEY_TMP_SWAP: &[u8] = b"tmp-swap";
 pub static KEY_TMP_LIQUIDATOR: &[u8] = b"tmp-liquidator";
-pub const VAMM_LIST: Item<VammList> = Item::new("admin_list");
+pub static KEY_VAMM_MAP: &[u8] = b"vamm-map";
+pub const VAMM_LIST: Item<VammList> = Item::new("vamm-list");
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
@@ -182,4 +183,64 @@ pub fn remove_tmp_liquidator(storage: &mut dyn Storage) {
 
 pub fn read_tmp_liquidator(storage: &dyn Storage) -> StdResult<Option<Addr>> {
     singleton_read(storage, KEY_TMP_LIQUIDATOR).load()
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct VammMap {
+    pub last_restriction_block: u64,
+    pub cumulative_premium_fractions: Vec<Uint128>,
+}
+
+impl Default for VammMap {
+    fn default() -> VammMap {
+        VammMap {
+            last_restriction_block: 0u64,
+            cumulative_premium_fractions: Vec::new(),
+        }
+    }
+}
+
+fn vamm_map_bucket(storage: &mut dyn Storage) -> Bucket<VammMap> {
+    bucket(storage, KEY_VAMM_MAP)
+}
+
+fn vamm_map_bucket_read(storage: &dyn Storage) -> ReadonlyBucket<VammMap> {
+    bucket_read(storage, KEY_VAMM_MAP)
+}
+
+pub fn store_vamm_map(storage: &mut dyn Storage, vamm: Addr, vamm_map: &VammMap) -> StdResult<()> {
+    vamm_map_bucket(storage).save(&vamm.as_bytes(), vamm_map)
+}
+
+pub fn read_vamm_map(storage: &dyn Storage, vamm: Addr) -> StdResult<VammMap> {
+    let result = vamm_map_bucket_read(storage)
+        .may_load(&vamm.as_bytes())?
+        .unwrap_or_default();
+
+    Ok(result)
+}
+
+/// Accumulates the premium fractions at each settlement payment so that eventually users take
+/// their P&L
+pub fn append_cumulative_premium_fraction(
+    storage: &mut dyn Storage,
+    vamm: Addr,
+    premium_fraction: Uint128,
+) -> StdResult<()> {
+    let mut vamm_map = read_vamm_map(storage, vamm.clone())?;
+
+    // we push the first premium fraction to an empty array
+    // else we add them together prior to pushing
+    match vamm_map.cumulative_premium_fractions.len() {
+        0 => vamm_map.cumulative_premium_fractions.push(premium_fraction),
+        n => {
+            let current_premium_fraction = vamm_map.cumulative_premium_fractions[n - 1];
+            let latest_premium_fraction = premium_fraction + current_premium_fraction;
+            vamm_map
+                .cumulative_premium_fractions
+                .push(latest_premium_fraction)
+        }
+    }
+
+    store_vamm_map(storage, vamm, &vamm_map)
 }

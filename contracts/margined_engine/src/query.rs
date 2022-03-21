@@ -5,8 +5,8 @@ use margined_perp::margined_engine::{
 };
 
 use crate::{
-    state::{read_config, read_position, read_vamm, Config},
-    utils::get_position_notional_unrealized_pnl,
+    state::{read_config, read_position, read_vamm, read_vamm_map, Config},
+    utils::{calc_funding_payment, get_position_notional_unrealized_pnl},
 };
 
 /// Queries contract Config
@@ -68,16 +68,37 @@ pub fn query_trader_balance_with_funding_payment(deps: Deps, trader: String) -> 
 /// Queries traders position across all vamms with funding payments
 pub fn query_trader_position_with_funding_payment(
     deps: Deps,
+    vamm: String,
     trader: String,
-) -> StdResult<Uint128> {
-    let mut margin = Uint128::zero();
-    let vamm_list = read_vamm(deps.storage)?;
-    for vamm in vamm_list.vamm.iter() {
-        let position = query_position(deps, vamm.to_string(), trader.clone())?;
-        margin = margin.checked_add(position.margin)?;
-    }
+) -> StdResult<PositionResponse> {
+    let vamm = deps.api.addr_validate(&vamm)?;
+    let trader = deps.api.addr_validate(&trader)?;
 
-    Ok(margin)
+    // retrieve latest user position
+    let mut position = read_position(deps.storage, &vamm, &trader)?;
+
+    let latest_cumulative_premium_fraction = read_vamm_map(deps.storage, vamm)
+        .unwrap()
+        .cumulative_premium_fractions
+        .pop()
+        .unwrap();
+
+    let funding_payment = calc_funding_payment(
+        deps.storage,
+        position.clone(),
+        latest_cumulative_premium_fraction,
+    );
+
+    let funding_margin = position.margin.checked_add(funding_payment)?;
+
+    Ok(PositionResponse {
+        size: position.size,
+        margin: funding_margin,
+        notional: position.notional,
+        last_updated_premium_fraction: position.last_updated_premium_fraction,
+        liquidity_history_index: position.liquidity_history_index,
+        timestamp: position.timestamp,
+    })
 }
 
 /// Queries the margin ratio of a trader
