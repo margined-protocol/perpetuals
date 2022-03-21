@@ -3,7 +3,7 @@ use cosmwasm_std::{
 };
 
 use margined_common::integer::Integer;
-use margined_perp::margined_vamm::{Direction, LongShort, PremiumResponse};
+use margined_perp::margined_vamm::Direction;
 
 use crate::{
     contract::{ONE_DAY_IN_SECONDS, ONE_HOUR_IN_SECONDS},
@@ -158,21 +158,14 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
     let index_price: Uint128 =
         query_twap_price(deps.as_ref(), env.clone(), config.spot_price_twap_interval)?;
 
-    println!("Underlying: {}\t Index: {}", underlying_price, index_price);
+    // let premium = calculate_premium(underlying_price, index_price)?;
+    let premium = Integer::new_positive(index_price) - Integer::new_positive(underlying_price);
 
-    let premium = calculate_premium(underlying_price, index_price)?;
-
-    println!("Premium: {:?}", premium);
-
-    let premium_fraction = premium
-        .value
-        .checked_mul(Uint128::from(config.funding_period))?
-        .checked_div(Uint128::from(ONE_DAY_IN_SECONDS))?;
-
-    println!("Premium Fraction: {}", premium_fraction);
+    let premium_fraction = premium * Integer::new_positive(config.funding_period)
+        / Integer::new_positive(ONE_DAY_IN_SECONDS);
 
     // update funding rate = premiumFraction / twapIndexPrice
-    state.funding_rate = premium_fraction.checked_div(underlying_price)?;
+    state.funding_rate = premium_fraction.value.checked_div(underlying_price)?;
 
     // in order to prevent multiple funding settlement during very short time after network congestion
     let min_next_funding_time = env.block.time.plus_seconds(config.funding_buffer_period);
@@ -193,25 +186,8 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
 
     Ok(Response::new().add_attributes(vec![
         ("action", "settle_funding"),
-        ("premium fraction", &premium_fraction.to_string()),
+        ("premium_fraction", &premium_fraction.to_string()),
     ]))
-}
-
-pub fn calculate_premium(underlying: Uint128, index: Uint128) -> StdResult<PremiumResponse> {
-    // if premium is positive: long pay short, amm get positive funding payment
-    // if premium is negative: short pay long, amm get negative funding payment
-    // if totalPositionSize.side * premiumFraction > 0, funding payment is positive which means profit
-    let value: Uint128;
-    let payer: LongShort;
-    if index > underlying {
-        value = index.checked_sub(underlying)?;
-        payer = LongShort::Long;
-    } else {
-        value = underlying.checked_sub(index)?;
-        payer = LongShort::Short;
-    }
-
-    Ok(PremiumResponse { value, payer })
 }
 
 pub fn get_input_price_with_reserves(

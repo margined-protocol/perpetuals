@@ -598,6 +598,7 @@ dependencies = [
  "cw-multi-test",
  "cw20 0.9.1",
  "cw20-base",
+ "margined_common",
  "margined_engine",
  "margined_perp",
  "margined_pricefeed",

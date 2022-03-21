@@ -4,6 +4,7 @@ use cosmwasm_std::{
     MessageInfo, Reply, Response, StdError, StdResult, SubMsgExecutionResponse, Uint128,
 };
 use cw20::Cw20ReceiveMsg;
+use margined_common::integer::Integer;
 use margined_perp::margined_engine::{Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
 #[cfg(not(feature = "library"))]
 use std::str::FromStr;
@@ -12,8 +13,9 @@ use crate::error::ContractError;
 use crate::{
     handle::{close_position, liquidate, open_position, pay_funding, update_config},
     query::{
-        query_config, query_margin_ratio, query_position,
-        query_trader_balance_with_funding_payment, query_unrealized_pnl,
+        query_config, query_cumulative_premium_fraction, query_margin_ratio, query_position,
+        query_trader_balance_with_funding_payment, query_trader_position_with_funding_payment,
+        query_unrealized_pnl,
     },
     reply::{
         close_position_reply, decrease_position_reply, increase_position_reply, liquidate_reply,
@@ -143,12 +145,18 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::MarginRatio { vamm, trader } => {
             to_binary(&query_margin_ratio(deps, vamm, trader)?)
         }
-        QueryMsg::TraderBalance { trader } => {
-            to_binary(&query_trader_balance_with_funding_payment(deps, trader)?)
+        QueryMsg::CumulativePremiumFraction { vamm } => {
+            to_binary(&query_cumulative_premium_fraction(deps, vamm)?)
         }
         QueryMsg::UnrealizedPnl { vamm, trader } => {
             to_binary(&query_unrealized_pnl(deps, vamm, trader)?)
         }
+        QueryMsg::BalanceWithFundingPayment { trader } => {
+            to_binary(&query_trader_balance_with_funding_payment(deps, trader)?)
+        }
+        QueryMsg::PositionWithFundingPayment { vamm, trader } => to_binary(
+            &query_trader_position_with_funding_payment(deps, vamm, trader)?,
+        ),
     }
 }
 
@@ -212,14 +220,13 @@ fn parse_swap(response: SubMsgExecutionResponse) -> (Uint128, Uint128) {
     (input, output)
 }
 
-fn parse_pay_funding(response: SubMsgExecutionResponse) -> (Uint128, String) {
-    // println!("{:?}", response);
+fn parse_pay_funding(response: SubMsgExecutionResponse) -> (Integer, String) {
     // Find swap inputs and output events
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");
     let wasm = wasm.unwrap();
 
-    let premium_str = read_event("premium fraction".to_string(), wasm).value;
-    let premium: Uint128 = Uint128::from_str(&premium_str).unwrap();
+    let premium_str = read_event("premium_fraction".to_string(), wasm).value;
+    let premium: Integer = Integer::from_str(&premium_str).unwrap();
 
     let sender = read_event("_contract_addr".to_string(), wasm).value;
 

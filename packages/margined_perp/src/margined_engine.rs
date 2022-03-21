@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, Timestamp, Uint128};
 use cw20::Cw20ReceiveMsg;
+use margined_common::integer::Integer;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -82,9 +83,11 @@ pub enum Cw20HookMsg {
 pub enum QueryMsg {
     Config {},
     Position { vamm: String, trader: String },
-    TraderBalance { trader: String },
     UnrealizedPnl { vamm: String, trader: String },
+    CumulativePremiumFraction { vamm: String },
     MarginRatio { vamm: String, trader: String },
+    BalanceWithFundingPayment { trader: String },
+    PositionWithFundingPayment { vamm: String, trader: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -103,10 +106,10 @@ pub struct MarginRatioResponse {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct PositionResponse {
-    pub size: Uint128,
+    pub size: Integer,
     pub margin: Uint128,
     pub notional: Uint128,
-    pub premium_fraction: Uint128,
+    pub last_updated_premium_fraction: Uint128,
     pub liquidity_history_index: Uint128,
     pub timestamp: Timestamp,
 }

@@ -1,12 +1,13 @@
 use cosmwasm_std::{Deps, StdResult, Uint128};
+use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
     ConfigResponse, MarginRatioResponse, PnlCalcOption, PositionResponse,
     PositionUnrealizedPnlResponse,
 };
 
 use crate::{
-    handle::get_position_notional_unrealized_pnl,
-    state::{read_config, read_position, read_vamm, Config},
+    state::{read_config, read_position, read_vamm, read_vamm_map, Config},
+    utils::{calc_funding_payment, get_position_notional_unrealized_pnl},
 };
 
 /// Queries contract Config
@@ -32,7 +33,7 @@ pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Pos
         size: position.size,
         margin: position.margin,
         notional: position.notional,
-        premium_fraction: position.premium_fraction,
+        last_updated_premium_fraction: position.last_updated_premium_fraction,
         liquidity_history_index: position.liquidity_history_index,
         timestamp: position.timestamp,
     })
@@ -53,16 +54,67 @@ pub fn query_unrealized_pnl(deps: Deps, vamm: String, trader: String) -> StdResu
     Ok(result.unrealized_pnl)
 }
 
-/// Queries traders position across all vamms
+/// Queries user position
+pub fn query_cumulative_premium_fraction(deps: Deps, vamm: String) -> StdResult<Integer> {
+    // read the msg.senders position
+    let vamm_map = read_vamm_map(deps.storage, deps.api.addr_validate(&vamm)?).unwrap();
+
+    let result = match vamm_map.cumulative_premium_fractions.len() {
+        0 => Integer::zero(),
+        n => vamm_map.cumulative_premium_fractions[n - 1],
+    };
+
+    Ok(result)
+}
+
+/// Queries traders balanmce across all vamms with funding payment
 pub fn query_trader_balance_with_funding_payment(deps: Deps, trader: String) -> StdResult<Uint128> {
     let mut margin = Uint128::zero();
     let vamm_list = read_vamm(deps.storage)?;
     for vamm in vamm_list.vamm.iter() {
-        let position = query_position(deps, vamm.to_string(), trader.clone())?;
+        let position =
+            query_trader_position_with_funding_payment(deps, vamm.to_string(), trader.clone())?;
         margin = margin.checked_add(position.margin)?;
     }
 
     Ok(margin)
+}
+
+/// Queries traders position across all vamms with funding payments
+pub fn query_trader_position_with_funding_payment(
+    deps: Deps,
+    vamm: String,
+    trader: String,
+) -> StdResult<PositionResponse> {
+    let vamm = deps.api.addr_validate(&vamm)?;
+    let trader = deps.api.addr_validate(&trader)?;
+
+    // retrieve latest user position
+    let mut position = read_position(deps.storage, &vamm, &trader)?;
+
+    let latest_cumulative_premium_fraction =
+        query_cumulative_premium_fraction(deps, vamm.to_string()).unwrap();
+
+    let funding_payment = calc_funding_payment(
+        deps.storage,
+        position.clone(),
+        latest_cumulative_premium_fraction,
+    );
+
+    if funding_payment.is_positive() {
+        position.margin = position.margin.checked_add(funding_payment.value)?;
+    } else {
+        position.margin = position.margin.checked_sub(funding_payment.value)?;
+    }
+
+    Ok(PositionResponse {
+        size: position.size,
+        margin: position.margin,
+        notional: position.notional,
+        last_updated_premium_fraction: position.last_updated_premium_fraction,
+        liquidity_history_index: position.liquidity_history_index,
+        timestamp: position.timestamp,
+    })
 }
 
 /// Queries the margin ratio of a trader

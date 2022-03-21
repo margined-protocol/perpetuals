@@ -9,6 +9,8 @@ use cosmwasm_std::{
     WasmQuery,
 };
 
+use margined_common::integer::Integer;
+
 /// EngineController is a wrapper around Addr that provides a lot of helpers
 /// for working with this.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -78,19 +80,6 @@ impl EngineController {
         Ok(res)
     }
 
-    /// get traders margin balance
-    pub fn trader_balance<Q: Querier>(&self, querier: &Q, trader: String) -> StdResult<Uint128> {
-        let msg = QueryMsg::TraderBalance { trader };
-        let query = WasmQuery::Smart {
-            contract_addr: self.addr().into(),
-            msg: to_binary(&msg)?,
-        }
-        .into();
-
-        let res: Uint128 = QuerierWrapper::new(querier).query(&query)?;
-        Ok(res)
-    }
-
     /// get traders position for a particular vamm
     pub fn position<Q: Querier>(
         &self,
@@ -142,6 +131,58 @@ impl EngineController {
         .into();
 
         let res: MarginRatioResponse = QuerierWrapper::new(querier).query(&query)?;
+        Ok(res)
+    }
+
+    /// get traders margin balance
+    pub fn get_balance_with_funding_payment<Q: Querier>(
+        &self,
+        querier: &Q,
+        trader: String,
+    ) -> StdResult<Uint128> {
+        let msg = QueryMsg::BalanceWithFundingPayment { trader };
+        let query = WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&msg)?,
+        }
+        .into();
+
+        let res: Uint128 = QuerierWrapper::new(querier).query(&query)?;
+        Ok(res)
+    }
+
+    /// get personal position with funding payment
+    pub fn get_position_with_funding_payment<Q: Querier>(
+        &self,
+        querier: &Q,
+        vamm: String,
+        trader: String,
+    ) -> StdResult<PositionResponse> {
+        let msg = QueryMsg::PositionWithFundingPayment { vamm, trader };
+        let query = WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&msg)?,
+        }
+        .into();
+
+        let res: PositionResponse = QuerierWrapper::new(querier).query(&query)?;
+        Ok(res)
+    }
+
+    /// get the latest cumulative premium fraction
+    pub fn get_latest_cumulative_premium_fraction<Q: Querier>(
+        &self,
+        querier: &Q,
+        vamm: String,
+    ) -> StdResult<Integer> {
+        let msg = QueryMsg::CumulativePremiumFraction { vamm };
+        let query = WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&msg)?,
+        }
+        .into();
+
+        let res: Integer = QuerierWrapper::new(querier).query(&query)?;
         Ok(res)
     }
 }

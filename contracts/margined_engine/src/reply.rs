@@ -1,24 +1,22 @@
 use cosmwasm_std::{DepsMut, Env, Response, StdError, StdResult, SubMsg, Uint128};
 
 use crate::{
-    handle::{
-        calc_pnl, calc_remain_margin_with_funding_payment, clear_position,
-        internal_increase_position,
-    },
+    handle::internal_increase_position,
     querier::query_vamm_state,
     state::{
-        read_config, read_state, read_tmp_liquidator, read_tmp_swap, remove_tmp_liquidator,
-        remove_tmp_swap, store_position, store_state, store_tmp_swap,
+        append_cumulative_premium_fraction, read_config, read_state, read_tmp_liquidator,
+        read_tmp_swap, remove_tmp_liquidator, remove_tmp_swap, store_position, store_state,
+        store_tmp_swap,
     },
     utils::{
-        execute_transfer, execute_transfer_from, get_position, realize_bad_debt, side_to_direction,
-        transfer_fee,
+        calc_pnl, calc_remain_margin_with_funding_payment, clear_position, execute_transfer,
+        execute_transfer_from, get_position, realize_bad_debt, side_to_direction, transfer_fee,
     },
 };
 
 use margined_common::integer::Integer;
-use margined_perp::margined_engine::Pnl;
 use margined_perp::querier::query_token_balance;
+use margined_perp::{margined_engine::Pnl, margined_vamm::Direction};
 
 // Increases position after successful execution of the swap
 pub fn increase_position_reply(
@@ -42,10 +40,18 @@ pub fn increase_position_reply(
         swap.side.clone(),
     );
 
+    let direction = side_to_direction(swap.side);
+
+    let signed_output = if direction == Direction::AddToAmm {
+        Integer::new_positive(output)
+    } else {
+        Integer::new_negative(output)
+    };
+
     // now update the position
-    position.size = position.size.checked_add(output)?;
+    position.size += signed_output;
     position.notional = position.notional.checked_add(swap.open_notional)?;
-    position.direction = side_to_direction(swap.side);
+    position.direction = direction;
 
     // TODO make my own decimal math lib
     position.margin = position
@@ -95,8 +101,14 @@ pub fn decrease_position_reply(
         swap.side.clone(),
     );
 
+    let signed_output = if side_to_direction(swap.side) == Direction::AddToAmm {
+        Integer::new_positive(output)
+    } else {
+        Integer::new_negative(output)
+    };
+
     // now update the position
-    position.size = position.size.checked_sub(output)?;
+    position.size += signed_output;
     position.notional = position.notional.checked_sub(swap.open_notional)?;
 
     store_position(deps.storage, &position)?;
@@ -366,19 +378,19 @@ pub fn liquidate_reply(
 pub fn pay_funding_reply(
     deps: DepsMut,
     env: Env,
-    premium_fraction: Uint128,
+    premium_fraction: Integer,
     sender: String,
 ) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
     let vamm = deps.api.addr_validate(&sender)?;
-    println!("premium fraction: {}", premium_fraction);
-    println!("vamm: {}", vamm);
-    let total_position_size = query_vamm_state(&deps, vamm.to_string())?.total_position_size;
-    println!("total position size: {}", total_position_size);
 
-    let funding_payment = total_position_size * Integer::new_positive(premium_fraction)
-        / Integer::new_positive(config.decimals);
-    println!("funding payment: {}", funding_payment);
+    // update the cumulative premium fraction
+    append_cumulative_premium_fraction(deps.storage, vamm.clone(), premium_fraction)?;
+
+    let total_position_size = query_vamm_state(&deps, vamm.to_string())?.total_position_size;
+
+    let funding_payment =
+        total_position_size * premium_fraction / Integer::new_positive(config.decimals);
 
     let msg: SubMsg = if funding_payment.is_negative() {
         execute_transfer_from(
@@ -391,5 +403,7 @@ pub fn pay_funding_reply(
         execute_transfer(deps.storage, &config.insurance_fund, funding_payment.value)?
     };
 
-    Ok(Response::new().add_submessage(msg))
+    Ok(Response::new()
+        .add_submessage(msg)
+        .add_attributes(vec![("action", "pay_funding_reply")]))
 }

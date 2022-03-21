@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    to_binary, Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError,
-    StdResult, SubMsg, Uint128, WasmMsg,
+    to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError, StdResult,
+    SubMsg, Uint128, WasmMsg,
 };
 
 use crate::{
@@ -8,7 +8,7 @@ use crate::{
         PAY_FUNDING_REPLY_ID, SWAP_CLOSE_REPLY_ID, SWAP_DECREASE_REPLY_ID, SWAP_INCREASE_REPLY_ID,
         SWAP_LIQUIDATE_REPLY_ID, SWAP_REVERSE_REPLY_ID,
     },
-    querier::{query_vamm_output_price, query_vamm_output_twap},
+    querier::query_vamm_output_price,
     query::query_margin_ratio,
     state::{
         read_config, read_position, store_config, store_tmp_liquidator, store_tmp_swap, Config,
@@ -19,9 +19,7 @@ use crate::{
         side_to_direction,
     },
 };
-use margined_perp::margined_engine::{
-    Pnl, PnlCalcOption, PnlResponse, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
-};
+use margined_perp::margined_engine::Side;
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 
 pub fn update_config(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {
@@ -210,7 +208,7 @@ pub fn internal_close_position(deps: DepsMut, position: &Position, id: u64) -> S
         funds: vec![],
         msg: to_binary(&ExecuteMsg::SwapOutput {
             direction: position.direction.clone(),
-            base_asset_amount: position.size,
+            base_asset_amount: position.size.value,
         })?,
     };
 
@@ -220,7 +218,7 @@ pub fn internal_close_position(deps: DepsMut, position: &Position, id: u64) -> S
             vamm: position.vamm.clone(),
             trader: position.trader.clone(),
             side: direction_to_side(position.direction.clone()),
-            quote_asset_amount: position.size,
+            quote_asset_amount: position.size.value,
             leverage: Uint128::zero(),
             open_notional: position.notional,
         },
@@ -248,7 +246,7 @@ fn open_reverse_position(
         &deps.as_ref(),
         vamm.to_string(),
         position.direction.clone(),
-        position.size,
+        position.size.value,
     )
     .unwrap();
 
@@ -261,7 +259,7 @@ fn open_reverse_position(
         swap_output(
             &vamm,
             direction_to_side(position.direction.clone()),
-            position.size,
+            position.size.value,
             SWAP_REVERSE_REPLY_ID,
         )
         .unwrap()
@@ -312,111 +310,4 @@ fn swap_output(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdR
     };
 
     Ok(execute_submsg)
-}
-
-pub fn get_position_notional_unrealized_pnl(
-    deps: Deps,
-    position: &Position,
-    calc_option: PnlCalcOption,
-) -> StdResult<PositionUnrealizedPnlResponse> {
-    let mut position_notional = Uint128::zero();
-    let mut unrealized_pnl = Uint128::zero();
-
-    let position_size = position.size;
-    if !position_size.is_zero() {
-        match calc_option {
-            PnlCalcOption::TWAP => {
-                position_notional = query_vamm_output_twap(
-                    &deps,
-                    position.vamm.to_string(),
-                    position.direction.clone(),
-                    position_size,
-                )?;
-            }
-            PnlCalcOption::SPOTPRICE => {
-                position_notional = query_vamm_output_price(
-                    &deps,
-                    position.vamm.to_string(),
-                    position.direction.clone(),
-                    position_size,
-                )?;
-            }
-            PnlCalcOption::ORACLE => {}
-        }
-        if position.notional > position_notional {
-            unrealized_pnl = position.notional.checked_sub(position_notional)?;
-        } else {
-            unrealized_pnl = position_notional.checked_sub(position.notional)?;
-        }
-    }
-
-    Ok(PositionUnrealizedPnlResponse {
-        position_notional,
-        unrealized_pnl,
-    })
-}
-
-pub fn calc_pnl(
-    output: Uint128,
-    previous_notional: Uint128,
-    direction: Direction,
-) -> StdResult<PnlResponse> {
-    // calculate delta from the trade
-    let profit_loss: Pnl;
-    let value: Uint128 = if output > previous_notional {
-        if direction == Direction::AddToAmm {
-            profit_loss = Pnl::Profit;
-        } else {
-            profit_loss = Pnl::Loss;
-        }
-        output.checked_sub(previous_notional)?
-    } else {
-        if direction == Direction::AddToAmm {
-            profit_loss = Pnl::Loss;
-        } else {
-            profit_loss = Pnl::Profit;
-        }
-        previous_notional.checked_sub(output)?
-    };
-
-    Ok(PnlResponse { value, profit_loss })
-}
-
-pub fn calc_remain_margin_with_funding_payment(
-    position: &Position,
-    pnl: PnlResponse,
-) -> StdResult<RemainMarginResponse> {
-    // calculate the funding payment
-
-    // calculate the remaining margin
-    let mut bad_debt = Uint128::zero();
-    let remaining_margin: Uint128 = if pnl.profit_loss == Pnl::Profit {
-        position.margin.checked_add(pnl.value)?
-    } else if pnl.value < position.margin {
-        position.margin.checked_sub(pnl.value)?
-    } else {
-        // if the delta is bigger than margin we
-        // will have some bad debt and margin out is gonna
-        // be zero
-        bad_debt = pnl.value.checked_sub(position.margin)?;
-        Uint128::zero()
-    };
-
-    // if the remain is negative, set it to zero
-    // and set the rest to
-    Ok(RemainMarginResponse {
-        funding_payment: Uint128::zero(),
-        margin: remaining_margin,
-        bad_debt,
-    })
-}
-
-// this resets the main variables of a position
-pub fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
-    position.size = Uint128::zero();
-    position.margin = Uint128::zero();
-    position.notional = Uint128::zero();
-    position.timestamp = env.block.time;
-
-    Ok(position)
 }
