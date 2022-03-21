@@ -1,4 +1,5 @@
 use cosmwasm_std::{Deps, StdResult, Uint128};
+use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
     ConfigResponse, MarginRatioResponse, PnlCalcOption, PositionResponse,
     PositionUnrealizedPnlResponse,
@@ -53,12 +54,26 @@ pub fn query_unrealized_pnl(deps: Deps, vamm: String, trader: String) -> StdResu
     Ok(result.unrealized_pnl)
 }
 
+/// Queries user position
+pub fn query_cumulative_premium_fraction(deps: Deps, vamm: String) -> StdResult<Integer> {
+    // read the msg.senders position
+    let vamm_map = read_vamm_map(deps.storage, deps.api.addr_validate(&vamm)?).unwrap();
+
+    let result = match vamm_map.cumulative_premium_fractions.len() {
+        0 => Integer::zero(),
+        n => vamm_map.cumulative_premium_fractions[n - 1],
+    };
+
+    Ok(result)
+}
+
 /// Queries traders balanmce across all vamms with funding payment
 pub fn query_trader_balance_with_funding_payment(deps: Deps, trader: String) -> StdResult<Uint128> {
     let mut margin = Uint128::zero();
     let vamm_list = read_vamm(deps.storage)?;
     for vamm in vamm_list.vamm.iter() {
-        let position = query_position(deps, vamm.to_string(), trader.clone())?;
+        let position =
+            query_trader_position_with_funding_payment(deps, vamm.to_string(), trader.clone())?;
         margin = margin.checked_add(position.margin)?;
     }
 
@@ -77,11 +92,8 @@ pub fn query_trader_position_with_funding_payment(
     // retrieve latest user position
     let mut position = read_position(deps.storage, &vamm, &trader)?;
 
-    let latest_cumulative_premium_fraction = read_vamm_map(deps.storage, vamm)
-        .unwrap()
-        .cumulative_premium_fractions
-        .pop()
-        .unwrap();
+    let latest_cumulative_premium_fraction =
+        query_cumulative_premium_fraction(deps, vamm.to_string()).unwrap();
 
     let funding_payment = calc_funding_payment(
         deps.storage,

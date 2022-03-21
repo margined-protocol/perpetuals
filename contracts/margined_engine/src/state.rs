@@ -189,7 +189,7 @@ pub fn read_tmp_liquidator(storage: &dyn Storage) -> StdResult<Option<Addr>> {
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, JsonSchema)]
 pub struct VammMap {
     pub last_restriction_block: u64,
-    pub cumulative_premium_fractions: Vec<Uint128>,
+    pub cumulative_premium_fractions: Vec<Integer>,
 }
 
 fn vamm_map_bucket(storage: &mut dyn Storage) -> Bucket<VammMap> {
@@ -217,7 +217,7 @@ pub fn read_vamm_map(storage: &dyn Storage, vamm: Addr) -> StdResult<VammMap> {
 pub fn append_cumulative_premium_fraction(
     storage: &mut dyn Storage,
     vamm: Addr,
-    premium_fraction: Uint128,
+    premium_fraction: Integer,
 ) -> StdResult<()> {
     let mut vamm_map = read_vamm_map(storage, vamm.clone())?;
 

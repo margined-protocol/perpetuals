@@ -378,7 +378,7 @@ pub fn liquidate_reply(
 pub fn pay_funding_reply(
     deps: DepsMut,
     env: Env,
-    premium_fraction: Uint128,
+    premium_fraction: Integer,
     sender: String,
 ) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
@@ -389,8 +389,8 @@ pub fn pay_funding_reply(
 
     let total_position_size = query_vamm_state(&deps, vamm.to_string())?.total_position_size;
 
-    let funding_payment = total_position_size * Integer::new_positive(premium_fraction)
-        / Integer::new_positive(config.decimals);
+    let funding_payment =
+        total_position_size * premium_fraction / Integer::new_positive(config.decimals);
 
     let msg: SubMsg = if funding_payment.is_negative() {
         execute_transfer_from(

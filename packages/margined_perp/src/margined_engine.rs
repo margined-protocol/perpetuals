@@ -83,9 +83,10 @@ pub enum Cw20HookMsg {
 pub enum QueryMsg {
     Config {},
     Position { vamm: String, trader: String },
-    TraderBalance { trader: String },
     UnrealizedPnl { vamm: String, trader: String },
+    CumulativePremiumFraction { vamm: String },
     MarginRatio { vamm: String, trader: String },
+    BalanceWithFundingPayment { trader: String },
     PositionWithFundingPayment { vamm: String, trader: String },
 }
 

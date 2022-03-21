@@ -59,7 +59,7 @@ fn test_open_position_long() {
 
     // expect to be 60
     let margin = engine
-        .get_trader_balance(&router, alice.to_string())
+        .get_balance_with_funding_payment(&router, alice.to_string())
         .unwrap();
     assert_eq!(margin, to_decimals(60));
 
@@ -107,7 +107,7 @@ fn test_open_position_two_longs() {
 
     // expect to be 120
     let margin = engine
-        .get_trader_balance(&router, alice.to_string())
+        .get_balance_with_funding_payment(&router, alice.to_string())
         .unwrap();
     assert_eq!(margin, to_decimals(120));
 
@@ -150,7 +150,7 @@ fn test_open_position_two_shorts() {
 
     // personal balance with funding payment
     let margin = engine
-        .get_trader_balance(&router, alice.to_string())
+        .get_balance_with_funding_payment(&router, alice.to_string())
         .unwrap();
     assert_eq!(margin, to_decimals(80));
 
@@ -194,7 +194,7 @@ fn test_open_position_equal_size_opposite_side() {
 
     // personal balance with funding payment
     let margin = engine
-        .get_trader_balance(&router, alice.to_string())
+        .get_balance_with_funding_payment(&router, alice.to_string())
         .unwrap();
     assert_eq!(margin, Uint128::zero());
 
@@ -255,7 +255,7 @@ fn test_open_position_one_long_two_shorts() {
 
     // personal balance with funding payment
     let margin = engine
-        .get_trader_balance(&router, alice.to_string())
+        .get_balance_with_funding_payment(&router, alice.to_string())
         .unwrap();
     assert_eq!(margin, Uint128::zero());
 

@@ -344,15 +344,14 @@ pub fn calc_remain_margin_with_funding_payment(
 pub fn calc_funding_payment(
     storage: &dyn Storage,
     position: Position,
-    latest_premium_fraction: Uint128,
+    latest_premium_fraction: Integer,
 ) -> Integer {
     let config = read_config(storage).unwrap();
     if !position.size.is_zero() {
-        let signed_premium_fraction = Integer::new_positive(latest_premium_fraction);
         let signed_prev_premium_fraction: Integer =
             Integer::new_positive(position.last_updated_premium_fraction);
 
-        (signed_premium_fraction - signed_prev_premium_fraction) * position.size
+        (latest_premium_fraction - signed_prev_premium_fraction) * position.size
             / Integer::new_positive(config.decimals)
             * Integer::new_negative(1u64)
     } else {
