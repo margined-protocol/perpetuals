@@ -208,7 +208,7 @@ pub fn internal_close_position(deps: DepsMut, position: &Position, id: u64) -> S
         funds: vec![],
         msg: to_binary(&ExecuteMsg::SwapOutput {
             direction: position.direction.clone(),
-            base_asset_amount: position.size,
+            base_asset_amount: position.size.value,
         })?,
     };
 
@@ -218,7 +218,7 @@ pub fn internal_close_position(deps: DepsMut, position: &Position, id: u64) -> S
             vamm: position.vamm.clone(),
             trader: position.trader.clone(),
             side: direction_to_side(position.direction.clone()),
-            quote_asset_amount: position.size,
+            quote_asset_amount: position.size.value,
             leverage: Uint128::zero(),
             open_notional: position.notional,
         },
@@ -246,7 +246,7 @@ fn open_reverse_position(
         &deps.as_ref(),
         vamm.to_string(),
         position.direction.clone(),
-        position.size,
+        position.size.value,
     )
     .unwrap();
 
@@ -259,7 +259,7 @@ fn open_reverse_position(
         swap_output(
             &vamm,
             direction_to_side(position.direction.clone()),
-            position.size,
+            position.size.value,
             SWAP_REVERSE_REPLY_ID,
         )
         .unwrap()

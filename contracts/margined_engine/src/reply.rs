@@ -15,8 +15,8 @@ use crate::{
 };
 
 use margined_common::integer::Integer;
-use margined_perp::margined_engine::Pnl;
 use margined_perp::querier::query_token_balance;
+use margined_perp::{margined_engine::Pnl, margined_vamm::Direction};
 
 // Increases position after successful execution of the swap
 pub fn increase_position_reply(
@@ -40,10 +40,18 @@ pub fn increase_position_reply(
         swap.side.clone(),
     );
 
+    let direction = side_to_direction(swap.side);
+
+    let signed_output = if direction == Direction::AddToAmm {
+        Integer::new_positive(output)
+    } else {
+        Integer::new_negative(output)
+    };
+
     // now update the position
-    position.size = position.size.checked_add(output)?;
+    position.size += signed_output;
     position.notional = position.notional.checked_add(swap.open_notional)?;
-    position.direction = side_to_direction(swap.side);
+    position.direction = direction;
 
     // TODO make my own decimal math lib
     position.margin = position
@@ -93,8 +101,14 @@ pub fn decrease_position_reply(
         swap.side.clone(),
     );
 
+    let signed_output = if side_to_direction(swap.side) == Direction::AddToAmm {
+        Integer::new_positive(output)
+    } else {
+        Integer::new_negative(output)
+    };
+
     // now update the position
-    position.size = position.size.checked_sub(output)?;
+    position.size += signed_output;
     position.notional = position.notional.checked_sub(swap.open_notional)?;
 
     store_position(deps.storage, &position)?;

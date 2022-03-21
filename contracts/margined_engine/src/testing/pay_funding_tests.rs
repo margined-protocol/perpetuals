@@ -1,10 +1,8 @@
-use cosmwasm_std::{Addr, Uint128};
-use cw_multi_test::{App, Executor};
+use cosmwasm_std::Uint128;
+use cw_multi_test::Executor;
+use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
-use margined_utils::{
-    contracts::helpers::{EngineController, VammController},
-    scenarios::SimpleScenario,
-};
+use margined_utils::scenarios::SimpleScenario;
 
 pub const DECIMAL_MULTIPLIER: Uint128 = Uint128::new(1_000_000_000);
 
@@ -73,7 +71,10 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
     let alice_position = engine
         .get_position_with_funding_payment(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(alice_position.size, Uint128::from(37_500_000_000u128));
+    assert_eq!(
+        alice_position.size,
+        Integer::new_positive(37_500_000_000u128)
+    );
     assert_eq!(alice_position.margin, Uint128::from(299_625_000_000u128));
 
     // then bob will get 1% of his position size as fundingPayment
@@ -81,7 +82,10 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
     let bob_position = engine
         .get_position_with_funding_payment(&router, vamm.addr().to_string(), bob.to_string())
         .unwrap();
-    assert_eq!(bob_position.size, Uint128::from(187_500_000_000u128));
+    assert_eq!(
+        bob_position.size,
+        Integer::new_negative(187_500_000_000u128)
+    );
     assert_eq!(bob_position.margin, Uint128::from(1_201_875_000_000u128));
 
     // then fundingPayment will generate 1.5 loss and clearingHouse will withdraw in advanced from insuranceFund

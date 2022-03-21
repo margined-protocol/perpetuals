@@ -7,6 +7,7 @@ use cosmwasm_storage::{
 };
 use cw_storage_plus::Item;
 
+use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
 use margined_perp::margined_vamm::Direction;
 
@@ -86,7 +87,7 @@ pub struct Position {
     pub vamm: Addr,
     pub trader: Addr,
     pub direction: Direction,
-    pub size: Uint128,
+    pub size: Integer,
     pub margin: Uint128,
     pub notional: Uint128,
     pub last_updated_premium_fraction: Uint128,
@@ -100,7 +101,7 @@ impl Default for Position {
             vamm: Addr::unchecked(""),
             trader: Addr::unchecked(""),
             direction: Direction::AddToAmm,
-            size: Uint128::zero(),
+            size: Integer::zero(),
             margin: Uint128::zero(),
             notional: Uint128::zero(),
             last_updated_premium_fraction: Uint128::zero(),

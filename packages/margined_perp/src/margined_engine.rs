@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, Timestamp, Uint128};
 use cw20::Cw20ReceiveMsg;
+use margined_common::integer::Integer;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -104,7 +105,7 @@ pub struct MarginRatioResponse {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct PositionResponse {
-    pub size: Uint128,
+    pub size: Integer,
     pub margin: Uint128,
     pub notional: Uint128,
     pub last_updated_premium_fraction: Uint128,

@@ -33,6 +33,14 @@ impl Integer {
         negative: false,
     };
 
+    /// 0 as a Integer
+    pub fn zero() -> Self {
+        Self {
+            value: Uint128::zero(),
+            negative: false,
+        }
+    }
+
     /// create a new positive Integer with the given value
     pub fn new_positive<T: Into<Uint128>>(value: T) -> Self {
         Self {

@@ -259,7 +259,7 @@ pub fn get_position_notional_unrealized_pnl(
                     &deps,
                     position.vamm.to_string(),
                     position.direction.clone(),
-                    position_size,
+                    position_size.value,
                 )?;
             }
             PnlCalcOption::SPOTPRICE => {
@@ -267,7 +267,7 @@ pub fn get_position_notional_unrealized_pnl(
                     &deps,
                     position.vamm.to_string(),
                     position.direction.clone(),
-                    position_size,
+                    position_size.value,
                 )?;
             }
             PnlCalcOption::ORACLE => {}
@@ -352,8 +352,7 @@ pub fn calc_funding_payment(
         let signed_prev_premium_fraction: Integer =
             Integer::new_positive(position.last_updated_premium_fraction);
 
-        (signed_premium_fraction - signed_prev_premium_fraction)
-            * Integer::new_positive(position.size)
+        (signed_premium_fraction - signed_prev_premium_fraction) * position.size
             / Integer::new_positive(config.decimals)
             * Integer::new_negative(1u64)
     } else {
@@ -363,7 +362,7 @@ pub fn calc_funding_payment(
 
 // this resets the main variables of a position
 pub fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
-    position.size = Uint128::zero();
+    position.size = Integer::zero();
     position.margin = Uint128::zero();
     position.notional = Uint128::zero();
     position.last_updated_premium_fraction = Uint128::zero();

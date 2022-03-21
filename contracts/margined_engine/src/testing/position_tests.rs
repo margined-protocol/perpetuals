@@ -2,6 +2,7 @@
 use cosmwasm_std::Uint128;
 use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
+use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PositionResponse, Side};
 use margined_utils::scenarios::SimpleScenario;
 
@@ -66,7 +67,7 @@ fn test_open_position_long() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Uint128::new(37_500_000_000));
+    assert_eq!(position.size, Integer::new_positive(37_500_000_000u128));
     assert_eq!(position.margin, to_decimals(60u64));
 
     // clearing house token balance should be 60
@@ -113,7 +114,7 @@ fn test_open_position_two_longs() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Uint128::new(54_545_454_545));
+    assert_eq!(position.size, Integer::new_positive(54_545_454_545u128));
     assert_eq!(position.margin, to_decimals(120));
 }
 
@@ -157,7 +158,7 @@ fn test_open_position_two_shorts() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Uint128::new(66_666_666_667));
+    assert_eq!(position.size, Integer::new_negative(66_666_666_667u128));
     assert_eq!(position.margin, to_decimals(80));
 }
 
@@ -201,7 +202,7 @@ fn test_open_position_equal_size_opposite_side() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Uint128::zero());
+    assert_eq!(position.size, Integer::zero());
     assert_eq!(position.margin, Uint128::zero());
 }
 
@@ -239,7 +240,7 @@ fn test_open_position_one_long_two_shorts() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Uint128::new(33_333_333_333));
+    assert_eq!(position.size, Integer::new_positive(33_333_333_333u128));
     assert_eq!(position.margin, to_decimals(60));
 
     let msg = engine
@@ -262,7 +263,7 @@ fn test_open_position_one_long_two_shorts() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Uint128::zero());
+    assert_eq!(position.size, Integer::zero());
     assert_eq!(position.margin, Uint128::zero());
 }
 
@@ -289,7 +290,7 @@ fn test_open_position_short_and_two_longs() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Uint128::new(25_000_000_000));
+    assert_eq!(position.size, Integer::new_negative(25_000_000_000u128));
     assert_eq!(position.margin, to_decimals(40));
 
     let msg = engine
@@ -305,7 +306,7 @@ fn test_open_position_short_and_two_longs() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Uint128::new(11_111_111_112));
+    assert_eq!(position.size, Integer::new_negative(11_111_111_112u128));
     assert_eq!(position.margin, to_decimals(40));
 
     let msg = engine
@@ -322,7 +323,7 @@ fn test_open_position_short_and_two_longs() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Uint128::from(1_u128));
+    assert_eq!(position.size, Integer::new_negative(1_u128));
     assert_eq!(position.margin, to_decimals(40u64));
 }
 
@@ -359,7 +360,7 @@ fn test_open_position_short_long_short() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, to_decimals(20u64));
+    assert_eq!(position.size, Integer::new_positive(to_decimals(20u64)));
     assert_eq!(position.margin, Uint128::new(83_333_333_333));
 
     let msg = engine
@@ -376,7 +377,7 @@ fn test_open_position_short_long_short() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Uint128::zero());
+    assert_eq!(position.size, Integer::zero());
     assert_eq!(position.margin, Uint128::zero());
 }
 
@@ -412,7 +413,7 @@ fn test_open_position_long_short_long() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, to_decimals(25u64));
+    assert_eq!(position.size, Integer::new_negative(to_decimals(25u64)));
     assert_eq!(position.margin, Uint128::new(66_666_666_666));
 
     let msg = engine
@@ -429,7 +430,7 @@ fn test_open_position_long_short_long() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Uint128::zero());
+    assert_eq!(position.size, Integer::zero());
     assert_eq!(position.margin, Uint128::zero());
 }
 
@@ -495,7 +496,7 @@ fn test_close_safe_position() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Uint128::from(11_111_111_112u128));
+    assert_eq!(position.size, Integer::new_negative(11_111_111_112u128));
 
     let msg = engine
         .open_position(
@@ -517,7 +518,7 @@ fn test_close_safe_position() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Uint128::zero());
+    assert_eq!(position.size, Integer::zero());
     assert_eq!(position.margin, Uint128::zero());
     assert_eq!(position.notional, Uint128::zero());
 
@@ -557,7 +558,7 @@ fn test_close_position_over_maintenance_margin_ration() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, to_decimals(20));
+    assert_eq!(position.size, Integer::new_positive(to_decimals(20)));
 
     let msg = engine
         .open_position(
@@ -575,7 +576,7 @@ fn test_close_position_over_maintenance_margin_ration() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Uint128::zero());
+    assert_eq!(position.size, Integer::zero());
 
     let state = vamm.state(&router).unwrap();
     assert_eq!(
@@ -611,7 +612,7 @@ fn test_close_under_collateral_position() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, to_decimals(20));
+    assert_eq!(position.size, Integer::new_positive(to_decimals(20)));
 
     let msg = engine
         .open_position(
@@ -636,7 +637,7 @@ fn test_close_under_collateral_position() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Uint128::zero());
+    assert_eq!(position.size, Integer::zero());
 
     // alice balance should be 4975
     let alice_balance = usdc.balance(&router, alice.clone()).unwrap();
@@ -765,7 +766,7 @@ fn test_pnl_unrealized() {
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, to_decimals(20u64));
+    assert_eq!(position.size, Integer::new_positive(to_decimals(20u64)));
 
     // calculate Alice's unrealized PNL:
     // Alice has position 20 ptoken, so

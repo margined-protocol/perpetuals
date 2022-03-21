@@ -1,7 +1,7 @@
 use crate::contract::{execute, instantiate, query};
 use crate::testing::setup::to_decimals;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{from_binary, StdError, Uint128};
+use cosmwasm_std::{from_binary, Uint128};
 use margined_perp::margined_vamm::{CalcFeeResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 
 #[test]
