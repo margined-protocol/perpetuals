@@ -88,7 +88,7 @@ pub struct Position {
     pub size: Uint128,
     pub margin: Uint128,
     pub notional: Uint128,
-    pub premium_fraction: Uint128,
+    pub last_updated_premium_fraction: Uint128,
     pub liquidity_history_index: Uint128,
     pub timestamp: Timestamp,
 }
@@ -102,7 +102,7 @@ impl Default for Position {
             size: Uint128::zero(),
             margin: Uint128::zero(),
             notional: Uint128::zero(),
-            premium_fraction: Uint128::zero(),
+            last_updated_premium_fraction: Uint128::zero(),
             liquidity_history_index: Uint128::zero(),
             timestamp: Timestamp::from_seconds(0),
         }

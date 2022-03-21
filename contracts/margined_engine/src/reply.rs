@@ -1,18 +1,15 @@
 use cosmwasm_std::{DepsMut, Env, Response, StdError, StdResult, SubMsg, Uint128};
 
 use crate::{
-    handle::{
-        calc_pnl, calc_remain_margin_with_funding_payment, clear_position,
-        internal_increase_position,
-    },
+    handle::internal_increase_position,
     querier::query_vamm_state,
     state::{
         read_config, read_state, read_tmp_liquidator, read_tmp_swap, remove_tmp_liquidator,
         remove_tmp_swap, store_position, store_state, store_tmp_swap,
     },
     utils::{
-        execute_transfer, execute_transfer_from, get_position, realize_bad_debt, side_to_direction,
-        transfer_fee,
+        calc_pnl, calc_remain_margin_with_funding_payment, clear_position, execute_transfer,
+        execute_transfer_from, get_position, realize_bad_debt, side_to_direction, transfer_fee,
     },
 };
 

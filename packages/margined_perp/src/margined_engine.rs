@@ -106,7 +106,7 @@ pub struct PositionResponse {
     pub size: Uint128,
     pub margin: Uint128,
     pub notional: Uint128,
-    pub premium_fraction: Uint128,
+    pub last_updated_premium_fraction: Uint128,
     pub liquidity_history_index: Uint128,
     pub timestamp: Timestamp,
 }

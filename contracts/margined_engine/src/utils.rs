@@ -5,11 +5,13 @@ use cosmwasm_std::{
 use cw20::Cw20ExecuteMsg;
 
 use crate::{
-    querier::query_vamm_calc_fee,
+    querier::{query_vamm_calc_fee, query_vamm_output_price, query_vamm_output_twap},
     state::{read_config, read_position, read_state, read_vamm, store_state, Position, VammList},
 };
 
-use margined_perp::margined_engine::Side;
+use margined_perp::margined_engine::{
+    Pnl, PnlCalcOption, PnlResponse, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
+};
 use margined_perp::margined_vamm::{CalcFeeResponse, Direction};
 
 pub fn execute_transfer_from(
@@ -238,4 +240,112 @@ pub fn require_insufficient_margin(
     }
 
     Ok(Response::new())
+}
+
+pub fn get_position_notional_unrealized_pnl(
+    deps: Deps,
+    position: &Position,
+    calc_option: PnlCalcOption,
+) -> StdResult<PositionUnrealizedPnlResponse> {
+    let mut position_notional = Uint128::zero();
+    let mut unrealized_pnl = Uint128::zero();
+
+    let position_size = position.size;
+    if !position_size.is_zero() {
+        match calc_option {
+            PnlCalcOption::TWAP => {
+                position_notional = query_vamm_output_twap(
+                    &deps,
+                    position.vamm.to_string(),
+                    position.direction.clone(),
+                    position_size,
+                )?;
+            }
+            PnlCalcOption::SPOTPRICE => {
+                position_notional = query_vamm_output_price(
+                    &deps,
+                    position.vamm.to_string(),
+                    position.direction.clone(),
+                    position_size,
+                )?;
+            }
+            PnlCalcOption::ORACLE => {}
+        }
+        if position.notional > position_notional {
+            unrealized_pnl = position.notional.checked_sub(position_notional)?;
+        } else {
+            unrealized_pnl = position_notional.checked_sub(position.notional)?;
+        }
+    }
+
+    Ok(PositionUnrealizedPnlResponse {
+        position_notional,
+        unrealized_pnl,
+    })
+}
+
+pub fn calc_pnl(
+    output: Uint128,
+    previous_notional: Uint128,
+    direction: Direction,
+) -> StdResult<PnlResponse> {
+    // calculate delta from the trade
+    let profit_loss: Pnl;
+    let value: Uint128 = if output > previous_notional {
+        if direction == Direction::AddToAmm {
+            profit_loss = Pnl::Profit;
+        } else {
+            profit_loss = Pnl::Loss;
+        }
+        output.checked_sub(previous_notional)?
+    } else {
+        if direction == Direction::AddToAmm {
+            profit_loss = Pnl::Loss;
+        } else {
+            profit_loss = Pnl::Profit;
+        }
+        previous_notional.checked_sub(output)?
+    };
+
+    Ok(PnlResponse { value, profit_loss })
+}
+
+pub fn calc_remain_margin_with_funding_payment(
+    position: &Position,
+    pnl: PnlResponse,
+) -> StdResult<RemainMarginResponse> {
+    // calculate the funding payment
+
+    // calculate the remaining margin
+    let mut bad_debt = Uint128::zero();
+    let remaining_margin: Uint128 = if pnl.profit_loss == Pnl::Profit {
+        position.margin.checked_add(pnl.value)?
+    } else if pnl.value < position.margin {
+        position.margin.checked_sub(pnl.value)?
+    } else {
+        // if the delta is bigger than margin we
+        // will have some bad debt and margin out is gonna
+        // be zero
+        bad_debt = pnl.value.checked_sub(position.margin)?;
+        Uint128::zero()
+    };
+
+    // if the remain is negative, set it to zero
+    // and set the rest to
+    Ok(RemainMarginResponse {
+        funding_payment: Uint128::zero(),
+        margin: remaining_margin,
+        bad_debt,
+    })
+}
+
+// this resets the main variables of a position
+pub fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
+    position.size = Uint128::zero();
+    position.margin = Uint128::zero();
+    position.notional = Uint128::zero();
+    position.last_updated_premium_fraction = Uint128::zero();
+    position.timestamp = env.block.time;
+
+    Ok(position)
 }

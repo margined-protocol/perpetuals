@@ -5,8 +5,8 @@ use margined_perp::margined_engine::{
 };
 
 use crate::{
-    handle::get_position_notional_unrealized_pnl,
     state::{read_config, read_position, read_vamm, Config},
+    utils::get_position_notional_unrealized_pnl,
 };
 
 /// Queries contract Config
@@ -32,7 +32,7 @@ pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Pos
         size: position.size,
         margin: position.margin,
         notional: position.notional,
-        premium_fraction: position.premium_fraction,
+        last_updated_premium_fraction: position.last_updated_premium_fraction,
         liquidity_history_index: position.liquidity_history_index,
         timestamp: position.timestamp,
     })
@@ -53,8 +53,23 @@ pub fn query_unrealized_pnl(deps: Deps, vamm: String, trader: String) -> StdResu
     Ok(result.unrealized_pnl)
 }
 
-/// Queries traders position across all vamms
+/// Queries traders balanmce across all vamms with funding payment
 pub fn query_trader_balance_with_funding_payment(deps: Deps, trader: String) -> StdResult<Uint128> {
+    let mut margin = Uint128::zero();
+    let vamm_list = read_vamm(deps.storage)?;
+    for vamm in vamm_list.vamm.iter() {
+        let position = query_position(deps, vamm.to_string(), trader.clone())?;
+        margin = margin.checked_add(position.margin)?;
+    }
+
+    Ok(margin)
+}
+
+/// Queries traders position across all vamms with funding payments
+pub fn query_trader_position_with_funding_payment(
+    deps: Deps,
+    trader: String,
+) -> StdResult<Uint128> {
     let mut margin = Uint128::zero();
     let vamm_list = read_vamm(deps.storage)?;
     for vamm in vamm_list.vamm.iter() {
