@@ -150,7 +150,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::UnrealizedPnl { vamm, trader } => {
             to_binary(&query_unrealized_pnl(deps, vamm, trader)?)
         }
-        QueryMsg::PersonalBalanceWithFundingPayment { vamm, trader } => to_binary(
+        QueryMsg::PositionWithFundingPayment { vamm, trader } => to_binary(
             &query_trader_position_with_funding_payment(deps, vamm, trader)?,
         ),
     }

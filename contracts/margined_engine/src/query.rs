@@ -89,11 +89,15 @@ pub fn query_trader_position_with_funding_payment(
         latest_cumulative_premium_fraction,
     );
 
-    let funding_margin = position.margin.checked_add(funding_payment)?;
+    if funding_payment.is_positive() {
+        position.margin = position.margin.checked_add(funding_payment.value)?;
+    } else {
+        position.margin = position.margin.checked_sub(funding_payment.value)?;
+    }
 
     Ok(PositionResponse {
         size: position.size,
-        margin: funding_margin,
+        margin: position.margin,
         notional: position.notional,
         last_updated_premium_fraction: position.last_updated_premium_fraction,
         liquidity_history_index: position.liquidity_history_index,

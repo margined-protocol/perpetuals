@@ -185,19 +185,10 @@ pub fn read_tmp_liquidator(storage: &dyn Storage) -> StdResult<Option<Addr>> {
     singleton_read(storage, KEY_TMP_LIQUIDATOR).load()
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, JsonSchema)]
 pub struct VammMap {
     pub last_restriction_block: u64,
     pub cumulative_premium_fractions: Vec<Uint128>,
-}
-
-impl Default for VammMap {
-    fn default() -> VammMap {
-        VammMap {
-            last_restriction_block: 0u64,
-            cumulative_premium_fractions: Vec::new(),
-        }
-    }
 }
 
 fn vamm_map_bucket(storage: &mut dyn Storage) -> Bucket<VammMap> {
@@ -209,12 +200,12 @@ fn vamm_map_bucket_read(storage: &dyn Storage) -> ReadonlyBucket<VammMap> {
 }
 
 pub fn store_vamm_map(storage: &mut dyn Storage, vamm: Addr, vamm_map: &VammMap) -> StdResult<()> {
-    vamm_map_bucket(storage).save(&vamm.as_bytes(), vamm_map)
+    vamm_map_bucket(storage).save(vamm.as_bytes(), vamm_map)
 }
 
 pub fn read_vamm_map(storage: &dyn Storage, vamm: Addr) -> StdResult<VammMap> {
     let result = vamm_map_bucket_read(storage)
-        .may_load(&vamm.as_bytes())?
+        .may_load(vamm.as_bytes())?
         .unwrap_or_default();
 
     Ok(result)

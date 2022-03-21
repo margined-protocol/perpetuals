@@ -79,7 +79,11 @@ impl EngineController {
     }
 
     /// get traders margin balance
-    pub fn trader_balance<Q: Querier>(&self, querier: &Q, trader: String) -> StdResult<Uint128> {
+    pub fn get_trader_balance<Q: Querier>(
+        &self,
+        querier: &Q,
+        trader: String,
+    ) -> StdResult<Uint128> {
         let msg = QueryMsg::TraderBalance { trader };
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -142,6 +146,24 @@ impl EngineController {
         .into();
 
         let res: MarginRatioResponse = QuerierWrapper::new(querier).query(&query)?;
+        Ok(res)
+    }
+
+    /// get personal position with funding payment
+    pub fn get_position_with_funding_payment<Q: Querier>(
+        &self,
+        querier: &Q,
+        vamm: String,
+        trader: String,
+    ) -> StdResult<PositionResponse> {
+        let msg = QueryMsg::PositionWithFundingPayment { vamm, trader };
+        let query = WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&msg)?,
+        }
+        .into();
+
+        let res: PositionResponse = QuerierWrapper::new(querier).query(&query)?;
         Ok(res)
     }
 }

@@ -57,7 +57,9 @@ fn test_open_position_long() {
     router.execute(alice.clone(), msg).unwrap();
 
     // expect to be 60
-    let margin = engine.trader_balance(&router, alice.to_string()).unwrap();
+    let margin = engine
+        .get_trader_balance(&router, alice.to_string())
+        .unwrap();
     assert_eq!(margin, to_decimals(60));
 
     // personal position should be 37.5
@@ -103,7 +105,9 @@ fn test_open_position_two_longs() {
     router.execute(alice.clone(), msg).unwrap();
 
     // expect to be 120
-    let margin = engine.trader_balance(&router, alice.to_string()).unwrap();
+    let margin = engine
+        .get_trader_balance(&router, alice.to_string())
+        .unwrap();
     assert_eq!(margin, to_decimals(120));
 
     let position: PositionResponse = engine
@@ -144,7 +148,9 @@ fn test_open_position_two_shorts() {
     router.execute(alice.clone(), msg).unwrap();
 
     // personal balance with funding payment
-    let margin = engine.trader_balance(&router, alice.to_string()).unwrap();
+    let margin = engine
+        .get_trader_balance(&router, alice.to_string())
+        .unwrap();
     assert_eq!(margin, to_decimals(80));
 
     // retrieve the vamm state
@@ -186,7 +192,9 @@ fn test_open_position_equal_size_opposite_side() {
     router.execute(alice.clone(), msg).unwrap();
 
     // personal balance with funding payment
-    let margin = engine.trader_balance(&router, alice.to_string()).unwrap();
+    let margin = engine
+        .get_trader_balance(&router, alice.to_string())
+        .unwrap();
     assert_eq!(margin, Uint128::zero());
 
     // retrieve the vamm state
@@ -245,7 +253,9 @@ fn test_open_position_one_long_two_shorts() {
     router.execute(alice.clone(), msg).unwrap();
 
     // personal balance with funding payment
-    let margin = engine.trader_balance(&router, alice.to_string()).unwrap();
+    let margin = engine
+        .get_trader_balance(&router, alice.to_string())
+        .unwrap();
     assert_eq!(margin, Uint128::zero());
 
     // retrieve the vamm state

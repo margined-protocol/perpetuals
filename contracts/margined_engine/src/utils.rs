@@ -9,6 +9,7 @@ use crate::{
     state::{read_config, read_position, read_state, read_vamm, store_state, Position, VammList},
 };
 
+use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
     Pnl, PnlCalcOption, PnlResponse, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
 };
@@ -344,18 +345,19 @@ pub fn calc_funding_payment(
     storage: &dyn Storage,
     position: Position,
     latest_premium_fraction: Uint128,
-) -> Uint128 {
+) -> Integer {
     let config = read_config(storage).unwrap();
-    if position.size.is_zero() {
-        Uint128::zero()
+    if !position.size.is_zero() {
+        let signed_premium_fraction = Integer::new_positive(latest_premium_fraction);
+        let signed_prev_premium_fraction: Integer =
+            Integer::new_positive(position.last_updated_premium_fraction);
+
+        (signed_premium_fraction - signed_prev_premium_fraction)
+            * Integer::new_positive(position.size)
+            / Integer::new_positive(config.decimals)
+            * Integer::new_negative(1u64)
     } else {
-        latest_premium_fraction
-            .checked_sub(position.last_updated_premium_fraction)
-            .unwrap()
-            .checked_mul(position.size)
-            .unwrap()
-            .checked_div(config.decimals)
-            .unwrap()
+        Integer::ZERO
     }
 }
 

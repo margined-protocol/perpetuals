@@ -68,6 +68,22 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
     let msg = engine.pay_funding(vamm.addr().to_string()).unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
+    // then alice need to pay 1% of her position size as fundingPayment
+    // {balance: 37.5, margin: 300} => {balance: 37.5, margin: 299.625}
+    let alice_position = engine
+        .get_position_with_funding_payment(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(alice_position.size, Uint128::from(37_500_000_000u128));
+    assert_eq!(alice_position.margin, Uint128::from(299_625_000_000u128));
+
+    // then bob will get 1% of his position size as fundingPayment
+    // {balance: -187.5, margin: 1200} => {balance: -187.5, margin: 1201.875}
+    let bob_position = engine
+        .get_position_with_funding_payment(&router, vamm.addr().to_string(), bob.to_string())
+        .unwrap();
+    assert_eq!(bob_position.size, Uint128::from(187_500_000_000u128));
+    assert_eq!(bob_position.margin, Uint128::from(1_201_875_000_000u128));
+
     // then fundingPayment will generate 1.5 loss and clearingHouse will withdraw in advanced from insuranceFund
     // clearingHouse: 1500 + 1.5
     // insuranceFund: 5000 - 1.5
