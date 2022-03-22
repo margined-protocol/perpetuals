@@ -295,3 +295,72 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
         .unwrap();
     assert_eq!(alice_balance, Uint128::from(299_625_000_000u128));
 }
+
+#[test]
+fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        owner,
+        engine,
+        vamm,
+        pricefeed,
+        ..
+    } = SimpleScenario::new();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            to_decimals(300u64),
+            to_decimals(2u64),
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            to_decimals(1200u64),
+            to_decimals(1u64),
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    let price: Uint128 = Uint128::from(21_600_000_000u128);
+    let timestamp: u64 = 1_000_000_000;
+
+    let msg = pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // move to the next funding time
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(NEXT_FUNDING_PERIOD_DELTA);
+        block.height += 1;
+    });
+
+    let msg = engine.pay_funding(vamm.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // then alice will get 2000% of her position size as fundingPayment
+    // {balance: 37.5, margin: 300} => {balance: 37.5, margin: 1050}
+    // then alice can withdraw more than her initial margin while remain the enough margin ratio
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), to_decimals(400u64))
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    // margin = 1050 - 400 = 650
+    let alice_position = engine
+        .get_position_with_funding_payment(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(alice_position.margin, Uint128::from(299_625_000_000u128));
+    let alice_balance = engine
+        .get_balance_with_funding_payment(&router, alice.to_string())
+        .unwrap();
+    assert_eq!(alice_balance, Uint128::from(299_625_000_000u128));
+}

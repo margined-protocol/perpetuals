@@ -196,7 +196,8 @@ pub fn close_position_reply(
 
     let pnl = calc_pnl(output, swap.open_notional, position.direction.clone())?;
 
-    let remain_margin = calc_remain_margin_with_funding_payment(&position, pnl.clone())?;
+    let remain_margin =
+        calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), pnl.clone())?;
 
     let mut messages: Vec<SubMsg> = vec![];
 
@@ -290,7 +291,8 @@ pub fn liquidate_reply(
     // calculate delta from trade and whether it was profitable or a loss
     let pnl = calc_pnl(output, swap.open_notional, position.direction.clone())?;
 
-    let mut remain_margin = calc_remain_margin_with_funding_payment(&position, pnl.clone())?;
+    let mut remain_margin =
+        calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), pnl.clone())?;
 
     let liquidation_fee: Uint128 = output
         .checked_mul(config.liquidation_fee)?

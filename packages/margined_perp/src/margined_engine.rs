@@ -63,8 +63,14 @@ pub enum ExecuteMsg {
     PayFunding {
         vamm: String,
     },
-    // DepositMargin {},
-    // WithdrawMargin {},
+    DepositMargin {
+        vamm: String,
+        amount: Uint128,
+    },
+    WithdrawMargin {
+        vamm: String,
+        amount: Uint128,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -140,7 +146,7 @@ pub struct PnlResponse {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct RemainMarginResponse {
-    pub funding_payment: Uint128,
+    pub funding_payment: Integer,
     pub margin: Uint128,
     pub bad_debt: Uint128,
 }

@@ -67,6 +67,16 @@ impl EngineController {
         self.call(msg, vec![])
     }
 
+    pub fn deposit_margin(&self, vamm: String, amount: Uint128) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::DepositMargin { vamm, amount };
+        self.call(msg, vec![])
+    }
+
+    pub fn withdraw_margin(&self, vamm: String, amount: Uint128) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::WithdrawMargin { vamm, amount };
+        self.call(msg, vec![])
+    }
+
     /// get margin engine configuration
     pub fn config<Q: Querier>(&self, querier: &Q) -> StdResult<ConfigResponse> {
         let msg = QueryMsg::Config {};

@@ -6,6 +6,7 @@ use cw20::Cw20ExecuteMsg;
 
 use crate::{
     querier::{query_vamm_calc_fee, query_vamm_output_price, query_vamm_output_twap},
+    query::query_cumulative_premium_fraction,
     state::{read_config, read_position, read_state, read_vamm, store_state, Position, VammList},
 };
 
@@ -188,6 +189,36 @@ pub fn require_vamm(storage: &dyn Storage, vamm: &Addr) -> StdResult<Response> {
     Ok(Response::new())
 }
 
+// Check no bad debt
+pub fn require_bad_debt(bad_debt: Uint128) -> StdResult<Response> {
+    if !bad_debt.is_zero() {
+        return Err(StdError::generic_err("Insufficient margin"));
+    }
+
+    Ok(Response::new())
+}
+
+// Checks that margin ratio is greater than base margin
+pub fn require_margin(base_margin: Uint128, margin_ratio: Uint128) -> StdResult<Response> {
+    if margin_ratio < base_margin {
+        return Err(StdError::generic_err("Position is undercollateralized"));
+    }
+
+    Ok(Response::new())
+}
+
+pub fn require_insufficient_margin(
+    base_margin: Uint128,
+    margin_ratio: Uint128,
+    polarity: bool,
+) -> StdResult<Response> {
+    if margin_ratio > base_margin && polarity {
+        return Err(StdError::generic_err("Position is overcollateralized"));
+    }
+
+    Ok(Response::new())
+}
+
 // takes the side (buy|sell) and returns the direction (long|short)
 pub fn side_to_direction(side: Side) -> Direction {
     match side {
@@ -220,27 +251,6 @@ pub fn _switch_side(dir: Side) -> Side {
         Side::BUY => Side::SELL,
         Side::SELL => Side::BUY,
     }
-}
-
-// Checks that margin ratio is greater than base margin
-pub fn require_margin(base_margin: Uint128, margin_ratio: Uint128) -> StdResult<Response> {
-    if margin_ratio < base_margin {
-        return Err(StdError::generic_err("Position is undercollateralized"));
-    }
-
-    Ok(Response::new())
-}
-
-pub fn require_insufficient_margin(
-    base_margin: Uint128,
-    margin_ratio: Uint128,
-    polarity: bool,
-) -> StdResult<Response> {
-    if margin_ratio > base_margin && polarity {
-        return Err(StdError::generic_err("Position is overcollateralized"));
-    }
-
-    Ok(Response::new())
 }
 
 pub fn get_position_notional_unrealized_pnl(
@@ -312,10 +322,17 @@ pub fn calc_pnl(
 }
 
 pub fn calc_remain_margin_with_funding_payment(
-    position: &Position,
+    deps: Deps,
+    position: Position,
     pnl: PnlResponse,
 ) -> StdResult<RemainMarginResponse> {
+    let config = read_config(deps.storage)?;
+
     // calculate the funding payment
+    let latest_premium_fraction =
+        query_cumulative_premium_fraction(deps, position.vamm.to_string())?;
+    let funding_payment =
+        calc_funding_payment(position.clone(), latest_premium_fraction, config.decimals);
 
     // calculate the remaining margin
     let mut bad_debt = Uint128::zero();
@@ -334,7 +351,7 @@ pub fn calc_remain_margin_with_funding_payment(
     // if the remain is negative, set it to zero
     // and set the rest to
     Ok(RemainMarginResponse {
-        funding_payment: Uint128::zero(),
+        funding_payment: funding_payment,
         margin: remaining_margin,
         bad_debt,
     })
@@ -342,17 +359,16 @@ pub fn calc_remain_margin_with_funding_payment(
 
 // negative means trader pays and vice versa
 pub fn calc_funding_payment(
-    storage: &dyn Storage,
     position: Position,
     latest_premium_fraction: Integer,
+    decimals: Uint128,
 ) -> Integer {
-    let config = read_config(storage).unwrap();
     if !position.size.is_zero() {
         let signed_prev_premium_fraction: Integer =
             Integer::new_positive(position.last_updated_premium_fraction);
 
         (latest_premium_fraction - signed_prev_premium_fraction) * position.size
-            / Integer::new_positive(config.decimals)
+            / Integer::new_positive(decimals)
             * Integer::new_negative(1u64)
     } else {
         Integer::ZERO

@@ -11,15 +11,16 @@ use crate::{
     querier::query_vamm_output_price,
     query::query_margin_ratio,
     state::{
-        read_config, read_position, store_config, store_tmp_liquidator, store_tmp_swap, Config,
-        Position, Swap,
+        read_config, read_position, store_config, store_position, store_tmp_liquidator,
+        store_tmp_swap, Config, Position, Swap,
     },
     utils::{
-        direction_to_side, get_position, require_insufficient_margin, require_margin, require_vamm,
-        side_to_direction,
+        calc_remain_margin_with_funding_payment, direction_to_side, execute_transfer,
+        execute_transfer_from, get_position, require_bad_debt, require_insufficient_margin,
+        require_margin, require_vamm, side_to_direction,
     },
 };
-use margined_perp::margined_engine::Side;
+use margined_perp::margined_engine::{Pnl, PnlResponse, Side};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 
 pub fn update_config(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {
@@ -192,6 +193,81 @@ pub fn pay_funding(
     };
 
     Ok(Response::new().add_submessage(funding_msg))
+}
+
+/// Enables a user to directly deposit margin into their position
+pub fn deposit_margin(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    vamm: String,
+    amount: Uint128,
+) -> StdResult<Response> {
+    let vamm = deps.api.addr_validate(&vamm)?;
+    let trader = info.sender;
+
+    // first try to execute the transfer
+    let msg = execute_transfer_from(deps.storage, &trader, &env.contract.address, amount)?;
+
+    // read the position for the trader from vamm
+    let mut position = read_position(deps.storage, &vamm, &trader).unwrap();
+    position.margin = position.margin.checked_add(amount)?;
+
+    store_position(deps.storage, &position)?;
+
+    Ok(Response::new().add_submessage(msg).add_attributes(vec![
+        ("action", "deposit_margin"),
+        ("trader", &trader.to_string()),
+        ("amount", &amount.to_string()),
+    ]))
+}
+
+/// Enables a user to directly withdraw excess margin from their position
+pub fn withdraw_margin(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    vamm: String,
+    amount: Uint128,
+) -> StdResult<Response> {
+    let config: Config = read_config(deps.storage)?;
+
+    // get and validate address inputs
+    let vamm = deps.api.addr_validate(&vamm)?;
+    let trader = info.sender;
+
+    require_vamm(deps.storage, &vamm)?;
+
+    // read the position for the trader from vamm
+    let mut position = read_position(deps.storage, &vamm, &trader).unwrap();
+
+    // TODO this can be changed to an integer
+    let pnl = PnlResponse {
+        value: amount,
+        profit_loss: Pnl::Profit,
+    };
+
+    let remain_margin =
+        calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), pnl.clone())?;
+
+    require_bad_debt(remain_margin.bad_debt)?;
+
+    // check if margin ratio has been
+    let margin = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
+
+    require_margin(config.initial_margin_ratio, margin.ratio)?;
+
+    position.margin = remain_margin.margin;
+    store_position(deps.storage, &position)?;
+
+    // try to execute the transfer
+    let msg = execute_transfer(deps.storage, &trader, amount)?;
+
+    Ok(Response::new().add_submessage(msg).add_attributes(vec![
+        ("action", "withdraw_margin"),
+        ("trader", &trader.to_string()),
+        ("amount", &amount.to_string()),
+    ]))
 }
 
 // Increase the position, just basically wraps swap input though it may do more in the future
