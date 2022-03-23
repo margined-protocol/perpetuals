@@ -15,7 +15,7 @@ use crate::{
         store_tmp_swap, Config, Position, State, Swap,
     },
     utils::{
-        calc_remain_margin_with_funding_payment_integer, direction_to_side, execute_transfer_from,
+        calc_remain_margin_with_funding_payment, direction_to_side, execute_transfer_from,
         get_position, require_bad_debt, require_insufficient_margin, require_margin, require_vamm,
         side_to_direction, withdraw,
     },
@@ -246,11 +246,8 @@ pub fn withdraw_margin(
     // TODO this can be changed to an integer
     let margin_delta = Integer::new_negative(amount);
 
-    let remain_margin = calc_remain_margin_with_funding_payment_integer(
-        deps.as_ref(),
-        position.clone(),
-        margin_delta,
-    )?;
+    let remain_margin =
+        calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), margin_delta)?;
     require_bad_debt(remain_margin.bad_debt)?;
 
     // check if margin ratio has been

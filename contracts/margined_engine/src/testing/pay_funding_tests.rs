@@ -370,3 +370,74 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
         .unwrap();
     assert_eq!(alice_balance, to_decimals(650u64));
 }
+
+#[test]
+fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        owner,
+        insurance,
+        engine,
+        vamm,
+        pricefeed,
+        usdc,
+        ..
+    } = SimpleScenario::new();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            to_decimals(300u64),
+            to_decimals(2u64),
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            to_decimals(1200u64),
+            to_decimals(1u64),
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    let price: Uint128 = Uint128::from(21_600_000_000u128);
+    let timestamp: u64 = 1_000_000_000;
+
+    let msg = pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // move to the next funding time
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(NEXT_FUNDING_PERIOD_DELTA);
+        block.height += 1;
+    });
+
+    let msg = engine.pay_funding(vamm.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // then bob will get 2000% of his position size as fundingPayment
+    // funding payment: -187.5 x 2000% = -3750, margin is 1200 so bad debt = -3750 + 1200 = 2550
+    let bob_position = engine
+        .get_position_with_funding_payment(&router, vamm.addr().to_string(), bob.to_string())
+        .unwrap();
+    assert_eq!(bob_position.margin, to_decimals(0u64));
+
+    let msg = engine.close_position(vamm.addr().to_string()).unwrap();
+    let response = router.execute(bob.clone(), msg).unwrap();
+    assert_eq!(
+        response.events[4].attributes[2].value,
+        Uint128::from(3_750_000_000_000u128).to_string()
+    ); // funding payment
+    assert_eq!(
+        response.events[4].attributes[3].value,
+        Uint128::from(2_550_000_000_000u128).to_string()
+    ); // bad debt
+}

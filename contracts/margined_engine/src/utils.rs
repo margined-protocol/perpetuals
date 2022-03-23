@@ -15,9 +15,7 @@ use crate::{
 use margined_common::integer::Integer;
 use margined_perp::margined_vamm::{CalcFeeResponse, Direction};
 use margined_perp::{
-    margined_engine::{
-        Pnl, PnlCalcOption, PnlResponse, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
-    },
+    margined_engine::{PnlCalcOption, PositionUnrealizedPnlResponse, RemainMarginResponse, Side},
     querier::query_token_balance,
 };
 
@@ -226,8 +224,13 @@ pub fn realize_bad_debt(
     if state.bad_debt.is_zero() {
         // create transfer from message
         messages.push(
-            execute_transfer_from(storage, &config.insurance_fund, &contract_address, bad_debt)
-                .unwrap(),
+            execute_transfer_from(
+                storage,
+                &config.insurance_fund,
+                &contract_address,
+                bad_debt, // Uint128::from(1000000000u64),
+            )
+            .unwrap(),
         );
         state.bad_debt = bad_debt;
     } else {
@@ -299,34 +302,7 @@ pub fn get_position_notional_unrealized_pnl(
     })
 }
 
-pub fn calc_pnl(
-    output: Uint128,
-    previous_notional: Uint128,
-    direction: Direction,
-) -> StdResult<PnlResponse> {
-    // calculate delta from the trade
-    let profit_loss: Pnl;
-    let value: Uint128 = if output > previous_notional {
-        if direction == Direction::AddToAmm {
-            profit_loss = Pnl::Profit;
-        } else {
-            profit_loss = Pnl::Loss;
-        }
-        output.checked_sub(previous_notional)?
-    } else {
-        if direction == Direction::AddToAmm {
-            profit_loss = Pnl::Loss;
-        } else {
-            profit_loss = Pnl::Profit;
-        }
-        previous_notional.checked_sub(output)?
-    };
-
-    Ok(PnlResponse { value, profit_loss })
-}
-
-// TODO remove non-integer version below but not trying to break all code at once
-pub fn calc_remain_margin_with_funding_payment_integer(
+pub fn calc_remain_margin_with_funding_payment(
     deps: Deps,
     position: Position,
     margin_delta: Integer,
@@ -339,7 +315,6 @@ pub fn calc_remain_margin_with_funding_payment_integer(
     let funding_payment = (latest_premium_fraction - position.last_updated_premium_fraction)
         * position.size
         / Integer::new_positive(config.decimals);
-    // calc_funding_payment(position.clone(), latest_premium_fraction, config.decimals);
 
     // calculate the remaining margin
     let mut remaining_margin: Integer =
@@ -360,44 +335,6 @@ pub fn calc_remain_margin_with_funding_payment_integer(
     })
 }
 
-// TODO remove
-pub fn calc_remain_margin_with_funding_payment(
-    deps: Deps,
-    position: Position,
-    pnl: PnlResponse,
-) -> StdResult<RemainMarginResponse> {
-    let config = read_config(deps.storage)?;
-
-    // calculate the funding payment
-    let latest_premium_fraction =
-        query_cumulative_premium_fraction(deps, position.vamm.to_string())?;
-    let funding_payment =
-        calc_funding_payment(position.clone(), latest_premium_fraction, config.decimals);
-
-    // calculate the remaining margin
-    let mut bad_debt = Uint128::zero();
-    let remaining_margin: Uint128 = if pnl.profit_loss == Pnl::Profit {
-        position.margin.checked_add(pnl.value)?
-    } else if pnl.value < position.margin {
-        position.margin.checked_sub(pnl.value)?
-    } else {
-        // if the delta is bigger than margin we
-        // will have some bad debt and margin out is gonna
-        // be zero
-        bad_debt = pnl.value.checked_sub(position.margin)?;
-        Uint128::zero()
-    };
-
-    // if the remain is negative, set it to zero
-    // and set the rest to
-    Ok(RemainMarginResponse {
-        funding_payment,
-        margin: remaining_margin,
-        bad_debt,
-        latest_premium_fraction,
-    })
-}
-
 // negative means trader pays and vice versa
 pub fn calc_funding_payment(
     position: Position,
@@ -405,10 +342,6 @@ pub fn calc_funding_payment(
     decimals: Uint128,
 ) -> Integer {
     if !position.size.is_zero() {
-        println!(
-            "{} {}",
-            latest_premium_fraction, position.last_updated_premium_fraction
-        );
         (latest_premium_fraction - position.last_updated_premium_fraction) * position.size
             / Integer::new_positive(decimals)
             * Integer::new_negative(1u64)
