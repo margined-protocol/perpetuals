@@ -6,14 +6,18 @@ use cw20::Cw20ExecuteMsg;
 
 use crate::{
     querier::{query_vamm_calc_fee, query_vamm_output_price, query_vamm_output_twap},
-    state::{read_config, read_position, read_state, read_vamm, store_state, Position, VammList},
+    query::query_cumulative_premium_fraction,
+    state::{
+        read_config, read_position, read_state, read_vamm, store_state, Position, State, VammList,
+    },
 };
 
 use margined_common::integer::Integer;
-use margined_perp::margined_engine::{
-    Pnl, PnlCalcOption, PnlResponse, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
-};
 use margined_perp::margined_vamm::{CalcFeeResponse, Direction};
+use margined_perp::{
+    margined_engine::{PnlCalcOption, PositionUnrealizedPnlResponse, RemainMarginResponse, Side},
+    querier::query_token_balance,
+};
 
 pub fn execute_transfer_from(
     storage: &dyn Storage,
@@ -67,6 +71,44 @@ pub fn execute_transfer(
     Ok(transfer_msg)
 }
 
+pub fn execute_transfer_to_insurance_fund(
+    deps: Deps,
+    env: Env,
+    amount: Uint128,
+) -> StdResult<SubMsg> {
+    let config = read_config(deps.storage)?;
+
+    let token_balance = query_token_balance(
+        deps,
+        config.eligible_collateral.clone(),
+        env.contract.address,
+    )?;
+
+    let amount_to_send = if token_balance < amount {
+        token_balance
+    } else {
+        amount
+    };
+
+    let msg = WasmMsg::Execute {
+        contract_addr: config.eligible_collateral.to_string(),
+        funds: vec![],
+        msg: to_binary(&Cw20ExecuteMsg::Transfer {
+            recipient: config.insurance_fund.to_string(),
+            amount: amount_to_send,
+        })?,
+    };
+
+    let transfer_msg = SubMsg {
+        msg: CosmosMsg::Wasm(msg),
+        gas_limit: None, // probably should set a limit in the config
+        id: 0u64,
+        reply_on: ReplyOn::Never,
+    };
+
+    Ok(transfer_msg)
+}
+
 // Transfers the toll and spread fees to the the insurance fund and fee pool
 pub fn transfer_fee(
     deps: Deps,
@@ -75,6 +117,7 @@ pub fn transfer_fee(
     notional: Uint128,
 ) -> StdResult<Vec<WasmMsg>> {
     let config = read_config(deps.storage)?;
+
     let CalcFeeResponse {
         spread_fee,
         toll_fee,
@@ -107,6 +150,40 @@ pub fn transfer_fee(
         };
         messages.push(msg);
     };
+
+    Ok(messages)
+}
+
+pub fn withdraw(
+    deps: Deps,
+    env: Env,
+    state: &mut State,
+    receiver: &Addr,
+    insurance_fund: &Addr,
+    eligible_collateral: Addr,
+    amount: Uint128,
+) -> StdResult<Vec<SubMsg>> {
+    let token_balance =
+        query_token_balance(deps, eligible_collateral, env.contract.address.clone())?;
+    let mut messages: Vec<SubMsg> = vec![];
+    let mut shortfall = Uint128::zero();
+    if token_balance < amount {
+        shortfall = amount.checked_sub(token_balance)?;
+
+        messages.push(
+            execute_transfer_from(
+                deps.storage,
+                insurance_fund,
+                &env.contract.address,
+                shortfall,
+            )
+            .unwrap(),
+        );
+    }
+    messages.push(execute_transfer(deps.storage, receiver, amount).unwrap());
+
+    // this is unecessary but need to find a better way to do it
+    state.bad_debt += shortfall;
 
     Ok(messages)
 }
@@ -147,8 +224,13 @@ pub fn realize_bad_debt(
     if state.bad_debt.is_zero() {
         // create transfer from message
         messages.push(
-            execute_transfer_from(storage, &config.insurance_fund, &contract_address, bad_debt)
-                .unwrap(),
+            execute_transfer_from(
+                storage,
+                &config.insurance_fund,
+                &contract_address,
+                bad_debt, // Uint128::from(1000000000u64),
+            )
+            .unwrap(),
         );
         state.bad_debt = bad_debt;
     } else {
@@ -174,71 +256,6 @@ pub fn realize_bad_debt(
     // };
 
     store_state(storage, &state)?;
-
-    Ok(Response::new())
-}
-
-pub fn require_vamm(storage: &dyn Storage, vamm: &Addr) -> StdResult<Response> {
-    // check that it is a registered vamm
-    let vamm_list: VammList = read_vamm(storage)?;
-    if !vamm_list.is_vamm(vamm.as_ref()) {
-        return Err(StdError::generic_err("vAMM is not registered"));
-    }
-
-    Ok(Response::new())
-}
-
-// takes the side (buy|sell) and returns the direction (long|short)
-pub fn side_to_direction(side: Side) -> Direction {
-    match side {
-        Side::BUY => Direction::AddToAmm,
-        Side::SELL => Direction::RemoveFromAmm,
-    }
-}
-
-// takes the direction (long|short) and returns the side (buy|sell)
-pub fn direction_to_side(direction: Direction) -> Side {
-    match direction {
-        Direction::AddToAmm => Side::BUY,
-        Direction::RemoveFromAmm => Side::SELL,
-    }
-}
-
-// takes the side (buy|sell) and returns opposite (short|long)
-// this is useful when closing/reversing a position
-pub fn _switch_direction(dir: Direction) -> Direction {
-    match dir {
-        Direction::RemoveFromAmm => Direction::AddToAmm,
-        Direction::AddToAmm => Direction::RemoveFromAmm,
-    }
-}
-
-// takes the side (buy|sell) and returns opposite (short|long)
-// this is useful when closing/reversing a position
-pub fn _switch_side(dir: Side) -> Side {
-    match dir {
-        Side::BUY => Side::SELL,
-        Side::SELL => Side::BUY,
-    }
-}
-
-// Checks that margin ratio is greater than base margin
-pub fn require_margin(base_margin: Uint128, margin_ratio: Uint128) -> StdResult<Response> {
-    if margin_ratio < base_margin {
-        return Err(StdError::generic_err("Position is undercollateralized"));
-    }
-
-    Ok(Response::new())
-}
-
-pub fn require_insufficient_margin(
-    base_margin: Uint128,
-    margin_ratio: Uint128,
-    polarity: bool,
-) -> StdResult<Response> {
-    if margin_ratio > base_margin && polarity {
-        return Err(StdError::generic_err("Position is overcollateralized"));
-    }
 
     Ok(Response::new())
 }
@@ -285,74 +302,48 @@ pub fn get_position_notional_unrealized_pnl(
     })
 }
 
-pub fn calc_pnl(
-    output: Uint128,
-    previous_notional: Uint128,
-    direction: Direction,
-) -> StdResult<PnlResponse> {
-    // calculate delta from the trade
-    let profit_loss: Pnl;
-    let value: Uint128 = if output > previous_notional {
-        if direction == Direction::AddToAmm {
-            profit_loss = Pnl::Profit;
-        } else {
-            profit_loss = Pnl::Loss;
-        }
-        output.checked_sub(previous_notional)?
-    } else {
-        if direction == Direction::AddToAmm {
-            profit_loss = Pnl::Loss;
-        } else {
-            profit_loss = Pnl::Profit;
-        }
-        previous_notional.checked_sub(output)?
-    };
-
-    Ok(PnlResponse { value, profit_loss })
-}
-
 pub fn calc_remain_margin_with_funding_payment(
-    position: &Position,
-    pnl: PnlResponse,
+    deps: Deps,
+    position: Position,
+    margin_delta: Integer,
 ) -> StdResult<RemainMarginResponse> {
+    let config = read_config(deps.storage)?;
+
     // calculate the funding payment
+    let latest_premium_fraction =
+        query_cumulative_premium_fraction(deps, position.vamm.to_string())?;
+    let funding_payment = (latest_premium_fraction - position.last_updated_premium_fraction)
+        * position.size
+        / Integer::new_positive(config.decimals);
 
     // calculate the remaining margin
-    let mut bad_debt = Uint128::zero();
-    let remaining_margin: Uint128 = if pnl.profit_loss == Pnl::Profit {
-        position.margin.checked_add(pnl.value)?
-    } else if pnl.value < position.margin {
-        position.margin.checked_sub(pnl.value)?
-    } else {
-        // if the delta is bigger than margin we
-        // will have some bad debt and margin out is gonna
-        // be zero
-        bad_debt = pnl.value.checked_sub(position.margin)?;
-        Uint128::zero()
-    };
+    let mut remaining_margin: Integer =
+        margin_delta - funding_payment + Integer::new_positive(position.margin);
+    let mut bad_debt = Integer::zero();
+    if remaining_margin.is_negative() {
+        bad_debt = remaining_margin.abs();
+        remaining_margin = Integer::zero();
+    }
 
     // if the remain is negative, set it to zero
     // and set the rest to
     Ok(RemainMarginResponse {
-        funding_payment: Uint128::zero(),
-        margin: remaining_margin,
-        bad_debt,
+        funding_payment,
+        margin: remaining_margin.value,
+        bad_debt: bad_debt.value,
+        latest_premium_fraction,
     })
 }
 
 // negative means trader pays and vice versa
 pub fn calc_funding_payment(
-    storage: &dyn Storage,
     position: Position,
     latest_premium_fraction: Integer,
+    decimals: Uint128,
 ) -> Integer {
-    let config = read_config(storage).unwrap();
     if !position.size.is_zero() {
-        let signed_prev_premium_fraction: Integer =
-            Integer::new_positive(position.last_updated_premium_fraction);
-
-        (latest_premium_fraction - signed_prev_premium_fraction) * position.size
-            / Integer::new_positive(config.decimals)
+        (latest_premium_fraction - position.last_updated_premium_fraction) * position.size
+            / Integer::new_positive(decimals)
             * Integer::new_negative(1u64)
     } else {
         Integer::ZERO
@@ -364,8 +355,82 @@ pub fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
     position.size = Integer::zero();
     position.margin = Uint128::zero();
     position.notional = Uint128::zero();
-    position.last_updated_premium_fraction = Uint128::zero();
+    position.last_updated_premium_fraction = Integer::zero();
     position.timestamp = env.block.time;
 
     Ok(position)
+}
+
+pub fn require_vamm(storage: &dyn Storage, vamm: &Addr) -> StdResult<Response> {
+    // check that it is a registered vamm
+    let vamm_list: VammList = read_vamm(storage)?;
+    if !vamm_list.is_vamm(vamm.as_ref()) {
+        return Err(StdError::generic_err("vAMM is not registered"));
+    }
+
+    Ok(Response::new())
+}
+
+// Check no bad debt
+pub fn require_bad_debt(bad_debt: Uint128) -> StdResult<Response> {
+    if !bad_debt.is_zero() {
+        return Err(StdError::generic_err("Insufficient margin"));
+    }
+
+    Ok(Response::new())
+}
+
+// Checks that margin ratio is greater than base margin
+pub fn require_margin(base_margin: Uint128, margin_ratio: Uint128) -> StdResult<Response> {
+    if margin_ratio < base_margin {
+        return Err(StdError::generic_err("Position is undercollateralized"));
+    }
+
+    Ok(Response::new())
+}
+
+pub fn require_insufficient_margin(
+    base_margin: Uint128,
+    margin_ratio: Uint128,
+    polarity: bool,
+) -> StdResult<Response> {
+    if margin_ratio > base_margin && polarity {
+        return Err(StdError::generic_err("Position is overcollateralized"));
+    }
+
+    Ok(Response::new())
+}
+
+// takes the side (buy|sell) and returns the direction (long|short)
+pub fn side_to_direction(side: Side) -> Direction {
+    match side {
+        Side::BUY => Direction::AddToAmm,
+        Side::SELL => Direction::RemoveFromAmm,
+    }
+}
+
+// takes the direction (long|short) and returns the side (buy|sell)
+pub fn direction_to_side(direction: Direction) -> Side {
+    match direction {
+        Direction::AddToAmm => Side::BUY,
+        Direction::RemoveFromAmm => Side::SELL,
+    }
+}
+
+// takes the side (buy|sell) and returns opposite (short|long)
+// this is useful when closing/reversing a position
+pub fn _switch_direction(dir: Direction) -> Direction {
+    match dir {
+        Direction::RemoveFromAmm => Direction::AddToAmm,
+        Direction::AddToAmm => Direction::RemoveFromAmm,
+    }
+}
+
+// takes the side (buy|sell) and returns opposite (short|long)
+// this is useful when closing/reversing a position
+pub fn _switch_side(dir: Side) -> Side {
+    match dir {
+        Side::BUY => Side::SELL,
+        Side::SELL => Side::BUY,
+    }
 }

@@ -11,7 +11,10 @@ use std::str::FromStr;
 
 use crate::error::ContractError;
 use crate::{
-    handle::{close_position, liquidate, open_position, pay_funding, update_config},
+    handle::{
+        close_position, deposit_margin, liquidate, open_position, pay_funding, update_config,
+        withdraw_margin,
+    },
     query::{
         query_config, query_cumulative_premium_fraction, query_margin_ratio, query_position,
         query_trader_balance_with_funding_payment, query_trader_position_with_funding_payment,
@@ -103,6 +106,10 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         }
         ExecuteMsg::Liquidate { vamm, trader } => liquidate(deps, env, info, vamm, trader),
         ExecuteMsg::PayFunding { vamm } => pay_funding(deps, env, info, vamm),
+        ExecuteMsg::DepositMargin { vamm, amount } => deposit_margin(deps, env, info, vamm, amount),
+        ExecuteMsg::WithdrawMargin { vamm, amount } => {
+            withdraw_margin(deps, env, info, vamm, amount)
+        }
     }
 }
 

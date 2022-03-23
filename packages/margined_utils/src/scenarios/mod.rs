@@ -195,7 +195,7 @@ impl SimpleScenario {
                 usdc_addr,
                 &Cw20ExecuteMsg::IncreaseAllowance {
                     spender: engine_addr.to_string(),
-                    amount: to_decimals(2000),
+                    amount: to_decimals(5000),
                     expires: None,
                 },
                 &[],

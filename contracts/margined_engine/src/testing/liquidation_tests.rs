@@ -2,6 +2,7 @@
 use cosmwasm_std::Uint128;
 use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
+use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::SimpleScenario;
 
@@ -256,7 +257,7 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
     ); // liquidation fee
     assert_eq!(
         response.events[4].attributes[3].value,
-        Uint128::from(278_761_061_950u128).to_string()
+        Integer::new_negative(278_761_061_950u64).to_string()
     ); // pnl (unsigned)
 }
 
