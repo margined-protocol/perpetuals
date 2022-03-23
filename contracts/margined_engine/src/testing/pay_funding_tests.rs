@@ -346,6 +346,12 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
     let msg = engine.pay_funding(vamm.addr().to_string()).unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
+    // margin = 1050 - 400 = 650
+    let alice_position = engine
+    .get_position_with_funding_payment(&router, vamm.addr().to_string(), alice.to_string())
+    .unwrap();
+    assert_eq!(alice_position.margin, to_decimals(1050u64));
+
     // then alice will get 2000% of her position size as fundingPayment
     // {balance: 37.5, margin: 300} => {balance: 37.5, margin: 1050}
     // then alice can withdraw more than her initial margin while remain the enough margin ratio
@@ -358,9 +364,9 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
     let alice_position = engine
         .get_position_with_funding_payment(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(alice_position.margin, Uint128::from(299_625_000_000u128));
+    assert_eq!(alice_position.margin, to_decimals(650u64));
     let alice_balance = engine
         .get_balance_with_funding_payment(&router, alice.to_string())
         .unwrap();
-    assert_eq!(alice_balance, Uint128::from(299_625_000_000u128));
+    assert_eq!(alice_balance, to_decimals(650u64));
 }

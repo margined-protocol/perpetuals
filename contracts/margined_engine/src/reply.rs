@@ -10,7 +10,8 @@ use crate::{
     },
     utils::{
         calc_pnl, calc_remain_margin_with_funding_payment, clear_position, execute_transfer,
-        execute_transfer_from, get_position, realize_bad_debt, side_to_direction, transfer_fee,
+        execute_transfer_from, execute_transfer_to_insurance_fund, get_position, realize_bad_debt,
+        side_to_direction, transfer_fee, withdraw,
     },
 };
 
@@ -179,6 +180,7 @@ pub fn close_position_reply(
     output: Uint128,
 ) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
+    let mut state = read_state(deps.storage)?;
 
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
@@ -203,32 +205,48 @@ pub fn close_position_reply(
 
     // TODO Make this less ugly
     if pnl.profit_loss == Pnl::Profit {
-        let token_balance = query_token_balance(
+        let withdraw_messages = withdraw(
             deps.as_ref(),
+            env.clone(),
+            state.clone(),
+            &swap.trader,
+            &config.insurance_fund,
             config.eligible_collateral,
-            env.contract.address.clone(),
-        )?;
-        if remain_margin.margin <= token_balance {
-            messages
-                .push(execute_transfer(deps.storage, &swap.trader, remain_margin.margin).unwrap());
-        } else {
-            let short_fall = remain_margin.margin.checked_sub(token_balance)?;
+            remain_margin.margin,
+        )
+        .unwrap();
 
-            let mut state = read_state(deps.storage)?;
-
-            messages.push(execute_transfer(deps.storage, &swap.trader, token_balance).unwrap());
-            messages.push(
-                execute_transfer_from(
-                    deps.storage,
-                    &config.insurance_fund,
-                    &swap.trader,
-                    short_fall,
-                )
-                .unwrap(),
-            );
-            state.bad_debt = short_fall;
-            store_state(deps.storage, &state)?;
+        for message in withdraw_messages.iter() {
+            messages.push(message.clone());
         }
+
+        store_state(deps.storage, &state)?;
+        // let token_balance = query_token_balance(
+        //     deps.as_ref(),
+        //     config.eligible_collateral,
+        //     env.contract.address.clone(),
+        // )?;
+        // if remain_margin.margin <= token_balance {
+        //     messages
+        //         .push(execute_transfer(deps.storage, &swap.trader, remain_margin.margin).unwrap());
+        // } else {
+        //     let short_fall = remain_margin.margin.checked_sub(token_balance)?;
+
+        //     let mut state = read_state(deps.storage)?;
+
+        //     messages.push(execute_transfer(deps.storage, &swap.trader, token_balance).unwrap());
+        //     messages.push(
+        //         execute_transfer_from(
+        //             deps.storage,
+        //             &config.insurance_fund,
+        //             &swap.trader,
+        //             short_fall,
+        //         )
+        //         .unwrap(),
+        //     );
+        //     state.bad_debt = short_fall;
+        //     store_state(deps.storage, &state)?;?
+        // }
     } else if pnl.value < position.margin {
         // create transfer message
         messages.push(execute_transfer(deps.storage, &swap.trader, remain_margin.margin).unwrap());
@@ -393,7 +411,6 @@ pub fn pay_funding_reply(
 
     let funding_payment =
         total_position_size * premium_fraction / Integer::new_positive(config.decimals);
-
     let msg: SubMsg = if funding_payment.is_negative() {
         execute_transfer_from(
             deps.storage,
@@ -402,7 +419,7 @@ pub fn pay_funding_reply(
             funding_payment.value,
         )?
     } else {
-        execute_transfer(deps.storage, &config.insurance_fund, funding_payment.value)?
+        execute_transfer_to_insurance_fund(deps.as_ref(), env, funding_payment.value)?
     };
 
     Ok(Response::new()

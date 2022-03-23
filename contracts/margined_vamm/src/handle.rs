@@ -164,6 +164,8 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
     let premium_fraction = premium * Integer::new_positive(config.funding_period)
         / Integer::new_positive(ONE_DAY_IN_SECONDS);
 
+    println!("{}", premium_fraction);
+
     // update funding rate = premiumFraction / twapIndexPrice
     state.funding_rate = premium_fraction.value.checked_div(underlying_price)?;
 

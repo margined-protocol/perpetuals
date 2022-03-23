@@ -1,20 +1,25 @@
 use cosmwasm_std::{
-    to_binary, Addr, CosmosMsg, Deps, Env, ReplyOn, Response, StdError, StdResult, Storage, SubMsg,
-    Uint128, WasmMsg,
+    to_binary, Addr, CosmosMsg, Deps, DepsMut, Env, ReplyOn, Response, StdError, StdResult,
+    Storage, SubMsg, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 
 use crate::{
     querier::{query_vamm_calc_fee, query_vamm_output_price, query_vamm_output_twap},
     query::query_cumulative_premium_fraction,
-    state::{read_config, read_position, read_state, read_vamm, store_state, Position, VammList},
+    state::{
+        read_config, read_position, read_state, read_vamm, store_state, Position, State, VammList,
+    },
 };
 
 use margined_common::integer::Integer;
-use margined_perp::margined_engine::{
-    Pnl, PnlCalcOption, PnlResponse, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
-};
 use margined_perp::margined_vamm::{CalcFeeResponse, Direction};
+use margined_perp::{
+    margined_engine::{
+        Pnl, PnlCalcOption, PnlResponse, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
+    },
+    querier::query_token_balance,
+};
 
 pub fn execute_transfer_from(
     storage: &dyn Storage,
@@ -68,6 +73,44 @@ pub fn execute_transfer(
     Ok(transfer_msg)
 }
 
+pub fn execute_transfer_to_insurance_fund(
+    deps: Deps,
+    env: Env,
+    amount: Uint128,
+) -> StdResult<SubMsg> {
+    let config = read_config(deps.storage)?;
+
+    let token_balance = query_token_balance(
+        deps,
+        config.eligible_collateral.clone(),
+        env.contract.address.clone(),
+    )?;
+
+    let amount_to_send = if token_balance < amount {
+        token_balance
+    } else {
+        amount
+    };
+
+    let msg = WasmMsg::Execute {
+        contract_addr: config.eligible_collateral.to_string(),
+        funds: vec![],
+        msg: to_binary(&Cw20ExecuteMsg::Transfer {
+            recipient: config.insurance_fund.to_string(),
+            amount: amount_to_send,
+        })?,
+    };
+
+    let transfer_msg = SubMsg {
+        msg: CosmosMsg::Wasm(msg),
+        gas_limit: None, // probably should set a limit in the config
+        id: 0u64,
+        reply_on: ReplyOn::Never,
+    };
+
+    Ok(transfer_msg)
+}
+
 // Transfers the toll and spread fees to the the insurance fund and fee pool
 pub fn transfer_fee(
     deps: Deps,
@@ -76,6 +119,7 @@ pub fn transfer_fee(
     notional: Uint128,
 ) -> StdResult<Vec<WasmMsg>> {
     let config = read_config(deps.storage)?;
+
     let CalcFeeResponse {
         spread_fee,
         toll_fee,
@@ -108,6 +152,42 @@ pub fn transfer_fee(
         };
         messages.push(msg);
     };
+
+    Ok(messages)
+}
+
+pub fn withdraw(
+    deps: Deps,
+    env: Env,
+    mut state: State,
+    receiver: &Addr,
+    insurance_fund: &Addr,
+    eligible_collateral: Addr,
+    amount: Uint128,
+) -> StdResult<Vec<SubMsg>> {
+    let token_balance =
+        query_token_balance(deps, eligible_collateral, env.contract.address.clone())?;
+
+    let mut messages: Vec<SubMsg> = vec![];
+    if token_balance < amount {
+        let shortfall = amount.checked_sub(token_balance)?;
+        println!("Shortfall: {}", shortfall);
+
+        let mut state = read_state(deps.storage)?;
+
+        messages.push(
+            execute_transfer_from(
+                deps.storage,
+                &insurance_fund,
+                &env.contract.address,
+                shortfall,
+            )
+            .unwrap(),
+        );
+
+        state.bad_debt += shortfall;
+    }
+    messages.push(execute_transfer(deps.storage, &receiver, amount).unwrap());
 
     Ok(messages)
 }
@@ -177,6 +257,172 @@ pub fn realize_bad_debt(
     store_state(storage, &state)?;
 
     Ok(Response::new())
+}
+
+pub fn get_position_notional_unrealized_pnl(
+    deps: Deps,
+    position: &Position,
+    calc_option: PnlCalcOption,
+) -> StdResult<PositionUnrealizedPnlResponse> {
+    let mut position_notional = Uint128::zero();
+    let mut unrealized_pnl = Uint128::zero();
+
+    let position_size = position.size;
+    if !position_size.is_zero() {
+        match calc_option {
+            PnlCalcOption::TWAP => {
+                position_notional = query_vamm_output_twap(
+                    &deps,
+                    position.vamm.to_string(),
+                    position.direction.clone(),
+                    position_size.value,
+                )?;
+            }
+            PnlCalcOption::SPOTPRICE => {
+                position_notional = query_vamm_output_price(
+                    &deps,
+                    position.vamm.to_string(),
+                    position.direction.clone(),
+                    position_size.value,
+                )?;
+            }
+            PnlCalcOption::ORACLE => {}
+        }
+        if position.notional > position_notional {
+            unrealized_pnl = position.notional.checked_sub(position_notional)?;
+        } else {
+            unrealized_pnl = position_notional.checked_sub(position.notional)?;
+        }
+    }
+
+    Ok(PositionUnrealizedPnlResponse {
+        position_notional,
+        unrealized_pnl,
+    })
+}
+
+pub fn calc_pnl(
+    output: Uint128,
+    previous_notional: Uint128,
+    direction: Direction,
+) -> StdResult<PnlResponse> {
+    // calculate delta from the trade
+    let profit_loss: Pnl;
+    let value: Uint128 = if output > previous_notional {
+        if direction == Direction::AddToAmm {
+            profit_loss = Pnl::Profit;
+        } else {
+            profit_loss = Pnl::Loss;
+        }
+        output.checked_sub(previous_notional)?
+    } else {
+        if direction == Direction::AddToAmm {
+            profit_loss = Pnl::Loss;
+        } else {
+            profit_loss = Pnl::Profit;
+        }
+        previous_notional.checked_sub(output)?
+    };
+
+    Ok(PnlResponse { value, profit_loss })
+}
+
+// TODO remove non-integer version below but not trying to break all code at once
+pub fn calc_remain_margin_with_funding_payment_integer(
+    deps: Deps,
+    position: Position,
+    margin_delta: Integer,
+) -> StdResult<RemainMarginResponse> {
+    let config = read_config(deps.storage)?;
+
+    // calculate the funding payment
+    let latest_premium_fraction =
+        query_cumulative_premium_fraction(deps, position.vamm.to_string())?;
+    let funding_payment = (latest_premium_fraction - position.last_updated_premium_fraction) * position.size
+    / Integer::new_positive(config.decimals);
+        // calc_funding_payment(position.clone(), latest_premium_fraction, config.decimals);
+
+    // calculate the remaining margin
+    let mut remaining_margin: Integer = margin_delta - funding_payment + Integer::new_positive(position.margin);
+    let mut bad_debt = Integer::zero();
+    if remaining_margin.is_negative() {
+        bad_debt = remaining_margin.abs();
+        remaining_margin = Integer::zero();
+    }
+
+    // if the remain is negative, set it to zero
+    // and set the rest to
+    Ok(RemainMarginResponse {
+        funding_payment: funding_payment,
+        margin: remaining_margin.value,
+        bad_debt: bad_debt.value,
+        latest_premium_fraction,
+    })
+}
+
+// TODO remove 
+pub fn calc_remain_margin_with_funding_payment(
+    deps: Deps,
+    position: Position,
+    pnl: PnlResponse,
+) -> StdResult<RemainMarginResponse> {
+    let config = read_config(deps.storage)?;
+
+    // calculate the funding payment
+    let latest_premium_fraction =
+        query_cumulative_premium_fraction(deps, position.vamm.to_string())?;
+    let funding_payment =
+        calc_funding_payment(position.clone(), latest_premium_fraction, config.decimals);
+
+    // calculate the remaining margin
+    let mut bad_debt = Uint128::zero();
+    let remaining_margin: Uint128 = if pnl.profit_loss == Pnl::Profit {
+        position.margin.checked_add(pnl.value)?
+    } else if pnl.value < position.margin {
+        position.margin.checked_sub(pnl.value)?
+    } else {
+        // if the delta is bigger than margin we
+        // will have some bad debt and margin out is gonna
+        // be zero
+        bad_debt = pnl.value.checked_sub(position.margin)?;
+        Uint128::zero()
+    };
+
+    // if the remain is negative, set it to zero
+    // and set the rest to
+    Ok(RemainMarginResponse {
+        funding_payment: funding_payment,
+        margin: remaining_margin,
+        bad_debt,
+        latest_premium_fraction,
+    })
+}
+
+// negative means trader pays and vice versa
+pub fn calc_funding_payment(
+    position: Position,
+    latest_premium_fraction: Integer,
+    decimals: Uint128,
+) -> Integer {
+    if !position.size.is_zero() {
+        println!("{} {}", latest_premium_fraction, position.last_updated_premium_fraction);
+        (latest_premium_fraction - position.last_updated_premium_fraction) * position.size
+            / Integer::new_positive(decimals)
+            * Integer::new_negative(1u64)
+    } else {
+        Integer::ZERO
+    }
+}
+
+// this resets the main variables of a position
+pub fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
+    position.size = Integer::zero();
+    position.margin = Uint128::zero();
+    position.notional = Uint128::zero();
+    position.last_updated_premium_fraction = Integer::zero();
+    position.timestamp = env.block.time;
+
+    Ok(position)
 }
 
 pub fn require_vamm(storage: &dyn Storage, vamm: &Addr) -> StdResult<Response> {
@@ -251,137 +497,4 @@ pub fn _switch_side(dir: Side) -> Side {
         Side::BUY => Side::SELL,
         Side::SELL => Side::BUY,
     }
-}
-
-pub fn get_position_notional_unrealized_pnl(
-    deps: Deps,
-    position: &Position,
-    calc_option: PnlCalcOption,
-) -> StdResult<PositionUnrealizedPnlResponse> {
-    let mut position_notional = Uint128::zero();
-    let mut unrealized_pnl = Uint128::zero();
-
-    let position_size = position.size;
-    if !position_size.is_zero() {
-        match calc_option {
-            PnlCalcOption::TWAP => {
-                position_notional = query_vamm_output_twap(
-                    &deps,
-                    position.vamm.to_string(),
-                    position.direction.clone(),
-                    position_size.value,
-                )?;
-            }
-            PnlCalcOption::SPOTPRICE => {
-                position_notional = query_vamm_output_price(
-                    &deps,
-                    position.vamm.to_string(),
-                    position.direction.clone(),
-                    position_size.value,
-                )?;
-            }
-            PnlCalcOption::ORACLE => {}
-        }
-        if position.notional > position_notional {
-            unrealized_pnl = position.notional.checked_sub(position_notional)?;
-        } else {
-            unrealized_pnl = position_notional.checked_sub(position.notional)?;
-        }
-    }
-
-    Ok(PositionUnrealizedPnlResponse {
-        position_notional,
-        unrealized_pnl,
-    })
-}
-
-pub fn calc_pnl(
-    output: Uint128,
-    previous_notional: Uint128,
-    direction: Direction,
-) -> StdResult<PnlResponse> {
-    // calculate delta from the trade
-    let profit_loss: Pnl;
-    let value: Uint128 = if output > previous_notional {
-        if direction == Direction::AddToAmm {
-            profit_loss = Pnl::Profit;
-        } else {
-            profit_loss = Pnl::Loss;
-        }
-        output.checked_sub(previous_notional)?
-    } else {
-        if direction == Direction::AddToAmm {
-            profit_loss = Pnl::Loss;
-        } else {
-            profit_loss = Pnl::Profit;
-        }
-        previous_notional.checked_sub(output)?
-    };
-
-    Ok(PnlResponse { value, profit_loss })
-}
-
-pub fn calc_remain_margin_with_funding_payment(
-    deps: Deps,
-    position: Position,
-    pnl: PnlResponse,
-) -> StdResult<RemainMarginResponse> {
-    let config = read_config(deps.storage)?;
-
-    // calculate the funding payment
-    let latest_premium_fraction =
-        query_cumulative_premium_fraction(deps, position.vamm.to_string())?;
-    let funding_payment =
-        calc_funding_payment(position.clone(), latest_premium_fraction, config.decimals);
-
-    // calculate the remaining margin
-    let mut bad_debt = Uint128::zero();
-    let remaining_margin: Uint128 = if pnl.profit_loss == Pnl::Profit {
-        position.margin.checked_add(pnl.value)?
-    } else if pnl.value < position.margin {
-        position.margin.checked_sub(pnl.value)?
-    } else {
-        // if the delta is bigger than margin we
-        // will have some bad debt and margin out is gonna
-        // be zero
-        bad_debt = pnl.value.checked_sub(position.margin)?;
-        Uint128::zero()
-    };
-
-    // if the remain is negative, set it to zero
-    // and set the rest to
-    Ok(RemainMarginResponse {
-        funding_payment: funding_payment,
-        margin: remaining_margin,
-        bad_debt,
-    })
-}
-
-// negative means trader pays and vice versa
-pub fn calc_funding_payment(
-    position: Position,
-    latest_premium_fraction: Integer,
-    decimals: Uint128,
-) -> Integer {
-    if !position.size.is_zero() {
-        let signed_prev_premium_fraction: Integer =
-            Integer::new_positive(position.last_updated_premium_fraction);
-
-        (latest_premium_fraction - signed_prev_premium_fraction) * position.size
-            / Integer::new_positive(decimals)
-            * Integer::new_negative(1u64)
-    } else {
-        Integer::ZERO
-    }
-}
-
-// this resets the main variables of a position
-pub fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
-    position.size = Integer::zero();
-    position.margin = Uint128::zero();
-    position.notional = Uint128::zero();
-    position.last_updated_premium_fraction = Uint128::zero();
-    position.timestamp = env.block.time;
-
-    Ok(position)
 }

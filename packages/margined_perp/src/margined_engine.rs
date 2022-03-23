@@ -115,7 +115,7 @@ pub struct PositionResponse {
     pub size: Integer,
     pub margin: Uint128,
     pub notional: Uint128,
-    pub last_updated_premium_fraction: Uint128,
+    pub last_updated_premium_fraction: Integer,
     pub liquidity_history_index: Uint128,
     pub timestamp: Timestamp,
 }
@@ -149,4 +149,5 @@ pub struct RemainMarginResponse {
     pub funding_payment: Integer,
     pub margin: Uint128,
     pub bad_debt: Uint128,
+    pub latest_premium_fraction: Integer,
 }

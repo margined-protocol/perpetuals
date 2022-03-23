@@ -86,6 +86,7 @@ pub fn query_trader_position_with_funding_payment(
     vamm: String,
     trader: String,
 ) -> StdResult<PositionResponse> {
+    println!("query trader position with funding payment");
     let config = read_config(deps.storage).unwrap();
 
     let vamm = deps.api.addr_validate(&vamm)?;
@@ -102,6 +103,10 @@ pub fn query_trader_position_with_funding_payment(
         latest_cumulative_premium_fraction,
         config.decimals,
     );
+
+    println!("latest premium fraction: {}", latest_cumulative_premium_fraction);
+    println!("funding payment: {}", funding_payment);
+    println!("margin: {}", position.margin);
 
     if funding_payment.is_positive() {
         position.margin = position.margin.checked_add(funding_payment.value)?;
