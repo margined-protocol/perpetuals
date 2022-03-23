@@ -9,15 +9,16 @@ use crate::{
         store_tmp_swap,
     },
     utils::{
-        calc_pnl, calc_remain_margin_with_funding_payment, clear_position, execute_transfer,
+        calc_pnl, calc_remain_margin_with_funding_payment,
+        calc_remain_margin_with_funding_payment_integer, clear_position, execute_transfer,
         execute_transfer_from, execute_transfer_to_insurance_fund, get_position, realize_bad_debt,
         side_to_direction, transfer_fee, withdraw,
     },
 };
 
 use margined_common::integer::Integer;
+use margined_perp::margined_vamm::Direction;
 use margined_perp::querier::query_token_balance;
-use margined_perp::{margined_engine::Pnl, margined_vamm::Direction};
 
 // Increases position after successful execution of the swap
 pub fn increase_position_reply(
@@ -179,6 +180,7 @@ pub fn close_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    println!("close position reply");
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
 
@@ -196,19 +198,34 @@ pub fn close_position_reply(
         swap.side.clone(),
     );
 
-    let pnl = calc_pnl(output, swap.open_notional, position.direction.clone())?;
+    let margin_delta = if position.direction != Direction::AddToAmm {
+        Integer::new_positive(swap.open_notional) - Integer::new_positive(output)
+    } else {
+        Integer::new_positive(output) - Integer::new_positive(swap.open_notional)
+    };
 
-    let remain_margin =
-        calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), pnl.clone())?;
+    let remain_margin = calc_remain_margin_with_funding_payment_integer(
+        deps.as_ref(),
+        position.clone(),
+        margin_delta,
+    )?;
 
     let mut messages: Vec<SubMsg> = vec![];
 
-    // TODO Make this less ugly
-    if pnl.profit_loss == Pnl::Profit {
+    if !remain_margin.bad_debt.is_zero() {
+        realize_bad_debt(
+            deps.storage,
+            env.contract.address.clone(),
+            remain_margin.bad_debt,
+            &mut messages,
+        )?;
+    }
+
+    if !remain_margin.margin.is_zero() {
         let withdraw_messages = withdraw(
             deps.as_ref(),
             env.clone(),
-            state.clone(),
+            &mut state,
             &swap.trader,
             &config.insurance_fund,
             config.eligible_collateral,
@@ -219,45 +236,7 @@ pub fn close_position_reply(
         for message in withdraw_messages.iter() {
             messages.push(message.clone());
         }
-
-        store_state(deps.storage, &state)?;
-        // let token_balance = query_token_balance(
-        //     deps.as_ref(),
-        //     config.eligible_collateral,
-        //     env.contract.address.clone(),
-        // )?;
-        // if remain_margin.margin <= token_balance {
-        //     messages
-        //         .push(execute_transfer(deps.storage, &swap.trader, remain_margin.margin).unwrap());
-        // } else {
-        //     let short_fall = remain_margin.margin.checked_sub(token_balance)?;
-
-        //     let mut state = read_state(deps.storage)?;
-
-        //     messages.push(execute_transfer(deps.storage, &swap.trader, token_balance).unwrap());
-        //     messages.push(
-        //         execute_transfer_from(
-        //             deps.storage,
-        //             &config.insurance_fund,
-        //             &swap.trader,
-        //             short_fall,
-        //         )
-        //         .unwrap(),
-        //     );
-        //     state.bad_debt = short_fall;
-        //     store_state(deps.storage, &state)?;?
-        // }
-    } else if pnl.value < position.margin {
-        // create transfer message
-        messages.push(execute_transfer(deps.storage, &swap.trader, remain_margin.margin).unwrap());
-    } else {
-        realize_bad_debt(
-            deps.storage,
-            env.contract.address.clone(),
-            remain_margin.bad_debt,
-            &mut messages,
-        )?;
-    };
+    }
 
     // now start putting the response together
     let mut response = Response::new();
@@ -271,6 +250,7 @@ pub fn close_position_reply(
 
     // remove_position(deps.storage, &position)?;
     store_position(deps.storage, &position)?;
+    store_state(deps.storage, &state)?;
 
     remove_tmp_swap(deps.storage);
 

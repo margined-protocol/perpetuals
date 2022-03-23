@@ -20,9 +20,9 @@ use crate::{
         side_to_direction, withdraw,
     },
 };
-use margined_perp::margined_engine::{Pnl, PnlResponse, Side};
-use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 use margined_common::integer::Integer;
+use margined_perp::margined_engine::Side;
+use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 
 pub fn update_config(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
@@ -231,7 +231,6 @@ pub fn withdraw_margin(
     vamm: String,
     amount: Uint128,
 ) -> StdResult<Response> {
-    println!("withdraw margin");
     let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
 
@@ -247,9 +246,11 @@ pub fn withdraw_margin(
     // TODO this can be changed to an integer
     let margin_delta = Integer::new_negative(amount);
 
-    let remain_margin =
-        calc_remain_margin_with_funding_payment_integer(deps.as_ref(), position.clone(), margin_delta.clone())?;
-    println!("Remain Margin: {:?}", remain_margin);
+    let remain_margin = calc_remain_margin_with_funding_payment_integer(
+        deps.as_ref(),
+        position.clone(),
+        margin_delta,
+    )?;
     require_bad_debt(remain_margin.bad_debt)?;
 
     // check if margin ratio has been
@@ -257,18 +258,16 @@ pub fn withdraw_margin(
 
     require_margin(config.initial_margin_ratio, margin.ratio)?;
 
-    println!("Margin Before: {:?}", position.margin);
     position.margin = remain_margin.margin;
     position.last_updated_premium_fraction = remain_margin.latest_premium_fraction;
+
     store_position(deps.storage, &position)?;
-    println!("Margin After: {:?}", position.margin);
-    println!("{:?}", position);
 
     // try to execute the transfer
     let msgs = withdraw(
         deps.as_ref(),
-        env.clone(),
-        state,
+        env,
+        &mut state,
         &trader,
         &config.insurance_fund,
         config.eligible_collateral,

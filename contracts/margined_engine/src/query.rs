@@ -104,7 +104,10 @@ pub fn query_trader_position_with_funding_payment(
         config.decimals,
     );
 
-    println!("latest premium fraction: {}", latest_cumulative_premium_fraction);
+    println!(
+        "latest premium fraction: {}",
+        latest_cumulative_premium_fraction
+    );
     println!("funding payment: {}", funding_payment);
     println!("margin: {}", position.margin);
 

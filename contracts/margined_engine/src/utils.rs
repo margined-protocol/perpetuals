@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    to_binary, Addr, CosmosMsg, Deps, DepsMut, Env, ReplyOn, Response, StdError, StdResult,
-    Storage, SubMsg, Uint128, WasmMsg,
+    to_binary, Addr, CosmosMsg, Deps, Env, ReplyOn, Response, StdError, StdResult, Storage, SubMsg,
+    Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 
@@ -83,7 +83,7 @@ pub fn execute_transfer_to_insurance_fund(
     let token_balance = query_token_balance(
         deps,
         config.eligible_collateral.clone(),
-        env.contract.address.clone(),
+        env.contract.address,
     )?;
 
     let amount_to_send = if token_balance < amount {
@@ -159,7 +159,7 @@ pub fn transfer_fee(
 pub fn withdraw(
     deps: Deps,
     env: Env,
-    mut state: State,
+    state: &mut State,
     receiver: &Addr,
     insurance_fund: &Addr,
     eligible_collateral: Addr,
@@ -167,27 +167,25 @@ pub fn withdraw(
 ) -> StdResult<Vec<SubMsg>> {
     let token_balance =
         query_token_balance(deps, eligible_collateral, env.contract.address.clone())?;
-
     let mut messages: Vec<SubMsg> = vec![];
+    let mut shortfall = Uint128::zero();
     if token_balance < amount {
-        let shortfall = amount.checked_sub(token_balance)?;
-        println!("Shortfall: {}", shortfall);
-
-        let mut state = read_state(deps.storage)?;
+        shortfall = amount.checked_sub(token_balance)?;
 
         messages.push(
             execute_transfer_from(
                 deps.storage,
-                &insurance_fund,
+                insurance_fund,
                 &env.contract.address,
                 shortfall,
             )
             .unwrap(),
         );
-
-        state.bad_debt += shortfall;
     }
-    messages.push(execute_transfer(deps.storage, &receiver, amount).unwrap());
+    messages.push(execute_transfer(deps.storage, receiver, amount).unwrap());
+
+    // this is unecessary but need to find a better way to do it
+    state.bad_debt += shortfall;
 
     Ok(messages)
 }
@@ -338,12 +336,14 @@ pub fn calc_remain_margin_with_funding_payment_integer(
     // calculate the funding payment
     let latest_premium_fraction =
         query_cumulative_premium_fraction(deps, position.vamm.to_string())?;
-    let funding_payment = (latest_premium_fraction - position.last_updated_premium_fraction) * position.size
-    / Integer::new_positive(config.decimals);
-        // calc_funding_payment(position.clone(), latest_premium_fraction, config.decimals);
+    let funding_payment = (latest_premium_fraction - position.last_updated_premium_fraction)
+        * position.size
+        / Integer::new_positive(config.decimals);
+    // calc_funding_payment(position.clone(), latest_premium_fraction, config.decimals);
 
     // calculate the remaining margin
-    let mut remaining_margin: Integer = margin_delta - funding_payment + Integer::new_positive(position.margin);
+    let mut remaining_margin: Integer =
+        margin_delta - funding_payment + Integer::new_positive(position.margin);
     let mut bad_debt = Integer::zero();
     if remaining_margin.is_negative() {
         bad_debt = remaining_margin.abs();
@@ -353,14 +353,14 @@ pub fn calc_remain_margin_with_funding_payment_integer(
     // if the remain is negative, set it to zero
     // and set the rest to
     Ok(RemainMarginResponse {
-        funding_payment: funding_payment,
+        funding_payment,
         margin: remaining_margin.value,
         bad_debt: bad_debt.value,
         latest_premium_fraction,
     })
 }
 
-// TODO remove 
+// TODO remove
 pub fn calc_remain_margin_with_funding_payment(
     deps: Deps,
     position: Position,
@@ -391,7 +391,7 @@ pub fn calc_remain_margin_with_funding_payment(
     // if the remain is negative, set it to zero
     // and set the rest to
     Ok(RemainMarginResponse {
-        funding_payment: funding_payment,
+        funding_payment,
         margin: remaining_margin,
         bad_debt,
         latest_premium_fraction,
@@ -405,7 +405,10 @@ pub fn calc_funding_payment(
     decimals: Uint128,
 ) -> Integer {
     if !position.size.is_zero() {
-        println!("{} {}", latest_premium_fraction, position.last_updated_premium_fraction);
+        println!(
+            "{} {}",
+            latest_premium_fraction, position.last_updated_premium_fraction
+        );
         (latest_premium_fraction - position.last_updated_premium_fraction) * position.size
             / Integer::new_positive(decimals)
             * Integer::new_negative(1u64)

@@ -348,8 +348,8 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
 
     // margin = 1050 - 400 = 650
     let alice_position = engine
-    .get_position_with_funding_payment(&router, vamm.addr().to_string(), alice.to_string())
-    .unwrap();
+        .get_position_with_funding_payment(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
     assert_eq!(alice_position.margin, to_decimals(1050u64));
 
     // then alice will get 2000% of her position size as fundingPayment
