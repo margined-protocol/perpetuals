@@ -1,10 +1,10 @@
 use crate::contract::{execute, instantiate, query};
-use crate::testing::setup::to_decimals;
 use cosmwasm_std::testing::{
     mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage,
 };
 use cosmwasm_std::{from_binary, Env, OwnedDeps, Uint128};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg, InstantiateMsg, QueryMsg};
+use margined_utils::scenarios::to_decimals;
 
 pub struct TestingEnv {
     pub deps: OwnedDeps<MockStorage, MockApi, MockQuerier>,
@@ -30,6 +30,10 @@ fn setup() -> TestingEnv {
 
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+    let msg = ExecuteMsg::SetOpen { open: true };
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     env.block.time = env.block.time.plus_seconds(14);
     env.block.height += 1;

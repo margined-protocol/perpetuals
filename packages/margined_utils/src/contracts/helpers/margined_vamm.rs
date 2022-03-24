@@ -36,6 +36,7 @@ impl VammController {
         spread_ratio: Option<Uint128>,
         margin_engine: Option<String>,
         pricefeed: Option<String>,
+        spot_price_twap_interval: Option<u64>,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
             owner,
@@ -43,7 +44,13 @@ impl VammController {
             spread_ratio,
             margin_engine,
             pricefeed,
+            spot_price_twap_interval,
         };
+        self.call(msg, vec![])
+    }
+
+    pub fn set_open(&self, open: bool) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::SetOpen { open };
         self.call(msg, vec![])
     }
 

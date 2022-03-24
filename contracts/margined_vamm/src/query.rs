@@ -33,6 +33,7 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
     let state: State = read_state(deps.storage)?;
 
     Ok(StateResponse {
+        open: state.open,
         quote_asset_reserve: state.quote_asset_reserve,
         base_asset_reserve: state.base_asset_reserve,
         total_position_size: state.total_position_size,

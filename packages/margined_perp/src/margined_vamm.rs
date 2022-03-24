@@ -38,12 +38,11 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     UpdateConfig {
         owner: Option<String>,
-        // open: Option<bool>,
-        // spot_price_twap_interval: Option<Uint128>,
         toll_ratio: Option<Uint128>,
         spread_ratio: Option<Uint128>,
         margin_engine: Option<String>,
         pricefeed: Option<String>,
+        spot_price_twap_interval: Option<u64>,
     },
     SwapInput {
         direction: Direction,
@@ -54,6 +53,9 @@ pub enum ExecuteMsg {
         base_asset_amount: Uint128,
     },
     SettleFunding {},
+    SetOpen {
+        open: bool,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -99,6 +101,7 @@ pub struct ConfigResponse {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct StateResponse {
+    pub open: bool,
     pub quote_asset_reserve: Uint128,
     pub base_asset_reserve: Uint128,
     pub total_position_size: Integer,
@@ -112,6 +115,7 @@ pub struct CalcFeeResponse {
     pub spread_fee: Uint128,
 }
 
+// TODO probably can replace this with integer?
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct PremiumResponse {
     pub value: Uint128,

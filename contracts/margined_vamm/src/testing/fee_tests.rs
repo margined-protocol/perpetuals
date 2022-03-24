@@ -1,9 +1,8 @@
 use crate::contract::{execute, instantiate, query};
-use crate::testing::setup::to_decimals;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Uint128};
 use margined_perp::margined_vamm::{CalcFeeResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-
+use margined_utils::scenarios::to_decimals;
 #[test]
 fn test_calc_fee() {
     let mut deps = mock_dependencies(&[]);
@@ -67,6 +66,7 @@ fn test_set_diff_fee_ratio() {
         spread_ratio: Some(Uint128::from(50_000_000u128)), // 0.01
         margin_engine: None,
         pricefeed: None,
+        spot_price_twap_interval: None,
     };
 
     let info = mock_info("addr0000", &[]);
@@ -193,6 +193,7 @@ fn test_update_not_owner() {
         spread_ratio: Some(Uint128::from(50_000_000u128)), // 0.01
         margin_engine: None,
         pricefeed: None,
+        spot_price_twap_interval: None,
     };
 
     let info = mock_info("addr0001", &[]);
