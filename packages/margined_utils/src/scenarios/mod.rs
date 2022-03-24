@@ -122,6 +122,9 @@ impl SimpleScenario {
             .unwrap();
         let vamm = VammController(vamm_addr.clone());
 
+        let msg = vamm.set_open(true).unwrap();
+        router.execute(owner.clone(), msg).unwrap();
+
         // set up margined engine contract
         let engine_addr = router
             .instantiate_contract(

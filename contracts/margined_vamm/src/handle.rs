@@ -11,7 +11,7 @@ use crate::{
     querier::query_underlying_twap_price,
     query::query_twap_price,
     state::{read_config, read_state, store_config, store_state, Config, State},
-    utils::{add_reserve_snapshot, require_margin_engine},
+    utils::{add_reserve_snapshot, require_margin_engine, require_open},
 };
 
 #[allow(clippy::too_many_arguments)]
@@ -100,6 +100,7 @@ pub fn swap_input(
     let state: State = read_state(deps.storage)?;
     let config: Config = read_config(deps.storage)?;
 
+    require_open(state.open)?;
     require_margin_engine(info.sender, config.margin_engine)?;
 
     let base_asset_amount = get_input_price_with_reserves(
@@ -136,6 +137,7 @@ pub fn swap_output(
     let state: State = read_state(deps.storage)?;
     let config: Config = read_config(deps.storage)?;
 
+    require_open(state.open)?;
     require_margin_engine(info.sender, config.margin_engine)?;
 
     let quote_asset_amount = get_output_price_with_reserves(
@@ -173,6 +175,7 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
     let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
 
+    require_open(state.open)?;
     require_margin_engine(info.sender, config.margin_engine)?;
 
     if env.block.time.seconds() < state.next_funding_time {

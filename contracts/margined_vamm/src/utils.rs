@@ -4,10 +4,20 @@ use crate::state::{
     read_reserve_snapshot, read_reserve_snapshot_counter, store_reserve_snapshot,
     update_reserve_snapshot, ReserveSnapshot,
 };
+
 pub fn require_margin_engine(sender: Addr, margin_engine: Addr) -> StdResult<Response> {
     // check that it is a registered vamm
     if sender != margin_engine {
         return Err(StdError::generic_err("sender not margin engine"));
+    }
+
+    Ok(Response::new())
+}
+
+pub fn require_open(open: bool) -> StdResult<Response> {
+    // check that it is a registered vamm
+    if !open {
+        return Err(StdError::generic_err("amm is closed"));
     }
 
     Ok(Response::new())

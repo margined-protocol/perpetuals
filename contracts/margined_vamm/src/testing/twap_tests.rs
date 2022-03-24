@@ -31,6 +31,12 @@ fn setup() -> TestingEnv {
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
 
+    let msg = ExecuteMsg::SetOpen {
+        open: true,
+    };
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
     env.block.time = env.block.time.plus_seconds(14);
     env.block.height += 1;
 
