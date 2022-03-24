@@ -7,11 +7,10 @@ use margined_perp::margined_vamm::Direction;
 
 use crate::{
     contract::{ONE_DAY_IN_SECONDS, ONE_HOUR_IN_SECONDS},
-    decimals::modulo,
     querier::query_underlying_twap_price,
     query::query_twap_price,
     state::{read_config, read_state, store_config, store_state, Config, State},
-    utils::{add_reserve_snapshot, require_margin_engine, require_open},
+    utils::{add_reserve_snapshot, modulo, require_margin_engine, require_open},
 };
 
 #[allow(clippy::too_many_arguments)]
