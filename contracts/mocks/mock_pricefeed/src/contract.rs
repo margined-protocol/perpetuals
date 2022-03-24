@@ -59,6 +59,7 @@ pub struct ConfigResponse {
     pub decimals: Uint128,
 }
 
+#[cfg(not(tarpaulin_include))]
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
@@ -76,6 +77,7 @@ pub fn instantiate(
     Ok(Response::default())
 }
 
+#[cfg(not(tarpaulin_include))]
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
@@ -98,6 +100,7 @@ pub fn execute(
     }
 }
 
+#[cfg(not(tarpaulin_include))]
 pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,
@@ -123,6 +126,7 @@ pub fn update_config(
 /// this is a mock function that enables storage of data
 /// by the contract owner will be replaced by integration
 /// with on-chain price oracles in the future.
+#[cfg(not(tarpaulin_include))]
 pub fn append_price(
     deps: DepsMut,
     _info: MessageInfo,
@@ -138,6 +142,7 @@ pub fn append_price(
 /// this is a mock function that enables storage of data
 /// by the contract owner will be replaced by integration
 /// with on-chain price oracles in the future.
+#[cfg(not(tarpaulin_include))]
 pub fn append_multiple_price(
     deps: DepsMut,
     _info: MessageInfo,
@@ -150,6 +155,7 @@ pub fn append_multiple_price(
     Ok(Response::default())
 }
 
+#[cfg(not(tarpaulin_include))]
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
@@ -166,6 +172,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 /// Queries contract Config
+#[cfg(not(tarpaulin_include))]
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config: Config = read_config(deps.storage)?;
 
@@ -176,11 +183,13 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 }
 
 /// Queries latest price for pair stored with key
+#[cfg(not(tarpaulin_include))]
 pub fn query_get_price(deps: Deps, _key: String) -> StdResult<PriceData> {
     singleton_read(deps.storage, KEY_PRICES).load()
 }
 
 /// Queries previous price for pair stored with key
+#[cfg(not(tarpaulin_include))]
 pub fn query_get_previous_price(
     deps: Deps,
     _key: String,
@@ -190,6 +199,7 @@ pub fn query_get_previous_price(
 }
 
 /// Queries contract Config
+#[cfg(not(tarpaulin_include))]
 pub fn query_get_twap_price(
     deps: Deps,
     _env: Env,
@@ -205,10 +215,12 @@ pub struct Config {
     pub decimals: Uint128,
 }
 
+#[cfg(not(tarpaulin_include))]
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
     singleton(storage, KEY_CONFIG).save(config)
 }
 
+#[cfg(not(tarpaulin_include))]
 pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
     singleton_read(storage, KEY_CONFIG).load()
 }
@@ -220,6 +232,7 @@ pub struct PriceData {
     pub timestamp: Timestamp,
 }
 
+#[cfg(not(tarpaulin_include))]
 pub fn store_price_data(
     storage: &mut dyn Storage,
     _key: String,
@@ -229,6 +242,7 @@ pub fn store_price_data(
     singleton(storage, KEY_PRICES).save(&price)
 }
 
+#[cfg(not(tarpaulin_include))]
 pub fn read_price_data(storage: &dyn Storage, _key: String) -> StdResult<Uint128> {
     singleton_read(storage, KEY_PRICES).load()
 }
