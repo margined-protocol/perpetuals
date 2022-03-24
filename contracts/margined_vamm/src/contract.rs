@@ -12,7 +12,7 @@ use crate::query::{
     query_twap_price,
 };
 use crate::{
-    handle::{settle_funding, swap_input, swap_output, update_config},
+    handle::{set_open, settle_funding, swap_input, swap_output, update_config},
     query::{query_config, query_state},
     state::{store_config, store_reserve_snapshot, store_state, Config, ReserveSnapshot, State},
 };
@@ -36,8 +36,8 @@ pub fn instantiate(
         spread_ratio: msg.spread_ratio,
         pricefeed: deps.api.addr_validate(&msg.pricefeed).unwrap(),
         decimals: Uint128::from(10u128.pow(msg.decimals as u32)),
-        spot_price_twap_interval: ONE_HOUR_IN_SECONDS, // default 1 hr
-        funding_period: msg.funding_period,            // Funding period in seconds
+        spot_price_twap_interval: ONE_HOUR_IN_SECONDS,
+        funding_period: msg.funding_period,
         funding_buffer_period: msg.funding_period / 2u64,
     };
 
@@ -50,12 +50,12 @@ pub fn instantiate(
     store_config(deps.storage, &config)?;
 
     let state = State {
+        open: false,
         base_asset_reserve: msg.base_asset_reserve,
         quote_asset_reserve: msg.quote_asset_reserve,
-        total_position_size: Integer::default(), // it's 0 btw
-        funding_rate: Uint128::zero(),           // Initialise the funding rate as 0
-        next_funding_time: env.block.time.seconds()
-            + msg.funding_period / ONE_HOUR_IN_SECONDS * ONE_HOUR_IN_SECONDS,
+        total_position_size: Integer::zero(),
+        funding_rate: Uint128::zero(),
+        next_funding_time: 0u64,
     };
 
     store_state(deps.storage, &state)?;
@@ -81,6 +81,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             spread_ratio,
             margin_engine,
             pricefeed,
+            spot_price_twap_interval,
         } => update_config(
             deps,
             info,
@@ -89,6 +90,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             spread_ratio,
             margin_engine,
             pricefeed,
+            spot_price_twap_interval,
         ),
         ExecuteMsg::SwapInput {
             direction,
@@ -99,6 +101,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             base_asset_amount,
         } => swap_output(deps, env, info, direction, base_asset_amount),
         ExecuteMsg::SettleFunding {} => settle_funding(deps, env, info),
+        ExecuteMsg::SetOpen { open } => set_open(deps, env, info, open),
     }
 }
 

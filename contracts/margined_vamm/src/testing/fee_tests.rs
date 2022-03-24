@@ -67,6 +67,7 @@ fn test_set_diff_fee_ratio() {
         spread_ratio: Some(Uint128::from(50_000_000u128)), // 0.01
         margin_engine: None,
         pricefeed: None,
+        spot_price_twap_interval: None,
     };
 
     let info = mock_info("addr0000", &[]);
@@ -193,6 +194,7 @@ fn test_update_not_owner() {
         spread_ratio: Some(Uint128::from(50_000_000u128)), // 0.01
         margin_engine: None,
         pricefeed: None,
+        spot_price_twap_interval: None,
     };
 
     let info = mock_info("addr0001", &[]);

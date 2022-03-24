@@ -155,6 +155,7 @@ impl SimpleScenario {
                     spread_ratio: None,
                     margin_engine: Some(engine_addr.to_string()),
                     pricefeed: None,
+                    spot_price_twap_interval: None,
                 },
                 &[],
             )
@@ -318,6 +319,9 @@ impl VammScenario {
             )
             .unwrap();
         let vamm = VammController(vamm_addr);
+
+        let msg = vamm.set_open(true).unwrap();
+        router.execute(owner.clone(), msg).unwrap();
 
         Self {
             router,
