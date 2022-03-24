@@ -1,5 +1,5 @@
 use crate::contract::{execute, instantiate, query};
-use crate::testing::setup::to_decimals;
+use margined_utils::scenarios::{to_decimals};
 use cosmwasm_std::testing::{
     mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage,
 };

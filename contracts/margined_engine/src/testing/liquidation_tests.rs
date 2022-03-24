@@ -4,14 +4,7 @@ use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
-use margined_utils::scenarios::SimpleScenario;
-
-pub const DECIMAL_MULTIPLIER: Uint128 = Uint128::new(1_000_000_000);
-
-// takes in a Uint128 and multiplies by the decimals just to make tests more legible
-pub fn to_decimals(input: u64) -> Uint128 {
-    Uint128::from(input) * DECIMAL_MULTIPLIER
-}
+use margined_utils::scenarios::{SimpleScenario, to_decimals};
 
 #[test]
 fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_liquidated() {

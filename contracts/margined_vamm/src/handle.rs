@@ -14,7 +14,7 @@ use crate::{
     utils::{add_reserve_snapshot, require_margin_engine},
 };
 
-#[warn(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments)]
 pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,

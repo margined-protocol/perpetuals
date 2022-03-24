@@ -1,11 +1,12 @@
 use crate::contract::{instantiate, query};
 use crate::{
     handle::{get_input_price_with_reserves, get_output_price_with_reserves},
-    testing::setup::to_decimals,
 };
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Uint128};
 use margined_perp::margined_vamm::{Direction, InstantiateMsg, QueryMsg, StateResponse};
+use margined_utils::scenarios::to_decimals;
+
 
 /// Unit tests
 #[test]

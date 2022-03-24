@@ -1,9 +1,8 @@
 use crate::contract::{execute, instantiate, query};
-use crate::testing::setup::to_decimals;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Uint128};
 use margined_perp::margined_vamm::{CalcFeeResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-
+use margined_utils::scenarios::to_decimals;
 #[test]
 fn test_calc_fee() {
     let mut deps = mock_dependencies(&[]);
