@@ -4,7 +4,7 @@ use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
-use margined_utils::scenarios::{SimpleScenario, to_decimals};
+use margined_utils::scenarios::{to_decimals, SimpleScenario};
 
 #[test]
 fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_liquidated() {

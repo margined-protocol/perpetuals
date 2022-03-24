@@ -1,11 +1,11 @@
 use crate::contract::{execute, instantiate, query};
-use margined_utils::scenarios::{to_decimals, DECIMAL_MULTIPLIER};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_vamm::{
     ConfigResponse, Direction, ExecuteMsg, InstantiateMsg, QueryMsg, StateResponse,
 };
+use margined_utils::scenarios::{to_decimals, DECIMAL_MULTIPLIER};
 
 #[test]
 fn test_set_open_admin_open_amm() {
@@ -25,19 +25,14 @@ fn test_set_open_admin_open_amm() {
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    let msg = ExecuteMsg::SetOpen {
-        open: true,
-    };
+    let msg = ExecuteMsg::SetOpen { open: true };
 
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        state.open,
-        true,
-    );
+    assert_eq!(state.open, true,);
 }
 
 #[test]
@@ -60,10 +55,7 @@ fn test_set_open_init_next_funding_time_zero() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        state.next_funding_time,
-        0u64,
-    );
+    assert_eq!(state.next_funding_time, 0u64,);
 }
 
 #[test]
@@ -84,9 +76,7 @@ fn test_set_open_admin_open_updates_next_funding_time() {
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    let msg = ExecuteMsg::SetOpen {
-        open: true,
-    };
+    let msg = ExecuteMsg::SetOpen { open: true };
 
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -117,26 +107,18 @@ fn test_set_open_admin_closes_amm() {
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    let msg = ExecuteMsg::SetOpen {
-        open: true,
-    };
+    let msg = ExecuteMsg::SetOpen { open: true };
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    let msg = ExecuteMsg::SetOpen {
-        open: false,
-    };
+    let msg = ExecuteMsg::SetOpen { open: false };
 
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        state.open,
-        false,
-    );
+    assert_eq!(state.open, false,);
 }
 
 #[test]
@@ -206,15 +188,11 @@ fn test_set_open_cant_do_anything_when_closed() {
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    let msg = ExecuteMsg::SetOpen {
-        open: true,
-    };
+    let msg = ExecuteMsg::SetOpen { open: true };
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    let msg = ExecuteMsg::SetOpen {
-        open: false,
-    };
+    let msg = ExecuteMsg::SetOpen { open: false };
 
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();

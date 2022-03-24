@@ -1,11 +1,11 @@
 use crate::contract::{execute, instantiate, query};
-use margined_utils::scenarios::{to_decimals, DECIMAL_MULTIPLIER};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_vamm::{
     ConfigResponse, Direction, ExecuteMsg, InstantiateMsg, QueryMsg, StateResponse,
 };
+use margined_utils::scenarios::{to_decimals, DECIMAL_MULTIPLIER};
 
 #[test]
 fn test_instantiation() {

@@ -1,7 +1,7 @@
 use cosmwasm_std::Uint128;
 use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
-use margined_utils::scenarios::{SimpleScenario, to_decimals};
+use margined_utils::scenarios::{to_decimals, SimpleScenario};
 
 #[test]
 fn test_get_margin_ratio() {
