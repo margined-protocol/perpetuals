@@ -154,6 +154,7 @@ fn test_set_open_cant_do_anything_when_its_beginning() {
     let msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
         quote_asset_amount: to_decimals(600),
+        can_go_over_fluctuation: false,
     };
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
@@ -213,6 +214,7 @@ fn test_set_open_cant_do_anything_when_closed() {
     let msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
         quote_asset_amount: to_decimals(600),
+        can_go_over_fluctuation: false,
     };
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();

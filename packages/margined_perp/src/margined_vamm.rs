@@ -43,6 +43,7 @@ pub enum ExecuteMsg {
     SwapInput {
         direction: Direction,
         quote_asset_amount: Uint128,
+        can_go_over_fluctuation: bool,
     },
     SwapOutput {
         direction: Direction,

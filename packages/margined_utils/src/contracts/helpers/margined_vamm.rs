@@ -60,10 +60,12 @@ impl VammController {
         &self,
         direction: Direction,
         quote_asset_amount: Uint128,
+        can_go_over_fluctuation: bool,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::SwapInput {
             direction,
             quote_asset_amount,
+            can_go_over_fluctuation,
         };
         self.call(msg, vec![])
     }

@@ -33,7 +33,7 @@ pub fn instantiate(
         quote_asset: msg.quote_asset,
         base_asset: msg.base_asset,
         toll_ratio: msg.toll_ratio,
-        spread_ratio: msg.spread_ratio,
+        spread_ratio: msg.spread_ratio, // TODO: validate these ratios, also maybe put them as Decimal256?
         fluctuation_limit_ratio: msg.fluctuation_limit_ratio,
         pricefeed: deps.api.addr_validate(&msg.pricefeed).unwrap(),
         decimals: Uint128::from(10u128.pow(msg.decimals as u32)),
@@ -98,7 +98,15 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         ExecuteMsg::SwapInput {
             direction,
             quote_asset_amount,
-        } => swap_input(deps, env, info, direction, quote_asset_amount),
+            can_go_over_fluctuation,
+        } => swap_input(
+            deps,
+            env,
+            info,
+            direction,
+            quote_asset_amount,
+            can_go_over_fluctuation,
+        ),
         ExecuteMsg::SwapOutput {
             direction,
             base_asset_amount,
