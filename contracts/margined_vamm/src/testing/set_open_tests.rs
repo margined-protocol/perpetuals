@@ -1,11 +1,10 @@
 use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{from_binary, Addr, Uint128};
-use margined_common::integer::Integer;
+use cosmwasm_std::{from_binary, Uint128};
 use margined_perp::margined_vamm::{
-    ConfigResponse, Direction, ExecuteMsg, InstantiateMsg, QueryMsg, StateResponse,
+    Direction, ExecuteMsg, InstantiateMsg, QueryMsg, StateResponse,
 };
-use margined_utils::scenarios::{to_decimals, DECIMAL_MULTIPLIER};
+use margined_utils::scenarios::to_decimals;
 
 #[test]
 fn test_set_open_admin_open_amm() {

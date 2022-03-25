@@ -113,13 +113,14 @@ pub fn swap_input(
     update_reserve(
         deps.storage,
         env,
-        direction,
+        direction.clone(),
         quote_asset_amount,
         base_asset_amount,
     )?;
 
     Ok(Response::new().add_attributes(vec![
         ("action", "swap_input"),
+        ("direction", &direction.to_string()),
         ("input", &quote_asset_amount.to_string()),
         ("output", &base_asset_amount.to_string()),
     ]))
@@ -148,7 +149,7 @@ pub fn swap_output(
     )?;
 
     // flip direction when updating reserve
-    let mut update_direction = direction;
+    let mut update_direction = direction.clone();
     if update_direction == Direction::AddToAmm {
         update_direction = Direction::RemoveFromAmm;
     } else {
@@ -165,6 +166,7 @@ pub fn swap_output(
 
     Ok(Response::new().add_attributes(vec![
         ("action", "swap_output"),
+        ("direction", &direction.to_string()),
         ("input", &base_asset_amount.to_string()),
         ("output", &quote_asset_amount.to_string()),
     ]))
@@ -350,5 +352,5 @@ pub fn update_reserve(
         update_state.base_asset_reserve,
     )?;
 
-    Ok(Response::new().add_attributes(vec![("action", "update_reserve")]))
+    Ok(Response::new())
 }
