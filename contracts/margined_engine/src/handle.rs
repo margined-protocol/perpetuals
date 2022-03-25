@@ -16,8 +16,8 @@ use crate::{
     },
     utils::{
         calc_remain_margin_with_funding_payment, direction_to_side, execute_transfer_from,
-        get_position, require_bad_debt, require_insufficient_margin, require_margin, require_vamm,
-        side_to_direction, withdraw,
+        get_position, require_bad_debt, require_insufficient_margin, require_margin,
+        require_position_not_zero, require_vamm, side_to_direction, withdraw,
     },
 };
 use margined_common::integer::Integer;
@@ -89,6 +89,7 @@ pub fn open_position(
             trader.clone(),
             side.clone(),
             open_notional,
+            false,
         )
     };
 
@@ -122,6 +123,9 @@ pub fn close_position(
 
     // read the position for the trader from vamm
     let position = read_position(deps.storage, &vamm, &trader).unwrap();
+
+    // check the position isn't zero
+    require_position_not_zero(position.size.value)?;
 
     let msg = internal_close_position(deps, &position, SWAP_CLOSE_REPLY_ID)?;
 
@@ -285,7 +289,7 @@ pub fn internal_increase_position(
     side: Side,
     open_notional: Uint128,
 ) -> StdResult<SubMsg> {
-    swap_input(&vamm, side, open_notional, SWAP_INCREASE_REPLY_ID)
+    swap_input(&vamm, side, open_notional, false, SWAP_INCREASE_REPLY_ID)
 }
 pub fn internal_close_position(deps: DepsMut, position: &Position, id: u64) -> StdResult<SubMsg> {
     let swap_msg = WasmMsg::Execute {
@@ -325,6 +329,7 @@ fn open_reverse_position(
     trader: Addr,
     side: Side,
     open_notional: Uint128,
+    can_go_over_fluctuation: bool,
 ) -> SubMsg {
     let position: Position = get_position(env, deps.storage, &vamm, &trader, side.clone());
     let current_notional = query_vamm_output_price(
@@ -338,7 +343,14 @@ fn open_reverse_position(
     // if position.notional > open_notional {
     let msg: SubMsg = if current_notional > open_notional {
         // then we are opening a new position or adding to an existing
-        swap_input(&vamm, side, open_notional, SWAP_DECREASE_REPLY_ID).unwrap()
+        swap_input(
+            &vamm,
+            side,
+            open_notional,
+            can_go_over_fluctuation,
+            SWAP_DECREASE_REPLY_ID,
+        )
+        .unwrap()
     } else {
         // first close position swap out the entire position
         swap_output(
@@ -353,7 +365,13 @@ fn open_reverse_position(
     msg
 }
 
-fn swap_input(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdResult<SubMsg> {
+fn swap_input(
+    vamm: &Addr,
+    side: Side,
+    open_notional: Uint128,
+    can_go_over_fluctuation: bool,
+    id: u64,
+) -> StdResult<SubMsg> {
     let direction: Direction = side_to_direction(side);
 
     let msg = WasmMsg::Execute {
@@ -362,6 +380,7 @@ fn swap_input(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdRe
         msg: to_binary(&ExecuteMsg::SwapInput {
             direction,
             quote_asset_amount: open_notional,
+            can_go_over_fluctuation,
         })?,
     };
 

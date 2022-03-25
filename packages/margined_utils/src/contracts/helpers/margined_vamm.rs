@@ -29,11 +29,13 @@ impl VammController {
         .into())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn update_config(
         &self,
         owner: Option<String>,
         toll_ratio: Option<Uint128>,
         spread_ratio: Option<Uint128>,
+        fluctuation_limit_ratio: Option<Uint128>,
         margin_engine: Option<String>,
         pricefeed: Option<String>,
         spot_price_twap_interval: Option<u64>,
@@ -42,6 +44,7 @@ impl VammController {
             owner,
             toll_ratio,
             spread_ratio,
+            fluctuation_limit_ratio,
             margin_engine,
             pricefeed,
             spot_price_twap_interval,
@@ -58,10 +61,12 @@ impl VammController {
         &self,
         direction: Direction,
         quote_asset_amount: Uint128,
+        can_go_over_fluctuation: bool,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::SwapInput {
             direction,
             quote_asset_amount,
+            can_go_over_fluctuation,
         };
         self.call(msg, vec![])
     }

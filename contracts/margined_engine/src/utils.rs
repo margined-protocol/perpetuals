@@ -380,6 +380,15 @@ pub fn require_bad_debt(bad_debt: Uint128) -> StdResult<Response> {
     Ok(Response::new())
 }
 
+// Checks that position isn't zero
+pub fn require_position_not_zero(size: Uint128) -> StdResult<Response> {
+    if size.is_zero() {
+        return Err(StdError::generic_err("Position is zero"));
+    }
+
+    Ok(Response::new())
+}
+
 // Checks that margin ratio is greater than base margin
 pub fn require_margin(base_margin: Uint128, margin_ratio: Uint128) -> StdResult<Response> {
     if margin_ratio < base_margin {

@@ -2,21 +2,15 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, Uint128};
+use strum_macros::Display;
 
 use margined_common::integer::Integer;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Display, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Direction {
     AddToAmm,
     RemoveFromAmm,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum LongShort {
-    Long,
-    Short,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -31,6 +25,7 @@ pub struct InstantiateMsg {
     pub funding_period: u64,
     pub toll_ratio: Uint128,
     pub spread_ratio: Uint128,
+    pub fluctuation_limit_ratio: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -40,6 +35,7 @@ pub enum ExecuteMsg {
         owner: Option<String>,
         toll_ratio: Option<Uint128>,
         spread_ratio: Option<Uint128>,
+        fluctuation_limit_ratio: Option<Uint128>,
         margin_engine: Option<String>,
         pricefeed: Option<String>,
         spot_price_twap_interval: Option<u64>,
@@ -47,6 +43,7 @@ pub enum ExecuteMsg {
     SwapInput {
         direction: Direction,
         quote_asset_amount: Uint128,
+        can_go_over_fluctuation: bool,
     },
     SwapOutput {
         direction: Direction,
@@ -95,6 +92,7 @@ pub struct ConfigResponse {
     pub base_asset: String,
     pub toll_ratio: Uint128,
     pub spread_ratio: Uint128,
+    pub fluctuation_limit_ratio: Uint128,
     pub decimals: Uint128,
     pub funding_period: u64,
 }
@@ -113,20 +111,4 @@ pub struct StateResponse {
 pub struct CalcFeeResponse {
     pub toll_fee: Uint128,
     pub spread_fee: Uint128,
-}
-
-// TODO probably can replace this with integer?
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct PremiumResponse {
-    pub value: Uint128,
-    pub payer: LongShort, // are the longs paying or the shorts?
-}
-
-impl Default for PremiumResponse {
-    fn default() -> Self {
-        PremiumResponse {
-            value: Uint128::zero(),
-            payer: LongShort::Long,
-        }
-    }
 }

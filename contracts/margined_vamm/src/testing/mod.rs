@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod fee_tests;
+mod fluctuation_tests;
 mod funding_tests;
 mod set_open_tests;
 mod swap_tests;

@@ -112,6 +112,7 @@ impl SimpleScenario {
                     funding_period: 86_400_u64, // funding period is 1 day to make calcs easier
                     toll_ratio: Uint128::zero(),
                     spread_ratio: Uint128::zero(),
+                    fluctuation_limit_ratio: Uint128::zero(),
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: None,
                 },
@@ -156,6 +157,7 @@ impl SimpleScenario {
                     owner: None,
                     toll_ratio: None,
                     spread_ratio: None,
+                    fluctuation_limit_ratio: None,
                     margin_engine: Some(engine_addr.to_string()),
                     pricefeed: None,
                     spot_price_twap_interval: None,
@@ -311,8 +313,9 @@ impl VammScenario {
                     quote_asset_reserve: to_decimals(1_000),
                     base_asset_reserve: to_decimals(100),
                     funding_period: 3_600_u64, // funding period is 1 day to make calcs easier
-                    toll_ratio: Uint128::zero(),
-                    spread_ratio: Uint128::zero(),
+                    toll_ratio: Uint128::from(10_000_000u128), // 0.01
+                    spread_ratio: Uint128::from(10_000_000u128), // 0.01
+                    fluctuation_limit_ratio: Uint128::from(10_000_000u128), // 0.01
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
                 },

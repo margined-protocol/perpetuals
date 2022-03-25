@@ -7,11 +7,13 @@ use margined_perp::margined_vamm::Direction;
 
 use crate::{
     contract::{ONE_DAY_IN_SECONDS, ONE_HOUR_IN_SECONDS},
-    decimals::modulo,
     querier::query_underlying_twap_price,
     query::query_twap_price,
     state::{read_config, read_state, store_config, store_state, Config, State},
-    utils::{add_reserve_snapshot, require_margin_engine, require_open},
+    utils::{
+        add_reserve_snapshot, check_is_over_block_fluctuation_limit, modulo, require_margin_engine,
+        require_open,
+    },
 };
 
 #[allow(clippy::too_many_arguments)]
@@ -21,6 +23,7 @@ pub fn update_config(
     owner: Option<String>,
     toll_ratio: Option<Uint128>,
     spread_ratio: Option<Uint128>,
+    fluctuation_limit_ratio: Option<Uint128>,
     margin_engine: Option<String>,
     pricefeed: Option<String>,
     spot_price_twap_interval: Option<u64>,
@@ -50,6 +53,11 @@ pub fn update_config(
     // change spread ratio
     if let Some(spread_ratio) = spread_ratio {
         config.spread_ratio = spread_ratio;
+    }
+
+    // change fluctuation limit ratio
+    if let Some(fluctuation_limit_ratio) = fluctuation_limit_ratio {
+        config.fluctuation_limit_ratio = fluctuation_limit_ratio;
     }
 
     // change pricefeed
@@ -96,6 +104,7 @@ pub fn swap_input(
     info: MessageInfo,
     direction: Direction,
     quote_asset_amount: Uint128,
+    can_go_over_fluctuation: bool,
 ) -> StdResult<Response> {
     let state: State = read_state(deps.storage)?;
     let config: Config = read_config(deps.storage)?;
@@ -114,13 +123,15 @@ pub fn swap_input(
     update_reserve(
         deps.storage,
         env,
-        direction,
+        direction.clone(),
         quote_asset_amount,
         base_asset_amount,
+        can_go_over_fluctuation,
     )?;
 
     Ok(Response::new().add_attributes(vec![
         ("action", "swap_input"),
+        ("direction", &direction.to_string()),
         ("input", &quote_asset_amount.to_string()),
         ("output", &base_asset_amount.to_string()),
     ]))
@@ -149,7 +160,7 @@ pub fn swap_output(
     )?;
 
     // flip direction when updating reserve
-    let mut update_direction = direction;
+    let mut update_direction = direction.clone();
     if update_direction == Direction::AddToAmm {
         update_direction = Direction::RemoveFromAmm;
     } else {
@@ -162,10 +173,12 @@ pub fn swap_output(
         update_direction,
         quote_asset_amount,
         base_asset_amount,
+        true,
     )?;
 
     Ok(Response::new().add_attributes(vec![
         ("action", "swap_output"),
+        ("direction", &direction.to_string()),
         ("input", &base_asset_amount.to_string()),
         ("output", &quote_asset_amount.to_string()),
     ]))
@@ -315,9 +328,19 @@ pub fn update_reserve(
     direction: Direction,
     quote_asset_amount: Uint128,
     base_asset_amount: Uint128,
+    can_go_over_fluctuation: bool,
 ) -> StdResult<Response> {
     let state: State = read_state(storage)?;
     let mut update_state = state.clone();
+
+    check_is_over_block_fluctuation_limit(
+        storage,
+        env.clone(),
+        direction.clone(),
+        quote_asset_amount,
+        base_asset_amount,
+        can_go_over_fluctuation,
+    )?;
 
     match direction {
         Direction::AddToAmm => {
@@ -327,7 +350,7 @@ pub fn update_reserve(
             update_state.base_asset_reserve =
                 state.base_asset_reserve.checked_sub(base_asset_amount)?;
 
-            // TODO think whether this is a very very bad idea or not
+            // TODO think whether this needs overflow protection
             update_state.total_position_size =
                 state.total_position_size + Integer::from(base_asset_amount);
         }
@@ -337,6 +360,8 @@ pub fn update_reserve(
                 .checked_add(base_asset_amount)?;
             update_state.quote_asset_reserve =
                 state.quote_asset_reserve.checked_sub(quote_asset_amount)?;
+
+            // TODO think whether this needs underflow protection
             update_state.total_position_size =
                 state.total_position_size - Integer::from(base_asset_amount);
         }
@@ -351,5 +376,5 @@ pub fn update_reserve(
         update_state.base_asset_reserve,
     )?;
 
-    Ok(Response::new().add_attributes(vec![("action", "update_reserve")]))
+    Ok(Response::new())
 }

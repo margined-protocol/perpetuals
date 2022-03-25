@@ -24,6 +24,7 @@ fn setup() -> TestingEnv {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::from(10_000_000u128),   // 0.01
         spread_ratio: Uint128::from(10_000_000u128), // 0.01
+        fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
         pricefeed: "oracle".to_string(),
     };
@@ -43,6 +44,7 @@ fn setup() -> TestingEnv {
             let swap_msg = ExecuteMsg::SwapInput {
                 direction: Direction::RemoveFromAmm,
                 quote_asset_amount: to_decimals(100),
+                can_go_over_fluctuation: false,
             };
 
             let info = mock_info("addr0000", &[]);
@@ -51,6 +53,7 @@ fn setup() -> TestingEnv {
             let swap_msg = ExecuteMsg::SwapInput {
                 direction: Direction::AddToAmm,
                 quote_asset_amount: to_decimals(50),
+                can_go_over_fluctuation: false,
             };
 
             let info = mock_info("addr0000", &[]);
@@ -85,6 +88,7 @@ fn test_no_change_in_snapshot() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::RemoveFromAmm,
         quote_asset_amount: to_decimals(100),
+        can_go_over_fluctuation: false,
     };
 
     let info = mock_info("addr0000", &[]);
@@ -122,6 +126,7 @@ fn test_interval_less_than_latest_snapshots() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::RemoveFromAmm,
         quote_asset_amount: to_decimals(100),
+        can_go_over_fluctuation: false,
     };
 
     let info = mock_info("addr0000", &[]);
@@ -164,6 +169,7 @@ fn test_input_twap_get_twap_price() {
             let swap_msg = ExecuteMsg::SwapInput {
                 direction: Direction::RemoveFromAmm,
                 quote_asset_amount: to_decimals(100),
+                can_go_over_fluctuation: false,
             };
 
             let info = mock_info("addr0000", &[]);
@@ -172,6 +178,7 @@ fn test_input_twap_get_twap_price() {
             let swap_msg = ExecuteMsg::SwapInput {
                 direction: Direction::AddToAmm,
                 quote_asset_amount: to_decimals(50),
+                can_go_over_fluctuation: false,
             };
 
             let info = mock_info("addr0000", &[]);
@@ -204,6 +211,7 @@ fn test_input_twap_if_snapshot_is_now_no_effect() {
             let swap_msg = ExecuteMsg::SwapInput {
                 direction: Direction::RemoveFromAmm,
                 quote_asset_amount: to_decimals(100),
+                can_go_over_fluctuation: false,
             };
 
             let info = mock_info("addr0000", &[]);
@@ -212,6 +220,7 @@ fn test_input_twap_if_snapshot_is_now_no_effect() {
             let swap_msg = ExecuteMsg::SwapInput {
                 direction: Direction::AddToAmm,
                 quote_asset_amount: to_decimals(50),
+                can_go_over_fluctuation: false,
             };
 
             let info = mock_info("addr0000", &[]);
@@ -225,6 +234,7 @@ fn test_input_twap_if_snapshot_is_now_no_effect() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::RemoveFromAmm,
         quote_asset_amount: to_decimals(100),
+        can_go_over_fluctuation: false,
     };
 
     let info = mock_info("addr0000", &[]);
@@ -286,6 +296,7 @@ fn test_output_twap_get_twap_price() {
             let swap_msg = ExecuteMsg::SwapInput {
                 direction: Direction::RemoveFromAmm,
                 quote_asset_amount: to_decimals(100),
+                can_go_over_fluctuation: false,
             };
 
             let info = mock_info("addr0000", &[]);
@@ -294,6 +305,7 @@ fn test_output_twap_get_twap_price() {
             let swap_msg = ExecuteMsg::SwapInput {
                 direction: Direction::AddToAmm,
                 quote_asset_amount: to_decimals(50),
+                can_go_over_fluctuation: false,
             };
 
             let info = mock_info("addr0000", &[]);

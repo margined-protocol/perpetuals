@@ -1,11 +1,10 @@
 use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{from_binary, Addr, Uint128};
-use margined_common::integer::Integer;
+use cosmwasm_std::{from_binary, Uint128};
 use margined_perp::margined_vamm::{
-    ConfigResponse, Direction, ExecuteMsg, InstantiateMsg, QueryMsg, StateResponse,
+    Direction, ExecuteMsg, InstantiateMsg, QueryMsg, StateResponse,
 };
-use margined_utils::scenarios::{to_decimals, DECIMAL_MULTIPLIER};
+use margined_utils::scenarios::to_decimals;
 
 #[test]
 fn test_set_open_admin_open_amm() {
@@ -19,6 +18,7 @@ fn test_set_open_admin_open_amm() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
         pricefeed: "oracle".to_string(),
     };
@@ -47,6 +47,7 @@ fn test_set_open_init_next_funding_time_zero() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
         pricefeed: "oracle".to_string(),
     };
@@ -70,6 +71,7 @@ fn test_set_open_admin_open_updates_next_funding_time() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
         pricefeed: "oracle".to_string(),
     };
@@ -101,6 +103,7 @@ fn test_set_open_admin_closes_amm() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
         pricefeed: "oracle".to_string(),
     };
@@ -133,6 +136,7 @@ fn test_set_open_cant_do_anything_when_its_beginning() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
         pricefeed: "oracle".to_string(),
     };
@@ -150,6 +154,7 @@ fn test_set_open_cant_do_anything_when_its_beginning() {
     let msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
         quote_asset_amount: to_decimals(600),
+        can_go_over_fluctuation: false,
     };
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
@@ -182,6 +187,7 @@ fn test_set_open_cant_do_anything_when_closed() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
         pricefeed: "oracle".to_string(),
     };
@@ -208,6 +214,7 @@ fn test_set_open_cant_do_anything_when_closed() {
     let msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
         quote_asset_amount: to_decimals(600),
+        can_go_over_fluctuation: false,
     };
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
