@@ -43,7 +43,12 @@ pub(crate) fn check_is_over_block_fluctuation_limit(
     let height = read_reserve_snapshot_counter(storage)?;
     let mut latest_snapshot = read_reserve_snapshot(storage, height)?;
 
+    println!(
+        "\n{} {} {}\n",
+        latest_snapshot.block_height, env.block.height, height
+    );
     if latest_snapshot.block_height == env.block.height && height > 1 {
+        println!("does this happen?");
         latest_snapshot = read_reserve_snapshot(storage, height - 1u64)?;
     }
 
@@ -68,7 +73,7 @@ pub(crate) fn check_is_over_block_fluctuation_limit(
     println!("{} {} {}", lower_limit, current_price, upper_limit);
     if current_price > upper_limit || current_price < lower_limit {
         return Err(StdError::generic_err(
-            "price already over fluctuation limit",
+            "price is already over fluctuation limit",
         ));
     }
 
@@ -91,7 +96,7 @@ pub(crate) fn check_is_over_block_fluctuation_limit(
         }?;
         println!("{} {} {}", lower_limit, price, upper_limit);
         if price > upper_limit || price < lower_limit {
-            return Err(StdError::generic_err("price over fluctuation limit"));
+            return Err(StdError::generic_err("price is over fluctuation limit"));
         }
     }
 
