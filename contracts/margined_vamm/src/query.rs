@@ -21,6 +21,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         base_asset: config.base_asset,
         toll_ratio: config.toll_ratio,
         spread_ratio: config.spread_ratio,
+        fluctuation_limit_ratio: config.fluctuation_limit_ratio,
         decimals: config.decimals,
         margin_engine: config.margin_engine,
         pricefeed: config.pricefeed,

@@ -19,6 +19,7 @@ fn test_instantiation() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
         pricefeed: "oracle".to_string(),
     };
@@ -36,6 +37,7 @@ fn test_instantiation() {
             base_asset: "USD".to_string(),
             toll_ratio: Uint128::zero(),
             spread_ratio: Uint128::zero(),
+            fluctuation_limit_ratio: Uint128::zero(),
             decimals: DECIMAL_MULTIPLIER,
             margin_engine: Addr::unchecked("addr0000".to_string()),
             pricefeed: Addr::unchecked("oracle".to_string()),
@@ -70,6 +72,7 @@ fn test_update_config() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
         margin_engine: Some("addr0000".to_string()),
     };
@@ -81,6 +84,7 @@ fn test_update_config() {
         owner: None,
         toll_ratio: None,
         spread_ratio: None,
+        fluctuation_limit_ratio: None,
         margin_engine: Some("addr0001".to_string()),
         pricefeed: None,
         spot_price_twap_interval: None,
@@ -99,6 +103,7 @@ fn test_update_config() {
             base_asset: "USD".to_string(),
             toll_ratio: Uint128::zero(),
             spread_ratio: Uint128::zero(),
+            fluctuation_limit_ratio: Uint128::zero(),
             decimals: DECIMAL_MULTIPLIER,
             margin_engine: Addr::unchecked("addr0001".to_string()),
             pricefeed: Addr::unchecked("oracle".to_string()),
@@ -119,6 +124,7 @@ fn test_swap_input_long() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
         margin_engine: Some("addr0000".to_string()),
     };
@@ -170,6 +176,7 @@ fn test_swap_input_short() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
         margin_engine: Some("addr0000".to_string()),
     };
@@ -221,6 +228,7 @@ fn test_swap_output_short() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
         margin_engine: Some("addr0000".to_string()),
     };
@@ -272,6 +280,7 @@ fn test_swap_output_long() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
         margin_engine: Some("addr0000".to_string()),
     };
@@ -323,6 +332,7 @@ fn test_swap_input_short_long() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
         margin_engine: Some("addr0000".to_string()),
     };
@@ -397,6 +407,7 @@ fn test_swap_input_short_long_long() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
         margin_engine: Some("addr0000".to_string()),
     };
@@ -492,6 +503,7 @@ fn test_swap_input_short_long_short() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
         margin_engine: Some("addr0000".to_string()),
     };
@@ -587,6 +599,7 @@ fn test_swap_input_long_integration_example() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
         margin_engine: Some("addr0000".to_string()),
     };
@@ -638,6 +651,7 @@ fn test_swap_input_long_short_integration_example() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
         margin_engine: Some("addr0000".to_string()),
     };
@@ -711,6 +725,7 @@ fn test_swap_input_twice_short_long() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
         margin_engine: Some("addr0000".to_string()),
     };
@@ -771,6 +786,7 @@ fn test_swap_input_twice_long_short() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
         margin_engine: Some("addr0000".to_string()),
     };
@@ -831,6 +847,7 @@ fn test_swap_output_twice_short_long() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
         margin_engine: Some("addr0000".to_string()),
     };
@@ -891,6 +908,7 @@ fn test_swap_output_twice_long_short() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         pricefeed: "oracle".to_string(),
         margin_engine: Some("addr0000".to_string()),
     };

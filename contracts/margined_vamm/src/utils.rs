@@ -23,6 +23,10 @@ pub fn require_open(open: bool) -> StdResult<Response> {
     Ok(Response::new())
 }
 
+fn check_is_over_block_fluctuation_limit() -> StdResult<Response> {
+    Ok(Response::new())
+}
+
 pub fn add_reserve_snapshot(
     storage: &mut dyn Storage,
     env: Env,

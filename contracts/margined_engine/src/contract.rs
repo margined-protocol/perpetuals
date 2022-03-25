@@ -223,7 +223,6 @@ fn parse_swap(response: SubMsgExecutionResponse) -> (Uint128, Uint128) {
 
     let output_str = read_event("output".to_string(), wasm).value;
     let output: Uint128 = Uint128::from_str(&output_str).unwrap();
-
     (input, output)
 }
 

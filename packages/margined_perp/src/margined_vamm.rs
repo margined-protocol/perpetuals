@@ -1,7 +1,6 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-
 use cosmwasm_std::{Addr, Uint128};
 use strum_macros::Display;
 
@@ -26,6 +25,7 @@ pub struct InstantiateMsg {
     pub funding_period: u64,
     pub toll_ratio: Uint128,
     pub spread_ratio: Uint128,
+    pub fluctuation_limit_ratio: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -35,6 +35,7 @@ pub enum ExecuteMsg {
         owner: Option<String>,
         toll_ratio: Option<Uint128>,
         spread_ratio: Option<Uint128>,
+        fluctuation_limit_ratio: Option<Uint128>,
         margin_engine: Option<String>,
         pricefeed: Option<String>,
         spot_price_twap_interval: Option<u64>,
@@ -90,6 +91,7 @@ pub struct ConfigResponse {
     pub base_asset: String,
     pub toll_ratio: Uint128,
     pub spread_ratio: Uint128,
+    pub fluctuation_limit_ratio: Uint128,
     pub decimals: Uint128,
     pub funding_period: u64,
 }

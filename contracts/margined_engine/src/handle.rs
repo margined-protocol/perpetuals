@@ -16,8 +16,8 @@ use crate::{
     },
     utils::{
         calc_remain_margin_with_funding_payment, direction_to_side, execute_transfer_from,
-        get_position, require_bad_debt, require_insufficient_margin, require_margin, require_vamm,
-        side_to_direction, withdraw,
+        get_position, require_bad_debt, require_insufficient_margin, require_margin,
+        require_position_not_zero, require_vamm, side_to_direction, withdraw,
     },
 };
 use margined_common::integer::Integer;
@@ -122,6 +122,9 @@ pub fn close_position(
 
     // read the position for the trader from vamm
     let position = read_position(deps.storage, &vamm, &trader).unwrap();
+
+    // check the position isn't zero
+    require_position_not_zero(position.size.value)?;
 
     let msg = internal_close_position(deps, &position, SWAP_CLOSE_REPLY_ID)?;
 

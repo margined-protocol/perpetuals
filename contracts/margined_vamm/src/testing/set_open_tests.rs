@@ -18,6 +18,7 @@ fn test_set_open_admin_open_amm() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
         pricefeed: "oracle".to_string(),
     };
@@ -46,6 +47,7 @@ fn test_set_open_init_next_funding_time_zero() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
         pricefeed: "oracle".to_string(),
     };
@@ -69,6 +71,7 @@ fn test_set_open_admin_open_updates_next_funding_time() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
         pricefeed: "oracle".to_string(),
     };
@@ -100,6 +103,7 @@ fn test_set_open_admin_closes_amm() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
         pricefeed: "oracle".to_string(),
     };
@@ -132,6 +136,7 @@ fn test_set_open_cant_do_anything_when_its_beginning() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
         pricefeed: "oracle".to_string(),
     };
@@ -181,6 +186,7 @@ fn test_set_open_cant_do_anything_when_closed() {
         funding_period: 3_600_u64,
         toll_ratio: Uint128::zero(),
         spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
         pricefeed: "oracle".to_string(),
     };

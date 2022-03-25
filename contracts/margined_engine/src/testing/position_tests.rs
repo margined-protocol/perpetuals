@@ -650,22 +650,23 @@ fn test_close_under_collateral_position() {
     assert_eq!(engine_balance, Uint128::from(333_333_333_334u128));
 }
 
-// #[test]
-// fn test_close_zero_position() {
-//     let SimpleScenario {
-//         mut router,
-//         alice,
-//         bob,
-//         engine,
-//         vamm,
-//         usdc,
-//         ..
-//     } = SimpleScenario::new();
+#[test]
+fn test_close_zero_position() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = SimpleScenario::new();
 
-//     let msg = engine.close_position(vamm.addr().to_string()).unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
-
-// }
+    let msg = engine.close_position(vamm.addr().to_string()).unwrap();
+    let res = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        res.to_string(),
+        "Generic error: Position is zero".to_string()
+    );
+}
 
 #[test]
 fn test_openclose_position_to_check_fee_is_charged() {
@@ -686,6 +687,7 @@ fn test_openclose_position_to_check_fee_is_charged() {
             None,
             Some(Uint128::from(10_000_000u128)), // 0.01
             Some(Uint128::from(20_000_000u128)), // 0.01
+            None,
             None,
             None,
             None,

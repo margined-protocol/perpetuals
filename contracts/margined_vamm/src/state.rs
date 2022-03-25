@@ -21,6 +21,7 @@ pub struct Config {
     pub decimals: Uint128,
     pub toll_ratio: Uint128,
     pub spread_ratio: Uint128,
+    pub fluctuation_limit_ratio: Uint128,
     pub spot_price_twap_interval: u64,
     pub funding_period: u64,
     pub funding_buffer_period: u64,
