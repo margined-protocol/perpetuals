@@ -13,13 +13,6 @@ pub enum Direction {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum LongShort {
-    Long,
-    Short,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub decimals: u8,
     pub pricefeed: String,
@@ -113,20 +106,4 @@ pub struct StateResponse {
 pub struct CalcFeeResponse {
     pub toll_fee: Uint128,
     pub spread_fee: Uint128,
-}
-
-// TODO probably can replace this with integer?
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct PremiumResponse {
-    pub value: Uint128,
-    pub payer: LongShort, // are the longs paying or the shorts?
-}
-
-impl Default for PremiumResponse {
-    fn default() -> Self {
-        PremiumResponse {
-            value: Uint128::zero(),
-            payer: LongShort::Long,
-        }
-    }
 }
