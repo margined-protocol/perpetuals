@@ -8,8 +8,8 @@ use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
 use crate::query::{
-    query_calc_fee, query_input_twap, query_output_price, query_output_twap, query_spot_price,
-    query_twap_price,
+    query_calc_fee, query_input_price, query_input_twap, query_output_price, query_output_twap,
+    query_spot_price, query_twap_price,
 };
 use crate::{
     handle::{set_open, settle_funding, swap_input, swap_output, update_config},
@@ -121,6 +121,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
+        QueryMsg::InputPrice { direction, amount } => {
+            to_binary(&query_input_price(deps, direction, amount)?)
+        }
         QueryMsg::OutputPrice { direction, amount } => {
             to_binary(&query_output_price(deps, direction, amount)?)
         }

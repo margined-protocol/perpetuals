@@ -44,7 +44,7 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
 }
 
 /// Queries input price
-pub fn _query_input_price(deps: Deps, direction: Direction, amount: Uint128) -> StdResult<Uint128> {
+pub fn query_input_price(deps: Deps, direction: Direction, amount: Uint128) -> StdResult<Uint128> {
     let state: State = read_state(deps.storage)?;
 
     let res = get_input_price_with_reserves(

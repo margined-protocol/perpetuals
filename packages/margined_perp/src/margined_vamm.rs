@@ -60,6 +60,10 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     Config {},
     State {},
+    InputPrice {
+        direction: Direction,
+        amount: Uint128,
+    },
     OutputPrice {
         direction: Direction,
         amount: Uint128,

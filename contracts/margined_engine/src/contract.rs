@@ -218,11 +218,32 @@ fn parse_swap(response: SubMsgExecutionResponse) -> (Uint128, Uint128) {
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");
     let wasm = wasm.unwrap();
 
-    let input_str = read_event("input".to_string(), wasm).value;
-    let input: Uint128 = Uint128::from_str(&input_str).unwrap();
+    let swap = read_event("action".to_string(), wasm).value;
 
-    let output_str = read_event("output".to_string(), wasm).value;
-    let output: Uint128 = Uint128::from_str(&output_str).unwrap();
+    let input: Uint128;
+    let output: Uint128;
+    match swap.as_str() {
+        "swap_input" => {
+            let input_str = read_event("quote_asset_amount".to_string(), wasm).value;
+            input = Uint128::from_str(&input_str).unwrap();
+
+            let output_str = read_event("base_asset_amount".to_string(), wasm).value;
+            output = Uint128::from_str(&output_str).unwrap();
+        }
+        "swap_output" => {
+            let input_str = read_event("base_asset_amount".to_string(), wasm).value;
+            input = Uint128::from_str(&input_str).unwrap();
+
+            let output_str = read_event("quote_asset_amount".to_string(), wasm).value;
+            output = Uint128::from_str(&output_str).unwrap();
+        }
+        // TODO this is bad bit need to deal with it properly
+        _ => {
+            input = Uint128::zero();
+            output = Uint128::zero();
+        }
+    }
+
     (input, output)
 }
 
