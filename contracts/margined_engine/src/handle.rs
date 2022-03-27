@@ -63,7 +63,7 @@ pub fn open_position(
         .checked_div(leverage)?;
 
     require_vamm(deps.storage, &vamm)?;
-    require_margin(config.initial_margin_ratio, margin_ratio)?;
+    require_margin(margin_ratio, config.initial_margin_ratio)?;
 
     // calc the input amount wrt to leverage and decimals
     let open_notional = quote_asset_amount
@@ -254,15 +254,15 @@ pub fn withdraw_margin(
         calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), margin_delta)?;
     require_bad_debt(remain_margin.bad_debt)?;
 
-    // check if margin ratio has been
-    let margin = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
-
-    require_margin(config.initial_margin_ratio, margin.ratio)?;
-
     position.margin = remain_margin.margin;
     position.last_updated_premium_fraction = remain_margin.latest_premium_fraction;
 
     store_position(deps.storage, &position)?;
+
+    // check if margin ratio has been
+    let margin = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
+
+    require_margin(margin.ratio, config.initial_margin_ratio)?;
 
     // try to execute the transfer
     let msgs = withdraw(
