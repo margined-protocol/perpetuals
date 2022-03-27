@@ -43,12 +43,7 @@ pub(crate) fn check_is_over_block_fluctuation_limit(
     let height = read_reserve_snapshot_counter(storage)?;
     let mut latest_snapshot = read_reserve_snapshot(storage, height)?;
 
-    println!(
-        "\n{} {} {}\n",
-        latest_snapshot.block_height, env.block.height, height
-    );
     if latest_snapshot.block_height == env.block.height && height > 1 {
-        println!("does this happen?");
         latest_snapshot = read_reserve_snapshot(storage, height - 1u64)?;
     }
 
@@ -70,7 +65,6 @@ pub(crate) fn check_is_over_block_fluctuation_limit(
 
     // ensure that the latest price isn't over the limit which would restrict any further
     // swaps from occurring in this block
-    println!("{} {} {}", lower_limit, current_price, upper_limit);
     if current_price > upper_limit || current_price < lower_limit {
         return Err(StdError::generic_err(
             "price is already over fluctuation limit",
@@ -78,9 +72,6 @@ pub(crate) fn check_is_over_block_fluctuation_limit(
     }
 
     if !can_go_over_limit {
-        println!("state: {:?}", state);
-        println!("quote_asset_amount: {}", quote_asset_amount);
-        println!("base_asset_amount: {}", base_asset_amount);
         let price = if direction == Direction::AddToAmm {
             state
                 .quote_asset_reserve
@@ -94,7 +85,6 @@ pub(crate) fn check_is_over_block_fluctuation_limit(
                 .checked_mul(config.decimals)?
                 .checked_div(state.base_asset_reserve.checked_add(base_asset_amount)?)
         }?;
-        println!("{} {} {}", lower_limit, price, upper_limit);
         if price > upper_limit || price < lower_limit {
             return Err(StdError::generic_err("price is over fluctuation limit"));
         }

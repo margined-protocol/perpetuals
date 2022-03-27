@@ -109,7 +109,7 @@ fn test_swap_input_price_goes_down_then_up_and_down_within_fluctuation_limit() {
     };
 
     let info = mock_info("addr0000", &[]);
-    execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
+    let _res = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
 
     // BUY 49, reserve will be 1024 : 97.66, price is 1024 / 97.66 = 10.49
     let swap_msg = ExecuteMsg::SwapInput {
@@ -119,7 +119,7 @@ fn test_swap_input_price_goes_down_then_up_and_down_within_fluctuation_limit() {
     };
 
     let info = mock_info("addr0000", &[]);
-    execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
+    let _res = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
 
     // SELL 49, reserve will be 975 : 102.56, price is 975 / 102.56 = 9.51
     let swap_msg = ExecuteMsg::SwapInput {
@@ -350,7 +350,7 @@ fn test_force_error_swap_output_short_can_go_over_limit_but_fails_second_time() 
     };
 
     let info = mock_info("addr0000", &[]);
-    execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
+    let _res = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapOutput {
         direction: Direction::AddToAmm,
@@ -413,7 +413,7 @@ fn test_force_error_swap_many_times() {
     };
 
     let info = mock_info("addr0000", &[]);
-    execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
+    let _res = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
@@ -422,7 +422,7 @@ fn test_force_error_swap_many_times() {
     };
 
     let info = mock_info("addr0000", &[]);
-    execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
+    let _res = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
@@ -447,7 +447,7 @@ fn test_force_error_compare_price_fluctuation_with_previous_blocks() {
     };
 
     let info = mock_info("addr0000", &[]);
-    execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
+    let _res = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
 
     // move forward 1 block
     app.env.block.time = app.env.block.time.plus_seconds(14);
@@ -493,7 +493,7 @@ fn test_force_error_compare_price_fluctuation_with_previous_blocks() {
     };
 
     let info = mock_info("addr0000", &[]);
-    execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
+    let _res = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
@@ -524,7 +524,7 @@ fn test_force_error_value_of_fluctuation_is_same_even_no_trading_for_multiple_bl
     };
 
     let info = mock_info("addr0000", &[]);
-    execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
+    let _res = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
 
     // move forward 3 blocks
     app.env.block.time = app.env.block.time.plus_seconds(42);

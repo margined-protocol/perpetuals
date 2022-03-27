@@ -1,4 +1,5 @@
 #[cfg(test)]
+mod add_remove_margin_tests;
 mod liquidation_tests;
 mod margin_ratio_tests;
 mod pay_funding_tests;

@@ -304,7 +304,6 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
 //     router.execute(alice.clone(), msg).unwrap();
 
 //     let spot_price = vamm.spot_price(&router).unwrap();
-//     println!("{}", spot_price);
 //     assert_eq!(1, 2);
 
 //     // let msg = engine

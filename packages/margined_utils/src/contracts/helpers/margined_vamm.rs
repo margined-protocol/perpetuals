@@ -174,4 +174,17 @@ impl VammController {
         let res: CalcFeeResponse = QuerierWrapper::new(querier).query(&query)?;
         Ok(res)
     }
+
+    /// is over spread limit
+    pub fn is_over_spread_limit<Q: Querier>(&self, querier: &Q) -> StdResult<bool> {
+        let msg = QueryMsg::IsOverSpreadLimit {};
+        let query = WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&msg)?,
+        }
+        .into();
+
+        let res: bool = QuerierWrapper::new(querier).query(&query)?;
+        Ok(res)
+    }
 }

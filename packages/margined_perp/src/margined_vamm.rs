@@ -60,6 +60,10 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     Config {},
     State {},
+    InputPrice {
+        direction: Direction,
+        amount: Uint128,
+    },
     OutputPrice {
         direction: Direction,
         amount: Uint128,
@@ -81,6 +85,8 @@ pub enum QueryMsg {
     CalcFee {
         quote_asset_amount: Uint128,
     },
+    // IsOverFluctuationLimit{},
+    IsOverSpreadLimit {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
