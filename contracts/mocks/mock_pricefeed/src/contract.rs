@@ -184,7 +184,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 
 /// Queries latest price for pair stored with key
 #[cfg(not(tarpaulin_include))]
-pub fn query_get_price(deps: Deps, _key: String) -> StdResult<PriceData> {
+pub fn query_get_price(deps: Deps, _key: String) -> StdResult<Uint128> {
     singleton_read(deps.storage, KEY_PRICES).load()
 }
 
@@ -194,7 +194,7 @@ pub fn query_get_previous_price(
     deps: Deps,
     _key: String,
     _num_round_back: Uint128,
-) -> StdResult<PriceData> {
+) -> StdResult<Uint128> {
     singleton_read(deps.storage, KEY_PRICES).load()
 }
 

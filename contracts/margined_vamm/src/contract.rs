@@ -7,16 +7,18 @@ use margined_common::integer::Integer;
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
-use crate::query::{
-    query_calc_fee, query_input_price, query_input_twap, query_output_price, query_output_twap,
-    query_spot_price, query_twap_price,
-};
 use crate::{
     handle::{set_open, settle_funding, swap_input, swap_output, update_config},
-    query::{query_config, query_state},
+    query::{
+        query_calc_fee, query_config, query_input_price, query_input_twap,
+        query_is_over_spread_limit, query_output_price, query_output_twap, query_spot_price,
+        query_state, query_twap_price,
+    },
     state::{store_config, store_reserve_snapshot, store_state, Config, ReserveSnapshot, State},
 };
 
+// TODO: maybe just hardcoding 10 isnt good
+pub const MAX_ORACLE_SPREAD_RATIO: u64 = 100_000_000; // 0.1 i.e. 10%
 pub const ONE_HOUR_IN_SECONDS: u64 = 60 * 60;
 pub const ONE_DAY_IN_SECONDS: u64 = 24 * 60 * 60;
 
@@ -138,5 +140,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         }
         QueryMsg::SpotPrice {} => to_binary(&query_spot_price(deps)?),
         QueryMsg::TwapPrice { interval } => to_binary(&query_twap_price(deps, env, interval)?),
+        QueryMsg::IsOverSpreadLimit {} => to_binary(&query_is_over_spread_limit(deps)?),
     }
 }

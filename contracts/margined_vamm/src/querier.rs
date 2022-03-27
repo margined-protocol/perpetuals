@@ -1,12 +1,12 @@
 // Contains queries for external contracts,
-use cosmwasm_std::{to_binary, Deps, DepsMut, QueryRequest, StdResult, Uint128, WasmQuery};
+use cosmwasm_std::{to_binary, Deps, QueryRequest, StdResult, Uint128, WasmQuery};
 
 use margined_perp::margined_pricefeed::QueryMsg;
 
 use crate::state::{read_config, Config};
 
 // returns the underlying price provided by an oracle
-pub fn _query_underlying_price(deps: &DepsMut) -> StdResult<Uint128> {
+pub fn query_underlying_price(deps: &Deps) -> StdResult<Uint128> {
     let config: Config = read_config(deps.storage)?;
     let key: String = config.quote_asset;
 

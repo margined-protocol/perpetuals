@@ -85,6 +85,8 @@ pub enum QueryMsg {
     CalcFee {
         quote_asset_amount: Uint128,
     },
+    // IsOverFluctuationLimit{},
+    IsOverSpreadLimit {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

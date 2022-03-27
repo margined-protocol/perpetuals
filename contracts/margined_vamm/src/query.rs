@@ -1,8 +1,11 @@
-use cosmwasm_std::{Deps, Env, StdResult, Uint128};
+use cosmwasm_std::{Deps, Env, StdError, StdResult, Uint128};
+use margined_common::integer::Integer;
 use margined_perp::margined_vamm::{CalcFeeResponse, ConfigResponse, Direction, StateResponse};
 
 use crate::{
+    contract::MAX_ORACLE_SPREAD_RATIO,
     handle::{get_input_price_with_reserves, get_output_price_with_reserves},
+    querier::query_underlying_price,
     state::{
         read_config, read_reserve_snapshot, read_reserve_snapshot_counter, read_state, Config,
         State,
@@ -130,6 +133,28 @@ pub fn query_calc_fee(deps: Deps, quote_asset_amount: Uint128) -> StdResult<Calc
     }
 
     Ok(res)
+}
+
+/// Returns bool to show is spead limit has been exceeded
+pub fn query_is_over_spread_limit(deps: Deps) -> StdResult<bool> {
+    let config: Config = read_config(deps.storage)?;
+
+    // get price from the oracle
+    let oracle_price = query_underlying_price(&deps)?;
+    if oracle_price.is_zero() {
+        return Err(StdError::generic_err("underlying price is 0"));
+    }
+
+    // get the local market price of the vamm
+    let market_price = query_spot_price(deps)?;
+
+    let current_spread_ratio = (Integer::new_positive(market_price)
+        - Integer::new_positive(oracle_price))
+        * Integer::new_positive(config.decimals)
+        / Integer::new_positive(oracle_price);
+
+    // TODO this is only 10% if the decimals are matching, and probably we should do this more nicely
+    Ok(current_spread_ratio.abs() >= Integer::new_positive(MAX_ORACLE_SPREAD_RATIO))
 }
 
 /// Calculates the TWAP of the AMM reserves
