@@ -53,6 +53,7 @@ fn test_open_position_long() {
             Side::BUY,
             to_decimals(60u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -91,6 +92,7 @@ fn test_open_position_two_longs() {
             Side::BUY,
             to_decimals(60u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -101,6 +103,7 @@ fn test_open_position_two_longs() {
             Side::BUY,
             to_decimals(60u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -134,6 +137,7 @@ fn test_open_position_two_shorts() {
             Side::SELL,
             to_decimals(40u64),
             to_decimals(5u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -144,6 +148,7 @@ fn test_open_position_two_shorts() {
             Side::SELL,
             to_decimals(40u64),
             to_decimals(5u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -178,6 +183,7 @@ fn test_open_position_equal_size_opposite_side() {
             Side::BUY,
             to_decimals(60u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -188,6 +194,7 @@ fn test_open_position_equal_size_opposite_side() {
             Side::SELL,
             to_decimals(300u64),
             to_decimals(2u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -222,6 +229,7 @@ fn test_open_position_one_long_two_shorts() {
             Side::BUY,
             to_decimals(60u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -232,6 +240,7 @@ fn test_open_position_one_long_two_shorts() {
             Side::SELL,
             to_decimals(20u64),
             to_decimals(5u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -249,6 +258,7 @@ fn test_open_position_one_long_two_shorts() {
             Side::SELL,
             to_decimals(50u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -283,6 +293,7 @@ fn test_open_position_short_and_two_longs() {
             Side::SELL,
             to_decimals(40u64),
             to_decimals(5u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -299,6 +310,7 @@ fn test_open_position_short_and_two_longs() {
             Side::BUY,
             to_decimals(20u64),
             to_decimals(5u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -315,6 +327,7 @@ fn test_open_position_short_and_two_longs() {
             Side::BUY,
             to_decimals(10u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -343,6 +356,7 @@ fn test_open_position_short_long_short() {
             Side::SELL,
             to_decimals(20u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -353,6 +367,7 @@ fn test_open_position_short_long_short() {
             Side::BUY,
             to_decimals(150u64),
             to_decimals(3u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -369,6 +384,7 @@ fn test_open_position_short_long_short() {
             Side::SELL,
             to_decimals(25u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -397,6 +413,7 @@ fn test_open_position_long_short_long() {
             Side::BUY,
             to_decimals(25u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -407,6 +424,7 @@ fn test_open_position_long_short_long() {
             Side::SELL,
             to_decimals(150u64),
             to_decimals(3u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -422,6 +440,7 @@ fn test_open_position_long_short_long() {
             Side::BUY,
             to_decimals(20u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -450,6 +469,7 @@ fn test_pnl_zero_no_others_trading() {
             Side::BUY,
             to_decimals(250u64),
             to_decimals(1u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -460,6 +480,7 @@ fn test_pnl_zero_no_others_trading() {
             Side::BUY,
             to_decimals(750u64),
             to_decimals(1u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -488,6 +509,7 @@ fn test_close_safe_position() {
             Side::SELL,
             to_decimals(50u64),
             to_decimals(2u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -504,6 +526,7 @@ fn test_close_safe_position() {
             Side::BUY,
             to_decimals(10u64),
             to_decimals(6u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -512,7 +535,9 @@ fn test_close_safe_position() {
     assert_eq!(state.quote_asset_reserve, to_decimals(960));
     assert_eq!(state.base_asset_reserve, Uint128::from(104_166_666_668u128));
 
-    let msg = engine.close_position(vamm.addr().to_string()).unwrap();
+    let msg = engine
+        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let position: PositionResponse = engine
@@ -551,6 +576,7 @@ fn test_close_position_over_maintenance_margin_ration() {
             Side::BUY,
             to_decimals(25u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -566,11 +592,14 @@ fn test_close_position_over_maintenance_margin_ration() {
             Side::SELL,
             Uint128::from(35_080_000_000u128),
             to_decimals(1u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let msg = engine.close_position(vamm.addr().to_string()).unwrap();
+    let msg = engine
+        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let position: PositionResponse = engine
@@ -605,6 +634,7 @@ fn test_close_under_collateral_position() {
             Side::BUY,
             to_decimals(25u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -620,6 +650,7 @@ fn test_close_under_collateral_position() {
             Side::SELL,
             to_decimals(250u64),
             to_decimals(1u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -627,7 +658,9 @@ fn test_close_under_collateral_position() {
     // Now Alice's position is {balance: 20, margin: 25}
     // positionValue of 20 quoteAsset is 166.67 now
     // marginRatio = (margin(25) + unrealizedPnl(166.67-250)) / openNotionalSize(250) = -23%
-    let msg = engine.close_position(vamm.addr().to_string()).unwrap();
+    let msg = engine
+        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     // Alice's realizedPnl = 166.66 - 250 = -83.33, she lost all her margin(25)
@@ -660,7 +693,9 @@ fn test_close_zero_position() {
         ..
     } = SimpleScenario::new();
 
-    let msg = engine.close_position(vamm.addr().to_string()).unwrap();
+    let msg = engine
+        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .unwrap();
     let res = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         res.to_string(),
@@ -701,6 +736,7 @@ fn test_openclose_position_to_check_fee_is_charged() {
             Side::BUY,
             to_decimals(60u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -708,7 +744,9 @@ fn test_openclose_position_to_check_fee_is_charged() {
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, to_decimals(60u64));
 
-    let msg = engine.close_position(vamm.addr().to_string()).unwrap();
+    let msg = engine
+        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
@@ -742,6 +780,7 @@ fn test_pnl_unrealized() {
             Side::BUY,
             to_decimals(25u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -762,6 +801,7 @@ fn test_pnl_unrealized() {
             Side::SELL,
             to_decimals(100u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -817,6 +857,7 @@ fn test_error_open_position_insufficient_balance() {
             Side::BUY,
             to_decimals(60u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -827,6 +868,7 @@ fn test_error_open_position_insufficient_balance() {
             Side::BUY,
             to_decimals(60u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     let res = router.execute(alice.clone(), msg).unwrap_err();
@@ -852,6 +894,7 @@ fn test_error_open_position_exceed_margin_ratio() {
             Side::BUY,
             to_decimals(60u64),
             to_decimals(21u64),
+            to_decimals(0u64),
         )
         .unwrap();
     let res = router.execute(alice.clone(), msg).unwrap_err();
@@ -908,6 +951,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
             Side::SELL,
             to_decimals(20u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -918,13 +962,16 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
             Side::SELL,
             to_decimals(20u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
     // alice close position, pnl = 200 -105.88 ~= 94.12
     // receive pnl + margin = 114.12
-    let msg = engine.close_position(vamm.addr().to_string()).unwrap();
+    let msg = engine
+        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let alice_balance = usdc.balance(&router, alice.clone()).unwrap();
@@ -935,7 +982,9 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     // bob loss all his margin (20) with additional 74.12 badDebt
     // which is already prepaid by insurance fund when alice close the position before
     // clearing house doesn't need to ask insurance fund for covering the bad debt
-    let msg = engine.close_position(vamm.addr().to_string()).unwrap();
+    let msg = engine
+        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
     let bob_balance = usdc.balance(&router, bob.clone()).unwrap();

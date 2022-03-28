@@ -52,6 +52,7 @@ pub fn open_position(
     side: Side,
     quote_asset_amount: Uint128,
     leverage: Uint128,
+    base_asset_limit: Uint128,
 ) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
 
@@ -80,7 +81,8 @@ pub fn open_position(
     }
 
     let msg: SubMsg = if is_increase {
-        internal_increase_position(vamm.clone(), side.clone(), open_notional).unwrap()
+        internal_increase_position(vamm.clone(), side.clone(), open_notional, base_asset_limit)
+            .unwrap()
     } else {
         open_reverse_position(
             &deps,
@@ -89,6 +91,7 @@ pub fn open_position(
             trader.clone(),
             side.clone(),
             open_notional,
+            base_asset_limit,
             false,
         )
     };
@@ -116,6 +119,7 @@ pub fn close_position(
     _info: MessageInfo,
     vamm: String,
     trader: String,
+    quote_amount_limit: Uint128,
 ) -> StdResult<Response> {
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
@@ -127,7 +131,7 @@ pub fn close_position(
     // check the position isn't zero
     require_position_not_zero(position.size.value)?;
 
-    let msg = internal_close_position(deps, &position, SWAP_CLOSE_REPLY_ID)?;
+    let msg = internal_close_position(deps, &position, quote_amount_limit, SWAP_CLOSE_REPLY_ID)?;
 
     Ok(Response::new().add_submessage(msg))
 }
@@ -167,7 +171,7 @@ pub fn liquidate(
     if false {
         // NOTHING in future this condition will be there to see if the liquidation is partial
     } else {
-        msg = internal_close_position(deps, &position, SWAP_LIQUIDATE_REPLY_ID)?;
+        msg = internal_close_position(deps, &position, Uint128::zero(), SWAP_LIQUIDATE_REPLY_ID)?;
         response = response.add_submessage(msg);
     }
 
@@ -288,16 +292,31 @@ pub fn internal_increase_position(
     vamm: Addr,
     side: Side,
     open_notional: Uint128,
+    base_asset_limit: Uint128,
 ) -> StdResult<SubMsg> {
-    swap_input(&vamm, side, open_notional, false, SWAP_INCREASE_REPLY_ID)
+    swap_input(
+        &vamm,
+        side,
+        open_notional,
+        base_asset_limit,
+        false,
+        SWAP_INCREASE_REPLY_ID,
+    )
 }
-pub fn internal_close_position(deps: DepsMut, position: &Position, id: u64) -> StdResult<SubMsg> {
+
+pub fn internal_close_position(
+    deps: DepsMut,
+    position: &Position,
+    quote_asset_limit: Uint128,
+    id: u64,
+) -> StdResult<SubMsg> {
     let swap_msg = WasmMsg::Execute {
         contract_addr: position.vamm.to_string(),
         funds: vec![],
         msg: to_binary(&ExecuteMsg::SwapOutput {
             direction: position.direction.clone(),
             base_asset_amount: position.size.value,
+            quote_asset_limit,
         })?,
     };
 
@@ -322,6 +341,7 @@ pub fn internal_close_position(deps: DepsMut, position: &Position, id: u64) -> S
 }
 
 // Increase the position, just basically wraps swap input though it may do more in the future
+#[allow(clippy::too_many_arguments)]
 fn open_reverse_position(
     deps: &DepsMut,
     env: Env,
@@ -329,6 +349,7 @@ fn open_reverse_position(
     trader: Addr,
     side: Side,
     open_notional: Uint128,
+    base_amount_limit: Uint128,
     can_go_over_fluctuation: bool,
 ) -> SubMsg {
     let position: Position = get_position(env, deps.storage, &vamm, &trader, side.clone());
@@ -347,6 +368,7 @@ fn open_reverse_position(
             &vamm,
             side,
             open_notional,
+            base_amount_limit,
             can_go_over_fluctuation,
             SWAP_DECREASE_REPLY_ID,
         )
@@ -357,6 +379,7 @@ fn open_reverse_position(
             &vamm,
             direction_to_side(position.direction.clone()),
             position.size.value,
+            Uint128::zero(),
             SWAP_REVERSE_REPLY_ID,
         )
         .unwrap()
@@ -369,6 +392,7 @@ fn swap_input(
     vamm: &Addr,
     side: Side,
     open_notional: Uint128,
+    base_asset_limit: Uint128,
     can_go_over_fluctuation: bool,
     id: u64,
 ) -> StdResult<SubMsg> {
@@ -380,6 +404,7 @@ fn swap_input(
         msg: to_binary(&ExecuteMsg::SwapInput {
             direction,
             quote_asset_amount: open_notional,
+            base_asset_limit,
             can_go_over_fluctuation,
         })?,
     };
@@ -394,7 +419,13 @@ fn swap_input(
     Ok(execute_submsg)
 }
 
-fn swap_output(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdResult<SubMsg> {
+fn swap_output(
+    vamm: &Addr,
+    side: Side,
+    open_notional: Uint128,
+    quote_asset_limit: Uint128,
+    id: u64,
+) -> StdResult<SubMsg> {
     let direction: Direction = side_to_direction(side);
 
     let swap_msg = WasmMsg::Execute {
@@ -403,6 +434,7 @@ fn swap_output(vamm: &Addr, side: Side, open_notional: Uint128, id: u64) -> StdR
         msg: to_binary(&ExecuteMsg::SwapOutput {
             direction,
             base_asset_amount: open_notional,
+            quote_asset_limit,
         })?,
     };
 

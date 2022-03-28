@@ -104,6 +104,7 @@ pub fn swap_input(
     info: MessageInfo,
     direction: Direction,
     quote_asset_amount: Uint128,
+    base_asset_limit: Uint128,
     can_go_over_fluctuation: bool,
 ) -> StdResult<Response> {
     let state: State = read_state(deps.storage)?;
@@ -119,6 +120,19 @@ pub fn swap_input(
         state.quote_asset_reserve,
         state.base_asset_reserve,
     )?;
+
+    // If AddToAmm, exchanged base amount should be more than base_asset_limit,
+    // otherwise(RemoveFromAmm), exchanged base amount should be less than base_asset_limit.
+    // In RemoveFromAmm case, more position means more debt so should not be larger than base_asset_limit
+    if !base_asset_limit.is_zero() {
+        if direction == Direction::AddToAmm && base_asset_amount < base_asset_limit {
+            return Err(StdError::generic_err("Less than minimal base amount limit"));
+        } else if direction == Direction::RemoveFromAmm && base_asset_amount > base_asset_limit {
+            return Err(StdError::generic_err(
+                "Greater than maximum base amount limit",
+            ));
+        }
+    }
 
     update_reserve(
         deps.storage,
@@ -144,6 +158,7 @@ pub fn swap_output(
     info: MessageInfo,
     direction: Direction,
     base_asset_amount: Uint128,
+    quote_asset_limit: Uint128,
 ) -> StdResult<Response> {
     let state: State = read_state(deps.storage)?;
     let config: Config = read_config(deps.storage)?;
@@ -165,6 +180,19 @@ pub fn swap_output(
         update_direction = Direction::RemoveFromAmm;
     } else {
         update_direction = Direction::AddToAmm;
+    }
+
+    // If AddToAmm, exchanged base amount should be more than quote_asset_limit,
+    // otherwise(RemoveFromAmm), exchanged base amount should be less than quote_asset_limit.
+    // In RemoveFromAmm case, more position means more debt so should not be larger than quote_asset_limit
+    if !quote_asset_limit.is_zero() {
+        if direction == Direction::RemoveFromAmm && quote_asset_amount < quote_asset_limit {
+            return Err(StdError::generic_err("Less than minimal base amount limit"));
+        } else if direction == Direction::AddToAmm && quote_asset_amount > quote_asset_limit {
+            return Err(StdError::generic_err(
+                "Greater than maximum base amount limit",
+            ));
+        }
     }
 
     update_reserve(

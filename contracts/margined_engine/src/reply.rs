@@ -161,7 +161,8 @@ pub fn reverse_position_reply(
     } else {
         store_tmp_swap(deps.storage, &swap)?;
 
-        msg = internal_increase_position(swap.vamm, swap.side, open_notional)?
+        // TODO maybe we need to actually let the user define this limit
+        msg = internal_increase_position(swap.vamm, swap.side, open_notional, Uint128::zero())?
     }
 
     store_position(deps.storage, &position)?;

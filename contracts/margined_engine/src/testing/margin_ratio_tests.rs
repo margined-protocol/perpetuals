@@ -19,6 +19,7 @@ fn test_get_margin_ratio() {
             Side::BUY,
             to_decimals(25u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -47,6 +48,7 @@ fn test_get_margin_ratio_long() {
             Side::BUY,
             to_decimals(25u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -57,6 +59,7 @@ fn test_get_margin_ratio_long() {
             Side::SELL,
             to_decimals(15u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -86,6 +89,7 @@ fn test_get_margin_ratio_short() {
             Side::SELL,
             to_decimals(25u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -96,6 +100,7 @@ fn test_get_margin_ratio_short() {
             Side::BUY,
             to_decimals(15u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -131,6 +136,7 @@ fn test_get_margin_higher_twap() {
             Side::BUY,
             to_decimals(25u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -146,6 +152,7 @@ fn test_get_margin_higher_twap() {
             Side::SELL,
             to_decimals(15u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();

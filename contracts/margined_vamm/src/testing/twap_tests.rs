@@ -45,6 +45,7 @@ fn setup() -> TestingEnv {
                 direction: Direction::RemoveFromAmm,
                 quote_asset_amount: to_decimals(100),
                 can_go_over_fluctuation: false,
+                base_asset_limit: Uint128::zero(),
             };
 
             let info = mock_info("addr0000", &[]);
@@ -54,6 +55,7 @@ fn setup() -> TestingEnv {
                 direction: Direction::AddToAmm,
                 quote_asset_amount: to_decimals(50),
                 can_go_over_fluctuation: false,
+                base_asset_limit: Uint128::zero(),
             };
 
             let info = mock_info("addr0000", &[]);
@@ -89,6 +91,7 @@ fn test_no_change_in_snapshot() {
         direction: Direction::RemoveFromAmm,
         quote_asset_amount: to_decimals(100),
         can_go_over_fluctuation: false,
+        base_asset_limit: Uint128::zero(),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -127,6 +130,7 @@ fn test_interval_less_than_latest_snapshots() {
         direction: Direction::RemoveFromAmm,
         quote_asset_amount: to_decimals(100),
         can_go_over_fluctuation: false,
+        base_asset_limit: Uint128::zero(),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -170,6 +174,7 @@ fn test_input_twap_get_twap_price() {
                 direction: Direction::RemoveFromAmm,
                 quote_asset_amount: to_decimals(100),
                 can_go_over_fluctuation: false,
+                base_asset_limit: Uint128::zero(),
             };
 
             let info = mock_info("addr0000", &[]);
@@ -179,6 +184,7 @@ fn test_input_twap_get_twap_price() {
                 direction: Direction::AddToAmm,
                 quote_asset_amount: to_decimals(50),
                 can_go_over_fluctuation: false,
+                base_asset_limit: Uint128::zero(),
             };
 
             let info = mock_info("addr0000", &[]);
@@ -212,6 +218,7 @@ fn test_input_twap_if_snapshot_is_now_no_effect() {
                 direction: Direction::RemoveFromAmm,
                 quote_asset_amount: to_decimals(100),
                 can_go_over_fluctuation: false,
+                base_asset_limit: Uint128::zero(),
             };
 
             let info = mock_info("addr0000", &[]);
@@ -221,6 +228,7 @@ fn test_input_twap_if_snapshot_is_now_no_effect() {
                 direction: Direction::AddToAmm,
                 quote_asset_amount: to_decimals(50),
                 can_go_over_fluctuation: false,
+                base_asset_limit: Uint128::zero(),
             };
 
             let info = mock_info("addr0000", &[]);
@@ -235,6 +243,7 @@ fn test_input_twap_if_snapshot_is_now_no_effect() {
         direction: Direction::RemoveFromAmm,
         quote_asset_amount: to_decimals(100),
         can_go_over_fluctuation: false,
+        base_asset_limit: Uint128::zero(),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -297,6 +306,7 @@ fn test_output_twap_get_twap_price() {
                 direction: Direction::RemoveFromAmm,
                 quote_asset_amount: to_decimals(100),
                 can_go_over_fluctuation: false,
+                base_asset_limit: Uint128::zero(),
             };
 
             let info = mock_info("addr0000", &[]);
@@ -306,6 +316,7 @@ fn test_output_twap_get_twap_price() {
                 direction: Direction::AddToAmm,
                 quote_asset_amount: to_decimals(50),
                 can_go_over_fluctuation: false,
+                base_asset_limit: Uint128::zero(),
             };
 
             let info = mock_info("addr0000", &[]);
