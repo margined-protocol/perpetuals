@@ -126,10 +126,10 @@ pub fn swap_input(
     // In RemoveFromAmm case, more position means more debt so should not be larger than base_asset_limit
     if !base_asset_limit.is_zero() {
         if direction == Direction::AddToAmm && base_asset_amount < base_asset_limit {
-            return Err(StdError::generic_err("Less than minimal base amount limit"));
+            return Err(StdError::generic_err("Less than minimal base asset amount limit"));
         } else if direction == Direction::RemoveFromAmm && base_asset_amount > base_asset_limit {
             return Err(StdError::generic_err(
-                "Greater than maximum base amount limit",
+                "Greater than maximum base asset amount limit",
             ));
         }
     }
@@ -187,10 +187,10 @@ pub fn swap_output(
     // In RemoveFromAmm case, more position means more debt so should not be larger than quote_asset_limit
     if !quote_asset_limit.is_zero() {
         if direction == Direction::RemoveFromAmm && quote_asset_amount < quote_asset_limit {
-            return Err(StdError::generic_err("Less than minimal base amount limit"));
+            return Err(StdError::generic_err("Less than minimal quote asset amount limit"));
         } else if direction == Direction::AddToAmm && quote_asset_amount > quote_asset_limit {
             return Err(StdError::generic_err(
-                "Greater than maximum base amount limit",
+                "Greater than maximum quote asset amount limit",
             ));
         }
     }
