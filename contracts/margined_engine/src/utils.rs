@@ -266,7 +266,7 @@ pub fn get_position_notional_unrealized_pnl(
     calc_option: PnlCalcOption,
 ) -> StdResult<PositionUnrealizedPnlResponse> {
     let mut position_notional = Uint128::zero();
-    let mut unrealized_pnl = Uint128::zero();
+    let mut unrealized_pnl = Integer::zero();
 
     let position_size = position.size;
     if !position_size.is_zero() {
@@ -289,11 +289,13 @@ pub fn get_position_notional_unrealized_pnl(
             }
             PnlCalcOption::ORACLE => {}
         }
-        if position.notional > position_notional {
-            unrealized_pnl = position.notional.checked_sub(position_notional)?;
+
+        // we are short if the size of the position is less than 0
+        unrealized_pnl = if position.size < Integer::zero() {
+            Integer::new_positive(position_notional) - Integer::new_positive(position.notional)
         } else {
-            unrealized_pnl = position_notional.checked_sub(position.notional)?;
-        }
+            Integer::new_positive(position.notional) - Integer::new_positive(position_notional)
+        };
     }
 
     Ok(PositionUnrealizedPnlResponse {

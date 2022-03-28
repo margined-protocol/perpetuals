@@ -120,7 +120,7 @@ pub struct SwapResponse {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct PositionUnrealizedPnlResponse {
     pub position_notional: Uint128,
-    pub unrealized_pnl: Uint128,
+    pub unrealized_pnl: Integer,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

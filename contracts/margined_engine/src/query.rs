@@ -39,7 +39,7 @@ pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Pos
 }
 
 /// Queries user position
-pub fn query_unrealized_pnl(deps: Deps, vamm: String, trader: String) -> StdResult<Uint128> {
+pub fn query_unrealized_pnl(deps: Deps, vamm: String, trader: String) -> StdResult<Integer> {
     // read the msg.senders position
     let position = read_position(
         deps.storage,
@@ -140,8 +140,8 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
     // currently it seems only losses have been
     // tested but it cant be like that forever...
     let PositionUnrealizedPnlResponse {
-        position_notional: mut notional,
-        unrealized_pnl: mut pnl,
+        position_notional: spot_notional,
+        unrealized_pnl: spot_pnl,
     } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::SPOTPRICE)?;
     let PositionUnrealizedPnlResponse {
         position_notional: twap_notional,
@@ -149,12 +149,23 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
     } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::TWAP)?;
 
     // calculate and return margin
-    if pnl > twap_pnl {
-        pnl = twap_pnl;
-        notional = twap_notional;
-    }
+    let PositionUnrealizedPnlResponse {
+        position_notional,
+        unrealized_pnl,
+    } = if spot_pnl.abs() > twap_pnl.abs() {
+        PositionUnrealizedPnlResponse {
+            position_notional: spot_notional,
+            unrealized_pnl: spot_pnl,
+        }
+    } else {
+        PositionUnrealizedPnlResponse {
+            position_notional: twap_notional,
+            unrealized_pnl: twap_pnl,
+        }
+    };
 
-    let margin_ratio = Integer::new_positive(position.margin) - Integer::new_positive(pnl);
+    let margin_ratio = Integer::new_positive(position.margin) - unrealized_pnl;
 
-    Ok((margin_ratio * Integer::new_positive(config.decimals)) / Integer::new_positive(notional))
+    Ok((margin_ratio * Integer::new_positive(config.decimals))
+        / Integer::new_positive(position_notional))
 }
