@@ -310,16 +310,6 @@ pub fn internal_close_position(
     quote_asset_limit: Uint128,
     id: u64,
 ) -> StdResult<SubMsg> {
-    let swap_msg = WasmMsg::Execute {
-        contract_addr: position.vamm.to_string(),
-        funds: vec![],
-        msg: to_binary(&ExecuteMsg::SwapOutput {
-            direction: position.direction.clone(),
-            base_asset_amount: position.size.value,
-            quote_asset_limit,
-        })?,
-    };
-
     store_tmp_swap(
         deps.storage,
         &Swap {
@@ -332,12 +322,13 @@ pub fn internal_close_position(
         },
     )?;
 
-    Ok(SubMsg {
-        msg: CosmosMsg::Wasm(swap_msg),
-        gas_limit: None, // probably should set a limit in the config
+    swap_output(
+        &position.vamm.clone(),
+        direction_to_side(position.direction.clone()),
+        position.size.value,
+        quote_asset_limit,
         id,
-        reply_on: ReplyOn::Always,
-    })
+    )
 }
 
 // Increase the position, just basically wraps swap input though it may do more in the future
