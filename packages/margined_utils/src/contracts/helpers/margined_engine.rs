@@ -1,5 +1,5 @@
 use margined_perp::margined_engine::{
-    ConfigResponse, ExecuteMsg, MarginRatioResponse, PositionResponse, QueryMsg, Side,
+    ConfigResponse, ExecuteMsg, PositionResponse, QueryMsg, Side,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -137,7 +137,7 @@ impl EngineController {
         querier: &Q,
         vamm: String,
         trader: String,
-    ) -> StdResult<MarginRatioResponse> {
+    ) -> StdResult<Integer> {
         let msg = QueryMsg::MarginRatio { vamm, trader };
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -145,7 +145,7 @@ impl EngineController {
         }
         .into();
 
-        let res: MarginRatioResponse = QuerierWrapper::new(querier).query(&query)?;
+        let res: Integer = QuerierWrapper::new(querier).query(&query)?;
         Ok(res)
     }
 

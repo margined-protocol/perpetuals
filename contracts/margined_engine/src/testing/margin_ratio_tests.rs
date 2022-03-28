@@ -1,5 +1,6 @@
 use cosmwasm_std::Uint128;
 use cw_multi_test::Executor;
+use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
 
@@ -28,7 +29,7 @@ fn test_get_margin_ratio() {
     let margin_ratio = engine
         .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(margin_ratio.ratio, Uint128::from(100_000_000u128));
+    assert_eq!(margin_ratio, Integer::new_positive(100_000_000u128));
 }
 
 #[test]
@@ -68,8 +69,7 @@ fn test_get_margin_ratio_long() {
     let margin_ratio = engine
         .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(margin_ratio.ratio, Uint128::from(134_297_520u128));
-    assert_eq!(margin_ratio.polarity, false);
+    assert_eq!(margin_ratio, Integer::new_negative(134_297_520u128));
 }
 
 #[test]
@@ -109,8 +109,7 @@ fn test_get_margin_ratio_short() {
     let margin_ratio = engine
         .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(margin_ratio.ratio, Uint128::from(287_037_037u128));
-    assert_eq!(margin_ratio.polarity, false);
+    assert_eq!(margin_ratio, Integer::new_negative(287_037_037u128));
 }
 
 #[test]
@@ -167,6 +166,5 @@ fn test_get_margin_higher_twap() {
     let margin_ratio = engine
         .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(margin_ratio.ratio, Uint128::from(96_890_936u128));
-    assert_eq!(margin_ratio.polarity, true);
+    assert_eq!(margin_ratio, Integer::new_positive(96_890_936u128));
 }

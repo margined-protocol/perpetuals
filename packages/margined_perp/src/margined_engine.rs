@@ -96,14 +96,6 @@ pub struct ConfigResponse {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct MarginRatioResponse {
-    pub ratio: Uint128,
-    // TODO think if i128 should be used or
-    // if there is a better solution to this
-    pub polarity: bool, // true = positive, false = negative
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct PositionResponse {
     pub size: Integer,
     pub margin: Uint128,

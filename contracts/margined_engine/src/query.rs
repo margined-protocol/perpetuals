@@ -1,8 +1,7 @@
 use cosmwasm_std::{Deps, StdResult, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
-    ConfigResponse, MarginRatioResponse, PnlCalcOption, PositionResponse,
-    PositionUnrealizedPnlResponse,
+    ConfigResponse, PnlCalcOption, PositionResponse, PositionUnrealizedPnlResponse,
 };
 
 use crate::{
@@ -122,11 +121,7 @@ pub fn query_trader_position_with_funding_payment(
 }
 
 /// Queries the margin ratio of a trader
-pub fn query_margin_ratio(
-    deps: Deps,
-    vamm: String,
-    trader: String,
-) -> StdResult<MarginRatioResponse> {
+pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult<Integer> {
     let config: Config = read_config(deps.storage)?;
 
     // retrieve the latest position
@@ -138,10 +133,7 @@ pub fn query_margin_ratio(
     .unwrap();
 
     if position.size.is_zero() {
-        return Ok(MarginRatioResponse {
-            ratio: Uint128::zero(),
-            polarity: true,
-        });
+        return Ok(Integer::zero());
     }
 
     // TODO think how the side can be used
@@ -162,23 +154,7 @@ pub fn query_margin_ratio(
         notional = twap_notional;
     }
 
-    let mut response = if position.margin > pnl {
-        MarginRatioResponse {
-            ratio: position.margin.checked_sub(pnl)?,
-            polarity: true,
-        }
-    } else {
-        MarginRatioResponse {
-            ratio: pnl.checked_sub(position.margin)?,
-            polarity: false,
-        }
-    };
+    let margin_ratio = Integer::new_positive(position.margin) - Integer::new_positive(pnl);
 
-    // divide by the margin that is deposited
-    response.ratio = response
-        .ratio
-        .checked_mul(config.decimals)?
-        .checked_div(notional)?;
-
-    Ok(response)
+    Ok((margin_ratio * Integer::new_positive(config.decimals)) / Integer::new_positive(notional))
 }

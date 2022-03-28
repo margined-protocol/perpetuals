@@ -335,7 +335,7 @@ fn test_force_error_swap_output_can_go_over_limit_but_fails_second_time() {
     };
 
     let info = mock_info("addr0000", &[]);
-    let _result = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
+    execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapOutput {
         direction: Direction::RemoveFromAmm,

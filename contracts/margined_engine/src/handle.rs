@@ -153,14 +153,10 @@ pub fn liquidate(
     store_tmp_liquidator(deps.storage, &info.sender)?;
 
     // check if margin ratio has been
-    let margin = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
+    let margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
 
     require_vamm(deps.storage, &vamm)?;
-    require_insufficient_margin(
-        config.maintenance_margin_ratio,
-        margin.ratio,
-        margin.polarity,
-    )?;
+    require_insufficient_margin(margin_ratio, config.maintenance_margin_ratio)?;
 
     // read the position for the trader from vamm
     let position = read_position(deps.storage, &vamm, &trader).unwrap();
@@ -168,6 +164,7 @@ pub fn liquidate(
     // TODO First we should see if it is a partial or full liqudiation, but not today
     let msg: SubMsg;
     let mut response = Response::default();
+
     if false {
         // NOTHING in future this condition will be there to see if the liquidation is partial
     } else {
@@ -264,9 +261,9 @@ pub fn withdraw_margin(
     store_position(deps.storage, &position)?;
 
     // check if margin ratio has been
-    let margin = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
+    let margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
 
-    require_margin(margin.ratio, config.initial_margin_ratio)?;
+    require_margin(margin_ratio.value, config.initial_margin_ratio)?;
 
     // try to execute the transfer
     let msgs = withdraw(

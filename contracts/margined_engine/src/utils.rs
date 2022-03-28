@@ -401,11 +401,11 @@ pub fn require_margin(margin_ratio: Uint128, base_margin: Uint128) -> StdResult<
 }
 
 pub fn require_insufficient_margin(
+    margin_ratio: Integer,
     base_margin: Uint128,
-    margin_ratio: Uint128,
-    polarity: bool,
 ) -> StdResult<Response> {
-    if margin_ratio > base_margin && polarity {
+    let remaining_margin_ratio = margin_ratio - Integer::new_positive(base_margin);
+    if remaining_margin_ratio >= Integer::zero() {
         return Err(StdError::generic_err("Position is overcollateralized"));
     }
 
