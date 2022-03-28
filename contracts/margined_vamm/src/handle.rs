@@ -126,7 +126,9 @@ pub fn swap_input(
     // In RemoveFromAmm case, more position means more debt so should not be larger than base_asset_limit
     if !base_asset_limit.is_zero() {
         if direction == Direction::AddToAmm && base_asset_amount < base_asset_limit {
-            return Err(StdError::generic_err("Less than minimal base asset amount limit"));
+            return Err(StdError::generic_err(
+                "Less than minimum base asset amount limit",
+            ));
         } else if direction == Direction::RemoveFromAmm && base_asset_amount > base_asset_limit {
             return Err(StdError::generic_err(
                 "Greater than maximum base asset amount limit",
@@ -175,20 +177,22 @@ pub fn swap_output(
     )?;
 
     // flip direction when updating reserve
-    let mut update_direction = direction.clone();
-    if update_direction == Direction::AddToAmm {
-        update_direction = Direction::RemoveFromAmm;
+    let update_direction = if direction == Direction::AddToAmm {
+        Direction::RemoveFromAmm
     } else {
-        update_direction = Direction::AddToAmm;
-    }
+        Direction::AddToAmm
+    };
 
     // If AddToAmm, exchanged base amount should be more than quote_asset_limit,
     // otherwise(RemoveFromAmm), exchanged base amount should be less than quote_asset_limit.
     // In RemoveFromAmm case, more position means more debt so should not be larger than quote_asset_limit
     if !quote_asset_limit.is_zero() {
-        if direction == Direction::RemoveFromAmm && quote_asset_amount < quote_asset_limit {
-            return Err(StdError::generic_err("Less than minimal quote asset amount limit"));
-        } else if direction == Direction::AddToAmm && quote_asset_amount > quote_asset_limit {
+        if update_direction == Direction::RemoveFromAmm && quote_asset_amount < quote_asset_limit {
+            return Err(StdError::generic_err(
+                "Less than minimum quote asset amount limit",
+            ));
+        } else if update_direction == Direction::AddToAmm && quote_asset_amount > quote_asset_limit
+        {
             return Err(StdError::generic_err(
                 "Greater than maximum quote asset amount limit",
             ));

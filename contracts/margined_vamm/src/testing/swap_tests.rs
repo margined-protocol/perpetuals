@@ -609,7 +609,6 @@ fn test_swap_input_short_long_short() {
     );
 }
 
-
 #[test]
 fn test_swap_output_short_and_indivisable() {
     let mut deps = mock_dependencies(&[]);
@@ -639,10 +638,15 @@ fn test_swap_output_short_and_indivisable() {
     )
     .unwrap();
 
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::OutputPrice {
-        direction: Direction::AddToAmm,
-        amount: to_decimals(5),
-    }).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::OutputPrice {
+            direction: Direction::AddToAmm,
+            amount: to_decimals(5),
+        },
+    )
+    .unwrap();
     let amount: Uint128 = from_binary(&res).unwrap();
 
     let swap_msg = ExecuteMsg::SwapOutput {
@@ -681,7 +685,6 @@ fn test_swap_output_short_and_indivisable() {
     );
 }
 
-
 #[test]
 fn test_swap_output_long_and_indivisable() {
     let mut deps = mock_dependencies(&[]);
@@ -711,10 +714,15 @@ fn test_swap_output_long_and_indivisable() {
     )
     .unwrap();
 
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::OutputPrice {
-        direction: Direction::RemoveFromAmm,
-        amount: to_decimals(5),
-    }).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::OutputPrice {
+            direction: Direction::RemoveFromAmm,
+            amount: to_decimals(5),
+        },
+    )
+    .unwrap();
     let amount: Uint128 = from_binary(&res).unwrap();
 
     let swap_msg = ExecuteMsg::SwapOutput {
@@ -783,10 +791,15 @@ fn test_swap_output_long_short_same_size_should_get_diff_base_asset_amount() {
     .unwrap();
 
     // quote asset = (1000 * 100 / (100 - 10)) - 1000 = 111.111...2
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::OutputPrice {
-        direction: Direction::RemoveFromAmm,
-        amount: to_decimals(10),
-    }).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::OutputPrice {
+            direction: Direction::RemoveFromAmm,
+            amount: to_decimals(10),
+        },
+    )
+    .unwrap();
     let amount1: Uint128 = from_binary(&res).unwrap();
 
     let swap_msg = ExecuteMsg::SwapOutput {
@@ -799,18 +812,25 @@ fn test_swap_output_long_short_same_size_should_get_diff_base_asset_amount() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&res).unwrap();
-    assert_eq!(state.quote_asset_reserve, Uint128::from(1_111_111_111_112u128));
+    assert_eq!(
+        state.quote_asset_reserve,
+        Uint128::from(1_111_111_111_112u128)
+    );
     assert_eq!(state.base_asset_reserve, to_decimals(90));
 
     // quote asset = 1111.111 - (111.111 * 90 / (90 + 10)) = 111.11...1
     // price will be 1 wei less after traded
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::OutputPrice {
-        direction: Direction::AddToAmm,
-        amount: to_decimals(10),
-    }).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::OutputPrice {
+            direction: Direction::AddToAmm,
+            amount: to_decimals(10),
+        },
+    )
+    .unwrap();
     let amount2: Uint128 = from_binary(&res).unwrap();
     assert_eq!(amount1, amount2 + Uint128::from(1u64));
-
 }
 
 #[test]
@@ -854,7 +874,7 @@ fn test_force_error_swapinput_long_but_less_than_min_base_amount() {
     let result = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap_err();
     assert_eq!(
         result.to_string(),
-        "Generic error: Less than minimal base asset amount limit"
+        "Generic error: Less than minimum base asset amount limit"
     );
 }
 
@@ -903,5 +923,343 @@ fn test_force_error_swapinput_short_but_more_than_min_base_amount() {
     );
 }
 
+#[test]
+fn test_swapoutput_short_slippage_limit() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: to_decimals(1250),
+        base_asset_reserve: to_decimals(80),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
+    // open amm
+    let info = mock_info("addr0000", &[]);
+    execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SetOpen { open: true },
+    )
+    .unwrap();
 
+    let swap_msg = ExecuteMsg::SwapOutput {
+        direction: Direction::AddToAmm,
+        base_asset_amount: to_decimals(20),
+        quote_asset_limit: to_decimals(100),
+    };
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(state.quote_asset_reserve, to_decimals(1000));
+    assert_eq!(state.base_asset_reserve, to_decimals(100));
+}
+
+#[test]
+fn test_swapoutput_short_at_slippage_limit() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: to_decimals(1250),
+        base_asset_reserve: to_decimals(80),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // open amm
+    let info = mock_info("addr0000", &[]);
+    execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SetOpen { open: true },
+    )
+    .unwrap();
+
+    let swap_msg = ExecuteMsg::SwapOutput {
+        direction: Direction::AddToAmm,
+        base_asset_amount: to_decimals(20),
+        quote_asset_limit: to_decimals(249),
+    };
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(state.quote_asset_reserve, to_decimals(1000));
+    assert_eq!(state.base_asset_reserve, to_decimals(100));
+}
+
+#[test]
+fn test_swapoutput_short_force_error_min_quote_251() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: to_decimals(1250),
+        base_asset_reserve: to_decimals(80),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // open amm
+    let info = mock_info("addr0000", &[]);
+    execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SetOpen { open: true },
+    )
+    .unwrap();
+
+    let swap_msg = ExecuteMsg::SwapOutput {
+        direction: Direction::AddToAmm,
+        base_asset_amount: to_decimals(20),
+        quote_asset_limit: to_decimals(400),
+    };
+    let info = mock_info("addr0000", &[]);
+    let result = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap_err();
+    assert_eq!(
+        result.to_string(),
+        "Generic error: Less than minimum quote asset amount limit"
+    );
+}
+
+#[test]
+fn test_swapoutput_short_force_error_min_quote_400() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: to_decimals(1250),
+        base_asset_reserve: to_decimals(80),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // open amm
+    let info = mock_info("addr0000", &[]);
+    execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SetOpen { open: true },
+    )
+    .unwrap();
+
+    let swap_msg = ExecuteMsg::SwapOutput {
+        direction: Direction::AddToAmm,
+        base_asset_amount: to_decimals(20),
+        quote_asset_limit: to_decimals(400),
+    };
+    let info = mock_info("addr0000", &[]);
+    let result = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap_err();
+    assert_eq!(
+        result.to_string(),
+        "Generic error: Less than minimum quote asset amount limit"
+    );
+}
+
+#[test]
+fn test_swapoutput_long_slippage_limit() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: to_decimals(800),
+        base_asset_reserve: to_decimals(125),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // open amm
+    let info = mock_info("addr0000", &[]);
+    execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SetOpen { open: true },
+    )
+    .unwrap();
+
+    let swap_msg = ExecuteMsg::SwapOutput {
+        direction: Direction::RemoveFromAmm,
+        base_asset_amount: to_decimals(25),
+        quote_asset_limit: to_decimals(400),
+    };
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(state.quote_asset_reserve, to_decimals(1000));
+    assert_eq!(state.base_asset_reserve, to_decimals(100));
+}
+
+#[test]
+fn test_swapoutput_long_at_slippage_limit() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: to_decimals(800),
+        base_asset_reserve: to_decimals(125),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // open amm
+    let info = mock_info("addr0000", &[]);
+    execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SetOpen { open: true },
+    )
+    .unwrap();
+
+    let swap_msg = ExecuteMsg::SwapOutput {
+        direction: Direction::RemoveFromAmm,
+        base_asset_amount: to_decimals(25),
+        quote_asset_limit: to_decimals(201),
+    };
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(state.quote_asset_reserve, to_decimals(1000));
+    assert_eq!(state.base_asset_reserve, to_decimals(100));
+}
+
+#[test]
+fn test_swapoutput_long_force_error_min_quote_199() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: to_decimals(800),
+        base_asset_reserve: to_decimals(125),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // open amm
+    let info = mock_info("addr0000", &[]);
+    execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SetOpen { open: true },
+    )
+    .unwrap();
+
+    let swap_msg = ExecuteMsg::SwapOutput {
+        direction: Direction::RemoveFromAmm,
+        base_asset_amount: to_decimals(25),
+        quote_asset_limit: to_decimals(199),
+    };
+    let info = mock_info("addr0000", &[]);
+    let result = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap_err();
+    assert_eq!(
+        result.to_string(),
+        "Generic error: Greater than maximum quote asset amount limit"
+    );
+}
+
+#[test]
+fn test_swapoutput_long_force_error_min_quote_100() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: to_decimals(800),
+        base_asset_reserve: to_decimals(125),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // open amm
+    let info = mock_info("addr0000", &[]);
+    execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SetOpen { open: true },
+    )
+    .unwrap();
+
+    let swap_msg = ExecuteMsg::SwapOutput {
+        direction: Direction::RemoveFromAmm,
+        base_asset_amount: to_decimals(25),
+        quote_asset_limit: to_decimals(100),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    let result = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap_err();
+    assert_eq!(
+        result.to_string(),
+        "Generic error: Greater than maximum quote asset amount limit"
+    );
+}
