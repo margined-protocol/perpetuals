@@ -6,7 +6,7 @@ use margined_perp::margined_engine::{
 
 use crate::{
     state::{read_config, read_position, read_vamm, read_vamm_map, Config},
-    utils::{calc_funding_payment, get_position_notional_unrealized_pnl},
+    utils::{calc_funding_payment, calc_remain_margin_with_funding_payment, get_position_notional_unrealized_pnl},
 };
 
 /// Queries contract Config
@@ -136,9 +136,6 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
         return Ok(Integer::zero());
     }
 
-    // TODO think how the side can be used
-    // currently it seems only losses have been
-    // tested but it cant be like that forever...
     let PositionUnrealizedPnlResponse {
         position_notional: spot_notional,
         unrealized_pnl: spot_pnl,
@@ -154,15 +151,19 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
         unrealized_pnl,
     } = if spot_pnl.abs() > twap_pnl.abs() {
         PositionUnrealizedPnlResponse {
-            position_notional: spot_notional,
-            unrealized_pnl: spot_pnl,
-        }
-    } else {
-        PositionUnrealizedPnlResponse {
             position_notional: twap_notional,
             unrealized_pnl: twap_pnl,
         }
+    } else {
+        PositionUnrealizedPnlResponse {
+            position_notional: spot_notional,
+            unrealized_pnl: spot_pnl,
+        }
     };
+
+    // TODO include funding payment into the calculation
+    // let remain_margin =
+    //     calc_remain_margin_with_funding_payment(deps, position.clone(), unrealized_pnl)?;
 
     let margin_ratio = Integer::new_positive(position.margin) - unrealized_pnl;
 

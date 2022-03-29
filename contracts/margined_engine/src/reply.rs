@@ -368,6 +368,146 @@ pub fn liquidate_reply(
         ]))
 }
 
+// Partially liquidates the position
+pub fn partial_liquidation_reply(
+    deps: DepsMut,
+    env: Env,
+    input: Uint128,
+    output: Uint128,
+) -> StdResult<Response> {
+    println!("partial_liquidation_reply");
+
+    println!("Input: {}\nOutput: {}", input, output);
+    let config = read_config(deps.storage)?;
+    let mut state = read_state(deps.storage)?;
+
+    let tmp_swap = read_tmp_swap(deps.storage)?;
+    if tmp_swap.is_none() {
+        return Err(StdError::generic_err("no temporary position"));
+    }
+
+    let liquidator = read_tmp_liquidator(deps.storage)?;
+    if liquidator.is_none() {
+        return Err(StdError::generic_err("no liquidator"));
+    }
+
+    let swap = tmp_swap.unwrap();
+    let mut position = get_position(
+        env.clone(),
+        deps.storage,
+        &swap.vamm,
+        &swap.trader,
+        swap.side.clone(),
+    );
+
+    // calculate delta from trade and whether it was profitable or a loss
+    let total_pnl = Integer::new_positive(position.notional) - Integer::new_positive(output);
+
+    println!("swap.open_notional: {}", position.notional);
+    println!("swap.open_notional: {}", swap.open_notional);
+    println!("output: {}", output);
+    println!("margin delta: {}", total_pnl);
+
+    let realized_pnl = (total_pnl * Integer::new_positive(config.partial_liquidation_margin_ratio))
+        / Integer::new_positive(config.decimals);
+
+    println!("liquidated notionals: {}", swap.open_notional);
+
+    // let mut remain_margin =
+    //     calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), realized_pnl)?;
+
+    let liquidation_penalty: Uint128 = swap.open_notional
+    .checked_mul(config.liquidation_fee)?
+    .checked_div(config.decimals)?;
+
+    let liquidation_fee: Uint128 = liquidation_penalty
+        .checked_div(Uint128::from(2u64))?;
+    println!("liquidation fee ratio: {}", config.liquidation_fee);
+
+    println!("margin: {}", position.margin);
+    println!("realized pnl: {}", realized_pnl);
+    println!("liquidation fee: {}", liquidation_fee);
+
+    let signed_output = if side_to_direction(swap.side) == Direction::AddToAmm {
+        Integer::new_positive(swap.quote_asset_amount)
+    } else {
+        Integer::new_negative(swap.quote_asset_amount)
+    };
+
+    position.size += signed_output;
+
+
+    position.margin = position.margin
+        .checked_sub(realized_pnl.value)?
+        .checked_sub(liquidation_penalty)?;
+
+    position.notional = position.notional
+        .checked_sub(swap.open_notional)?;
+    
+    println!("margin: {}", position.margin);
+    println!("realized pnl: {}", realized_pnl);
+    println!("liquidation fee: {}", liquidation_fee);
+
+    let mut messages: Vec<SubMsg> = vec![];
+
+    // if !remain_margin.bad_debt.is_zero() {
+    //     realize_bad_debt(
+    //         deps.storage,
+    //         env.contract.address.clone(),
+    //         remain_margin.bad_debt,
+    //         &mut messages,
+    //     )?;
+    // }
+
+    // let fee_to_insurance = if !liquidation_fee.is_zero() {
+    //     remain_margin.margin
+    // } else {
+    //     Uint128::zero()
+    // };
+
+    if !liquidation_fee.is_zero() {
+        messages.push(
+            execute_transfer(deps.storage, &config.insurance_fund, liquidation_fee).unwrap(),
+        );
+    }
+
+    // pay liquidation fees
+    let liquidator = liquidator.unwrap();
+
+    // calculate token balance that should be remaining once
+    // insurance fees have been paid
+    let withdraw_messages = withdraw(
+        deps.as_ref(),
+        env.clone(),
+        &mut state,
+        &liquidator,
+        &config.insurance_fund,
+        config.eligible_collateral,
+        liquidation_fee,
+    )
+    .unwrap();
+
+    for message in withdraw_messages.iter() {
+        messages.push(message.clone());
+    }
+
+    // position = clear_position(env, position)?;
+
+    // remove_position(deps.storage, &position)?;
+    store_position(deps.storage, &position)?;
+
+    remove_tmp_swap(deps.storage);
+    remove_tmp_liquidator(deps.storage);
+
+    Ok(Response::new()
+        .add_submessages(messages)
+        .add_attributes(vec![
+            ("action", "liquidate_reply"),
+            ("liquidation_fee", &liquidation_fee.to_string()),
+            ("pnl", &realized_pnl.to_string()),
+        ]))
+}
+
 /// pays funding, if funding rate is positive, traders with long position
 /// pay traders with short position and vice versa.
 pub fn pay_funding_reply(

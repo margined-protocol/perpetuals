@@ -170,7 +170,7 @@ pub fn remove_tmp_swap(storage: &mut dyn Storage) {
 }
 
 pub fn read_tmp_swap(storage: &dyn Storage) -> StdResult<Option<Swap>> {
-    singleton_read(storage, KEY_TMP_SWAP).load()
+    singleton_read(storage, KEY_TMP_SWAP).may_load()
 }
 
 pub fn store_tmp_liquidator(storage: &mut dyn Storage, liquidator: &Addr) -> StdResult<()> {
@@ -183,7 +183,7 @@ pub fn remove_tmp_liquidator(storage: &mut dyn Storage) {
 }
 
 pub fn read_tmp_liquidator(storage: &dyn Storage) -> StdResult<Option<Addr>> {
-    singleton_read(storage, KEY_TMP_LIQUIDATOR).load()
+    singleton_read(storage, KEY_TMP_LIQUIDATOR).may_load()
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, JsonSchema)]

@@ -36,7 +36,15 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     // Receive(Cw20ReceiveMsg),
     UpdateConfig {
-        owner: String,
+        owner: Option<String>,
+        insurance_fund: Option<String>,
+        fee_pool: Option<String>,
+        eligible_collateral: Option<String>,
+        decimals: Option<Uint128>,
+        initial_margin_ratio: Option<Uint128>,
+        maintenance_margin_ratio: Option<Uint128>,
+        partial_liquidation_margin_ratio: Option<Uint128>,
+        liquidation_fee: Option<Uint128>,
     },
     OpenPosition {
         vamm: String,

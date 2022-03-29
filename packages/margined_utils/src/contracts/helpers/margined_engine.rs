@@ -31,8 +31,29 @@ impl EngineController {
         .into())
     }
 
-    pub fn update_config(&self, owner: String) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::UpdateConfig { owner };
+    pub fn update_config(
+        &self,
+        owner: Option<String>,
+        insurance_fund: Option<String>,
+        fee_pool: Option<String>,
+        eligible_collateral: Option<String>,
+        decimals: Option<Uint128>,
+        initial_margin_ratio: Option<Uint128>,
+        maintenance_margin_ratio: Option<Uint128>,
+        partial_liquidation_margin_ratio: Option<Uint128>,
+        liquidation_fee: Option<Uint128>,
+    ) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::UpdateConfig { 
+            owner,
+            insurance_fund,
+            fee_pool,
+            eligible_collateral,
+            decimals,
+            initial_margin_ratio,
+            maintenance_margin_ratio,
+            partial_liquidation_margin_ratio,
+            liquidation_fee,
+        };
         self.call(msg, vec![])
     }
 

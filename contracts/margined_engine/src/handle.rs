@@ -1,3 +1,5 @@
+use std::thread::current;
+
 use cosmwasm_std::{
     to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError, StdResult,
     SubMsg, Uint128, WasmMsg,
@@ -6,7 +8,7 @@ use cosmwasm_std::{
 use crate::{
     contract::{
         PAY_FUNDING_REPLY_ID, SWAP_CLOSE_REPLY_ID, SWAP_DECREASE_REPLY_ID, SWAP_INCREASE_REPLY_ID,
-        SWAP_LIQUIDATE_REPLY_ID, SWAP_REVERSE_REPLY_ID,
+        SWAP_LIQUIDATE_REPLY_ID, SWAP_PARTIAL_LIQUIDATION_REPLY_ID, SWAP_REVERSE_REPLY_ID,
     },
     querier::query_vamm_output_price,
     query::query_margin_ratio,
@@ -24,18 +26,74 @@ use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 
-pub fn update_config(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {
-    let config = read_config(deps.storage)?;
+#[allow(clippy::too_many_arguments)]
+pub fn update_config(
+    deps: DepsMut,
+    info: MessageInfo,
+    owner: Option<String>,
+    insurance_fund: Option<String>,
+    fee_pool: Option<String>,
+    eligible_collateral: Option<String>,
+    decimals: Option<Uint128>,
+    initial_margin_ratio: Option<Uint128>,
+    maintenance_margin_ratio: Option<Uint128>,
+    partial_liquidation_margin_ratio: Option<Uint128>,
+    liquidation_fee: Option<Uint128>,
+) -> StdResult<Response> {
+    let mut config = read_config(deps.storage)?;
+
+    // check permission
     if info.sender != config.owner {
         return Err(StdError::generic_err("unauthorized"));
     }
 
-    let new_config = Config {
-        owner: deps.api.addr_validate(&owner).unwrap(),
-        ..config
-    };
+    // change owner of amm
+    if let Some(owner) = owner {
+        config.owner = deps.api.addr_validate(owner.as_str())?;
+    }
 
-    store_config(deps.storage, &new_config)?;
+    // update insurance fund
+    if let Some(insurance_fund) = insurance_fund {
+        config.insurance_fund = deps.api.addr_validate(insurance_fund.as_str())?;
+    }
+
+    // update fee pool
+    if let Some(fee_pool) = fee_pool {
+        config.fee_pool = deps.api.addr_validate(fee_pool.as_str())?;
+    }
+
+    // update eligible collateral
+    if let Some(eligible_collateral) = eligible_collateral {
+        config.eligible_collateral = deps.api.addr_validate(eligible_collateral.as_str())?;
+    }
+
+    // update decimals TODO: remove all this
+    if let Some(decimals) = decimals {
+        config.decimals = decimals;
+    }
+
+    // update initial margin ratio
+    if let Some(initial_margin_ratio) = initial_margin_ratio {
+        config.initial_margin_ratio = initial_margin_ratio;
+    }
+
+    // update maintenance margin ratio
+    if let Some(maintenance_margin_ratio) = maintenance_margin_ratio {
+        config.maintenance_margin_ratio = maintenance_margin_ratio;
+    }
+
+    // update partial liquidation ratio
+    if let Some(partial_liquidation_margin_ratio) = partial_liquidation_margin_ratio {
+        config.partial_liquidation_margin_ratio = partial_liquidation_margin_ratio;
+    }
+    
+    // update liquidation fee
+    if let Some(liquidation_fee) = liquidation_fee {
+        config.liquidation_fee = liquidation_fee;
+    }
+    
+
+    store_config(deps.storage, &config)?;
 
     Ok(Response::default())
 }
@@ -138,7 +196,7 @@ pub fn close_position(
 
 pub fn liquidate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     vamm: String,
     trader: String,
@@ -156,21 +214,27 @@ pub fn liquidate(
     let margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
 
     require_vamm(deps.storage, &vamm)?;
+    println!("{} {}", margin_ratio, config.maintenance_margin_ratio);
     require_insufficient_margin(margin_ratio, config.maintenance_margin_ratio)?;
 
     // read the position for the trader from vamm
     let position = read_position(deps.storage, &vamm, &trader).unwrap();
 
     // TODO First we should see if it is a partial or full liqudiation, but not today
-    let msg: SubMsg;
     let mut response = Response::default();
 
-    if false {
-        // NOTHING in future this condition will be there to see if the liquidation is partial
+    // first see if this is a partial liquidation, else we just rek the trader
+    let msg = if margin_ratio.value > config.liquidation_fee && !config.partial_liquidation_margin_ratio.is_zero() {
+        partial_liquidation(
+            deps,
+            env,
+            vamm,
+            trader,
+        )
     } else {
-        msg = internal_close_position(deps, &position, Uint128::zero(), SWAP_LIQUIDATE_REPLY_ID)?;
-        response = response.add_submessage(msg);
-    }
+        internal_close_position(deps, &position, Uint128::zero(), SWAP_LIQUIDATE_REPLY_ID)?
+    };
+    response = response.add_submessage(msg);
 
     Ok(response)
 }
@@ -248,7 +312,6 @@ pub fn withdraw_margin(
     // read the position for the trader from vamm
     let mut position = read_position(deps.storage, &vamm, &trader).unwrap();
 
-    // TODO this can be changed to an integer
     let margin_delta = Integer::new_negative(amount);
 
     let remain_margin =
@@ -328,7 +391,6 @@ pub fn internal_close_position(
     )
 }
 
-// Increase the position, just basically wraps swap input though it may do more in the future
 #[allow(clippy::too_many_arguments)]
 fn open_reverse_position(
     deps: &DepsMut,
@@ -369,6 +431,82 @@ fn open_reverse_position(
             position.size.value,
             Uint128::zero(),
             SWAP_REVERSE_REPLY_ID,
+        )
+        .unwrap()
+    };
+
+    msg
+}
+
+// Increase the position, just basically wraps swap input though it may do more in the future
+#[allow(clippy::too_many_arguments)]
+fn partial_liquidation(
+    deps: DepsMut,
+    _env: Env,
+    vamm: Addr,
+    trader: Addr,
+) -> SubMsg {
+    let config: Config = read_config(deps.storage).unwrap();
+
+    let position: Position = read_position(deps.storage, &vamm, &trader).unwrap();
+
+    println!("Position size: {}", position.size.value);
+
+    let partial_position_size = position.size.value
+        .checked_mul(config.partial_liquidation_margin_ratio).unwrap()
+        .checked_div(config.decimals).unwrap();
+
+    let current_notional = query_vamm_output_price(
+        &deps.as_ref(),
+        vamm.to_string(),
+        position.direction.clone(),
+        partial_position_size,
+    )
+    .unwrap();
+
+    println!("Output price: {}", current_notional);
+    println!("Partial position: {}", partial_position_size);
+
+    let side = if position.size > Integer::zero() {
+        Side::SELL
+    } else {
+        Side::BUY
+    };
+
+    store_tmp_swap(
+        deps.storage,
+        &Swap {
+            vamm: position.vamm.clone(),
+            trader: position.trader.clone(),
+            side,
+            quote_asset_amount: partial_position_size,
+            leverage: Uint128::zero(),
+            open_notional: current_notional,
+        },
+    ).unwrap();
+
+    // if position.notional > open_notional {
+    let msg: SubMsg = if current_notional > position.notional {
+        println!("swap input");
+        // then we are opening a new position or adding to an existing
+        swap_input(
+            &vamm,
+            direction_to_side(position.direction.clone()),
+            position.notional,
+            Uint128::zero(),
+            true,
+            SWAP_PARTIAL_LIQUIDATION_REPLY_ID,
+        )
+        .unwrap()
+    } else {
+        println!("swap output");
+        // first close position swap out the entire position
+        swap_output(
+            &vamm,
+            direction_to_side(position.direction.clone()),
+            position.size.value,
+            Uint128::zero(),
+            SWAP_PARTIAL_LIQUIDATION_REPLY_ID,
         )
         .unwrap()
     };

@@ -99,7 +99,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
     router.execute(carol.clone(), msg).unwrap();
 
     let carol_balance = usdc.balance(&router, carol.clone()).unwrap();
-    assert_eq!(carol_balance, Uint128::from(5_007_352_941_176u128));
+    assert_eq!(carol_balance, Uint128::from(7_352_941_176u128));
 
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, to_decimals(0u64));

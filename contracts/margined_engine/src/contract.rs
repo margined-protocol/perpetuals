@@ -21,7 +21,7 @@ use crate::{
     },
     reply::{
         close_position_reply, decrease_position_reply, increase_position_reply, liquidate_reply,
-        pay_funding_reply, reverse_position_reply,
+        partial_liquidation_reply, pay_funding_reply, reverse_position_reply,
     },
     state::{store_config, store_state, store_vamm, Config, State},
 };
@@ -31,7 +31,8 @@ pub const SWAP_DECREASE_REPLY_ID: u64 = 2;
 pub const SWAP_REVERSE_REPLY_ID: u64 = 3;
 pub const SWAP_CLOSE_REPLY_ID: u64 = 4;
 pub const SWAP_LIQUIDATE_REPLY_ID: u64 = 5;
-pub const PAY_FUNDING_REPLY_ID: u64 = 6;
+pub const SWAP_PARTIAL_LIQUIDATION_REPLY_ID: u64 = 6;
+pub const PAY_FUNDING_REPLY_ID: u64 = 7;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -80,7 +81,29 @@ pub fn instantiate(
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
         // ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
-        ExecuteMsg::UpdateConfig { owner } => update_config(deps, info, owner),
+        ExecuteMsg::UpdateConfig { 
+            owner,
+            insurance_fund,
+            fee_pool,
+            eligible_collateral,
+            decimals,
+            initial_margin_ratio,
+            maintenance_margin_ratio,
+            partial_liquidation_margin_ratio,
+            liquidation_fee,
+        } => update_config(
+            deps,
+            info,
+            owner,
+            insurance_fund,
+            fee_pool,
+            eligible_collateral,
+            decimals,
+            initial_margin_ratio,
+            maintenance_margin_ratio,
+            partial_liquidation_margin_ratio,
+            liquidation_fee,
+        ),
         ExecuteMsg::OpenPosition {
             vamm,
             side,
@@ -198,6 +221,11 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
             SWAP_LIQUIDATE_REPLY_ID => {
                 let (input, output) = parse_swap(response);
                 let response = liquidate_reply(deps, env, input, output)?;
+                Ok(response)
+            }
+            SWAP_PARTIAL_LIQUIDATION_REPLY_ID => {
+                let (input, output) = parse_swap(response);
+                let response = partial_liquidation_reply(deps, env, input, output)?;
                 Ok(response)
             }
             PAY_FUNDING_REPLY_ID => {
