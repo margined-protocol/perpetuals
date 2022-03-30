@@ -7,7 +7,102 @@ use margined_utils::scenarios::to_decimals;
 
 /// Unit tests
 #[test]
-fn test_get_input_and_output_price() {
+fn test_get_input_add_to_amm() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        quote_asset: "ETH".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: to_decimals(1_000),
+        base_asset_reserve: to_decimals(100),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        margin_engine: Some("addr0000".to_string()),
+        pricefeed: "oracle".to_string(),
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // getInputPrice, add to amm
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::InputPrice {
+            direction: Direction::AddToAmm,
+            amount: to_decimals(50),
+        },
+    )
+    .unwrap();
+    let result: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(result, Uint128::from(4761904761u128));
+
+    // getInputPrice, remove from amm
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::InputPrice {
+            direction: Direction::RemoveFromAmm,
+            amount: to_decimals(50),
+        },
+    )
+    .unwrap();
+    let result: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(result, Uint128::from(5263157895u128));
+
+    // getOutputPrice, add to amm
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::OutputPrice {
+            direction: Direction::AddToAmm,
+            amount: to_decimals(5),
+        },
+    )
+    .unwrap();
+    let result: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(result, Uint128::from(47619047619u128));
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::OutputPrice {
+            direction: Direction::AddToAmm,
+            amount: to_decimals(25),
+        },
+    )
+    .unwrap();
+    let result: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(result, Uint128::from(200_000_000_000u128));
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::OutputPrice {
+            direction: Direction::RemoveFromAmm,
+            amount: to_decimals(5),
+        },
+    )
+    .unwrap();
+    let result: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(result, Uint128::from(52_631_578_948u128));
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::OutputPrice {
+            direction: Direction::RemoveFromAmm,
+            amount: Uint128::from(37_500_000_000u128),
+        },
+    )
+    .unwrap();
+    let result: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(result, Uint128::from(600_000_000_000u128));
+}
+
+#[test]
+fn test_get_input_and_output_price_with_reserves() {
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {
         decimals: 9u8,
