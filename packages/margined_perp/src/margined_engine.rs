@@ -2,7 +2,6 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, Timestamp, Uint128};
-use cw20::Cw20ReceiveMsg;
 use margined_common::integer::Integer;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -35,18 +34,28 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    Receive(Cw20ReceiveMsg),
+    // Receive(Cw20ReceiveMsg),
     UpdateConfig {
-        owner: String,
+        owner: Option<String>,
+        insurance_fund: Option<String>,
+        fee_pool: Option<String>,
+        eligible_collateral: Option<String>,
+        decimals: Option<Uint128>,
+        initial_margin_ratio: Option<Uint128>,
+        maintenance_margin_ratio: Option<Uint128>,
+        partial_liquidation_margin_ratio: Option<Uint128>,
+        liquidation_fee: Option<Uint128>,
     },
     OpenPosition {
         vamm: String,
         side: Side,
         quote_asset_amount: Uint128,
         leverage: Uint128,
+        base_asset_limit: Uint128,
     },
     ClosePosition {
         vamm: String,
+        quote_asset_limit: Uint128,
     },
     Liquidate {
         vamm: String,
@@ -95,14 +104,6 @@ pub struct ConfigResponse {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct MarginRatioResponse {
-    pub ratio: Uint128,
-    // TODO think if i128 should be used or
-    // if there is a better solution to this
-    pub polarity: bool, // true = positive, false = negative
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct PositionResponse {
     pub size: Integer,
     pub margin: Uint128,
@@ -127,7 +128,7 @@ pub struct SwapResponse {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct PositionUnrealizedPnlResponse {
     pub position_notional: Uint128,
-    pub unrealized_pnl: Uint128,
+    pub unrealized_pnl: Integer,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

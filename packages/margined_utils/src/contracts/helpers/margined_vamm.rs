@@ -61,11 +61,13 @@ impl VammController {
         &self,
         direction: Direction,
         quote_asset_amount: Uint128,
+        base_asset_limit: Uint128,
         can_go_over_fluctuation: bool,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::SwapInput {
             direction,
             quote_asset_amount,
+            base_asset_limit,
             can_go_over_fluctuation,
         };
         self.call(msg, vec![])
@@ -75,10 +77,12 @@ impl VammController {
         &self,
         direction: Direction,
         base_asset_amount: Uint128,
+        quote_asset_limit: Uint128,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::SwapOutput {
             direction,
             base_asset_amount,
+            quote_asset_limit,
         };
         self.call(msg, vec![])
     }

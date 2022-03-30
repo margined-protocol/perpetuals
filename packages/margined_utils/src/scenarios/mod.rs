@@ -65,10 +65,6 @@ impl SimpleScenario {
                             amount: to_decimals(5000),
                         },
                         Cw20Coin {
-                            address: carol.to_string(),
-                            amount: to_decimals(5000),
-                        },
-                        Cw20Coin {
                             address: insurance_fund.to_string(),
                             amount: to_decimals(5000),
                         },

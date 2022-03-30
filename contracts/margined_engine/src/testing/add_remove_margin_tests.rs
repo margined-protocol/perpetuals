@@ -28,6 +28,7 @@ fn test_add_margin() {
             Side::BUY,
             to_decimals(60u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -72,6 +73,7 @@ fn test_remove_margin() {
             Side::BUY,
             to_decimals(60u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -118,6 +120,7 @@ fn test_remove_margin_after_paying_funding() {
             Side::BUY,
             to_decimals(60u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -180,6 +183,7 @@ fn test_remove_margin_insufficient_margin() {
             Side::BUY,
             to_decimals(60u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -211,6 +215,7 @@ fn test_remove_margin_incorrect_ratio_four_percent() {
             Side::BUY,
             to_decimals(60u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();

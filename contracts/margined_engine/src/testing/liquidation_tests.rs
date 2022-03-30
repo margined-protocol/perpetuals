@@ -7,17 +7,50 @@ use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
 
 #[test]
-fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_liquidated() {
+fn test_partially_liquidate_long_position() {
     let SimpleScenario {
         mut router,
         alice,
         bob,
         carol,
+        owner,
+        insurance,
         engine,
         usdc,
         vamm,
+        pricefeed,
         ..
     } = SimpleScenario::new();
+
+    // set the latest price
+    let price: Uint128 = Uint128::from(10_000_000_000u128);
+    let timestamp: u64 = router.block_info().time.seconds();
+
+    let msg = pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(900);
+        block.height += 1;
+    });
+
+    // set the margin ratios
+    let msg = engine
+        .update_config(
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(Uint128::from(100_000_000u128)),
+            Some(Uint128::from(250_000_000u128)),
+            Some(Uint128::from(25_000_000u128)),
+        )
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
     // reduce the allowance
     router
@@ -26,7 +59,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
             usdc.addr().clone(),
             &Cw20ExecuteMsg::DecreaseAllowance {
                 spender: engine.addr().to_string(),
-                amount: to_decimals(1980),
+                amount: to_decimals(1900),
                 expires: None,
             },
             &[],
@@ -40,80 +73,113 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
             usdc.addr().clone(),
             &Cw20ExecuteMsg::DecreaseAllowance {
                 spender: engine.addr().to_string(),
-                amount: to_decimals(1980),
+                amount: to_decimals(1900),
                 expires: None,
             },
             &[],
         )
         .unwrap();
 
+    // when alice create a 25 margin * 10x position to get 20 long position
+    // AMM after: 1250 : 80
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
-            to_decimals(20u64),
+            Side::BUY,
+            to_decimals(25u64),
             to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
+
+    // when bob create a 45.18072289 margin * 1x position to get 3 short position
+    // AMM after: 1204.819277 : 83
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
             Side::SELL,
-            to_decimals(20u64),
-            to_decimals(10u64),
+            Uint128::from(45_180_722_890u128),
+            to_decimals(1u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    // alice close position, pnl = 200 -105.88 ~= 94.12
-    // receive pnl + margin = 114.12
-    let msg = engine.close_position(vamm.addr().to_string()).unwrap();
-    router.execute(alice.clone(), msg).unwrap();
-
-    let alice_balance = usdc.balance(&router, alice.clone()).unwrap();
-    assert_eq!(alice_balance, Uint128::from(5_094_117_647_059u128));
-
-    // keeper liquidate bob's under collateral position, bob's positionValue is -294.11
-    // bob's pnl = 200 - 294.11 ~= -94.12
-    // bob loss all his margin (20) and there's 74.12 badDebt
-    // which is already prepaid by insurance fund when alice close the position
-    let margin_ratio = engine
-        .get_margin_ratio(&router, vamm.addr().to_string(), bob.to_string())
-        .unwrap();
-    assert_eq!(margin_ratio.ratio, Uint128::from(252_000_000u128));
-    assert_eq!(margin_ratio.polarity, false);
-
-    // bob close his under collateral position, positionValue is -294.11
-    // bob's pnl = 200 - 294.11 ~= -94.12
-    // bob loss all his margin (20) with additional 74.12 badDebt
-    // which is already prepaid by insurance fund when alice close the position before
-    // clearing house doesn't need to ask insurance fund for covering the bad debt
     let msg = engine
-        .liquidate(vamm.addr().to_string(), bob.to_string())
+        .liquidate(vamm.addr().to_string(), alice.to_string())
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 
+    let position = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(position.margin, Uint128::from(19_274_981_657u128));
+    assert_eq!(position.size, Integer::new_positive(15_000_000_000u128));
+
+    // this is todo need to add funding into the get margin ratio
+    let margin_ratio = engine
+        .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(margin_ratio, Integer::new_positive(43_713_253u128));
+
     let carol_balance = usdc.balance(&router, carol.clone()).unwrap();
-    assert_eq!(carol_balance, Uint128::from(5_007_352_941_176u128));
+    assert_eq!(carol_balance, Uint128::from(855_695_509u128));
 
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
-    assert_eq!(engine_balance, to_decimals(0u64));
+    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    assert_eq!(insurance_balance, Uint128::from(5_000_855_695_509u128));
 }
 
 #[test]
-fn test_alice_has_enough_margin_cant_get_liquidated() {
+fn test_partially_liquidate_short_position() {
     let SimpleScenario {
         mut router,
         alice,
         bob,
         carol,
+        owner,
+        insurance,
         engine,
         usdc,
         vamm,
+        pricefeed,
         ..
     } = SimpleScenario::new();
+
+    // set the latest price
+    let price: Uint128 = Uint128::from(10_000_000_000u128);
+    let timestamp: u64 = router.block_info().time.seconds();
+
+    let msg = pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(900);
+        block.height += 1;
+    });
+
+    // set the margin ratios
+    let msg = engine
+        .update_config(
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(Uint128::from(100_000_000u128)),
+            Some(Uint128::from(250_000_000u128)),
+            Some(Uint128::from(25_000_000u128)),
+        )
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
     // reduce the allowance
     router
@@ -122,7 +188,7 @@ fn test_alice_has_enough_margin_cant_get_liquidated() {
             usdc.addr().clone(),
             &Cw20ExecuteMsg::DecreaseAllowance {
                 spender: engine.addr().to_string(),
-                amount: to_decimals(1700),
+                amount: to_decimals(1900),
                 expires: None,
             },
             &[],
@@ -136,197 +202,65 @@ fn test_alice_has_enough_margin_cant_get_liquidated() {
             usdc.addr().clone(),
             &Cw20ExecuteMsg::DecreaseAllowance {
                 spender: engine.addr().to_string(),
-                amount: to_decimals(1500),
+                amount: to_decimals(1900),
                 expires: None,
             },
             &[],
         )
         .unwrap();
 
-    let msg = engine
-        .open_position(
-            vamm.addr().to_string(),
-            Side::BUY,
-            to_decimals(300u64),
-            to_decimals(2u64),
-        )
-        .unwrap();
-    router.execute(alice.clone(), msg).unwrap();
-
+    // when alice create a 20 margin * 10x position to get 25 short position
+    // AMM after: 800 : 125
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
             Side::SELL,
-            to_decimals(500u64),
-            to_decimals(1u64),
-        )
-        .unwrap();
-    router.execute(bob.clone(), msg).unwrap();
-
-    // unrealizedPnl: -278.77
-    // positionNotional: 600 - 278.77 = 321.23
-    // remainMargin: 300 - 278.77 = 21.23
-    // liquidationFee: 321.23 * 5% = 16.06
-    // margin ratio: = (margin + unrealizedPnl) / positionNotional = 21.23 / 321.23 = 6.608971765%
-    let msg = engine
-        .liquidate(vamm.addr().to_string(), alice.to_string())
-        .unwrap();
-    let res = router.execute(carol.clone(), msg).unwrap_err();
-    assert_eq!(
-        res.to_string(),
-        "Generic error: Position is overcollateralized".to_string()
-    );
-}
-
-#[test]
-fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
-    let SimpleScenario {
-        mut router,
-        alice,
-        bob,
-        carol,
-        engine,
-        usdc,
-        vamm,
-        ..
-    } = SimpleScenario::new();
-
-    // reduce the allowance
-    router
-        .execute_contract(
-            alice.clone(),
-            usdc.addr().clone(),
-            &Cw20ExecuteMsg::DecreaseAllowance {
-                spender: engine.addr().to_string(),
-                amount: to_decimals(1850),
-                expires: None,
-            },
-            &[],
-        )
-        .unwrap();
-
-    // reduce the allowance
-    router
-        .execute_contract(
-            bob.clone(),
-            usdc.addr().clone(),
-            &Cw20ExecuteMsg::DecreaseAllowance {
-                spender: engine.addr().to_string(),
-                amount: to_decimals(1500),
-                expires: None,
-            },
-            &[],
-        )
-        .unwrap();
-
-    let msg = engine
-        .open_position(
-            vamm.addr().to_string(),
-            Side::BUY,
-            to_decimals(150u64),
-            to_decimals(4u64),
+            to_decimals(20u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
+
+    // when bob create a 19.67213115 margin * 1x position to get 3 long position
+    // AMM after: 819.6721311 : 122
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
-            to_decimals(500u64),
+            Side::BUY,
+            Uint128::from(19_672_131_150u128),
             to_decimals(1u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    // alice's margin ratio = (margin + unrealizedPnl) / openNotional = (150 + (-278.77)) / 600 = -21.46%
     let msg = engine
         .liquidate(vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    let response = router.execute(carol.clone(), msg).unwrap();
-    assert_eq!(
-        response.events[4].attributes[2].value,
-        Uint128::from(8_030_973_451u128).to_string()
-    ); // liquidation fee
-    assert_eq!(
-        response.events[4].attributes[3].value,
-        Integer::new_negative(278_761_061_950u64).to_string()
-    ); // pnl (unsigned)
+    router.execute(carol.clone(), msg).unwrap();
+
+    let state = vamm.state(&router).unwrap();
+
+    let position = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(position.margin, Uint128::from(16_079_605_165u128));
+    assert_eq!(position.size, Integer::new_negative(18_750_000_000u128));
+
+    let margin_ratio = engine
+        .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(margin_ratio, Integer::new_positive(45_736_327u128));
+
+    let carol_balance = usdc.balance(&router, carol.clone()).unwrap();
+    assert_eq!(carol_balance, Uint128::from(553_234_429u128));
+
+    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    assert_eq!(insurance_balance, Uint128::from(5_000_553_234_429u128));
 }
-
-// #[test]
-// fn test_alice_long_position_underwater_oracle_price_activated_doesnt_get_liquidated() {
-//     let SimpleScenario {
-//         mut router,
-//         alice,
-//         bob,
-//         carol,
-//         engine,
-//         usdc,
-//         vamm,
-//         ..
-//     } = SimpleScenario::new();
-
-//     router
-//         .execute_contract(
-//             alice.clone(),
-//             usdc.addr().clone(),
-//             &Cw20ExecuteMsg::DecreaseAllowance {
-//                 spender: engine.addr().to_string(),
-//                 amount: to_decimals(1850),
-//                 expires: None,
-//             },
-//             &[],
-//         )
-//         .unwrap();
-
-//     router
-//         .execute_contract(
-//             bob.clone(),
-//             usdc.addr().clone(),
-//             &Cw20ExecuteMsg::DecreaseAllowance {
-//                 spender: engine.addr().to_string(),
-//                 amount: to_decimals(1500),
-//                 expires: None,
-//             },
-//             &[],
-//         )
-//         .unwrap();
-
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::BUY,
-//             to_decimals(150u64),
-//             to_decimals(4u64),
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
-
-//     let spot_price = vamm.spot_price(&router).unwrap();
-//     assert_eq!(1, 2);
-
-//     // let msg = engine
-//     //     .open_position(
-//     //         vamm.addr().to_string(),
-//     //         Side::SELL,
-//     //         to_decimals(500u64),
-//     //         to_decimals(1u64),
-//     //     )
-//     //     .unwrap();
-//     // router.execute(bob.clone(), msg).unwrap();
-
-//     // // alice's margin ratio = (margin + unrealizedPnl) / openNotional = (150 + (-278.77)) / 600 = -21.46%
-//     // let msg = engine
-//     //     .liquidate(vamm.addr().to_string(), alice.to_string())
-//     //     .unwrap();
-//     // let response = router.execute(carol.clone(), msg).unwrap();
-//     // assert_eq!(
-//     //     response.events[4].attributes[2].value,
-//     //     Uint128::from(8_030_973_451u128).to_string()
-//     // ); // liquidation fee
-//     // assert_eq!(
-//     //     response.events[4].attributes[3].value,
-//     //     Uint128::from(278_761_061_950u128).to_string()
-//     // ); // pnl (unsigned)
-// }

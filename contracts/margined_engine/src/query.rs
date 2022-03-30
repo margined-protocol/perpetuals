@@ -1,13 +1,15 @@
 use cosmwasm_std::{Deps, StdResult, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
-    ConfigResponse, MarginRatioResponse, PnlCalcOption, PositionResponse,
-    PositionUnrealizedPnlResponse,
+    ConfigResponse, PnlCalcOption, PositionResponse, PositionUnrealizedPnlResponse,
 };
 
 use crate::{
     state::{read_config, read_position, read_vamm, read_vamm_map, Config},
-    utils::{calc_funding_payment, get_position_notional_unrealized_pnl},
+    utils::{
+        calc_funding_payment, calc_remain_margin_with_funding_payment,
+        get_position_notional_unrealized_pnl,
+    },
 };
 
 /// Queries contract Config
@@ -40,7 +42,11 @@ pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Pos
 }
 
 /// Queries user position
-pub fn query_unrealized_pnl(deps: Deps, vamm: String, trader: String) -> StdResult<Uint128> {
+pub fn query_unrealized_pnl(
+    deps: Deps,
+    vamm: String,
+    trader: String,
+) -> StdResult<PositionUnrealizedPnlResponse> {
     // read the msg.senders position
     let position = read_position(
         deps.storage,
@@ -51,7 +57,7 @@ pub fn query_unrealized_pnl(deps: Deps, vamm: String, trader: String) -> StdResu
 
     let result = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::SPOTPRICE)?;
 
-    Ok(result.unrealized_pnl)
+    Ok(result)
 }
 
 /// Queries user position
@@ -122,11 +128,7 @@ pub fn query_trader_position_with_funding_payment(
 }
 
 /// Queries the margin ratio of a trader
-pub fn query_margin_ratio(
-    deps: Deps,
-    vamm: String,
-    trader: String,
-) -> StdResult<MarginRatioResponse> {
+pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult<Integer> {
     let config: Config = read_config(deps.storage)?;
 
     // retrieve the latest position
@@ -138,18 +140,12 @@ pub fn query_margin_ratio(
     .unwrap();
 
     if position.size.is_zero() {
-        return Ok(MarginRatioResponse {
-            ratio: Uint128::zero(),
-            polarity: true,
-        });
+        return Ok(Integer::zero());
     }
 
-    // TODO think how the side can be used
-    // currently it seems only losses have been
-    // tested but it cant be like that forever...
     let PositionUnrealizedPnlResponse {
-        position_notional: mut notional,
-        unrealized_pnl: mut pnl,
+        position_notional: spot_notional,
+        unrealized_pnl: spot_pnl,
     } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::SPOTPRICE)?;
     let PositionUnrealizedPnlResponse {
         position_notional: twap_notional,
@@ -157,28 +153,27 @@ pub fn query_margin_ratio(
     } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::TWAP)?;
 
     // calculate and return margin
-    if pnl > twap_pnl {
-        pnl = twap_pnl;
-        notional = twap_notional;
-    }
-
-    let mut response = if position.margin > pnl {
-        MarginRatioResponse {
-            ratio: position.margin.checked_sub(pnl)?,
-            polarity: true,
+    let PositionUnrealizedPnlResponse {
+        position_notional,
+        unrealized_pnl,
+    } = if spot_pnl.abs() > twap_pnl.abs() {
+        PositionUnrealizedPnlResponse {
+            position_notional: twap_notional,
+            unrealized_pnl: twap_pnl,
         }
     } else {
-        MarginRatioResponse {
-            ratio: pnl.checked_sub(position.margin)?,
-            polarity: false,
+        PositionUnrealizedPnlResponse {
+            position_notional: spot_notional,
+            unrealized_pnl: spot_pnl,
         }
     };
 
-    // divide by the margin that is deposited
-    response.ratio = response
-        .ratio
-        .checked_mul(config.decimals)?
-        .checked_div(notional)?;
+    let remain_margin = calc_remain_margin_with_funding_payment(deps, position, unrealized_pnl)?;
 
-    Ok(response)
+    let margin_ratio = ((Integer::new_positive(remain_margin.margin)
+        - Integer::new_positive(remain_margin.bad_debt))
+        * Integer::new_positive(config.decimals))
+        / Integer::new_positive(position_notional);
+
+    Ok(margin_ratio)
 }

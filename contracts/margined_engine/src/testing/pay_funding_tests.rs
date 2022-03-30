@@ -33,6 +33,7 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
             Side::BUY,
             to_decimals(300u64),
             to_decimals(2u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -43,6 +44,7 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
             Side::SELL,
             to_decimals(1200u64),
             to_decimals(1u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -127,6 +129,7 @@ fn test_will_keep_generating_same_loss_when_funding_rate_is_positive() {
             Side::BUY,
             to_decimals(300u64),
             to_decimals(2u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -137,6 +140,7 @@ fn test_will_keep_generating_same_loss_when_funding_rate_is_positive() {
             Side::SELL,
             to_decimals(1200u64),
             to_decimals(1u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -201,6 +205,7 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
             Side::BUY,
             to_decimals(300u64),
             to_decimals(2u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -211,6 +216,7 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
             Side::SELL,
             to_decimals(1200u64),
             to_decimals(1u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -315,6 +321,7 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
             Side::BUY,
             to_decimals(300u64),
             to_decimals(2u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -325,6 +332,7 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
             Side::SELL,
             to_decimals(1200u64),
             to_decimals(1u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -390,6 +398,7 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
             Side::BUY,
             to_decimals(300u64),
             to_decimals(2u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -400,6 +409,7 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
             Side::SELL,
             to_decimals(1200u64),
             to_decimals(1u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -428,7 +438,9 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
         .unwrap();
     assert_eq!(bob_position.margin, to_decimals(0u64));
 
-    let msg = engine.close_position(vamm.addr().to_string()).unwrap();
+    let msg = engine
+        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .unwrap();
     let response = router.execute(bob.clone(), msg).unwrap();
     assert_eq!(
         response.events[4].attributes[2].value,
@@ -460,6 +472,7 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
             Side::BUY,
             to_decimals(300u64),
             to_decimals(2u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -470,6 +483,7 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
             Side::SELL,
             to_decimals(1200u64),
             to_decimals(1u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -531,6 +545,7 @@ fn test_have_huge_funding_payment_margin_zero_cannot_remove_margin() {
             Side::BUY,
             to_decimals(300u64),
             to_decimals(2u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -541,6 +556,7 @@ fn test_have_huge_funding_payment_margin_zero_cannot_remove_margin() {
             Side::SELL,
             to_decimals(1200u64),
             to_decimals(1u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -598,6 +614,7 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
             Side::BUY,
             to_decimals(300u64),
             to_decimals(2u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -608,6 +625,7 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
             Side::SELL,
             to_decimals(1200u64),
             to_decimals(1u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -642,7 +660,9 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
     router.execute(bob.clone(), msg).unwrap();
 
     // badDebt 2550 - 10 margin = 2540
-    let msg = engine.close_position(vamm.addr().to_string()).unwrap();
+    let msg = engine
+        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .unwrap();
     let response = router.execute(bob.clone(), msg).unwrap();
     assert_eq!(
         response.events[4].attributes[2].value,
@@ -675,6 +695,7 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
             Side::BUY,
             to_decimals(300u64),
             to_decimals(2u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -685,6 +706,7 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
             Side::SELL,
             to_decimals(1200u64),
             to_decimals(1u64),
+            to_decimals(0u64),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();

@@ -51,6 +51,7 @@ fn test_swap_input_price_goes_up_within_fluctuation_limit() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
         quote_asset_amount: to_decimals(24),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: false,
     };
 
@@ -78,6 +79,7 @@ fn test_swap_input_price_goes_down_within_fluctuation_limit() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::RemoveFromAmm,
         quote_asset_amount: to_decimals(25),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: false,
     };
 
@@ -105,6 +107,7 @@ fn test_swap_input_price_goes_down_then_up_and_down_within_fluctuation_limit() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::RemoveFromAmm,
         quote_asset_amount: to_decimals(25),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: false,
     };
 
@@ -115,6 +118,7 @@ fn test_swap_input_price_goes_down_then_up_and_down_within_fluctuation_limit() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
         quote_asset_amount: to_decimals(49),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: false,
     };
 
@@ -125,6 +129,7 @@ fn test_swap_input_price_goes_down_then_up_and_down_within_fluctuation_limit() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::RemoveFromAmm,
         quote_asset_amount: to_decimals(49),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: false,
     };
 
@@ -153,6 +158,7 @@ fn test_swap_input_price_goes_can_go_over_fluctuation_limit_once() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
         quote_asset_amount: to_decimals(25),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: true,
     };
 
@@ -180,6 +186,7 @@ fn test_swap_output_price_goes_up_within_fluctuation_limit() {
     let swap_msg = ExecuteMsg::SwapOutput {
         direction: Direction::AddToAmm,
         base_asset_amount: Uint128::from(2_400_000u64),
+        quote_asset_limit: Uint128::zero(),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -206,6 +213,7 @@ fn test_swap_output_price_goes_down_within_fluctuation_limit() {
     let swap_msg = ExecuteMsg::SwapOutput {
         direction: Direction::RemoveFromAmm,
         base_asset_amount: Uint128::from(2_500_000u64),
+        quote_asset_limit: Uint128::zero(),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -232,6 +240,7 @@ fn test_force_error_swap_input_price_down_over_limit() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::RemoveFromAmm,
         quote_asset_amount: to_decimals(26),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: false,
     };
 
@@ -255,6 +264,7 @@ fn test_force_error_swap_input_can_go_over_limit_but_fails_second_time() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
         quote_asset_amount: to_decimals(25),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: true,
     };
 
@@ -264,6 +274,7 @@ fn test_force_error_swap_input_can_go_over_limit_but_fails_second_time() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
         quote_asset_amount: to_decimals(1),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: true,
     };
 
@@ -287,6 +298,7 @@ fn test_force_error_swap_input_short_can_go_over_limit_but_fails_second_time() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::RemoveFromAmm,
         quote_asset_amount: to_decimals(30),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: true,
     };
 
@@ -296,6 +308,7 @@ fn test_force_error_swap_input_short_can_go_over_limit_but_fails_second_time() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::RemoveFromAmm,
         quote_asset_amount: to_decimals(1),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: true,
     };
 
@@ -318,14 +331,16 @@ fn test_force_error_swap_output_can_go_over_limit_but_fails_second_time() {
     let swap_msg = ExecuteMsg::SwapOutput {
         direction: Direction::RemoveFromAmm,
         base_asset_amount: Uint128::from(25_000_000_000u64),
+        quote_asset_limit: Uint128::zero(),
     };
 
     let info = mock_info("addr0000", &[]);
-    let _result = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
+    execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
 
     let swap_msg = ExecuteMsg::SwapOutput {
         direction: Direction::RemoveFromAmm,
         base_asset_amount: Uint128::from(100_000_000u64),
+        quote_asset_limit: Uint128::zero(),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -347,6 +362,7 @@ fn test_force_error_swap_output_short_can_go_over_limit_but_fails_second_time() 
     let swap_msg = ExecuteMsg::SwapOutput {
         direction: Direction::AddToAmm,
         base_asset_amount: Uint128::from(3_000_000_000u64),
+        quote_asset_limit: Uint128::zero(),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -355,6 +371,7 @@ fn test_force_error_swap_output_short_can_go_over_limit_but_fails_second_time() 
     let swap_msg = ExecuteMsg::SwapOutput {
         direction: Direction::AddToAmm,
         base_asset_amount: Uint128::from(3_000_000_000u64),
+        quote_asset_limit: Uint128::zero(),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -376,6 +393,7 @@ fn test_force_error_swap_output_short_can_go_over_limit_but_fails_larger_price()
     let swap_msg = ExecuteMsg::SwapOutput {
         direction: Direction::AddToAmm,
         base_asset_amount: Uint128::from(3_000_000_000u64),
+        quote_asset_limit: Uint128::zero(),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -384,6 +402,7 @@ fn test_force_error_swap_output_short_can_go_over_limit_but_fails_larger_price()
     let swap_msg = ExecuteMsg::SwapOutput {
         direction: Direction::AddToAmm,
         base_asset_amount: Uint128::from(3_000_000_000u64),
+        quote_asset_limit: Uint128::zero(),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -409,6 +428,7 @@ fn test_force_error_swap_many_times() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
         quote_asset_amount: to_decimals(10),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: false,
     };
 
@@ -418,6 +438,7 @@ fn test_force_error_swap_many_times() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
         quote_asset_amount: to_decimals(10),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: false,
     };
 
@@ -427,6 +448,7 @@ fn test_force_error_swap_many_times() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
         quote_asset_amount: to_decimals(10),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: false,
     };
 
@@ -443,6 +465,7 @@ fn test_force_error_compare_price_fluctuation_with_previous_blocks() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
         quote_asset_amount: to_decimals(10),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: false,
     };
 
@@ -457,6 +480,7 @@ fn test_force_error_compare_price_fluctuation_with_previous_blocks() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::RemoveFromAmm,
         quote_asset_amount: to_decimals(26),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: false,
     };
 
@@ -473,6 +497,7 @@ fn test_force_error_compare_price_fluctuation_with_previous_blocks() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
         quote_asset_amount: to_decimals(30),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: false,
     };
 
@@ -489,6 +514,7 @@ fn test_force_error_compare_price_fluctuation_with_previous_blocks() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
         quote_asset_amount: to_decimals(10),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: false,
     };
 
@@ -498,6 +524,7 @@ fn test_force_error_compare_price_fluctuation_with_previous_blocks() {
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
         quote_asset_amount: to_decimals(20),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: false,
     };
 
@@ -520,6 +547,7 @@ fn test_force_error_value_of_fluctuation_is_same_even_no_trading_for_multiple_bl
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
         quote_asset_amount: to_decimals(10),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: false,
     };
 
@@ -534,6 +562,7 @@ fn test_force_error_value_of_fluctuation_is_same_even_no_trading_for_multiple_bl
     let swap_msg = ExecuteMsg::SwapInput {
         direction: Direction::AddToAmm,
         quote_asset_amount: to_decimals(25),
+        base_asset_limit: to_decimals(0u64),
         can_go_over_fluctuation: false,
     };
 

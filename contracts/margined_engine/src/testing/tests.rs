@@ -54,7 +54,15 @@ fn test_update_config() {
 
     // Update the config
     let msg = ExecuteMsg::UpdateConfig {
-        owner: "addr0001".to_string(),
+        owner: Some("addr0001".to_string()),
+        insurance_fund: None,
+        fee_pool: None,
+        eligible_collateral: None,
+        decimals: None,
+        initial_margin_ratio: None,
+        maintenance_margin_ratio: None,
+        partial_liquidation_margin_ratio: None,
+        liquidation_fee: None,
     };
 
     let info = mock_info(OWNER, &[]);
@@ -72,7 +80,15 @@ fn test_update_config() {
 
     // Update should fail
     let msg = ExecuteMsg::UpdateConfig {
-        owner: OWNER.to_string(),
+        owner: Some(OWNER.to_string()),
+        insurance_fund: None,
+        fee_pool: None,
+        eligible_collateral: None,
+        decimals: None,
+        initial_margin_ratio: None,
+        maintenance_margin_ratio: None,
+        partial_liquidation_margin_ratio: None,
+        liquidation_fee: None,
     };
 
     let info = mock_info(OWNER, &[]);
