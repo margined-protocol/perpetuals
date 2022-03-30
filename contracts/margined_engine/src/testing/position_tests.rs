@@ -821,7 +821,10 @@ fn test_pnl_unrealized() {
     let pnl = engine
         .unrealized_pnl(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(238_095_238_096u64));
+    assert_eq!(
+        pnl.unrealized_pnl,
+        Integer::new_negative(238_095_238_096u64)
+    );
 }
 
 #[test]

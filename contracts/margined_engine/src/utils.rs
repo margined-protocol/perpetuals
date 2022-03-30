@@ -267,7 +267,6 @@ pub fn get_position_notional_unrealized_pnl(
 ) -> StdResult<PositionUnrealizedPnlResponse> {
     let mut output_notional = Uint128::zero();
     let mut unrealized_pnl = Integer::zero();
-    println!("\n\nPosition Size: {}", position.size.value);
 
     let position_size = position.size;
     if !position_size.is_zero() {
@@ -277,34 +276,27 @@ pub fn get_position_notional_unrealized_pnl(
             Direction::AddToAmm
         };
 
-        println!("direction: {:?}", direction);
-
         match calc_option {
             PnlCalcOption::TWAP => {
-                println!("twap");
                 output_notional = query_vamm_output_twap(
                     &deps,
                     position.vamm.to_string(),
-                    // position.direction.clone(),
-                    direction,
+                    position.direction.clone(),
+                    // direction,
                     position_size.value,
                 )?;
             }
             PnlCalcOption::SPOTPRICE => {
-                println!("spot");
                 output_notional = query_vamm_output_price(
                     &deps,
                     position.vamm.to_string(),
-                    // position.direction.clone(),
-                    direction,
+                    position.direction.clone(),
+                    // direction,
                     position_size.value,
                 )?;
             }
             PnlCalcOption::ORACLE => {}
         }
-
-        println!("Position Notional: {}", position.notional);
-        println!("Output Notional: {}", output_notional);
 
         // we are short if the size of the position is less than 0
         unrealized_pnl = if position.direction == Direction::AddToAmm {
@@ -312,8 +304,6 @@ pub fn get_position_notional_unrealized_pnl(
         } else {
             Integer::new_positive(position.notional) - Integer::new_positive(output_notional)
         };
-
-        println!("pnl: {}", unrealized_pnl);
     }
 
     Ok(PositionUnrealizedPnlResponse {
@@ -335,9 +325,6 @@ pub fn calc_remain_margin_with_funding_payment(
     let funding_payment = (latest_premium_fraction - position.last_updated_premium_fraction)
         * position.size
         / Integer::new_positive(config.decimals);
-
-    println!("Margin delta: {:?}", margin_delta);
-    println!("position margin: {}", position.margin);
 
     // let margin = if position.size < Integer::zero() {
     //     println!("negative");

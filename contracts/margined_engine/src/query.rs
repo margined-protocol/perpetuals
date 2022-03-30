@@ -42,7 +42,11 @@ pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Pos
 }
 
 /// Queries user position
-pub fn query_unrealized_pnl(deps: Deps, vamm: String, trader: String) -> StdResult<PositionUnrealizedPnlResponse> {
+pub fn query_unrealized_pnl(
+    deps: Deps,
+    vamm: String,
+    trader: String,
+) -> StdResult<PositionUnrealizedPnlResponse> {
     // read the msg.senders position
     let position = read_position(
         deps.storage,
@@ -139,8 +143,6 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
         return Ok(Integer::zero());
     }
 
-    println!("Size: {:?}", position.size);
-
     let PositionUnrealizedPnlResponse {
         position_notional: spot_notional,
         unrealized_pnl: spot_pnl,
@@ -165,8 +167,6 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
             unrealized_pnl: spot_pnl,
         }
     };
-
-    println!("{:?}", unrealized_pnl);
 
     let remain_margin =
         calc_remain_margin_with_funding_payment(deps, position.clone(), unrealized_pnl)?;

@@ -18,12 +18,13 @@ use crate::{
     },
     utils::{
         calc_remain_margin_with_funding_payment, direction_to_side, execute_transfer_from,
-        get_position, require_bad_debt, require_insufficient_margin, require_margin,
-        require_position_not_zero, require_vamm, side_to_direction, withdraw,
+        get_position, get_position_notional_unrealized_pnl, require_bad_debt,
+        require_insufficient_margin, require_margin, require_position_not_zero, require_vamm,
+        side_to_direction, withdraw,
     },
 };
 use margined_common::integer::Integer;
-use margined_perp::margined_engine::Side;
+use margined_perp::margined_engine::{PnlCalcOption, PositionUnrealizedPnlResponse, Side};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 
 #[allow(clippy::too_many_arguments)]
@@ -162,6 +163,7 @@ pub fn open_position(
             quote_asset_amount,
             leverage,
             open_notional,
+            unrealized_pnl: Integer::zero(),
         },
     )?;
 
@@ -213,14 +215,10 @@ pub fn liquidate(
     let margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
 
     require_vamm(deps.storage, &vamm)?;
-    println!("{} {}", margin_ratio, config.maintenance_margin_ratio);
     require_insufficient_margin(margin_ratio, config.maintenance_margin_ratio)?;
 
     // read the position for the trader from vamm
     let position = read_position(deps.storage, &vamm, &trader).unwrap();
-
-    // TODO First we should see if it is a partial or full liqudiation, but not today
-    let mut response = Response::default();
 
     // first see if this is a partial liquidation, else we just rek the trader
     let msg = if margin_ratio.value > config.liquidation_fee
@@ -230,9 +228,8 @@ pub fn liquidate(
     } else {
         internal_close_position(deps, &position, Uint128::zero(), SWAP_LIQUIDATE_REPLY_ID)?
     };
-    response = response.add_submessage(msg);
 
-    Ok(response)
+    Ok(Response::default().add_submessage(msg))
 }
 
 pub fn pay_funding(
@@ -375,6 +372,7 @@ pub fn internal_close_position(
             quote_asset_amount: position.size.value,
             leverage: Uint128::zero(),
             open_notional: position.notional,
+            unrealized_pnl: Integer::zero(),
         },
     )?;
 
@@ -434,7 +432,6 @@ fn open_reverse_position(
     msg
 }
 
-// Increase the position, just basically wraps swap input though it may do more in the future
 #[allow(clippy::too_many_arguments)]
 fn partial_liquidation(deps: DepsMut, _env: Env, vamm: Addr, trader: Addr) -> SubMsg {
     let config: Config = read_config(deps.storage).unwrap();
@@ -449,6 +446,9 @@ fn partial_liquidation(deps: DepsMut, _env: Env, vamm: Addr, trader: Addr) -> Su
         .checked_div(config.decimals)
         .unwrap();
 
+    println!("size: {}", position.size);
+    println!("partial size: {}", partial_position_size);
+
     let current_notional = query_vamm_output_price(
         &deps.as_ref(),
         vamm.to_string(),
@@ -456,6 +456,14 @@ fn partial_liquidation(deps: DepsMut, _env: Env, vamm: Addr, trader: Addr) -> Su
         partial_position_size,
     )
     .unwrap();
+
+    println!("current_notional: {}", current_notional);
+
+    let PositionUnrealizedPnlResponse {
+        position_notional: _,
+        unrealized_pnl,
+    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)
+        .unwrap();
 
     let side = if position.size > Integer::zero() {
         Side::SELL
@@ -472,12 +480,14 @@ fn partial_liquidation(deps: DepsMut, _env: Env, vamm: Addr, trader: Addr) -> Su
             quote_asset_amount: partial_position_size,
             leverage: Uint128::zero(),
             open_notional: current_notional,
+            unrealized_pnl,
         },
     )
     .unwrap();
 
     // if position.notional > open_notional {
     let msg: SubMsg = if current_notional > position.notional {
+        println!("swap input");
         // then we are opening a new position or adding to an existing
         swap_input(
             &vamm,
@@ -489,11 +499,12 @@ fn partial_liquidation(deps: DepsMut, _env: Env, vamm: Addr, trader: Addr) -> Su
         )
         .unwrap()
     } else {
+        println!("swap output");
         // first close position swap out the entire position
         swap_output(
             &vamm,
             direction_to_side(position.direction.clone()),
-            position.size.value,
+            partial_position_size,
             Uint128::zero(),
             SWAP_PARTIAL_LIQUIDATION_REPLY_ID,
         )

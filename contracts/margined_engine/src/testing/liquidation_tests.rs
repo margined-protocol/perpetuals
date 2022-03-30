@@ -115,10 +115,18 @@ fn test_partially_liquidate_long_position() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
+    let state = vamm.state(&router).unwrap();
+    println!("\nquote asset reserve:{}", state.quote_asset_reserve);
+    println!("base asset reserve:{}\n", state.base_asset_reserve);
+
     let msg = engine
         .liquidate(vamm.addr().to_string(), alice.to_string())
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
+
+    let state = vamm.state(&router).unwrap();
+    println!("\nquote asset reserve:{}", state.quote_asset_reserve);
+    println!("base asset reserve:{}\n", state.base_asset_reserve);
 
     let position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
@@ -126,9 +134,16 @@ fn test_partially_liquidate_long_position() {
     assert_eq!(position.margin, Uint128::from(19_274_981_657u128));
     assert_eq!(position.size, Integer::new_positive(15_000_000_000u128));
     println!("Position:\n{:?}\n", position);
+    println!("PositionSize:\n{:?}\n", position.size);
 
-    let price = vamm.output_price(&router, Direction::AddToAmm, position.size.value).unwrap();
-    println!("result:\n{}\n", price);
+    let price = vamm
+        .output_price(&router, Direction::AddToAmm, position.size.value)
+        .unwrap();
+    println!("addtoamm:\n{}\n", price);
+    let price = vamm
+        .output_price(&router, Direction::RemoveFromAmm, position.size.value)
+        .unwrap();
+    println!("removefrom:\n{}\n", price);
 
     let unrealized_pnl = engine
         .unrealized_pnl(&router, vamm.addr().to_string(), alice.to_string())
@@ -140,7 +155,7 @@ fn test_partially_liquidate_long_position() {
         .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_positive(43_713_253u128));
-
+    assert_eq!(1, 2);
     // let pnl: Integer = engine
     //     .unrealized_pnl(&router, vamm.addr().to_string(), alice.to_string())
     //     .unwrap();

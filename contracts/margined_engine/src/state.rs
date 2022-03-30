@@ -158,6 +158,7 @@ pub struct Swap {
     pub quote_asset_amount: Uint128,
     pub leverage: Uint128,
     pub open_notional: Uint128,
+    pub unrealized_pnl: Integer,
 }
 
 pub fn store_tmp_swap(storage: &mut dyn Storage, swap: &Swap) -> StdResult<()> {
