@@ -6,7 +6,10 @@ use margined_perp::margined_engine::{
 
 use crate::{
     state::{read_config, read_position, read_vamm, read_vamm_map, Config},
-    utils::{calc_funding_payment, calc_remain_margin_with_funding_payment, get_position_notional_unrealized_pnl},
+    utils::{
+        calc_funding_payment, calc_remain_margin_with_funding_payment,
+        get_position_notional_unrealized_pnl,
+    },
 };
 
 /// Queries contract Config
@@ -39,7 +42,7 @@ pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Pos
 }
 
 /// Queries user position
-pub fn query_unrealized_pnl(deps: Deps, vamm: String, trader: String) -> StdResult<Integer> {
+pub fn query_unrealized_pnl(deps: Deps, vamm: String, trader: String) -> StdResult<PositionUnrealizedPnlResponse> {
     // read the msg.senders position
     let position = read_position(
         deps.storage,
@@ -50,7 +53,7 @@ pub fn query_unrealized_pnl(deps: Deps, vamm: String, trader: String) -> StdResu
 
     let result = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::SPOTPRICE)?;
 
-    Ok(result.unrealized_pnl)
+    Ok(result)
 }
 
 /// Queries user position
@@ -136,6 +139,8 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
         return Ok(Integer::zero());
     }
 
+    println!("Size: {:?}", position.size);
+
     let PositionUnrealizedPnlResponse {
         position_notional: spot_notional,
         unrealized_pnl: spot_pnl,
@@ -161,12 +166,15 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
         }
     };
 
-    // TODO include funding payment into the calculation
-    // let remain_margin =
-    //     calc_remain_margin_with_funding_payment(deps, position.clone(), unrealized_pnl)?;
+    println!("{:?}", unrealized_pnl);
 
-    let margin_ratio = Integer::new_positive(position.margin) - unrealized_pnl;
+    let remain_margin =
+        calc_remain_margin_with_funding_payment(deps, position.clone(), unrealized_pnl)?;
 
-    Ok((margin_ratio * Integer::new_positive(config.decimals))
-        / Integer::new_positive(position_notional))
+    let margin_ratio = ((Integer::new_positive(remain_margin.margin)
+        - Integer::new_positive(remain_margin.bad_debt))
+        * Integer::new_positive(config.decimals))
+        / Integer::new_positive(position_notional);
+
+    Ok(margin_ratio)
 }

@@ -265,41 +265,59 @@ pub fn get_position_notional_unrealized_pnl(
     position: &Position,
     calc_option: PnlCalcOption,
 ) -> StdResult<PositionUnrealizedPnlResponse> {
-    let mut position_notional = Uint128::zero();
+    let mut output_notional = Uint128::zero();
     let mut unrealized_pnl = Integer::zero();
+    println!("\n\nPosition Size: {}", position.size.value);
 
     let position_size = position.size;
     if !position_size.is_zero() {
+        let direction = if position.size < Integer::zero() {
+            Direction::RemoveFromAmm
+        } else {
+            Direction::AddToAmm
+        };
+
+        println!("direction: {:?}", direction);
+
         match calc_option {
             PnlCalcOption::TWAP => {
-                position_notional = query_vamm_output_twap(
+                println!("twap");
+                output_notional = query_vamm_output_twap(
                     &deps,
                     position.vamm.to_string(),
-                    position.direction.clone(),
+                    // position.direction.clone(),
+                    direction,
                     position_size.value,
                 )?;
             }
             PnlCalcOption::SPOTPRICE => {
-                position_notional = query_vamm_output_price(
+                println!("spot");
+                output_notional = query_vamm_output_price(
                     &deps,
                     position.vamm.to_string(),
-                    position.direction.clone(),
+                    // position.direction.clone(),
+                    direction,
                     position_size.value,
                 )?;
             }
             PnlCalcOption::ORACLE => {}
         }
 
+        println!("Position Notional: {}", position.notional);
+        println!("Output Notional: {}", output_notional);
+
         // we are short if the size of the position is less than 0
-        unrealized_pnl = if position.size < Integer::zero() {
-            Integer::new_positive(position_notional) - Integer::new_positive(position.notional)
+        unrealized_pnl = if position.direction == Direction::AddToAmm {
+            Integer::new_positive(output_notional) - Integer::new_positive(position.notional)
         } else {
-            Integer::new_positive(position.notional) - Integer::new_positive(position_notional)
+            Integer::new_positive(position.notional) - Integer::new_positive(output_notional)
         };
+
+        println!("pnl: {}", unrealized_pnl);
     }
 
     Ok(PositionUnrealizedPnlResponse {
-        position_notional,
+        position_notional: output_notional,
         unrealized_pnl,
     })
 }
@@ -318,12 +336,28 @@ pub fn calc_remain_margin_with_funding_payment(
         * position.size
         / Integer::new_positive(config.decimals);
 
+    println!("Margin delta: {:?}", margin_delta);
+    println!("position margin: {}", position.margin);
+
+    // let margin = if position.size < Integer::zero() {
+    //     println!("negative");
+    //     Integer::new_negative(position.margin)
+    // } else {
+    //     println!("positive");
+    //     Integer::new_positive(position.margin)
+    // };
+
     // calculate the remaining margin
     let mut remaining_margin: Integer =
         margin_delta - funding_payment + Integer::new_positive(position.margin);
     let mut bad_debt = Integer::zero();
+
+    // println!("{:?}", margin);
+    // println!("{:?}", margin_delta);
+    // println!("{:?}", remaining_margin);
+
     if remaining_margin.is_negative() {
-        bad_debt = remaining_margin.abs();
+        bad_debt = remaining_margin.invert_sign();
         remaining_margin = Integer::zero();
     }
 
@@ -432,7 +466,7 @@ pub fn direction_to_side(direction: Direction) -> Side {
 
 // takes the side (buy|sell) and returns opposite (short|long)
 // this is useful when closing/reversing a position
-pub fn _switch_direction(dir: Direction) -> Direction {
+pub fn switch_direction(dir: Direction) -> Direction {
     match dir {
         Direction::RemoveFromAmm => Direction::AddToAmm,
         Direction::AddToAmm => Direction::RemoveFromAmm,

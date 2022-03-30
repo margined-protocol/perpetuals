@@ -86,12 +86,11 @@ pub fn update_config(
     if let Some(partial_liquidation_margin_ratio) = partial_liquidation_margin_ratio {
         config.partial_liquidation_margin_ratio = partial_liquidation_margin_ratio;
     }
-    
+
     // update liquidation fee
     if let Some(liquidation_fee) = liquidation_fee {
         config.liquidation_fee = liquidation_fee;
     }
-    
 
     store_config(deps.storage, &config)?;
 
@@ -224,13 +223,10 @@ pub fn liquidate(
     let mut response = Response::default();
 
     // first see if this is a partial liquidation, else we just rek the trader
-    let msg = if margin_ratio.value > config.liquidation_fee && !config.partial_liquidation_margin_ratio.is_zero() {
-        partial_liquidation(
-            deps,
-            env,
-            vamm,
-            trader,
-        )
+    let msg = if margin_ratio.value > config.liquidation_fee
+        && !config.partial_liquidation_margin_ratio.is_zero()
+    {
+        partial_liquidation(deps, env, vamm, trader)
     } else {
         internal_close_position(deps, &position, Uint128::zero(), SWAP_LIQUIDATE_REPLY_ID)?
     };
@@ -440,21 +436,18 @@ fn open_reverse_position(
 
 // Increase the position, just basically wraps swap input though it may do more in the future
 #[allow(clippy::too_many_arguments)]
-fn partial_liquidation(
-    deps: DepsMut,
-    _env: Env,
-    vamm: Addr,
-    trader: Addr,
-) -> SubMsg {
+fn partial_liquidation(deps: DepsMut, _env: Env, vamm: Addr, trader: Addr) -> SubMsg {
     let config: Config = read_config(deps.storage).unwrap();
 
     let position: Position = read_position(deps.storage, &vamm, &trader).unwrap();
 
-    println!("Position size: {}", position.size.value);
-
-    let partial_position_size = position.size.value
-        .checked_mul(config.partial_liquidation_margin_ratio).unwrap()
-        .checked_div(config.decimals).unwrap();
+    let partial_position_size = position
+        .size
+        .value
+        .checked_mul(config.partial_liquidation_margin_ratio)
+        .unwrap()
+        .checked_div(config.decimals)
+        .unwrap();
 
     let current_notional = query_vamm_output_price(
         &deps.as_ref(),
@@ -463,9 +456,6 @@ fn partial_liquidation(
         partial_position_size,
     )
     .unwrap();
-
-    println!("Output price: {}", current_notional);
-    println!("Partial position: {}", partial_position_size);
 
     let side = if position.size > Integer::zero() {
         Side::SELL
@@ -483,11 +473,11 @@ fn partial_liquidation(
             leverage: Uint128::zero(),
             open_notional: current_notional,
         },
-    ).unwrap();
+    )
+    .unwrap();
 
     // if position.notional > open_notional {
     let msg: SubMsg = if current_notional > position.notional {
-        println!("swap input");
         // then we are opening a new position or adding to an existing
         swap_input(
             &vamm,
@@ -499,7 +489,6 @@ fn partial_liquidation(
         )
         .unwrap()
     } else {
-        println!("swap output");
         // first close position swap out the entire position
         swap_output(
             &vamm,

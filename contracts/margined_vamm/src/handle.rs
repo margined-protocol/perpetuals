@@ -329,8 +329,8 @@ pub fn get_output_price_with_reserves(
         .checked_div(config.decimals)?;
 
     let base_asset_after: Uint128 = match direction {
-        Direction::AddToAmm => base_asset_reserve.checked_add(base_asset_amount)?,
-        Direction::RemoveFromAmm => base_asset_reserve.checked_sub(base_asset_amount)?,
+        Direction::AddToAmm => base_asset_reserve.checked_sub(base_asset_amount)?,
+        Direction::RemoveFromAmm => base_asset_reserve.checked_add(base_asset_amount)?,
     };
 
     let quote_asset_after: Uint128 = invariant_k

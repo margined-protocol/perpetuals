@@ -485,10 +485,10 @@ fn test_pnl_zero_no_others_trading() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let pnl: Uint128 = engine
+    let pnl = engine
         .unrealized_pnl(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(pnl, Uint128::zero());
+    assert_eq!(pnl.unrealized_pnl, Integer::zero());
 }
 
 #[test]
@@ -821,9 +821,7 @@ fn test_pnl_unrealized() {
     let pnl = engine
         .unrealized_pnl(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(pnl, Uint128::from(238_095_238_096u64));
-
-    // TODO return indication where it is Profit or Loss
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(238_095_238_096u64));
 }
 
 #[test]

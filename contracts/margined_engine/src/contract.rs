@@ -81,7 +81,7 @@ pub fn instantiate(
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
         // ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
-        ExecuteMsg::UpdateConfig { 
+        ExecuteMsg::UpdateConfig {
             owner,
             insurance_fund,
             fee_pool,

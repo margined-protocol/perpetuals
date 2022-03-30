@@ -1,5 +1,5 @@
 use margined_perp::margined_engine::{
-    ConfigResponse, ExecuteMsg, PositionResponse, QueryMsg, Side,
+    ConfigResponse, ExecuteMsg, PositionResponse, PositionUnrealizedPnlResponse, QueryMsg, Side,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -43,7 +43,7 @@ impl EngineController {
         partial_liquidation_margin_ratio: Option<Uint128>,
         liquidation_fee: Option<Uint128>,
     ) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::UpdateConfig { 
+        let msg = ExecuteMsg::UpdateConfig {
             owner,
             insurance_fund,
             fee_pool,
@@ -140,7 +140,7 @@ impl EngineController {
         querier: &Q,
         vamm: String,
         trader: String,
-    ) -> StdResult<Uint128> {
+    ) -> StdResult<PositionUnrealizedPnlResponse> {
         let msg = QueryMsg::UnrealizedPnl { vamm, trader };
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -148,7 +148,7 @@ impl EngineController {
         }
         .into();
 
-        let res: Uint128 = QuerierWrapper::new(querier).query(&query)?;
+        let res: PositionUnrealizedPnlResponse = QuerierWrapper::new(querier).query(&query)?;
         Ok(res)
     }
 

@@ -54,6 +54,11 @@ fn test_get_margin_ratio_long() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
+    let position = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::new_positive(20_000_000_000u128));
+
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
@@ -64,6 +69,11 @@ fn test_get_margin_ratio_long() {
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
+
+    let position = engine
+        .position(&router, vamm.addr().to_string(), bob.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::new_negative(10_909_090_910u128));
 
     // expect to be -0.13429752
     let margin_ratio = engine

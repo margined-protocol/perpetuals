@@ -4,6 +4,7 @@ use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
+use margined_perp::margined_vamm::Direction;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
 
 #[test]
@@ -18,23 +19,41 @@ fn test_partially_liquidate_long_position() {
         engine,
         usdc,
         vamm,
+        pricefeed,
         ..
     } = SimpleScenario::new();
 
+    let spot_price = vamm.spot_price(&router).unwrap();
+    println!("spot price: {}", spot_price);
+
+    // set the latest price
+    let price: Uint128 = Uint128::from(10_000_000_000u128);
+    let timestamp: u64 = router.block_info().time.seconds();
+
+    let msg = pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(900);
+        block.height += 1;
+    });
+
     // set the margin ratios
     let msg = engine
-    .update_config(
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        Some(Uint128::from(100_000_000u128)),
-        Some(Uint128::from(250_000_000u128)),
-        Some(Uint128::from(25_000_000u128)),
-    )
-    .unwrap();
+        .update_config(
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(Uint128::from(100_000_000u128)),
+            Some(Uint128::from(250_000_000u128)),
+            Some(Uint128::from(25_000_000u128)),
+        )
+        .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
     // reduce the allowance
@@ -106,12 +125,26 @@ fn test_partially_liquidate_long_position() {
         .unwrap();
     assert_eq!(position.margin, Uint128::from(19_274_981_657u128));
     assert_eq!(position.size, Integer::new_positive(15_000_000_000u128));
+    println!("Position:\n{:?}\n", position);
+
+    let price = vamm.output_price(&router, Direction::AddToAmm, position.size.value).unwrap();
+    println!("result:\n{}\n", price);
+
+    let unrealized_pnl = engine
+        .unrealized_pnl(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    println!("pnl:\n{:?}\n", unrealized_pnl);
 
     // this is todo need to add funding into the get margin ratio
-    // let margin_ratio = engine
-    //     .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
+    let margin_ratio = engine
+        .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(margin_ratio, Integer::new_positive(43_713_253u128));
+
+    // let pnl: Integer = engine
+    //     .unrealized_pnl(&router, vamm.addr().to_string(), alice.to_string())
     //     .unwrap();
-    // assert_eq!(margin_ratio, Integer::new_positive(43_713_253u128));
+    // assert_eq!(pnl, Integer::zero());
 
     let carol_balance = usdc.balance(&router, carol.clone()).unwrap();
     assert_eq!(carol_balance, Uint128::from(855_695_509u128));
