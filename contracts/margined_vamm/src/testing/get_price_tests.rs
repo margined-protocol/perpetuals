@@ -25,7 +25,7 @@ fn test_get_input_add_to_amm() {
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    // getInputPrice, add to amm 
+    // getInputPrice, add to amm
     let res = query(
         deps.as_ref(),
         mock_env(),
