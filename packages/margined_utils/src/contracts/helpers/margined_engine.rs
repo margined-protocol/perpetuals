@@ -31,6 +31,7 @@ impl EngineController {
         .into())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn update_config(
         &self,
         owner: Option<String>,

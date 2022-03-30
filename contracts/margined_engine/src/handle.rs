@@ -1,5 +1,3 @@
-use std::thread::current;
-
 use cosmwasm_std::{
     to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError, StdResult,
     SubMsg, Uint128, WasmMsg,
@@ -446,9 +444,6 @@ fn partial_liquidation(deps: DepsMut, _env: Env, vamm: Addr, trader: Addr) -> Su
         .checked_div(config.decimals)
         .unwrap();
 
-    println!("size: {}", position.size);
-    println!("partial size: {}", partial_position_size);
-
     let current_notional = query_vamm_output_price(
         &deps.as_ref(),
         vamm.to_string(),
@@ -456,8 +451,6 @@ fn partial_liquidation(deps: DepsMut, _env: Env, vamm: Addr, trader: Addr) -> Su
         partial_position_size,
     )
     .unwrap();
-
-    println!("current_notional: {}", current_notional);
 
     let PositionUnrealizedPnlResponse {
         position_notional: _,
@@ -487,7 +480,6 @@ fn partial_liquidation(deps: DepsMut, _env: Env, vamm: Addr, trader: Addr) -> Su
 
     // if position.notional > open_notional {
     let msg: SubMsg = if current_notional > position.notional {
-        println!("swap input");
         // then we are opening a new position or adding to an existing
         swap_input(
             &vamm,
@@ -499,11 +491,10 @@ fn partial_liquidation(deps: DepsMut, _env: Env, vamm: Addr, trader: Addr) -> Su
         )
         .unwrap()
     } else {
-        println!("swap output");
         // first close position swap out the entire position
         swap_output(
             &vamm,
-            direction_to_side(position.direction.clone()),
+            direction_to_side(position.direction),
             partial_position_size,
             Uint128::zero(),
             SWAP_PARTIAL_LIQUIDATION_REPLY_ID,

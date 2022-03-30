@@ -2,7 +2,7 @@ use cosmwasm_std::{DepsMut, Env, Response, StdError, StdResult, SubMsg, Uint128}
 
 use crate::{
     handle::internal_increase_position,
-    querier::{query_vamm_output_price, query_vamm_state},
+    querier::query_vamm_state,
     state::{
         append_cumulative_premium_fraction, read_config, read_state, read_tmp_liquidator,
         read_tmp_swap, remove_tmp_liquidator, remove_tmp_swap, store_position, store_state,
@@ -11,7 +11,7 @@ use crate::{
     utils::{
         calc_remain_margin_with_funding_payment, clear_position, execute_transfer,
         execute_transfer_from, execute_transfer_to_insurance_fund, get_position, realize_bad_debt,
-        side_to_direction, switch_direction, transfer_fee, withdraw,
+        side_to_direction, transfer_fee, withdraw,
     },
 };
 
@@ -397,58 +397,45 @@ pub fn partial_liquidation_reply(
         swap.side.clone(),
     );
 
-    println!("{} {}", input, output);
-
     // calculate delta from trade and whether it was profitable or a loss
     let realized_pnl = (swap.unrealized_pnl
         * Integer::new_positive(config.partial_liquidation_margin_ratio))
         / Integer::new_positive(config.decimals);
 
-    println!("unrealized pnl: {:?}", swap.unrealized_pnl);
-    println!("realized pnl: {:?}", realized_pnl);
-    println!("notional: {:?}", Integer::new_positive(position.notional));
-    println!("notional: {}", position.size);
-    println!(
-        "output price: {:?}",
-        (Integer::new_positive(output) * Integer::new_positive(config.decimals))
-            / Integer::new_positive(config.liquidation_fee)
-    );
-
     let liquidation_penalty: Uint128 = output
         .checked_mul(config.liquidation_fee)?
         .checked_div(config.decimals)?;
 
-    println!("liquidation_penalty: {}", liquidation_penalty);
-    println!("swap.open_notional: {}", swap.open_notional);
-
     let liquidation_fee: Uint128 = liquidation_penalty.checked_div(Uint128::from(2u64))?;
 
-    let current_notional = query_vamm_output_price(
-        &deps.as_ref(),
-        swap.vamm.to_string(),
-        position.direction.clone(),
-        position.size.value,
-    )
-    .unwrap();
-    println!("current_notional: {}", current_notional);
+    let signed_input = if position.size < Integer::zero() {
+        Integer::new_positive(input)
+    } else {
+        Integer::new_negative(input)
+    };
 
-    position.size -= Integer::new_positive(input);
+    position.size += signed_input;
 
-    println!("position margin: {}", position.margin);
     position.margin = position
         .margin
         .checked_sub(realized_pnl.value)?
         .checked_sub(liquidation_penalty)?;
-    println!("position margin: {}", position.margin);
-    println!("position margin: {}", realized_pnl.value);
-    println!("position margin: {}", liquidation_penalty);
 
-    position.notional = position
-        .notional
-        .checked_sub(swap.open_notional)?
-        .checked_sub(realized_pnl.value)?;
-
-    // position.direction = switch_direction(position.direction);
+    // calculate openNotional (it's different depends on long or short side)
+    // long: unrealizedPnl = positionNotional - openNotional => openNotional = positionNotional - unrealizedPnl
+    // short: unrealizedPnl = openNotional - positionNotional => openNotional = positionNotional + unrealizedPnl
+    // positionNotional = oldPositionNotional - exchangedQuoteAssetAmount
+    position.notional = if position.size.is_positive() {
+        position
+            .notional
+            .checked_sub(swap.open_notional)?
+            .checked_sub(realized_pnl.value)?
+    } else {
+        realized_pnl
+            .value
+            .checked_add(position.notional)?
+            .checked_sub(swap.open_notional)?
+    };
 
     let mut messages: Vec<SubMsg> = vec![];
 
@@ -464,7 +451,7 @@ pub fn partial_liquidation_reply(
     // insurance fees have been paid
     let withdraw_messages = withdraw(
         deps.as_ref(),
-        env.clone(),
+        env,
         &mut state,
         &liquidator,
         &config.insurance_fund,
@@ -487,7 +474,7 @@ pub fn partial_liquidation_reply(
         .add_attributes(vec![
             ("action", "liquidate_reply"),
             ("liquidation_fee", &liquidation_fee.to_string()),
-            // ("pnl", &realized_pnl.to_string()),
+            ("pnl", &realized_pnl.to_string()),
         ]))
 }
 

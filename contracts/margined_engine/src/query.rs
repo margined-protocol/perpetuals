@@ -168,8 +168,7 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
         }
     };
 
-    let remain_margin =
-        calc_remain_margin_with_funding_payment(deps, position.clone(), unrealized_pnl)?;
+    let remain_margin = calc_remain_margin_with_funding_payment(deps, position, unrealized_pnl)?;
 
     let margin_ratio = ((Integer::new_positive(remain_margin.margin)
         - Integer::new_positive(remain_margin.bad_debt))

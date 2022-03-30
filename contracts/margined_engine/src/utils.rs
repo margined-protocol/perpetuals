@@ -270,19 +270,12 @@ pub fn get_position_notional_unrealized_pnl(
 
     let position_size = position.size;
     if !position_size.is_zero() {
-        let direction = if position.size < Integer::zero() {
-            Direction::RemoveFromAmm
-        } else {
-            Direction::AddToAmm
-        };
-
         match calc_option {
             PnlCalcOption::TWAP => {
                 output_notional = query_vamm_output_twap(
                     &deps,
                     position.vamm.to_string(),
                     position.direction.clone(),
-                    // direction,
                     position_size.value,
                 )?;
             }
@@ -291,7 +284,6 @@ pub fn get_position_notional_unrealized_pnl(
                     &deps,
                     position.vamm.to_string(),
                     position.direction.clone(),
-                    // direction,
                     position_size.value,
                 )?;
             }
@@ -326,22 +318,10 @@ pub fn calc_remain_margin_with_funding_payment(
         * position.size
         / Integer::new_positive(config.decimals);
 
-    // let margin = if position.size < Integer::zero() {
-    //     println!("negative");
-    //     Integer::new_negative(position.margin)
-    // } else {
-    //     println!("positive");
-    //     Integer::new_positive(position.margin)
-    // };
-
     // calculate the remaining margin
     let mut remaining_margin: Integer =
         margin_delta - funding_payment + Integer::new_positive(position.margin);
     let mut bad_debt = Integer::zero();
-
-    // println!("{:?}", margin);
-    // println!("{:?}", margin_delta);
-    // println!("{:?}", remaining_margin);
 
     if remaining_margin.is_negative() {
         bad_debt = remaining_margin.invert_sign();
@@ -448,23 +428,5 @@ pub fn direction_to_side(direction: Direction) -> Side {
     match direction {
         Direction::AddToAmm => Side::BUY,
         Direction::RemoveFromAmm => Side::SELL,
-    }
-}
-
-// takes the side (buy|sell) and returns opposite (short|long)
-// this is useful when closing/reversing a position
-pub fn switch_direction(dir: Direction) -> Direction {
-    match dir {
-        Direction::RemoveFromAmm => Direction::AddToAmm,
-        Direction::AddToAmm => Direction::RemoveFromAmm,
-    }
-}
-
-// takes the side (buy|sell) and returns opposite (short|long)
-// this is useful when closing/reversing a position
-pub fn _switch_side(dir: Side) -> Side {
-    match dir {
-        Side::BUY => Side::SELL,
-        Side::SELL => Side::BUY,
     }
 }
