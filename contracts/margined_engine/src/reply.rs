@@ -161,7 +161,8 @@ pub fn reverse_position_reply(
     } else {
         store_tmp_swap(deps.storage, &swap)?;
 
-        msg = internal_increase_position(swap.vamm, swap.side, open_notional)?
+        // TODO maybe we need to actually let the user define this limit
+        msg = internal_increase_position(swap.vamm, swap.side, open_notional, Uint128::zero())?
     }
 
     store_position(deps.storage, &position)?;
@@ -364,6 +365,116 @@ pub fn liquidate_reply(
             ("action", "liquidate_reply"),
             ("liquidation_fee", &liquidation_fee.to_string()),
             ("pnl", &margin_delta.to_string()),
+        ]))
+}
+
+// Partially liquidates the position
+pub fn partial_liquidation_reply(
+    deps: DepsMut,
+    env: Env,
+    input: Uint128,
+    output: Uint128,
+) -> StdResult<Response> {
+    let config = read_config(deps.storage)?;
+    let mut state = read_state(deps.storage)?;
+
+    let tmp_swap = read_tmp_swap(deps.storage)?;
+    if tmp_swap.is_none() {
+        return Err(StdError::generic_err("no temporary position"));
+    }
+
+    let liquidator = read_tmp_liquidator(deps.storage)?;
+    if liquidator.is_none() {
+        return Err(StdError::generic_err("no liquidator"));
+    }
+
+    let swap = tmp_swap.unwrap();
+    let mut position = get_position(
+        env.clone(),
+        deps.storage,
+        &swap.vamm,
+        &swap.trader,
+        swap.side.clone(),
+    );
+
+    // calculate delta from trade and whether it was profitable or a loss
+    let realized_pnl = (swap.unrealized_pnl
+        * Integer::new_positive(config.partial_liquidation_margin_ratio))
+        / Integer::new_positive(config.decimals);
+
+    let liquidation_penalty: Uint128 = output
+        .checked_mul(config.liquidation_fee)?
+        .checked_div(config.decimals)?;
+
+    let liquidation_fee: Uint128 = liquidation_penalty.checked_div(Uint128::from(2u64))?;
+
+    let signed_input = if position.size < Integer::zero() {
+        Integer::new_positive(input)
+    } else {
+        Integer::new_negative(input)
+    };
+
+    position.size += signed_input;
+
+    position.margin = position
+        .margin
+        .checked_sub(realized_pnl.value)?
+        .checked_sub(liquidation_penalty)?;
+
+    // calculate openNotional (it's different depends on long or short side)
+    // long: unrealizedPnl = positionNotional - openNotional => openNotional = positionNotional - unrealizedPnl
+    // short: unrealizedPnl = openNotional - positionNotional => openNotional = positionNotional + unrealizedPnl
+    // positionNotional = oldPositionNotional - exchangedQuoteAssetAmount
+    position.notional = if position.size.is_positive() {
+        position
+            .notional
+            .checked_sub(swap.open_notional)?
+            .checked_sub(realized_pnl.value)?
+    } else {
+        realized_pnl
+            .value
+            .checked_add(position.notional)?
+            .checked_sub(swap.open_notional)?
+    };
+
+    let mut messages: Vec<SubMsg> = vec![];
+
+    if !liquidation_fee.is_zero() {
+        messages
+            .push(execute_transfer(deps.storage, &config.insurance_fund, liquidation_fee).unwrap());
+    }
+
+    // pay liquidation fees
+    let liquidator = liquidator.unwrap();
+
+    // calculate token balance that should be remaining once
+    // insurance fees have been paid
+    let withdraw_messages = withdraw(
+        deps.as_ref(),
+        env,
+        &mut state,
+        &liquidator,
+        &config.insurance_fund,
+        config.eligible_collateral,
+        liquidation_fee,
+    )
+    .unwrap();
+
+    for message in withdraw_messages.iter() {
+        messages.push(message.clone());
+    }
+
+    store_position(deps.storage, &position)?;
+
+    remove_tmp_swap(deps.storage);
+    remove_tmp_liquidator(deps.storage);
+
+    Ok(Response::new()
+        .add_submessages(messages)
+        .add_attributes(vec![
+            ("action", "liquidate_reply"),
+            ("liquidation_fee", &liquidation_fee.to_string()),
+            ("pnl", &realized_pnl.to_string()),
         ]))
 }
 

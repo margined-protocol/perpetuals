@@ -265,14 +265,14 @@ pub fn get_position_notional_unrealized_pnl(
     position: &Position,
     calc_option: PnlCalcOption,
 ) -> StdResult<PositionUnrealizedPnlResponse> {
-    let mut position_notional = Uint128::zero();
-    let mut unrealized_pnl = Uint128::zero();
+    let mut output_notional = Uint128::zero();
+    let mut unrealized_pnl = Integer::zero();
 
     let position_size = position.size;
     if !position_size.is_zero() {
         match calc_option {
             PnlCalcOption::TWAP => {
-                position_notional = query_vamm_output_twap(
+                output_notional = query_vamm_output_twap(
                     &deps,
                     position.vamm.to_string(),
                     position.direction.clone(),
@@ -280,7 +280,7 @@ pub fn get_position_notional_unrealized_pnl(
                 )?;
             }
             PnlCalcOption::SPOTPRICE => {
-                position_notional = query_vamm_output_price(
+                output_notional = query_vamm_output_price(
                     &deps,
                     position.vamm.to_string(),
                     position.direction.clone(),
@@ -289,15 +289,17 @@ pub fn get_position_notional_unrealized_pnl(
             }
             PnlCalcOption::ORACLE => {}
         }
-        if position.notional > position_notional {
-            unrealized_pnl = position.notional.checked_sub(position_notional)?;
+
+        // we are short if the size of the position is less than 0
+        unrealized_pnl = if position.direction == Direction::AddToAmm {
+            Integer::new_positive(output_notional) - Integer::new_positive(position.notional)
         } else {
-            unrealized_pnl = position_notional.checked_sub(position.notional)?;
-        }
+            Integer::new_positive(position.notional) - Integer::new_positive(output_notional)
+        };
     }
 
     Ok(PositionUnrealizedPnlResponse {
-        position_notional,
+        position_notional: output_notional,
         unrealized_pnl,
     })
 }
@@ -320,8 +322,9 @@ pub fn calc_remain_margin_with_funding_payment(
     let mut remaining_margin: Integer =
         margin_delta - funding_payment + Integer::new_positive(position.margin);
     let mut bad_debt = Integer::zero();
+
     if remaining_margin.is_negative() {
-        bad_debt = remaining_margin.abs();
+        bad_debt = remaining_margin.invert_sign();
         remaining_margin = Integer::zero();
     }
 
@@ -401,11 +404,11 @@ pub fn require_margin(margin_ratio: Uint128, base_margin: Uint128) -> StdResult<
 }
 
 pub fn require_insufficient_margin(
+    margin_ratio: Integer,
     base_margin: Uint128,
-    margin_ratio: Uint128,
-    polarity: bool,
 ) -> StdResult<Response> {
-    if margin_ratio > base_margin && polarity {
+    let remaining_margin_ratio = margin_ratio - Integer::new_positive(base_margin);
+    if remaining_margin_ratio > Integer::zero() {
         return Err(StdError::generic_err("Position is overcollateralized"));
     }
 
@@ -425,23 +428,5 @@ pub fn direction_to_side(direction: Direction) -> Side {
     match direction {
         Direction::AddToAmm => Side::BUY,
         Direction::RemoveFromAmm => Side::SELL,
-    }
-}
-
-// takes the side (buy|sell) and returns opposite (short|long)
-// this is useful when closing/reversing a position
-pub fn _switch_direction(dir: Direction) -> Direction {
-    match dir {
-        Direction::RemoveFromAmm => Direction::AddToAmm,
-        Direction::AddToAmm => Direction::RemoveFromAmm,
-    }
-}
-
-// takes the side (buy|sell) and returns opposite (short|long)
-// this is useful when closing/reversing a position
-pub fn _switch_side(dir: Side) -> Side {
-    match dir {
-        Side::BUY => Side::SELL,
-        Side::SELL => Side::BUY,
     }
 }

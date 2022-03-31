@@ -1,5 +1,5 @@
 use margined_perp::margined_engine::{
-    ConfigResponse, ExecuteMsg, MarginRatioResponse, PositionResponse, QueryMsg, Side,
+    ConfigResponse, ExecuteMsg, PositionResponse, PositionUnrealizedPnlResponse, QueryMsg, Side,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -31,8 +31,30 @@ impl EngineController {
         .into())
     }
 
-    pub fn update_config(&self, owner: String) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::UpdateConfig { owner };
+    #[allow(clippy::too_many_arguments)]
+    pub fn update_config(
+        &self,
+        owner: Option<String>,
+        insurance_fund: Option<String>,
+        fee_pool: Option<String>,
+        eligible_collateral: Option<String>,
+        decimals: Option<Uint128>,
+        initial_margin_ratio: Option<Uint128>,
+        maintenance_margin_ratio: Option<Uint128>,
+        partial_liquidation_margin_ratio: Option<Uint128>,
+        liquidation_fee: Option<Uint128>,
+    ) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::UpdateConfig {
+            owner,
+            insurance_fund,
+            fee_pool,
+            eligible_collateral,
+            decimals,
+            initial_margin_ratio,
+            maintenance_margin_ratio,
+            partial_liquidation_margin_ratio,
+            liquidation_fee,
+        };
         self.call(msg, vec![])
     }
 
@@ -42,18 +64,23 @@ impl EngineController {
         side: Side,
         quote_asset_amount: Uint128,
         leverage: Uint128,
+        base_asset_limit: Uint128,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::OpenPosition {
             vamm,
             side,
             quote_asset_amount,
             leverage,
+            base_asset_limit,
         };
         self.call(msg, vec![])
     }
 
-    pub fn close_position(&self, vamm: String) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::ClosePosition { vamm };
+    pub fn close_position(&self, vamm: String, quote_asset_limit: Uint128) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::ClosePosition {
+            vamm,
+            quote_asset_limit,
+        };
         self.call(msg, vec![])
     }
 
@@ -114,7 +141,7 @@ impl EngineController {
         querier: &Q,
         vamm: String,
         trader: String,
-    ) -> StdResult<Uint128> {
+    ) -> StdResult<PositionUnrealizedPnlResponse> {
         let msg = QueryMsg::UnrealizedPnl { vamm, trader };
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -122,7 +149,7 @@ impl EngineController {
         }
         .into();
 
-        let res: Uint128 = QuerierWrapper::new(querier).query(&query)?;
+        let res: PositionUnrealizedPnlResponse = QuerierWrapper::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -132,7 +159,7 @@ impl EngineController {
         querier: &Q,
         vamm: String,
         trader: String,
-    ) -> StdResult<MarginRatioResponse> {
+    ) -> StdResult<Integer> {
         let msg = QueryMsg::MarginRatio { vamm, trader };
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -140,7 +167,7 @@ impl EngineController {
         }
         .into();
 
-        let res: MarginRatioResponse = QuerierWrapper::new(querier).query(&query)?;
+        let res: Integer = QuerierWrapper::new(querier).query(&query)?;
         Ok(res)
     }
 

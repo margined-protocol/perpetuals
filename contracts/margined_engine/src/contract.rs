@@ -1,11 +1,10 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    from_binary, to_binary, Attribute, Binary, ContractResult, Deps, DepsMut, Env, Event,
-    MessageInfo, Reply, Response, StdError, StdResult, SubMsgExecutionResponse, Uint128,
+    to_binary, Attribute, Binary, ContractResult, Deps, DepsMut, Env, Event, MessageInfo, Reply,
+    Response, StdError, StdResult, SubMsgExecutionResponse, Uint128,
 };
-use cw20::Cw20ReceiveMsg;
 use margined_common::integer::Integer;
-use margined_perp::margined_engine::{Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
+use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg};
 #[cfg(not(feature = "library"))]
 use std::str::FromStr;
 
@@ -22,9 +21,9 @@ use crate::{
     },
     reply::{
         close_position_reply, decrease_position_reply, increase_position_reply, liquidate_reply,
-        pay_funding_reply, reverse_position_reply,
+        partial_liquidation_reply, pay_funding_reply, reverse_position_reply,
     },
-    state::{read_config, store_config, store_state, store_vamm, Config, State},
+    state::{store_config, store_state, store_vamm, Config, State},
 };
 
 pub const SWAP_INCREASE_REPLY_ID: u64 = 1;
@@ -32,7 +31,8 @@ pub const SWAP_DECREASE_REPLY_ID: u64 = 2;
 pub const SWAP_REVERSE_REPLY_ID: u64 = 3;
 pub const SWAP_CLOSE_REPLY_ID: u64 = 4;
 pub const SWAP_LIQUIDATE_REPLY_ID: u64 = 5;
-pub const PAY_FUNDING_REPLY_ID: u64 = 6;
+pub const SWAP_PARTIAL_LIQUIDATION_REPLY_ID: u64 = 6;
+pub const PAY_FUNDING_REPLY_ID: u64 = 7;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -80,13 +80,36 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
-        ExecuteMsg::UpdateConfig { owner } => update_config(deps, info, owner),
+        // ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
+        ExecuteMsg::UpdateConfig {
+            owner,
+            insurance_fund,
+            fee_pool,
+            eligible_collateral,
+            decimals,
+            initial_margin_ratio,
+            maintenance_margin_ratio,
+            partial_liquidation_margin_ratio,
+            liquidation_fee,
+        } => update_config(
+            deps,
+            info,
+            owner,
+            insurance_fund,
+            fee_pool,
+            eligible_collateral,
+            decimals,
+            initial_margin_ratio,
+            maintenance_margin_ratio,
+            partial_liquidation_margin_ratio,
+            liquidation_fee,
+        ),
         ExecuteMsg::OpenPosition {
             vamm,
             side,
             quote_asset_amount,
             leverage,
+            base_asset_limit,
         } => {
             let trader = info.sender.clone();
             open_position(
@@ -98,11 +121,15 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
                 side,
                 quote_asset_amount,
                 leverage,
+                base_asset_limit,
             )
         }
-        ExecuteMsg::ClosePosition { vamm } => {
+        ExecuteMsg::ClosePosition {
+            vamm,
+            quote_asset_limit,
+        } => {
             let trader = info.sender.clone();
-            close_position(deps, env, info, vamm, trader.to_string())
+            close_position(deps, env, info, vamm, trader.to_string(), quote_asset_limit)
         }
         ExecuteMsg::Liquidate { vamm, trader } => liquidate(deps, env, info, vamm, trader),
         ExecuteMsg::PayFunding { vamm } => pay_funding(deps, env, info, vamm),
@@ -113,36 +140,36 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
     }
 }
 
-pub fn receive_cw20(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    cw20_msg: Cw20ReceiveMsg,
-) -> StdResult<Response> {
-    // only asset contract can execute this message
-    let config: Config = read_config(deps.storage)?;
-    if config.eligible_collateral != deps.api.addr_validate(info.sender.as_str())? {
-        return Err(StdError::generic_err("unauthorized"));
-    }
+// pub fn receive_cw20(
+//     deps: DepsMut,
+//     env: Env,
+//     info: MessageInfo,
+//     cw20_msg: Cw20ReceiveMsg,
+// ) -> StdResult<Response> {
+//     // only asset contract can execute this message
+//     let config: Config = read_config(deps.storage)?;
+//     if config.eligible_collateral != deps.api.addr_validate(info.sender.as_str())? {
+//         return Err(StdError::generic_err("unauthorized"));
+//     }
 
-    match from_binary(&cw20_msg.msg) {
-        Ok(Cw20HookMsg::OpenPosition {
-            vamm,
-            side,
-            leverage,
-        }) => open_position(
-            deps,
-            env,
-            info,
-            vamm,
-            cw20_msg.sender,
-            side,
-            cw20_msg.amount, // not needed, we should take from deposited amount or validate
-            leverage,
-        ),
-        Err(_) => Err(StdError::generic_err("invalid cw20 hook message")),
-    }
-}
+//     match from_binary(&cw20_msg.msg) {
+//         Ok(Cw20HookMsg::OpenPosition {
+//             vamm,
+//             side,
+//             leverage,
+//         }) => open_position(
+//             deps,
+//             env,
+//             info,
+//             vamm,
+//             cw20_msg.sender,
+//             side,
+//             cw20_msg.amount, // not needed, we should take from deposited amount or validate
+//             leverage,
+//         ),
+//         Err(_) => Err(StdError::generic_err("invalid cw20 hook message")),
+//     }
+// }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
@@ -194,6 +221,11 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
             SWAP_LIQUIDATE_REPLY_ID => {
                 let (input, output) = parse_swap(response);
                 let response = liquidate_reply(deps, env, input, output)?;
+                Ok(response)
+            }
+            SWAP_PARTIAL_LIQUIDATION_REPLY_ID => {
+                let (input, output) = parse_swap(response);
+                let response = partial_liquidation_reply(deps, env, input, output)?;
                 Ok(response)
             }
             PAY_FUNDING_REPLY_ID => {

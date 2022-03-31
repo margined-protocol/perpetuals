@@ -43,11 +43,13 @@ pub enum ExecuteMsg {
     SwapInput {
         direction: Direction,
         quote_asset_amount: Uint128,
+        base_asset_limit: Uint128,
         can_go_over_fluctuation: bool,
     },
     SwapOutput {
         direction: Direction,
         base_asset_amount: Uint128,
+        quote_asset_limit: Uint128,
     },
     SettleFunding {},
     SetOpen {
