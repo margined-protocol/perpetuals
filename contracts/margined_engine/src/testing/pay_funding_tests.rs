@@ -2,15 +2,9 @@ use cosmwasm_std::Uint128;
 use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
-use margined_utils::scenarios::SimpleScenario;
+use margined_utils::scenarios::{to_decimals, SimpleScenario};
 
-pub const DECIMAL_MULTIPLIER: Uint128 = Uint128::new(1_000_000_000);
 pub const NEXT_FUNDING_PERIOD_DELTA: u64 = 86_400u64;
-
-// takes in a Uint128 and multiplies by the decimals just to make tests more legible
-pub fn to_decimals(input: u64) -> Uint128 {
-    Uint128::from(input) * DECIMAL_MULTIPLIER
-}
 
 #[test]
 fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
