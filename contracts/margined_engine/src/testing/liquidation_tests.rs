@@ -147,7 +147,6 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
         bob,
         carol,
         owner,
-        insurance,
         engine,
         usdc,
         vamm,
@@ -398,4 +397,133 @@ fn test_partially_liquidate_short_position() {
 
     let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
     assert_eq!(insurance_balance, Uint128::from(5_000_553_234_429u128));
+}
+
+
+#[test]
+fn test_partially_liquidate_short_position_with_quote_asset_limit() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        carol,
+        owner,
+        engine,
+        usdc,
+        vamm,
+        pricefeed,
+        ..
+    } = SimpleScenario::new();
+
+    // set the latest price
+    let price: Uint128 = Uint128::from(10_000_000_000u128);
+    let timestamp: u64 = router.block_info().time.seconds();
+
+    let msg = pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(900);
+        block.height += 1;
+    });
+
+    // set the margin ratios
+    let msg = engine
+        .update_config(
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(Uint128::from(100_000_000u128)),
+            Some(Uint128::from(250_000_000u128)),
+            Some(Uint128::from(25_000_000u128)),
+        )
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // reduce the allowance
+    router
+        .execute_contract(
+            alice.clone(),
+            usdc.addr().clone(),
+            &Cw20ExecuteMsg::DecreaseAllowance {
+                spender: engine.addr().to_string(),
+                amount: to_decimals(1900),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
+
+    // reduce the allowance
+    router
+        .execute_contract(
+            bob.clone(),
+            usdc.addr().clone(),
+            &Cw20ExecuteMsg::DecreaseAllowance {
+                spender: engine.addr().to_string(),
+                amount: to_decimals(1900),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
+
+    // when alice create a 20 margin * 10x position to get 25 short position
+    // AMM after: 800 : 125
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            to_decimals(20u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
+
+    // when bob create a 19.67213115 margin * 1x position to get 3 long position
+    // AMM after: 819.6721311 : 122
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(19_672_131_150u128),
+            to_decimals(1u64),
+            to_decimals(0u64),
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    // partially liquidate 25%
+    // liquidated positionNotional: getOutputPrice(25 (original position) * 0.25) = 44.258
+    // if quoteAssetAmountLimit == 177 > 44.258 * 4 = 177.032, quote asset pays is more than expected, thus tx reverts
+    let msg = engine
+        .liquidate(
+            vamm.addr().to_string(),
+            alice.to_string(),
+            Uint128::from(177_000_000_000u64),
+        )
+        .unwrap();
+    let result = router.execute(carol.clone(), msg).unwrap_err();
+    assert_eq!(result.to_string(), "Generic error: reply (id 6) error \"Generic error: Greater than maximum quote asset amount limit\"");
+
+    // if quoteAssetAmountLimit == 177.1 < 44.258 * 4 = 177.032, quote asset pays is less than expected
+    let msg = engine
+    .liquidate(
+        vamm.addr().to_string(),
+        alice.to_string(),
+        Uint128::from(177_100_000_000u64),
+    )
+    .unwrap();
+    router.execute(carol.clone(), msg).unwrap();
 }
