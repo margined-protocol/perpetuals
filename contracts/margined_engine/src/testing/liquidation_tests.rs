@@ -245,8 +245,6 @@ fn test_partially_liquidate_short_position() {
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 
-    let state = vamm.state(&router).unwrap();
-
     let position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();

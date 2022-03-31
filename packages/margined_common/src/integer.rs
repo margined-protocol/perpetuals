@@ -377,7 +377,6 @@ impl FromStr for Integer {
 }
 
 // Display
-
 impl std::fmt::Display for Integer {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let whole = self.value;
@@ -392,7 +391,6 @@ impl std::fmt::Display for Integer {
 }
 
 // Operations
-
 impl std::ops::Mul for Integer {
     type Output = Self;
 
