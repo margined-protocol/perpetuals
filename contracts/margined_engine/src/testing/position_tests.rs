@@ -720,6 +720,8 @@ fn test_openclose_position_to_check_fee_is_charged() {
     let msg = vamm
         .update_config(
             None,
+            None,
+            None,
             Some(Uint128::from(10_000_000u128)), // 0.01
             Some(Uint128::from(20_000_000u128)), // 0.01
             None,

@@ -1,5 +1,6 @@
 use margined_perp::margined_engine::{
     ConfigResponse, ExecuteMsg, PositionResponse, PositionUnrealizedPnlResponse, QueryMsg, Side,
+    StateResponse,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -114,6 +115,19 @@ impl EngineController {
         .into();
 
         let res: ConfigResponse = QuerierWrapper::new(querier).query(&query)?;
+        Ok(res)
+    }
+
+    /// get margin engine state
+    pub fn state<Q: Querier>(&self, querier: &Q) -> StdResult<StateResponse> {
+        let msg = QueryMsg::State {};
+        let query = WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&msg)?,
+        }
+        .into();
+
+        let res: StateResponse = QuerierWrapper::new(querier).query(&query)?;
         Ok(res)
     }
 

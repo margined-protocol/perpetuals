@@ -151,6 +151,8 @@ impl SimpleScenario {
                 vamm_addr,
                 &VammExecuteMsg::UpdateConfig {
                     owner: None,
+                    base_asset_holding_cap: None,
+                    open_interest_notional_cap: None,
                     toll_ratio: None,
                     spread_ratio: None,
                     fluctuation_limit_ratio: None,

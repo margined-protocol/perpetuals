@@ -1,11 +1,11 @@
 use cosmwasm_std::{Deps, StdResult, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
-    ConfigResponse, PnlCalcOption, PositionResponse, PositionUnrealizedPnlResponse,
+    ConfigResponse, PnlCalcOption, PositionResponse, PositionUnrealizedPnlResponse, StateResponse,
 };
 
 use crate::{
-    state::{read_config, read_position, read_vamm, read_vamm_map, Config},
+    state::{read_config, read_position, read_state, read_vamm, read_vamm_map, Config, State},
     utils::{
         calc_funding_payment, calc_remain_margin_with_funding_payment,
         get_position_notional_unrealized_pnl,
@@ -19,6 +19,16 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     Ok(ConfigResponse {
         owner: config.owner,
         eligible_collateral: config.eligible_collateral,
+    })
+}
+
+/// Queries contract State
+pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
+    let state: State = read_state(deps.storage)?;
+
+    Ok(StateResponse {
+        open_interest_notional: state.open_interest_notional,
+        bad_debt: state.bad_debt,
     })
 }
 

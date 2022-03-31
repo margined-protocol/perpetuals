@@ -20,6 +20,8 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 
     Ok(ConfigResponse {
         owner: config.owner,
+        base_asset_holding_cap: config.base_asset_holding_cap,
+        open_interest_notional_cap: config.open_interest_notional_cap,
         quote_asset: config.quote_asset,
         base_asset: config.base_asset,
         toll_ratio: config.toll_ratio,

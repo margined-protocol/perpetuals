@@ -33,6 +33,8 @@ impl VammController {
     pub fn update_config(
         &self,
         owner: Option<String>,
+        base_asset_holding_cap: Option<Uint128>,
+        open_interest_notional_cap: Option<Uint128>,
         toll_ratio: Option<Uint128>,
         spread_ratio: Option<Uint128>,
         fluctuation_limit_ratio: Option<Uint128>,
@@ -42,6 +44,8 @@ impl VammController {
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
             owner,
+            base_asset_holding_cap,
+            open_interest_notional_cap,
             toll_ratio,
             spread_ratio,
             fluctuation_limit_ratio,
