@@ -89,6 +89,7 @@ pub enum Cw20HookMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
+    State {},
     Position { vamm: String, trader: String },
     UnrealizedPnl { vamm: String, trader: String },
     CumulativePremiumFraction { vamm: String },
@@ -101,6 +102,12 @@ pub enum QueryMsg {
 pub struct ConfigResponse {
     pub owner: Addr,
     pub eligible_collateral: Addr,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct StateResponse {
+    pub open_interest_notional: Uint128,
+    pub bad_debt: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -11,7 +11,7 @@ use crate::{
     utils::{
         calc_remain_margin_with_funding_payment, clear_position, execute_transfer,
         execute_transfer_from, execute_transfer_to_insurance_fund, get_position, realize_bad_debt,
-        side_to_direction, transfer_fee, withdraw,
+        side_to_direction, transfer_fee, update_open_interest_notional, withdraw,
     },
 };
 
@@ -22,10 +22,11 @@ use margined_perp::margined_vamm::Direction;
 pub fn increase_position_reply(
     deps: DepsMut,
     env: Env,
-    _input: Uint128,
+    input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
+    let mut state = read_state(deps.storage)?;
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
         return Err(StdError::generic_err("no temporary position"));
@@ -48,6 +49,13 @@ pub fn increase_position_reply(
         Integer::new_negative(output)
     };
 
+    update_open_interest_notional(
+        &deps.as_ref(),
+        &mut state,
+        swap.vamm.clone(),
+        Integer::new_positive(input),
+    )?;
+
     // now update the position
     position.size += signed_output;
     position.notional = position.notional.checked_add(swap.open_notional)?;
@@ -60,6 +68,7 @@ pub fn increase_position_reply(
         .checked_div(swap.leverage)?;
 
     store_position(deps.storage, &position)?;
+    store_state(deps.storage, &state)?;
 
     // create transfer message
     let msg = execute_transfer_from(
@@ -84,9 +93,10 @@ pub fn increase_position_reply(
 pub fn decrease_position_reply(
     deps: DepsMut,
     env: Env,
-    _input: Uint128,
+    input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    let mut state = read_state(deps.storage)?;
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
         return Err(StdError::generic_err("no temporary position"));
@@ -101,6 +111,13 @@ pub fn decrease_position_reply(
         swap.side.clone(),
     );
 
+    update_open_interest_notional(
+        &deps.as_ref(),
+        &mut state,
+        swap.vamm.clone(),
+        Integer::new_negative(input),
+    )?;
+
     let signed_output = if side_to_direction(swap.side) == Direction::AddToAmm {
         Integer::new_positive(output)
     } else {
@@ -112,6 +129,7 @@ pub fn decrease_position_reply(
     position.notional = position.notional.checked_sub(swap.open_notional)?;
 
     store_position(deps.storage, &position)?;
+    store_state(deps.storage, &state)?;
 
     // remove the tmp position
     remove_tmp_swap(deps.storage);
@@ -119,14 +137,14 @@ pub fn decrease_position_reply(
     Ok(Response::new().add_attributes(vec![("action", "decrease_position")]))
 }
 
-// Decreases position after successful execution of the swap
+// reverse position after successful execution of the swap
 pub fn reverse_position_reply(
     deps: DepsMut,
     env: Env,
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    let response: Response = Response::new();
+    let mut state = read_state(deps.storage)?;
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
         return Err(StdError::generic_err("no temporary position"));
@@ -140,6 +158,14 @@ pub fn reverse_position_reply(
         &swap.trader,
         swap.side.clone(),
     );
+
+    update_open_interest_notional(
+        &deps.as_ref(),
+        &mut state,
+        swap.vamm.clone(),
+        Integer::new_negative(output),
+    )?;
+
     let margin_amount = position.margin;
 
     position = clear_position(env, position)?;
@@ -166,8 +192,9 @@ pub fn reverse_position_reply(
     }
 
     store_position(deps.storage, &position)?;
+    store_state(deps.storage, &state)?;
 
-    Ok(response
+    Ok(Response::new()
         .add_submessage(msg)
         .add_attributes(vec![("action", "reverse_position")]))
 }
@@ -191,7 +218,7 @@ pub fn close_position_reply(
     let mut position = get_position(
         env.clone(),
         deps.storage,
-        &swap.vamm,
+        &swap.vamm.clone(),
         &swap.trader,
         swap.side.clone(),
     );
@@ -237,8 +264,26 @@ pub fn close_position_reply(
     response = response.add_submessages(messages.clone());
 
     // create messages to pay for toll and spread fees
-    let fee_msgs = transfer_fee(deps.as_ref(), swap.trader, swap.vamm, position.notional).unwrap();
+    let fee_msgs = transfer_fee(
+        deps.as_ref(),
+        swap.trader,
+        swap.vamm.clone(),
+        position.notional,
+    )
+    .unwrap();
     response = response.add_messages(fee_msgs);
+
+    let value = margin_delta
+        + Integer::new_positive(remain_margin.bad_debt)
+        + Integer::new_positive(position.notional);
+
+    update_open_interest_notional(
+        &deps.as_ref(),
+        &mut state,
+        swap.vamm,
+        value.invert_sign(),
+        // Integer::new_negative(output),
+    )?;
 
     position = clear_position(env, position)?;
 
@@ -492,7 +537,8 @@ pub fn pay_funding_reply(
     // update the cumulative premium fraction
     append_cumulative_premium_fraction(deps.storage, vamm.clone(), premium_fraction)?;
 
-    let total_position_size = query_vamm_state(&deps, vamm.to_string())?.total_position_size;
+    let total_position_size =
+        query_vamm_state(&deps.as_ref(), vamm.to_string())?.total_position_size;
 
     let funding_payment =
         total_position_size * premium_fraction / Integer::new_positive(config.decimals);

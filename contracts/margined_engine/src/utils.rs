@@ -5,7 +5,9 @@ use cosmwasm_std::{
 use cw20::Cw20ExecuteMsg;
 
 use crate::{
-    querier::{query_vamm_calc_fee, query_vamm_output_price, query_vamm_output_twap},
+    querier::{
+        query_vamm_calc_fee, query_vamm_config, query_vamm_output_price, query_vamm_output_twap,
+    },
     query::query_cumulative_premium_fraction,
     state::{
         read_config, read_position, read_state, read_vamm, store_state, Position, State, VammList,
@@ -237,25 +239,34 @@ pub fn realize_bad_debt(
         state.bad_debt = Uint128::zero();
     };
 
-    // TODO think some more why this logic is incorrect
-    // when I did it this way I always had some dust left over
-    // if state.bad_debt > bad_debt {
-    //     state.bad_debt = state.bad_debt.checked_sub(bad_debt)?;
-    // } else {
-    //     // create transfer from message
-
-    //     let msg = execute_transfer_from(
-    //         storage,
-    //         &config.insurance_fund,
-    //         &contract_address,
-    //         bad_debt.checked_sub(state.bad_debt)?,
-    //     )
-    //     .unwrap();
-    //     messages.push(msg);
-    //     state.bad_debt = Uint128::zero();
-    // };
-
     store_state(storage, &state)?;
+
+    Ok(Response::new())
+}
+
+// this blocks trades if open interest is too high, required during the bootstrapping of the project
+pub fn update_open_interest_notional(
+    deps: &Deps,
+    state: &mut State,
+    vamm: Addr,
+    amount: Integer,
+) -> StdResult<Response> {
+    let cap = query_vamm_config(deps, vamm.to_string())?.open_interest_notional_cap;
+
+    if !cap.is_zero() {
+        let mut updated_open_interest =
+            amount.checked_add(Integer::new_positive(state.open_interest_notional))?;
+
+        if updated_open_interest.is_negative() {
+            updated_open_interest = Integer::zero();
+        }
+
+        if amount.is_positive() && updated_open_interest > Integer::new_positive(cap) {
+            return Err(StdError::generic_err("over limit"));
+        }
+
+        state.open_interest_notional = updated_open_interest.value;
+    }
 
     Ok(Response::new())
 }

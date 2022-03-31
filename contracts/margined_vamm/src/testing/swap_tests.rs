@@ -33,6 +33,8 @@ fn test_instantiation() {
         config,
         ConfigResponse {
             owner: info.sender,
+            base_asset_holding_cap: Uint128::zero(),
+            open_interest_notional_cap: Uint128::zero(),
             quote_asset: "ETH".to_string(),
             base_asset: "USD".to_string(),
             toll_ratio: Uint128::zero(),
@@ -82,6 +84,8 @@ fn test_update_config() {
     // Update the config
     let msg = ExecuteMsg::UpdateConfig {
         owner: None,
+        base_asset_holding_cap: None,
+        open_interest_notional_cap: None,
         toll_ratio: None,
         spread_ratio: None,
         fluctuation_limit_ratio: None,
@@ -99,6 +103,8 @@ fn test_update_config() {
         config,
         ConfigResponse {
             owner: Addr::unchecked("addr0000".to_string()),
+            base_asset_holding_cap: Uint128::zero(),
+            open_interest_notional_cap: Uint128::zero(),
             quote_asset: "ETH".to_string(),
             base_asset: "USD".to_string(),
             toll_ratio: Uint128::zero(),

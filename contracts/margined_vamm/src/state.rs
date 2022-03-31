@@ -18,6 +18,8 @@ pub struct Config {
     pub pricefeed: Addr,
     pub quote_asset: String,
     pub base_asset: String,
+    pub base_asset_holding_cap: Uint128,
+    pub open_interest_notional_cap: Uint128,
     pub decimals: Uint128,
     pub toll_ratio: Uint128,
     pub spread_ratio: Uint128,

@@ -33,6 +33,8 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     UpdateConfig {
         owner: Option<String>,
+        base_asset_holding_cap: Option<Uint128>,
+        open_interest_notional_cap: Option<Uint128>,
         toll_ratio: Option<Uint128>,
         spread_ratio: Option<Uint128>,
         fluctuation_limit_ratio: Option<Uint128>,
@@ -94,6 +96,8 @@ pub enum QueryMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: Addr,
+    pub base_asset_holding_cap: Uint128,
+    pub open_interest_notional_cap: Uint128,
     pub margin_engine: Addr,
     pub pricefeed: Addr,
     pub quote_asset: String,

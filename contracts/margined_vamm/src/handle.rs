@@ -21,6 +21,8 @@ pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,
     owner: Option<String>,
+    base_asset_holding_cap: Option<Uint128>,
+    open_interest_notional_cap: Option<Uint128>,
     toll_ratio: Option<Uint128>,
     spread_ratio: Option<Uint128>,
     fluctuation_limit_ratio: Option<Uint128>,
@@ -38,6 +40,16 @@ pub fn update_config(
     // change owner of amm
     if let Some(owner) = owner {
         config.owner = deps.api.addr_validate(owner.as_str())?;
+    }
+
+    // change base asset holding cap
+    if let Some(base_asset_holding_cap) = base_asset_holding_cap {
+        config.base_asset_holding_cap = base_asset_holding_cap;
+    }
+
+    // change open interest notional cap
+    if let Some(open_interest_notional_cap) = open_interest_notional_cap {
+        config.open_interest_notional_cap = open_interest_notional_cap;
     }
 
     // set and update margin engine

@@ -16,8 +16,8 @@ use crate::{
     },
     query::{
         query_config, query_cumulative_premium_fraction, query_margin_ratio, query_position,
-        query_trader_balance_with_funding_payment, query_trader_position_with_funding_payment,
-        query_unrealized_pnl,
+        query_state, query_trader_balance_with_funding_payment,
+        query_trader_position_with_funding_payment, query_unrealized_pnl,
     },
     reply::{
         close_position_reply, decrease_position_reply, increase_position_reply, liquidate_reply,
@@ -67,6 +67,7 @@ pub fn instantiate(
     store_state(
         deps.storage,
         &State {
+            open_interest_notional: Uint128::zero(),
             bad_debt: Uint128::zero(),
         },
     )?;
@@ -80,7 +81,6 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
-        // ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::UpdateConfig {
             owner,
             insurance_fund,
@@ -140,41 +140,11 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
     }
 }
 
-// pub fn receive_cw20(
-//     deps: DepsMut,
-//     env: Env,
-//     info: MessageInfo,
-//     cw20_msg: Cw20ReceiveMsg,
-// ) -> StdResult<Response> {
-//     // only asset contract can execute this message
-//     let config: Config = read_config(deps.storage)?;
-//     if config.eligible_collateral != deps.api.addr_validate(info.sender.as_str())? {
-//         return Err(StdError::generic_err("unauthorized"));
-//     }
-
-//     match from_binary(&cw20_msg.msg) {
-//         Ok(Cw20HookMsg::OpenPosition {
-//             vamm,
-//             side,
-//             leverage,
-//         }) => open_position(
-//             deps,
-//             env,
-//             info,
-//             vamm,
-//             cw20_msg.sender,
-//             side,
-//             cw20_msg.amount, // not needed, we should take from deposited amount or validate
-//             leverage,
-//         ),
-//         Err(_) => Err(StdError::generic_err("invalid cw20 hook message")),
-//     }
-// }
-
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
+        QueryMsg::State {} => to_binary(&query_state(deps)?),
         QueryMsg::Position { vamm, trader } => to_binary(&query_position(deps, vamm, trader)?),
         QueryMsg::MarginRatio { vamm, trader } => {
             to_binary(&query_margin_ratio(deps, vamm, trader)?)

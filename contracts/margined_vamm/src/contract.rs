@@ -34,6 +34,8 @@ pub fn instantiate(
         margin_engine: Addr::unchecked("".to_string()), // default to nothing, must be set
         quote_asset: msg.quote_asset,
         base_asset: msg.base_asset,
+        base_asset_holding_cap: Uint128::zero(),
+        open_interest_notional_cap: Uint128::zero(),
         toll_ratio: msg.toll_ratio,
         spread_ratio: msg.spread_ratio, // TODO: validate these ratios, also maybe put them as Decimal256?
         fluctuation_limit_ratio: msg.fluctuation_limit_ratio,
@@ -80,6 +82,8 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
     match msg {
         ExecuteMsg::UpdateConfig {
             owner,
+            base_asset_holding_cap,
+            open_interest_notional_cap,
             toll_ratio,
             spread_ratio,
             fluctuation_limit_ratio,
@@ -90,6 +94,8 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             deps,
             info,
             owner,
+            base_asset_holding_cap,
+            open_interest_notional_cap,
             toll_ratio,
             spread_ratio,
             fluctuation_limit_ratio,
