@@ -200,6 +200,7 @@ pub fn liquidate(
     info: MessageInfo,
     vamm: String,
     trader: String,
+    quote_asset_limit: Uint128,
 ) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
 
@@ -223,8 +224,9 @@ pub fn liquidate(
     let msg = if margin_ratio.value > config.liquidation_fee
         && !config.partial_liquidation_margin_ratio.is_zero()
     {
-        partial_liquidation(deps, env, vamm, trader)
+        partial_liquidation(deps, env, vamm, trader, quote_asset_limit)
     } else {
+        // Note: no slippage for a total liquidation
         internal_close_position(deps, &position, Uint128::zero(), SWAP_LIQUIDATE_REPLY_ID)?
     };
 
@@ -432,7 +434,13 @@ fn open_reverse_position(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn partial_liquidation(deps: DepsMut, _env: Env, vamm: Addr, trader: Addr) -> SubMsg {
+fn partial_liquidation(
+    deps: DepsMut,
+    _env: Env,
+    vamm: Addr,
+    trader: Addr,
+    quote_asset_limit: Uint128,
+) -> SubMsg {
     let config: Config = read_config(deps.storage).unwrap();
 
     let position: Position = read_position(deps.storage, &vamm, &trader).unwrap();
@@ -444,6 +452,17 @@ fn partial_liquidation(deps: DepsMut, _env: Env, vamm: Addr, trader: Addr) -> Su
         .unwrap()
         .checked_div(config.decimals)
         .unwrap();
+
+    // TODO neaten this up or maybe we can just throw later
+    let partial_asset_limit = if !quote_asset_limit.is_zero() {
+        quote_asset_limit
+            .checked_mul(config.partial_liquidation_margin_ratio)
+            .unwrap()
+            .checked_div(config.decimals)
+            .unwrap()
+    } else {
+        Uint128::zero()
+    };
 
     let current_notional = query_vamm_output_price(
         &deps.as_ref(),
@@ -497,7 +516,7 @@ fn partial_liquidation(deps: DepsMut, _env: Env, vamm: Addr, trader: Addr) -> Su
             &vamm,
             direction_to_side(position.direction),
             partial_position_size,
-            Uint128::zero(),
+            partial_asset_limit,
             SWAP_PARTIAL_LIQUIDATION_REPLY_ID,
         )
         .unwrap()

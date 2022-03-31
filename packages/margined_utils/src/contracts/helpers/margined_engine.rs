@@ -85,8 +85,17 @@ impl EngineController {
         self.call(msg, vec![])
     }
 
-    pub fn liquidate(&self, vamm: String, trader: String) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::Liquidate { vamm, trader };
+    pub fn liquidate(
+        &self,
+        vamm: String,
+        trader: String,
+        quote_asset_limit: Uint128,
+    ) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::Liquidate {
+            vamm,
+            trader,
+            quote_asset_limit,
+        };
         self.call(msg, vec![])
     }
 

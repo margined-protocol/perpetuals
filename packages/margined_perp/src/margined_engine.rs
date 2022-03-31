@@ -60,6 +60,7 @@ pub enum ExecuteMsg {
     Liquidate {
         vamm: String,
         trader: String,
+        quote_asset_limit: Uint128,
     },
     PayFunding {
         vamm: String,

@@ -131,7 +131,11 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             let trader = info.sender.clone();
             close_position(deps, env, info, vamm, trader.to_string(), quote_asset_limit)
         }
-        ExecuteMsg::Liquidate { vamm, trader } => liquidate(deps, env, info, vamm, trader),
+        ExecuteMsg::Liquidate {
+            vamm,
+            trader,
+            quote_asset_limit,
+        } => liquidate(deps, env, info, vamm, trader, quote_asset_limit),
         ExecuteMsg::PayFunding { vamm } => pay_funding(deps, env, info, vamm),
         ExecuteMsg::DepositMargin { vamm, amount } => deposit_margin(deps, env, info, vamm, amount),
         ExecuteMsg::WithdrawMargin { vamm, amount } => {
