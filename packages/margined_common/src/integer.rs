@@ -91,23 +91,23 @@ impl Integer {
             (false, false) => 
                 match self.value.checked_add(other.value) {
                     Ok(v) => Ok(Self::new_positive(v)),
-                    Err(_) => return Err(OverflowError{operation: Add, operand1: self.to_string(), operand2: other.to_string()}),
+                    Err(_) => Err(OverflowError{operation: Add, operand1: self.to_string(), operand2: other.to_string()}),
                 },
             (true, true) => 
                 match self.value.checked_add(other.value) {
                     Ok(v) => Ok(Self::new_negative(v)),
-                    Err(_) => return Err(OverflowError{operation: Add, operand1: self.to_string(), operand2: other.to_string()}),
+                    Err(_) => Err(OverflowError{operation: Add, operand1: self.to_string(), operand2: other.to_string()}),
                 },
             (false, true) => {
                 if self.value >= other.value {             
                     match self.value.checked_sub(other.value) {
                         Ok(v) => Ok(Self::new_positive(v)),
-                        Err(_) => return Err(OverflowError{operation: Add, operand1: self.to_string(), operand2: other.to_string()}),
+                        Err(_) => Err(OverflowError{operation: Add, operand1: self.to_string(), operand2: other.to_string()}),
                     }
                 } else {
                     match other.value.checked_sub(self.value) {
                         Ok(v) => Ok(Self::new_negative(v)),
-                        Err(_) => return Err(OverflowError{operation: Add, operand1: self.to_string(), operand2: other.to_string()}),
+                        Err(_) => Err(OverflowError{operation: Add, operand1: self.to_string(), operand2: other.to_string()}),
                     }               
                 }
             },
@@ -115,12 +115,12 @@ impl Integer {
                 if self.value > other.value {
                     match self.value.checked_sub(other.value) {
                         Ok(v) => Ok(Self::new_negative(v)),
-                        Err(_) => return Err(OverflowError{operation: Add, operand1: self.to_string(), operand2: other.to_string()}),
+                        Err(_) => Err(OverflowError{operation: Add, operand1: self.to_string(), operand2: other.to_string()}),
                     }
                 } else {
                     match other.value.checked_sub(self.value) {
                         Ok(v) => Ok(Self::new_positive(v)),
-                        Err(_) => return Err(OverflowError{operation: Add, operand1: self.to_string(), operand2: other.to_string()}),
+                        Err(_) => Err(OverflowError{operation: Add, operand1: self.to_string(), operand2: other.to_string()}),
                     } 
                 }                  
             }
@@ -134,23 +134,23 @@ impl Integer {
             (false, true) => 
                 match self.value.checked_add(other.value) {
                     Ok(v) => Ok(Self::new_positive(v)),
-                    Err(_) => return Err(OverflowError{operation: Sub, operand1: self.to_string(), operand2: other.to_string()}),
+                    Err(_) => Err(OverflowError{operation: Sub, operand1: self.to_string(), operand2: other.to_string()}),
                 },
             (true, false) => 
                 match self.value.checked_add(other.value) {
                     Ok(v) => Ok(Self::new_negative(v)),
-                    Err(_) => return Err(OverflowError{operation: Sub, operand1: self.to_string(), operand2: other.to_string()}),
+                    Err(_) => Err(OverflowError{operation: Sub, operand1: self.to_string(), operand2: other.to_string()}),
                 },
             (false, false) => {
                 if self.value >= other.value {             
                     match self.value.checked_sub(other.value) {
                         Ok(v) => Ok(Self::new_positive(v)),
-                        Err(_) => return Err(OverflowError{operation: Sub, operand1: self.to_string(), operand2: other.to_string()}),
+                        Err(_) => Err(OverflowError{operation: Sub, operand1: self.to_string(), operand2: other.to_string()}),
                     }
                 } else {
                     match other.value.checked_sub(self.value) {
                         Ok(v) => Ok(Self::new_negative(v)),
-                        Err(_) => return Err(OverflowError{operation: Sub, operand1: self.to_string(), operand2: other.to_string()}),
+                        Err(_) => Err(OverflowError{operation: Sub, operand1: self.to_string(), operand2: other.to_string()}),
                     }               
                 }
             },
@@ -158,12 +158,12 @@ impl Integer {
                 if self.value > other.value {
                     match self.value.checked_sub(other.value) {
                         Ok(v) => Ok(Self::new_negative(v)),
-                        Err(_) => return Err(OverflowError{operation: Sub, operand1: self.to_string(), operand2: other.to_string()}),
+                        Err(_) => Err(OverflowError{operation: Sub, operand1: self.to_string(), operand2: other.to_string()}),
                     }
                 } else {
                     match other.value.checked_sub(self.value) {
                         Ok(v) => Ok(Self::new_positive(v)),
-                        Err(_) => return Err(OverflowError{operation: Sub, operand1: self.to_string(), operand2: other.to_string()}),
+                        Err(_) => Err(OverflowError{operation: Sub, operand1: self.to_string(), operand2: other.to_string()}),
                     } 
                 }                  
             }
@@ -245,7 +245,6 @@ impl From<u8> for Integer {
 }
 
 // signed integers
- 
 impl From<i128> for Integer {
     fn from(val: i128) -> Self {
         match val >= 0 {
