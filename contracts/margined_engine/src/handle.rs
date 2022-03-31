@@ -115,7 +115,8 @@ pub fn open_position(
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = deps.api.addr_validate(&trader)?;
 
-    let margin_ratio = config.decimals
+    let margin_ratio = config
+        .decimals
         .checked_mul(config.decimals)?
         .checked_div(leverage)?;
 
