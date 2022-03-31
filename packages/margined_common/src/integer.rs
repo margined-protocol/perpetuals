@@ -1,4 +1,8 @@
-use cosmwasm_std::{StdError, Uint128, OverflowError, OverflowOperation::{Mul, Sub, Add}}; // DivideByZeroError,
+use cosmwasm_std::{
+    OverflowError,
+    OverflowOperation::{Add, Mul, Sub},
+    StdError, Uint128,
+}; // DivideByZeroError,
 use schemars::JsonSchema;
 use serde::{de, ser, Deserialize, Deserializer, Serialize};
 use std::fmt::Write;
@@ -83,100 +87,147 @@ impl Integer {
     pub fn is_zero(&self) -> bool {
         self.value.is_zero()
     }
-    
-    /// addition with checks if the value goes out of bounds
-    pub fn checked_add(self, other: Self) -> Result<Self, OverflowError>  {
 
+    /// addition with checks if the value goes out of bounds
+    pub fn checked_add(self, other: Self) -> Result<Self, OverflowError> {
         match (self.negative, other.negative) {
-            (false, false) => 
-                match self.value.checked_add(other.value) {
-                    Ok(v) => Ok(Self::new_positive(v)),
-                    Err(_) => Err(OverflowError{operation: Add, operand1: self.to_string(), operand2: other.to_string()}),
-                },
-            (true, true) => 
-                match self.value.checked_add(other.value) {
-                    Ok(v) => Ok(Self::new_negative(v)),
-                    Err(_) => Err(OverflowError{operation: Add, operand1: self.to_string(), operand2: other.to_string()}),
-                },
+            (false, false) => match self.value.checked_add(other.value) {
+                Ok(v) => Ok(Self::new_positive(v)),
+                Err(_) => Err(OverflowError {
+                    operation: Add,
+                    operand1: self.to_string(),
+                    operand2: other.to_string(),
+                }),
+            },
+            (true, true) => match self.value.checked_add(other.value) {
+                Ok(v) => Ok(Self::new_negative(v)),
+                Err(_) => Err(OverflowError {
+                    operation: Add,
+                    operand1: self.to_string(),
+                    operand2: other.to_string(),
+                }),
+            },
             (false, true) => {
-                if self.value >= other.value {             
+                if self.value >= other.value {
                     match self.value.checked_sub(other.value) {
                         Ok(v) => Ok(Self::new_positive(v)),
-                        Err(_) => Err(OverflowError{operation: Add, operand1: self.to_string(), operand2: other.to_string()}),
+                        Err(_) => Err(OverflowError {
+                            operation: Add,
+                            operand1: self.to_string(),
+                            operand2: other.to_string(),
+                        }),
                     }
                 } else {
                     match other.value.checked_sub(self.value) {
                         Ok(v) => Ok(Self::new_negative(v)),
-                        Err(_) => Err(OverflowError{operation: Add, operand1: self.to_string(), operand2: other.to_string()}),
-                    }               
+                        Err(_) => Err(OverflowError {
+                            operation: Add,
+                            operand1: self.to_string(),
+                            operand2: other.to_string(),
+                        }),
+                    }
                 }
-            },
+            }
             (true, false) => {
                 if self.value > other.value {
                     match self.value.checked_sub(other.value) {
                         Ok(v) => Ok(Self::new_negative(v)),
-                        Err(_) => Err(OverflowError{operation: Add, operand1: self.to_string(), operand2: other.to_string()}),
+                        Err(_) => Err(OverflowError {
+                            operation: Add,
+                            operand1: self.to_string(),
+                            operand2: other.to_string(),
+                        }),
                     }
                 } else {
                     match other.value.checked_sub(self.value) {
                         Ok(v) => Ok(Self::new_positive(v)),
-                        Err(_) => Err(OverflowError{operation: Add, operand1: self.to_string(), operand2: other.to_string()}),
-                    } 
-                }                  
+                        Err(_) => Err(OverflowError {
+                            operation: Add,
+                            operand1: self.to_string(),
+                            operand2: other.to_string(),
+                        }),
+                    }
+                }
             }
         }
-    } 
+    }
 
     /// subtraction with checks if the value goes out of bounds
-    pub fn checked_sub(self, other: Self) -> Result<Self, OverflowError>  {
-
+    pub fn checked_sub(self, other: Self) -> Result<Self, OverflowError> {
         match (self.negative, other.negative) {
-            (false, true) => 
-                match self.value.checked_add(other.value) {
-                    Ok(v) => Ok(Self::new_positive(v)),
-                    Err(_) => Err(OverflowError{operation: Sub, operand1: self.to_string(), operand2: other.to_string()}),
-                },
-            (true, false) => 
-                match self.value.checked_add(other.value) {
-                    Ok(v) => Ok(Self::new_negative(v)),
-                    Err(_) => Err(OverflowError{operation: Sub, operand1: self.to_string(), operand2: other.to_string()}),
-                },
+            (false, true) => match self.value.checked_add(other.value) {
+                Ok(v) => Ok(Self::new_positive(v)),
+                Err(_) => Err(OverflowError {
+                    operation: Sub,
+                    operand1: self.to_string(),
+                    operand2: other.to_string(),
+                }),
+            },
+            (true, false) => match self.value.checked_add(other.value) {
+                Ok(v) => Ok(Self::new_negative(v)),
+                Err(_) => Err(OverflowError {
+                    operation: Sub,
+                    operand1: self.to_string(),
+                    operand2: other.to_string(),
+                }),
+            },
             (false, false) => {
-                if self.value >= other.value {             
+                if self.value >= other.value {
                     match self.value.checked_sub(other.value) {
                         Ok(v) => Ok(Self::new_positive(v)),
-                        Err(_) => Err(OverflowError{operation: Sub, operand1: self.to_string(), operand2: other.to_string()}),
+                        Err(_) => Err(OverflowError {
+                            operation: Sub,
+                            operand1: self.to_string(),
+                            operand2: other.to_string(),
+                        }),
                     }
                 } else {
                     match other.value.checked_sub(self.value) {
                         Ok(v) => Ok(Self::new_negative(v)),
-                        Err(_) => Err(OverflowError{operation: Sub, operand1: self.to_string(), operand2: other.to_string()}),
-                    }               
+                        Err(_) => Err(OverflowError {
+                            operation: Sub,
+                            operand1: self.to_string(),
+                            operand2: other.to_string(),
+                        }),
+                    }
                 }
-            },
+            }
             (true, true) => {
                 if self.value > other.value {
                     match self.value.checked_sub(other.value) {
                         Ok(v) => Ok(Self::new_negative(v)),
-                        Err(_) => Err(OverflowError{operation: Sub, operand1: self.to_string(), operand2: other.to_string()}),
+                        Err(_) => Err(OverflowError {
+                            operation: Sub,
+                            operand1: self.to_string(),
+                            operand2: other.to_string(),
+                        }),
                     }
                 } else {
                     match other.value.checked_sub(self.value) {
                         Ok(v) => Ok(Self::new_positive(v)),
-                        Err(_) => Err(OverflowError{operation: Sub, operand1: self.to_string(), operand2: other.to_string()}),
-                    } 
-                }                  
+                        Err(_) => Err(OverflowError {
+                            operation: Sub,
+                            operand1: self.to_string(),
+                            operand2: other.to_string(),
+                        }),
+                    }
+                }
             }
         }
     }
 
     /// multiplication with overflow check
     pub fn checked_mul(self, other: Self) -> Result<Self, OverflowError> {
-        let abs_value = 
-            match self.value.checked_mul(other.value) {
-                Ok(v) => v,
-                Err(_) => return Err(OverflowError{operation: Mul, operand1: self.to_string(), operand2: other.to_string()})
-            };
+        let abs_value = match self.value.checked_mul(other.value) {
+            Ok(v) => v,
+            Err(_) => {
+                return Err(OverflowError {
+                    operation: Mul,
+                    operand1: self.to_string(),
+                    operand2: other.to_string(),
+                })
+            }
+        };
 
         match (self.negative, other.negative) {
             (true, true) | (false, false) => Ok(Self::new_positive(abs_value)),
@@ -184,20 +235,19 @@ impl Integer {
         }
     }
 
-    /* 
+    /*
     //Importing the DivideByZeroError is not possible on the current version of cosmwasm-std (0.16.6)
 
     /// division with overflow check
     pub fn checked_mul(self, other: Self) -> Result<Self, DivideByZeroError> {
         let abs_value = self.value.checked_div(other.value)?;
-    
+
         match (self.negative, other.negative) {
             (true, true) | (false, false) => Ok(Self::new_positive(abs_value)),
             (false, true) | (true, false) => Ok(Self::new_negative(abs_value)),
         }
     }
     */
-    
 }
 
 // Conversion
@@ -253,7 +303,6 @@ impl From<i128> for Integer {
         }
     }
 }
-
 
 impl From<i64> for Integer {
     fn from(val: i64) -> Self {
@@ -493,12 +542,11 @@ impl<'de> de::Visitor<'de> for IntegerVisitor {
 
 #[cfg(test)]
 mod test {
+    use cosmwasm_std::OverflowOperation::{Add, Mul, Sub};
     use cosmwasm_std::{OverflowError, Uint128}; //, DivideByZeroError
-    use cosmwasm_std::OverflowOperation::{Mul, Sub, Add};
-    
-    use super::Integer;
-    use std::{str::FromStr};
 
+    use super::Integer;
+    use std::str::FromStr;
 
     #[test]
     fn integer_default() {
@@ -586,7 +634,7 @@ mod test {
     #[test]
     fn checked_integer_arithmetic() {
         let max = Integer::MAX;
-        let min = Integer::MIN;   
+        let min = Integer::MIN;
         let a = Integer::new_positive(2u128);
         let b = Integer::new_positive(1u128);
         let c = Integer::new_negative(2u128);
@@ -611,45 +659,67 @@ mod test {
         //check subtraction to zero both ways
         assert_eq!(a.checked_sub(a).unwrap(), Integer::zero()); // positive minus itself
         assert_eq!(c.checked_sub(c).unwrap(), Integer::zero()); // negative minus itself
-        
+
         //check for overflow over max in addition
-        let e_add_max = OverflowError{operation: Add, operand1: Integer::MAX.to_string(), operand2: Integer::from(1u128).to_string()};
+        let e_add_max = OverflowError {
+            operation: Add,
+            operand1: Integer::MAX.to_string(),
+            operand2: Integer::from(1u128).to_string(),
+        };
         assert_eq!(max.checked_add(Integer::from(1u128)), Err(e_add_max));
 
-
-        //check for 'overflow' under min in addition  
-        let e_add_min = OverflowError{operation: Add, operand1: Integer::MIN.to_string(), operand2: Integer::from(-1i128).to_string()};
+        //check for 'overflow' under min in addition
+        let e_add_min = OverflowError {
+            operation: Add,
+            operand1: Integer::MIN.to_string(),
+            operand2: Integer::from(-1i128).to_string(),
+        };
         assert_eq!(min.checked_add(Integer::from(-1i128)), Err(e_add_min));
 
         //check for 'overflow' under min in subtraction
-        let e_sub_min = OverflowError{operation: Sub, operand1: Integer::MIN.to_string(), operand2: Integer::from(1u128).to_string()};
+        let e_sub_min = OverflowError {
+            operation: Sub,
+            operand1: Integer::MIN.to_string(),
+            operand2: Integer::from(1u128).to_string(),
+        };
         assert_eq!(min.checked_sub(Integer::from(1u128)), Err(e_sub_min));
 
         //check for overflow over max in subtraction
-        let e_sub_max = OverflowError{operation: Sub, operand1: Integer::MAX.to_string(), operand2: Integer::from(-1i128).to_string()};
+        let e_sub_max = OverflowError {
+            operation: Sub,
+            operand1: Integer::MAX.to_string(),
+            operand2: Integer::from(-1i128).to_string(),
+        };
         assert_eq!(max.checked_sub(Integer::from(-1i128)), Err(e_sub_max));
 
         //check for overflow over max in multiplication
-        let e_mul_max = OverflowError{operation: Mul, operand1: Integer::MAX.to_string(), operand2: Integer::from(2u128).to_string()};
-        assert_eq!(max.checked_mul(Integer::from(2u128)), Err(e_mul_max)); 
+        let e_mul_max = OverflowError {
+            operation: Mul,
+            operand1: Integer::MAX.to_string(),
+            operand2: Integer::from(2u128).to_string(),
+        };
+        assert_eq!(max.checked_mul(Integer::from(2u128)), Err(e_mul_max));
 
         //check for 'overflow' under min in multiplication
-        let e_mul_min = OverflowError{operation: Mul, operand1: Integer::MIN.to_string(), operand2: Integer::from(2u128).to_string()};
-        assert_eq!(min.checked_mul(Integer::from(2u128)), Err(e_mul_min)); 
+        let e_mul_min = OverflowError {
+            operation: Mul,
+            operand1: Integer::MIN.to_string(),
+            operand2: Integer::from(2u128).to_string(),
+        };
+        assert_eq!(min.checked_mul(Integer::from(2u128)), Err(e_mul_min));
 
         //check for correct error upon division by zero
         //let max = Integer::MAX;
         //let e_div_zero = DivideByZeroError {operand: Integer::MAX.to_string()};
-        //assert_eq!(max.checked_div(Integer::from(0u128)), Err(e_div_zero)); 
+        //assert_eq!(max.checked_div(Integer::from(0u128)), Err(e_div_zero));
     }
 
     #[test]
     fn type_conversions() {
-
         //////////////////////////////////
         // unsigned integer conversions //
         //////////////////////////////////
-         
+
         let a = Integer {
             value: Uint128::new(7u128),
             negative: false,
@@ -657,24 +727,23 @@ mod test {
 
         //u128 conversion test
         let b = Integer::from(7u128);
-        assert_eq!(a,b);
+        assert_eq!(a, b);
 
         //u64 conversion test
         let b = Integer::from(7u64);
-        assert_eq!(a,b);
+        assert_eq!(a, b);
 
         //u32 conversion test
         let b = Integer::from(7u32);
-        assert_eq!(a,b);
+        assert_eq!(a, b);
 
         //u16 conversion test
         let b = Integer::from(7u16);
-        assert_eq!(a,b);
+        assert_eq!(a, b);
 
         //u8 conversion test
         let b = Integer::from(7u8);
-        assert_eq!(a,b);
-
+        assert_eq!(a, b);
 
         ////////////////////////////////
         // signed integer conversions //
@@ -687,24 +756,22 @@ mod test {
 
         //i128 conversion test
         let b = Integer::from(-7i128);
-        assert_eq!(a,b);
+        assert_eq!(a, b);
 
         //i64 conversion test
         let b = Integer::from(-7i64);
-        assert_eq!(a,b);
+        assert_eq!(a, b);
 
         //i32 conversion test
         let b = Integer::from(-7i32);
-        assert_eq!(a,b);
+        assert_eq!(a, b);
 
         //i16 conversion test
         let b = Integer::from(-7i16);
-        assert_eq!(a,b);
+        assert_eq!(a, b);
 
         //i8 conversion test
         let b = Integer::from(-7i8);
-        assert_eq!(a,b);
-
+        assert_eq!(a, b);
     }
-
 }
