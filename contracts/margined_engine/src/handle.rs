@@ -220,6 +220,9 @@ pub fn liquidate(
     // read the position for the trader from vamm
     let position = read_position(deps.storage, &vamm, &trader).unwrap();
 
+    // check the position isn't zero
+    require_position_not_zero(position.size.value)?;
+
     // first see if this is a partial liquidation, else trader is rekt
     let msg = if margin_ratio.value > config.liquidation_fee
         && !config.partial_liquidation_margin_ratio.is_zero()

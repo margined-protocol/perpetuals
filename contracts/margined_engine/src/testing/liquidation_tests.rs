@@ -1211,3 +1211,38 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
         "Generic error: Position is overcollateralized"
     );
 }
+
+#[test]
+fn test_force_error_empty_position() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        carol,
+        owner,
+        engine,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    // set the margin ratios
+    let msg = engine
+        .update_config(
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(Uint128::from(100_000_000u128)),
+            Some(Uint128::from(250_000_000u128)),
+            Some(Uint128::from(25_000_000u128)),
+        )
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .liquidate(vamm.addr().to_string(), alice.to_string(), Uint128::zero())
+        .unwrap();
+    let result = router.execute(carol.clone(), msg).unwrap_err();
+    assert_eq!(result.to_string(), "Generic error: Position is zero");
+}
