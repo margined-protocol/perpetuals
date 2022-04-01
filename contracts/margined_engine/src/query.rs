@@ -56,6 +56,7 @@ pub fn query_unrealized_pnl(
     deps: Deps,
     vamm: String,
     trader: String,
+    calc_option: PnlCalcOption,
 ) -> StdResult<PositionUnrealizedPnlResponse> {
     // read the msg.senders position
     let position = read_position(
@@ -65,7 +66,7 @@ pub fn query_unrealized_pnl(
     )
     .unwrap();
 
-    let result = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::SPOTPRICE)?;
+    let result = get_position_notional_unrealized_pnl(deps, &position, calc_option)?;
 
     Ok(result)
 }

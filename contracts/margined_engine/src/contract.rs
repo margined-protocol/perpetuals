@@ -156,9 +156,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::CumulativePremiumFraction { vamm } => {
             to_binary(&query_cumulative_premium_fraction(deps, vamm)?)
         }
-        QueryMsg::UnrealizedPnl { vamm, trader } => {
-            to_binary(&query_unrealized_pnl(deps, vamm, trader)?)
-        }
+        QueryMsg::UnrealizedPnl {
+            vamm,
+            trader,
+            calc_option,
+        } => to_binary(&query_unrealized_pnl(deps, vamm, trader, calc_option)?),
         QueryMsg::BalanceWithFundingPayment { trader } => {
             to_binary(&query_trader_balance_with_funding_payment(deps, trader)?)
         }

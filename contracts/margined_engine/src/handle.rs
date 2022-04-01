@@ -220,14 +220,13 @@ pub fn liquidate(
     // read the position for the trader from vamm
     let position = read_position(deps.storage, &vamm, &trader).unwrap();
 
-    // first see if this is a partial liquidation, else we just rek the trader
+    // first see if this is a partial liquidation, else trader is rekt
     let msg = if margin_ratio.value > config.liquidation_fee
         && !config.partial_liquidation_margin_ratio.is_zero()
     {
         partial_liquidation(deps, env, vamm, trader, quote_asset_limit)
     } else {
-        // Note: no slippage for a total liquidation
-        internal_close_position(deps, &position, Uint128::zero(), SWAP_LIQUIDATE_REPLY_ID)?
+        internal_close_position(deps, &position, quote_asset_limit, SWAP_LIQUIDATE_REPLY_ID)?
     };
 
     Ok(Response::default().add_submessage(msg))
