@@ -515,7 +515,11 @@ fn test_zero_when_everyone_closes_positions_one_position_is_bankrupt() {
     router.execute(bob.clone(), msg).unwrap();
 
     let msg = engine
-        .liquidate(vamm.addr().to_string(), alice.to_string())
+        .liquidate(
+            vamm.addr().to_string(),
+            alice.to_string(),
+            to_decimals(0u64),
+        )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 

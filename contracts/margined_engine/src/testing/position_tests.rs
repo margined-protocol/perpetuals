@@ -3,7 +3,7 @@ use cosmwasm_std::Uint128;
 use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
 use margined_common::integer::Integer;
-use margined_perp::margined_engine::{PositionResponse, Side};
+use margined_perp::margined_engine::{PnlCalcOption, PositionResponse, Side};
 use margined_utils::scenarios::SimpleScenario;
 
 pub const DECIMAL_MULTIPLIER: Uint128 = Uint128::new(1_000_000_000);
@@ -486,7 +486,12 @@ fn test_pnl_zero_no_others_trading() {
     router.execute(alice.clone(), msg).unwrap();
 
     let pnl = engine
-        .unrealized_pnl(&router, vamm.addr().to_string(), alice.to_string())
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::zero());
 }
@@ -821,7 +826,12 @@ fn test_pnl_unrealized() {
     // since Alice use 250 to buy
     // 11.9047619048 - 250 = -238.0952380952 which is unrealized PNL.
     let pnl = engine
-        .unrealized_pnl(&router, vamm.addr().to_string(), alice.to_string())
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
         .unwrap();
     assert_eq!(
         pnl.unrealized_pnl,

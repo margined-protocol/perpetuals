@@ -341,10 +341,12 @@ pub fn liquidate_reply(
     let mut remain_margin =
         calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), margin_delta)?;
 
-    let liquidation_fee: Uint128 = output
+    // calculate liquidation penalty and fee for liquidator
+    let liquidation_penalty: Uint128 = output
         .checked_mul(config.liquidation_fee)?
-        .checked_div(config.decimals)?
-        .checked_div(Uint128::from(2u64))?;
+        .checked_div(config.decimals)?;
+
+    let liquidation_fee: Uint128 = liquidation_penalty.checked_div(Uint128::from(2u64))?;
 
     if liquidation_fee > remain_margin.margin {
         let bad_debt = liquidation_fee.checked_sub(remain_margin.margin)?;

@@ -131,7 +131,11 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             let trader = info.sender.clone();
             close_position(deps, env, info, vamm, trader.to_string(), quote_asset_limit)
         }
-        ExecuteMsg::Liquidate { vamm, trader } => liquidate(deps, env, info, vamm, trader),
+        ExecuteMsg::Liquidate {
+            vamm,
+            trader,
+            quote_asset_limit,
+        } => liquidate(deps, env, info, vamm, trader, quote_asset_limit),
         ExecuteMsg::PayFunding { vamm } => pay_funding(deps, env, info, vamm),
         ExecuteMsg::DepositMargin { vamm, amount } => deposit_margin(deps, env, info, vamm, amount),
         ExecuteMsg::WithdrawMargin { vamm, amount } => {
@@ -152,9 +156,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::CumulativePremiumFraction { vamm } => {
             to_binary(&query_cumulative_premium_fraction(deps, vamm)?)
         }
-        QueryMsg::UnrealizedPnl { vamm, trader } => {
-            to_binary(&query_unrealized_pnl(deps, vamm, trader)?)
-        }
+        QueryMsg::UnrealizedPnl {
+            vamm,
+            trader,
+            calc_option,
+        } => to_binary(&query_unrealized_pnl(deps, vamm, trader, calc_option)?),
         QueryMsg::BalanceWithFundingPayment { trader } => {
             to_binary(&query_trader_balance_with_funding_payment(deps, trader)?)
         }

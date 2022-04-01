@@ -1,6 +1,6 @@
 use margined_perp::margined_engine::{
-    ConfigResponse, ExecuteMsg, PositionResponse, PositionUnrealizedPnlResponse, QueryMsg, Side,
-    StateResponse,
+    ConfigResponse, ExecuteMsg, PnlCalcOption, PositionResponse, PositionUnrealizedPnlResponse,
+    QueryMsg, Side, StateResponse,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -85,8 +85,17 @@ impl EngineController {
         self.call(msg, vec![])
     }
 
-    pub fn liquidate(&self, vamm: String, trader: String) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::Liquidate { vamm, trader };
+    pub fn liquidate(
+        &self,
+        vamm: String,
+        trader: String,
+        quote_asset_limit: Uint128,
+    ) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::Liquidate {
+            vamm,
+            trader,
+            quote_asset_limit,
+        };
         self.call(msg, vec![])
     }
 
@@ -150,13 +159,18 @@ impl EngineController {
     }
 
     /// get unrealized profit and loss for a position
-    pub fn unrealized_pnl<Q: Querier>(
+    pub fn get_unrealized_pnl<Q: Querier>(
         &self,
         querier: &Q,
         vamm: String,
         trader: String,
+        calc_option: PnlCalcOption,
     ) -> StdResult<PositionUnrealizedPnlResponse> {
-        let msg = QueryMsg::UnrealizedPnl { vamm, trader };
+        let msg = QueryMsg::UnrealizedPnl {
+            vamm,
+            trader,
+            calc_option,
+        };
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
             msg: to_binary(&msg)?,

@@ -94,7 +94,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
     // which is already prepaid by insurance fund when alice close the position before
     // clearing house doesn't need to ask insurance fund for covering the bad debt
     let msg = engine
-        .liquidate(vamm.addr().to_string(), bob.to_string())
+        .liquidate(vamm.addr().to_string(), bob.to_string(), to_decimals(0u64))
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 
@@ -174,7 +174,11 @@ fn test_alice_has_enough_margin_cant_get_liquidated() {
     // liquidationFee: 321.23 * 5% = 16.06
     // margin ratio: = (margin + unrealizedPnl) / positionNotional = 21.23 / 321.23 = 6.608971765%
     let msg = engine
-        .liquidate(vamm.addr().to_string(), alice.to_string())
+        .liquidate(
+            vamm.addr().to_string(),
+            alice.to_string(),
+            to_decimals(0u64),
+        )
         .unwrap();
     let res = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
@@ -248,7 +252,11 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
 
     // alice's margin ratio = (margin + unrealizedPnl) / openNotional = (150 + (-278.77)) / 600 = -21.46%
     let msg = engine
-        .liquidate(vamm.addr().to_string(), alice.to_string())
+        .liquidate(
+            vamm.addr().to_string(),
+            alice.to_string(),
+            to_decimals(0u64),
+        )
         .unwrap();
     let response = router.execute(carol.clone(), msg).unwrap();
     assert_eq!(
