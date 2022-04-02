@@ -1246,3 +1246,127 @@ fn test_force_error_empty_position() {
     let result = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(result.to_string(), "Generic error: Position is zero");
 }
+
+#[test]
+fn test_partially_liquidate_position_within_fluctuation_limit() {
+    let mut env = SimpleScenario::new();
+
+    // set the latest price
+    let price: Uint128 = Uint128::from(10_000_000_000u128);
+    let timestamp: u64 = env.router.block_info().time.seconds();
+
+    let msg = env
+        .pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    env.router.update_block(|block| {
+        block.time = block.time.plus_seconds(900);
+        block.height += 1;
+    });
+
+    // set the margin ratios
+    let msg = env
+        .engine
+        .update_config(
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(Uint128::from(100_000_000u128)),
+            Some(Uint128::from(250_000_000u128)),
+            Some(Uint128::from(25_000_000u128)),
+        )
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    // reduce the allowance
+    env.router
+        .execute_contract(
+            env.alice.clone(),
+            env.usdc.addr().clone(),
+            &Cw20ExecuteMsg::DecreaseAllowance {
+                spender: env.engine.addr().to_string(),
+                amount: to_decimals(1900),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
+
+    // reduce the allowance
+    env.router
+        .execute_contract(
+            env.bob.clone(),
+            env.usdc.addr().clone(),
+            &Cw20ExecuteMsg::DecreaseAllowance {
+                spender: env.engine.addr().to_string(),
+                amount: to_decimals(1900),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
+
+    // when bob create a 20 margin * 5x long position when 9.0909090909 quoteAsset = 100
+    // AMM after: 1100 : 90.9090909091
+    env.open_small_position(
+        env.bob.clone(),
+        Side::BUY,
+        to_decimals(4u64),
+        to_decimals(5u64),
+        5u64,
+    );
+
+    // when alice create a 20 margin * 5x long position when 7.5757575758 quoteAsset = 100
+    // AMM after: 1200 : 83.3333333333
+    // alice get: 90.9090909091 - 83.3333333333 = 7.5757575758
+    env.open_small_position(
+        env.alice.clone(),
+        Side::BUY,
+        to_decimals(4u64),
+        to_decimals(5u64),
+        5u64,
+    );
+
+    // AMM after: 1100 : 90.9090909091, price: 12.1
+    env.open_small_position(
+        env.bob.clone(),
+        Side::SELL,
+        to_decimals(4u64),
+        to_decimals(5u64),
+        5u64,
+    );
+
+    let price = env.vamm.spot_price(&env.router).unwrap();
+    let msg = env
+        .pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    // liquidate -> return 25% base asset to AMM
+    // 90.9090909091 + 1.89 = 92.8
+    // AMM after: 1077.55102 : 92.8, price: 11.61
+    // fluctuation: (12.1 - 11.61116202) / 12.1 = 0.04039983306
+    // values can be retrieved with amm.quoteAssetReserve() & amm.baseAssetReserve()
+    let msg = env
+        .engine
+        .liquidate(
+            env.vamm.addr().to_string(),
+            env.alice.to_string(),
+            to_decimals(0u64),
+        )
+        .unwrap();
+    env.router.execute(env.carol.clone(), msg).unwrap();
+
+    let state = env.vamm.state(&env.router).unwrap();
+    assert_eq!(
+        state.quote_asset_reserve,
+        Uint128::from(1_077_551_020_421u128)
+    );
+    assert_eq!(state.base_asset_reserve, Uint128::from(92_803_030_310u128));
+}

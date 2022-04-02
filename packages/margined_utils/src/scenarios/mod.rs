@@ -1,15 +1,14 @@
-use cosmwasm_std::{Addr, Empty, Uint128};
-use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg};
-use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
-use margined_perp::margined_engine::InstantiateMsg;
-use margined_perp::margined_pricefeed::InstantiateMsg as PricefeedInstantiateMsg;
-use margined_perp::margined_vamm::{
-    ExecuteMsg as VammExecuteMsg, InstantiateMsg as VammInstantiateMsg,
-};
-
 use crate::contracts::helpers::{
     margined_engine::EngineController, margined_pricefeed::PricefeedController,
     margined_vamm::VammController,
+};
+use cosmwasm_std::{Addr, Empty, Uint128};
+use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg};
+use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
+use margined_perp::margined_engine::{InstantiateMsg, Side};
+use margined_perp::margined_pricefeed::InstantiateMsg as PricefeedInstantiateMsg;
+use margined_perp::margined_vamm::{
+    ExecuteMsg as VammExecuteMsg, InstantiateMsg as VammInstantiateMsg,
 };
 
 pub struct ContractInfo {
@@ -218,6 +217,34 @@ impl SimpleScenario {
             pricefeed,
             vamm,
             engine,
+        }
+    }
+
+    pub fn open_small_position(
+        &mut self,
+        account: Addr,
+        side: Side,
+        quote_asset_amount: Uint128,
+        leverage: Uint128,
+        count: u64,
+    ) {
+        for _ in 0..count {
+            let msg = self
+                .engine
+                .open_position(
+                    self.vamm.addr().to_string(),
+                    side.clone(),
+                    quote_asset_amount,
+                    leverage,
+                    Uint128::zero(),
+                )
+                .unwrap();
+            self.router.execute(account.clone(), msg).unwrap();
+
+            self.router.update_block(|block| {
+                block.time = block.time.plus_seconds(15);
+                block.height += 1;
+            });
         }
     }
 }
