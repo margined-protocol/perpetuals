@@ -2218,8 +2218,8 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
         5u64,
     );
 
-    // set the fluctuation ratio
-    let msg = env
+        // set the fluctuation ratio
+        let msg = env
         .vamm
         .update_config(
             None,
@@ -2252,8 +2252,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
-    let msg = env
-        .engine
+    let msg = env.engine
         .open_position(
             env.vamm.addr().to_string(),
             Side::SELL,
@@ -2265,8 +2264,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
     let response = env.router.execute(env.alice.clone(), msg).unwrap_err();
     assert_eq!(
         response.to_string(),
-        "Generic error: reply (id 2) error \"Generic error: price is over fluctuation limit\""
-            .to_string()
+        "Generic error: reply (id 2) error \"Generic error: price is over fluctuation limit\"".to_string()
     );
 
     let msg = env
@@ -2460,8 +2458,8 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         2u64,
     );
 
-    // set the fluctuation ratio
-    let msg = env
+        // set the fluctuation ratio
+        let msg = env
         .vamm
         .update_config(
             None,
