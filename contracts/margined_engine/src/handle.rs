@@ -11,14 +11,15 @@ use crate::{
     querier::query_vamm_output_price,
     query::query_margin_ratio,
     state::{
-        read_config, read_position, read_state, store_config, store_position, store_tmp_liquidator,
-        store_tmp_swap, Config, Position, State, Swap,
+        read_config, read_position, read_state, store_config, store_position, store_state,
+        store_tmp_liquidator, store_tmp_swap, Config, Position, State, Swap,
     },
     utils::{
         calc_remain_margin_with_funding_payment, direction_to_side, execute_transfer_from,
         get_position, get_position_notional_unrealized_pnl, require_bad_debt,
-        require_insufficient_margin, require_margin, require_not_restriction_mode,
-        require_position_not_zero, require_vamm, side_to_direction, withdraw,
+        require_insufficient_margin, require_margin, require_not_paused,
+        require_not_restriction_mode, require_position_not_zero, require_vamm, side_to_direction,
+        withdraw,
     },
 };
 use margined_common::integer::Integer;
@@ -96,6 +97,22 @@ pub fn update_config(
     Ok(Response::default())
 }
 
+pub fn set_pause(deps: DepsMut, _env: Env, info: MessageInfo, pause: bool) -> StdResult<Response> {
+    let config: Config = read_config(deps.storage)?;
+    let mut state: State = read_state(deps.storage)?;
+
+    // check permission and if state matches
+    if info.sender != config.owner || state.pause == pause {
+        return Err(StdError::generic_err("unauthorized"));
+    }
+
+    state.pause = pause;
+
+    store_state(deps.storage, &state)?;
+
+    Ok(Response::default())
+}
+
 // Opens a position
 // TODO - refactor arguments into a struct
 #[allow(clippy::too_many_arguments)]
@@ -111,6 +128,7 @@ pub fn open_position(
     base_asset_limit: Uint128,
 ) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
+    let state: State = read_state(deps.storage)?;
 
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = deps.api.addr_validate(&trader)?;
@@ -120,6 +138,7 @@ pub fn open_position(
         .checked_mul(config.decimals)?
         .checked_div(leverage)?;
 
+    require_not_paused(state.pause)?;
     require_vamm(deps.storage, &vamm)?;
     require_margin(margin_ratio, config.initial_margin_ratio)?;
     require_not_restriction_mode(deps.storage, &vamm, &trader, env.block.height)?;
@@ -180,6 +199,8 @@ pub fn close_position(
     trader: String,
     quote_amount_limit: Uint128,
 ) -> StdResult<Response> {
+    let state: State = read_state(deps.storage)?;
+
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = deps.api.addr_validate(&trader)?;
@@ -188,6 +209,7 @@ pub fn close_position(
     let position = read_position(deps.storage, &vamm, &trader).unwrap();
 
     // check the position isn't zero
+    require_not_paused(state.pause)?;
     require_position_not_zero(position.size.value)?;
     require_not_restriction_mode(deps.storage, &vamm, &trader, env.block.height)?;
 
@@ -271,8 +293,12 @@ pub fn deposit_margin(
     vamm: String,
     amount: Uint128,
 ) -> StdResult<Response> {
+    let state: State = read_state(deps.storage)?;
+
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = info.sender;
+
+    require_not_paused(state.pause)?;
 
     // first try to execute the transfer
     let msg = execute_transfer_from(deps.storage, &trader, &env.contract.address, amount)?;
@@ -306,6 +332,7 @@ pub fn withdraw_margin(
     let trader = info.sender;
 
     require_vamm(deps.storage, &vamm)?;
+    require_not_paused(state.pause)?;
 
     // read the position for the trader from vamm
     let mut position = read_position(deps.storage, &vamm, &trader).unwrap();

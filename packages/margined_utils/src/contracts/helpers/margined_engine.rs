@@ -59,6 +59,80 @@ impl EngineController {
         self.call(msg, vec![])
     }
 
+    pub fn set_initial_margin_ratio(
+        &self,
+        initial_margin_ratio: Option<Uint128>,
+    ) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::UpdateConfig {
+            owner: None,
+            insurance_fund: None,
+            fee_pool: None,
+            eligible_collateral: None,
+            decimals: None,
+            initial_margin_ratio,
+            maintenance_margin_ratio: None,
+            partial_liquidation_margin_ratio: None,
+            liquidation_fee: None,
+        };
+        self.call(msg, vec![])
+    }
+
+    pub fn set_maintenance_margin_ratio(
+        &self,
+        maintenance_margin_ratio: Option<Uint128>,
+    ) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::UpdateConfig {
+            owner: None,
+            insurance_fund: None,
+            fee_pool: None,
+            eligible_collateral: None,
+            decimals: None,
+            initial_margin_ratio: None,
+            maintenance_margin_ratio,
+            partial_liquidation_margin_ratio: None,
+            liquidation_fee: None,
+        };
+        self.call(msg, vec![])
+    }
+
+    pub fn set_partial_liquidation_margin_ratio(
+        &self,
+        partial_liquidation_margin_ratio: Option<Uint128>,
+    ) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::UpdateConfig {
+            owner: None,
+            insurance_fund: None,
+            fee_pool: None,
+            eligible_collateral: None,
+            decimals: None,
+            initial_margin_ratio: None,
+            maintenance_margin_ratio: None,
+            partial_liquidation_margin_ratio,
+            liquidation_fee: None,
+        };
+        self.call(msg, vec![])
+    }
+
+    pub fn set_liquidation_fee(&self, liquidation_fee: Option<Uint128>) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::UpdateConfig {
+            owner: None,
+            insurance_fund: None,
+            fee_pool: None,
+            eligible_collateral: None,
+            decimals: None,
+            initial_margin_ratio: None,
+            maintenance_margin_ratio: None,
+            partial_liquidation_margin_ratio: None,
+            liquidation_fee,
+        };
+        self.call(msg, vec![])
+    }
+
+    pub fn set_pause(&self, pause: bool) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::SetPause { pause };
+        self.call(msg, vec![])
+    }
+
     pub fn open_position(
         &self,
         vamm: String,
