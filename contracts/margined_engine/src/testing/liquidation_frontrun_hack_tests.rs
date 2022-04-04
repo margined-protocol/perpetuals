@@ -27,17 +27,19 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
     // set the margin ratios
     let msg = env
         .engine
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(100_000_000u128)),
-            Some(Uint128::from(250_000_000u128)),
-            Some(Uint128::from(25_000_000u128)),
-        )
+        .set_maintenance_margin_ratio(Uint128::from(100_000_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_partial_liquidation_margin_ratio(Uint128::from(250_000_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_liquidation_fee(Uint128::from(25_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -103,8 +105,7 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
             Side::BUY,
             to_decimals(20u64),
             to_decimals(5u64),
-            Uint128::zero(),
-            // Uint128::from(9_090_000_000u128),
+            Uint128::from(9_090_000_000u128),
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -205,20 +206,22 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
 
     // set the margin ratios
     let msg = env
-        .engine
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(100_000_000u128)),
-            Some(Uint128::from(250_000_000u128)),
-            Some(Uint128::from(25_000_000u128)),
-        )
-        .unwrap();
-    env.router.execute(env.owner.clone(), msg).unwrap();
+    .engine
+    .set_maintenance_margin_ratio(Uint128::from(100_000_000u128))
+    .unwrap();
+env.router.execute(env.owner.clone(), msg).unwrap();
+
+let msg = env
+    .engine
+    .set_partial_liquidation_margin_ratio(Uint128::from(250_000_000u128))
+    .unwrap();
+env.router.execute(env.owner.clone(), msg).unwrap();
+
+let msg = env
+    .engine
+    .set_liquidation_fee(Uint128::from(25_000_000u128))
+    .unwrap();
+env.router.execute(env.owner.clone(), msg).unwrap();
 
     // reduce the allowance
     env.router
@@ -385,20 +388,21 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
         block.height += 1;
     });
 
-    // set the margin ratios
     let msg = env
         .engine
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(100_000_000u128)),
-            Some(Uint128::from(250_000_000u128)),
-            Some(Uint128::from(25_000_000u128)),
-        )
+        .set_maintenance_margin_ratio(Uint128::from(100_000_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_partial_liquidation_margin_ratio(Uint128::from(250_000_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_liquidation_fee(Uint128::from(25_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -561,20 +565,21 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
         block.height += 1;
     });
 
-    // set the margin ratios
     let msg = env
         .engine
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(100_000_000u128)),
-            Some(Uint128::from(250_000_000u128)),
-            Some(Uint128::from(25_000_000u128)),
-        )
+        .set_maintenance_margin_ratio(Uint128::from(100_000_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_partial_liquidation_margin_ratio(Uint128::from(250_000_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_liquidation_fee(Uint128::from(25_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -743,20 +748,21 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
         block.height += 1;
     });
 
-    // set the margin ratios
     let msg = env
         .engine
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(100_000_000u128)),
-            Some(Uint128::from(250_000_000u128)),
-            Some(Uint128::from(25_000_000u128)),
-        )
+        .set_maintenance_margin_ratio(Uint128::from(100_000_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_partial_liquidation_margin_ratio(Uint128::from(250_000_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_liquidation_fee(Uint128::from(25_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 

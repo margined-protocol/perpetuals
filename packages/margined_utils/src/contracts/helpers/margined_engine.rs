@@ -61,7 +61,7 @@ impl EngineController {
 
     pub fn set_initial_margin_ratio(
         &self,
-        initial_margin_ratio: Option<Uint128>,
+        initial_margin_ratio: Uint128,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
             owner: None,
@@ -69,7 +69,7 @@ impl EngineController {
             fee_pool: None,
             eligible_collateral: None,
             decimals: None,
-            initial_margin_ratio,
+            initial_margin_ratio: Some(initial_margin_ratio),
             maintenance_margin_ratio: None,
             partial_liquidation_margin_ratio: None,
             liquidation_fee: None,
@@ -79,7 +79,7 @@ impl EngineController {
 
     pub fn set_maintenance_margin_ratio(
         &self,
-        maintenance_margin_ratio: Option<Uint128>,
+        maintenance_margin_ratio: Uint128,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
             owner: None,
@@ -88,7 +88,7 @@ impl EngineController {
             eligible_collateral: None,
             decimals: None,
             initial_margin_ratio: None,
-            maintenance_margin_ratio,
+            maintenance_margin_ratio: Some(maintenance_margin_ratio),
             partial_liquidation_margin_ratio: None,
             liquidation_fee: None,
         };
@@ -97,7 +97,7 @@ impl EngineController {
 
     pub fn set_partial_liquidation_margin_ratio(
         &self,
-        partial_liquidation_margin_ratio: Option<Uint128>,
+        partial_liquidation_margin_ratio: Uint128,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
             owner: None,
@@ -107,13 +107,13 @@ impl EngineController {
             decimals: None,
             initial_margin_ratio: None,
             maintenance_margin_ratio: None,
-            partial_liquidation_margin_ratio,
+            partial_liquidation_margin_ratio: Some(partial_liquidation_margin_ratio),
             liquidation_fee: None,
         };
         self.call(msg, vec![])
     }
 
-    pub fn set_liquidation_fee(&self, liquidation_fee: Option<Uint128>) -> StdResult<CosmosMsg> {
+    pub fn set_liquidation_fee(&self, liquidation_fee: Uint128) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
             owner: None,
             insurance_fund: None,
@@ -123,7 +123,7 @@ impl EngineController {
             initial_margin_ratio: None,
             maintenance_margin_ratio: None,
             partial_liquidation_margin_ratio: None,
-            liquidation_fee,
+            liquidation_fee: Some(liquidation_fee),
         };
         self.call(msg, vec![])
     }
