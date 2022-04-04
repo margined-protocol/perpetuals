@@ -59,10 +59,7 @@ impl EngineController {
         self.call(msg, vec![])
     }
 
-    pub fn set_initial_margin_ratio(
-        &self,
-        initial_margin_ratio: Uint128,
-    ) -> StdResult<CosmosMsg> {
+    pub fn set_initial_margin_ratio(&self, initial_margin_ratio: Uint128) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
             owner: None,
             insurance_fund: None,

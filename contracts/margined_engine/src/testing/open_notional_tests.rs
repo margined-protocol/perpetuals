@@ -16,19 +16,8 @@ fn test_increase_with_increase_position() {
         ..
     } = SimpleScenario::new();
 
-    // set cap
     let msg = vamm
-        .update_config(
-            None,
-            None,
-            Some(Uint128::from(600_000_000_000u64)),
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
+        .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -73,19 +62,8 @@ fn test_reduce_when_position_is_reduced() {
         ..
     } = SimpleScenario::new();
 
-    // set cap
     let msg = vamm
-        .update_config(
-            None,
-            None,
-            Some(Uint128::from(600_000_000_000u64)),
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
+        .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -141,19 +119,8 @@ fn test_reduce_when_close_position() {
         ..
     } = SimpleScenario::new();
 
-    // set cap
     let msg = vamm
-        .update_config(
-            None,
-            None,
-            Some(Uint128::from(600_000_000_000u64)),
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
+        .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -205,19 +172,8 @@ fn test_increase_when_traders_open_positions_in_diff_directions() {
         ..
     } = SimpleScenario::new();
 
-    // set cap
     let msg = vamm
-        .update_config(
-            None,
-            None,
-            Some(Uint128::from(600_000_000_000u64)),
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
+        .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -286,19 +242,8 @@ fn test_increase_when_traders_open_larger_positions_in_reverse_directions() {
         ..
     } = SimpleScenario::new();
 
-    // set cap
     let msg = vamm
-        .update_config(
-            None,
-            None,
-            Some(Uint128::from(600_000_000_000u64)),
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
+        .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -356,19 +301,8 @@ fn test_zero_when_everyone_closes_positions() {
         ..
     } = SimpleScenario::new();
 
-    // set cap
     let msg = vamm
-        .update_config(
-            None,
-            None,
-            Some(Uint128::from(600_000_000_000u64)),
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
+        .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -449,19 +383,8 @@ fn test_zero_when_everyone_closes_positions_one_position_is_bankrupt() {
         ..
     } = SimpleScenario::new();
 
-    // set cap
     let msg = vamm
-        .update_config(
-            None,
-            None,
-            Some(Uint128::from(600_000_000_000u64)),
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
+        .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -551,19 +474,8 @@ fn test_stop_trading_if_over_open_interest_notional_cap() {
         ..
     } = SimpleScenario::new();
 
-    // set cap
     let msg = vamm
-        .update_config(
-            None,
-            None,
-            Some(Uint128::from(600_000_000_000u64)),
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
+        .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 

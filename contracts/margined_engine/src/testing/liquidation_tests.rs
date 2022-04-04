@@ -310,7 +310,6 @@ fn test_partially_liquidate_short_position() {
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-
     // reduce the allowance
     router
         .execute_contract(
@@ -441,7 +440,6 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-
     // reduce the allowance
     router
         .execute_contract(
@@ -570,7 +568,6 @@ fn test_long_position_complete_liquidation() {
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-
     // reduce the allowance
     router
         .execute_contract(
@@ -691,7 +688,6 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
         .set_liquidation_fee(Uint128::from(25_000_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
-
 
     // reduce the allowance
     router
@@ -817,7 +813,6 @@ fn test_short_position_complete_liquidation() {
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-
     // reduce the allowance
     router
         .execute_contract(
@@ -938,7 +933,6 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
         .set_liquidation_fee(Uint128::from(25_000_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
-
 
     // reduce the allowance
     router
@@ -1114,7 +1108,6 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-
     // reduce the allowance
     router
         .execute_contract(
@@ -1237,7 +1230,6 @@ fn test_force_error_empty_position() {
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-
     let msg = engine
         .liquidate(vamm.addr().to_string(), alice.to_string(), Uint128::zero())
         .unwrap();
@@ -1264,20 +1256,21 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
         block.height += 1;
     });
 
-    // set the margin ratios
     let msg = env
         .engine
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(100_000_000u128)),
-            Some(Uint128::from(250_000_000u128)),
-            Some(Uint128::from(25_000_000u128)),
-        )
+        .set_maintenance_margin_ratio(Uint128::from(100_000_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_partial_liquidation_margin_ratio(Uint128::from(250_000_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_liquidation_fee(Uint128::from(25_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -1405,20 +1398,21 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
-    // set the margin ratios
     let msg = env
         .engine
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(199_999_999u128)), // ~20%
-            Some(Uint128::from(250_000_000u128)),
-            Some(Uint128::from(25_000_000u128)),
-        )
+        .set_maintenance_margin_ratio(Uint128::from(199_999_999u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_partial_liquidation_margin_ratio(Uint128::from(250_000_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_liquidation_fee(Uint128::from(25_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -1591,20 +1585,21 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
-    // set the margin ratios
     let msg = env
         .engine
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(199_999_999u128)), // ~20%
-            Some(Uint128::from(250_000_000u128)),
-            Some(Uint128::from(25_000_000u128)),
-        )
+        .set_maintenance_margin_ratio(Uint128::from(199_999_999u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_partial_liquidation_margin_ratio(Uint128::from(250_000_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_liquidation_fee(Uint128::from(25_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -1797,20 +1792,21 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
-    // set the margin ratios
     let msg = env
         .engine
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(199_999_999u128)), // ~20%
-            Some(Uint128::from(250_000_000u128)),
-            Some(Uint128::from(25_000_000u128)),
-        )
+        .set_maintenance_margin_ratio(Uint128::from(199_999_999u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_partial_liquidation_margin_ratio(Uint128::from(250_000_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_liquidation_fee(Uint128::from(25_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -2003,20 +1999,21 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
-    // set the margin ratios
     let msg = env
         .engine
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(100_000_000u128)),
-            Some(Uint128::from(1_000_000_000u128)),
-            Some(Uint128::from(25_000_000u128)),
-        )
+        .set_maintenance_margin_ratio(Uint128::from(100_000_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_partial_liquidation_margin_ratio(Uint128::from(250_000_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_liquidation_fee(Uint128::from(25_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -2141,20 +2138,21 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
-    // set the margin ratios
     let msg = env
         .engine
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(100_000_000u128)),
-            Some(Uint128::from(1_000_000_000u128)),
-            Some(Uint128::from(25_000_000u128)),
-        )
+        .set_maintenance_margin_ratio(Uint128::from(100_000_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_partial_liquidation_margin_ratio(Uint128::from(250_000_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_liquidation_fee(Uint128::from(25_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -2233,20 +2231,9 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
-    // temp exclude maintenance margin to openReverse
     let msg = env
         .engine
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::zero()),
-            None,
-            None,
-        )
+        .set_maintenance_margin_ratio(Uint128::zero())
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -2269,17 +2256,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
 
     let msg = env
         .engine
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(100_000_000u128)),
-            None,
-            None,
-        )
+        .set_maintenance_margin_ratio(Uint128::from(100_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -2346,20 +2323,21 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
-    // set the margin ratios
     let msg = env
         .engine
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(199_999_999u128)), // ~20%
-            Some(Uint128::from(500_000_000u128)),
-            Some(Uint128::from(25_000_000u128)),
-        )
+        .set_maintenance_margin_ratio(Uint128::from(199_999_999u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_partial_liquidation_margin_ratio(Uint128::from(500_000_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .set_liquidation_fee(Uint128::from(25_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
