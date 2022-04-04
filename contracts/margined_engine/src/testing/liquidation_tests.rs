@@ -1381,20 +1381,9 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         block.height += 1;
     });
 
-    // set the fluctuation ratio
     let msg = env
         .vamm
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(41_000_000u128)),
-            None,
-            None,
-            None,
-        )
+        .set_fluctuation_limit_ratio(Uint128::from(41_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -1568,20 +1557,9 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         block.height += 1;
     });
 
-    // set the fluctuation ratio
     let msg = env
         .vamm
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(60_000_000u128)),
-            None,
-            None,
-            None,
-        )
+        .set_fluctuation_limit_ratio(Uint128::from(60_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -1775,20 +1753,9 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         block.height += 1;
     });
 
-    // set the fluctuation ratio
     let msg = env
         .vamm
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(120_000_000u128)),
-            None,
-            None,
-            None,
-        )
+        .set_fluctuation_limit_ratio(Uint128::from(120_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -1982,20 +1949,9 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
         block.height += 1;
     });
 
-    // set the fluctuation ratio
     let msg = env
         .vamm
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(147_000_000u128)),
-            None,
-            None,
-            None,
-        )
+        .set_fluctuation_limit_ratio(Uint128::from(147_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -2121,20 +2077,9 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
         block.height += 1;
     });
 
-    // set the fluctuation ratio
     let msg = env
         .vamm
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(500_000_000u128)),
-            None,
-            None,
-            None,
-        )
+        .set_fluctuation_limit_ratio(Uint128::from(500_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -2214,20 +2159,9 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
         5u64,
     );
 
-    // set the fluctuation ratio
     let msg = env
         .vamm
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(70_000_000u128)),
-            None,
-            None,
-            None,
-        )
+        .set_fluctuation_limit_ratio(Uint128::from(70_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -2306,20 +2240,9 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         block.height += 1;
     });
 
-    // set the fluctuation ratio
     let msg = env
         .vamm
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(147_000_000u128)),
-            None,
-            None,
-            None,
-        )
+        .set_fluctuation_limit_ratio(Uint128::from(147_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -2436,20 +2359,9 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         2u64,
     );
 
-    // set the fluctuation ratio
     let msg = env
         .vamm
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(38_000_000u128)),
-            None,
-            None,
-            None,
-        )
+        .set_fluctuation_limit_ratio(Uint128::from(38_000_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
