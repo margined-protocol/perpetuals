@@ -6,6 +6,7 @@ mod liquidation_tests;
 mod margin_engine_tests;
 mod margin_ratio_tests;
 mod open_notional_tests;
+mod pausable_tests;
 mod pay_funding_tests;
 mod personal_position_tests;
 mod position_liquidation_tests;

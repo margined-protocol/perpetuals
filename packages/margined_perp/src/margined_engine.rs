@@ -73,6 +73,9 @@ pub enum ExecuteMsg {
         vamm: String,
         amount: Uint128,
     },
+    SetPause {
+        pause: bool,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

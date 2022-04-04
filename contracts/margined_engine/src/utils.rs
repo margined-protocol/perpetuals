@@ -443,6 +443,15 @@ pub fn require_not_restriction_mode(
     Ok(Response::new())
 }
 
+pub fn require_not_paused(paused: bool) -> StdResult<Response> {
+    // check margin engine is not paused
+    if paused {
+        return Err(StdError::generic_err("margin engine is paused"));
+    }
+
+    Ok(Response::new())
+}
+
 // takes the side (buy|sell) and returns the direction (long|short)
 pub fn side_to_direction(side: Side) -> Direction {
     match side {

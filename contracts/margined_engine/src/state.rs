@@ -46,6 +46,7 @@ pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
 pub struct State {
     pub open_interest_notional: Uint128,
     pub bad_debt: Uint128,
+    pub pause: bool,
 }
 
 pub fn store_state(storage: &mut dyn Storage, state: &State) -> StdResult<()> {

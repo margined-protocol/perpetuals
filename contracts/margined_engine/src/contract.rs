@@ -11,8 +11,8 @@ use std::str::FromStr;
 use crate::error::ContractError;
 use crate::{
     handle::{
-        close_position, deposit_margin, liquidate, open_position, pay_funding, update_config,
-        withdraw_margin,
+        close_position, deposit_margin, liquidate, open_position, pay_funding, set_pause,
+        update_config, withdraw_margin,
     },
     query::{
         query_config, query_cumulative_premium_fraction, query_margin_ratio, query_position,
@@ -69,6 +69,7 @@ pub fn instantiate(
         &State {
             open_interest_notional: Uint128::zero(),
             bad_debt: Uint128::zero(),
+            pause: false,
         },
     )?;
 
@@ -141,6 +142,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         ExecuteMsg::WithdrawMargin { vamm, amount } => {
             withdraw_margin(deps, env, info, vamm, amount)
         }
+        ExecuteMsg::SetPause { pause } => set_pause(deps, env, info, pause),
     }
 }
 

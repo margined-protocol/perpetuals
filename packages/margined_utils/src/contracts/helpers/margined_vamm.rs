@@ -56,6 +56,42 @@ impl VammController {
         self.call(msg, vec![])
     }
 
+    pub fn set_open_interest_notional_cap(
+        &self,
+        open_interest_notional_cap: Uint128,
+    ) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::UpdateConfig {
+            owner: None,
+            base_asset_holding_cap: None,
+            open_interest_notional_cap: Some(open_interest_notional_cap),
+            toll_ratio: None,
+            spread_ratio: None,
+            fluctuation_limit_ratio: None,
+            margin_engine: None,
+            pricefeed: None,
+            spot_price_twap_interval: None,
+        };
+        self.call(msg, vec![])
+    }
+
+    pub fn set_fluctuation_limit_ratio(
+        &self,
+        fluctuation_limit_ratio: Uint128,
+    ) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::UpdateConfig {
+            owner: None,
+            base_asset_holding_cap: None,
+            open_interest_notional_cap: None,
+            toll_ratio: None,
+            spread_ratio: None,
+            fluctuation_limit_ratio: Some(fluctuation_limit_ratio),
+            margin_engine: None,
+            pricefeed: None,
+            spot_price_twap_interval: None,
+        };
+        self.call(msg, vec![])
+    }
+
     pub fn set_open(&self, open: bool) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::SetOpen { open };
         self.call(msg, vec![])

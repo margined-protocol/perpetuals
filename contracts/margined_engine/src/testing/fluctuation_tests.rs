@@ -32,17 +32,7 @@ fn test_force_error_open_position_exceeds_fluctuation_limit() {
         .unwrap();
 
     let msg = vamm
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(200_000_000u128)), // 0.2
-            None,
-            None,
-            None,
-        )
+        .set_fluctuation_limit_ratio(Uint128::from(200_000_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -104,17 +94,7 @@ fn test_force_error_reduce_position_exceeds_fluctuation_limit() {
     router.execute(alice.clone(), msg).unwrap();
 
     let msg = vamm
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(78_000_000u128)), // 0.078
-            None,
-            None,
-            None,
-        )
+        .set_fluctuation_limit_ratio(Uint128::from(78_000_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -210,19 +190,8 @@ fn test_close_position_limit_force_error_exceeding_fluctuation_limit_twice_in_sa
         block.time = block.time.plus_seconds(15);
         block.height += 1;
     });
-
     let msg = vamm
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(43_000_000u128)), // 0.043
-            None,
-            None,
-            None,
-        )
+        .set_fluctuation_limit_ratio(Uint128::from(43_000_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -234,17 +203,7 @@ fn test_close_position_limit_force_error_exceeding_fluctuation_limit_twice_in_sa
     router.execute(alice.clone(), msg).unwrap();
 
     let msg = vamm
-        .update_config(
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Uint128::from(42_000_000u128)), // 0.042
-            None,
-            None,
-            None,
-        )
+        .set_fluctuation_limit_ratio(Uint128::from(42_000_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
