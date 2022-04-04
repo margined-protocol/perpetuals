@@ -4,9 +4,9 @@ use crate::{
     handle::internal_increase_position,
     querier::query_vamm_state,
     state::{
-        append_cumulative_premium_fraction, read_config, read_state, read_tmp_liquidator,
-        read_tmp_swap, remove_tmp_liquidator, remove_tmp_swap, store_position, store_state,
-        store_tmp_swap,
+        append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_state,
+        read_tmp_liquidator, read_tmp_swap, remove_tmp_liquidator, remove_tmp_swap, store_position,
+        store_state, store_tmp_swap,
     },
     utils::{
         calc_remain_margin_with_funding_payment, clear_position, execute_transfer,
@@ -398,13 +398,14 @@ pub fn liquidate_reply(
         messages.push(message.clone());
     }
 
-    position = clear_position(env, position)?;
+    position = clear_position(env.clone(), position)?;
 
-    // remove_position(deps.storage, &position)?;
     store_position(deps.storage, &position)?;
 
     remove_tmp_swap(deps.storage);
     remove_tmp_liquidator(deps.storage);
+
+    enter_restriction_mode(deps.storage, swap.vamm, env.block.height)?;
 
     Ok(Response::new()
         .add_submessages(messages)
@@ -498,7 +499,7 @@ pub fn partial_liquidation_reply(
     // insurance fees have been paid
     let withdraw_messages = withdraw(
         deps.as_ref(),
-        env,
+        env.clone(),
         &mut state,
         &liquidator,
         &config.insurance_fund,
@@ -516,10 +517,12 @@ pub fn partial_liquidation_reply(
     remove_tmp_swap(deps.storage);
     remove_tmp_liquidator(deps.storage);
 
+    enter_restriction_mode(deps.storage, swap.vamm, env.block.height)?;
+
     Ok(Response::new()
         .add_submessages(messages)
         .add_attributes(vec![
-            ("action", "liquidate_reply"),
+            ("action", "partial_liquidate_reply"),
             ("liquidation_fee", &liquidation_fee.to_string()),
             ("pnl", &realized_pnl.to_string()),
         ]))

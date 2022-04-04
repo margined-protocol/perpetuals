@@ -47,7 +47,7 @@ pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Pos
         notional: position.notional,
         last_updated_premium_fraction: position.last_updated_premium_fraction,
         liquidity_history_index: position.liquidity_history_index,
-        timestamp: position.timestamp,
+        block_number: position.block_number,
     })
 }
 
@@ -134,7 +134,7 @@ pub fn query_trader_position_with_funding_payment(
         notional: position.notional,
         last_updated_premium_fraction: position.last_updated_premium_fraction,
         liquidity_history_index: position.liquidity_history_index,
-        timestamp: position.timestamp,
+        block_number: position.block_number,
     })
 }
 

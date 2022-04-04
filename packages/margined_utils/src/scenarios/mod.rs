@@ -1,15 +1,14 @@
-use cosmwasm_std::{Addr, Empty, Uint128};
-use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg};
-use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
-use margined_perp::margined_engine::InstantiateMsg;
-use margined_perp::margined_pricefeed::InstantiateMsg as PricefeedInstantiateMsg;
-use margined_perp::margined_vamm::{
-    ExecuteMsg as VammExecuteMsg, InstantiateMsg as VammInstantiateMsg,
-};
-
 use crate::contracts::helpers::{
     margined_engine::EngineController, margined_pricefeed::PricefeedController,
     margined_vamm::VammController,
+};
+use cosmwasm_std::{Addr, Empty, Uint128};
+use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg, MinterResponse};
+use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
+use margined_perp::margined_engine::{InstantiateMsg, Side};
+use margined_perp::margined_pricefeed::InstantiateMsg as PricefeedInstantiateMsg;
+use margined_perp::margined_vamm::{
+    ExecuteMsg as VammExecuteMsg, InstantiateMsg as VammInstantiateMsg,
 };
 
 pub struct ContractInfo {
@@ -23,6 +22,7 @@ pub struct SimpleScenario {
     pub alice: Addr,
     pub bob: Addr,
     pub carol: Addr,
+    pub david: Addr,
     pub insurance: Addr,
     pub fee_pool: Addr,
     pub usdc: Cw20Contract,
@@ -39,6 +39,7 @@ impl SimpleScenario {
         let alice = Addr::unchecked("alice");
         let bob = Addr::unchecked("bob");
         let carol = Addr::unchecked("carol");
+        let david = Addr::unchecked("david");
         let insurance_fund = Addr::unchecked("insurance_fund");
         let fee_pool = Addr::unchecked("fee_pool");
 
@@ -65,11 +66,18 @@ impl SimpleScenario {
                             amount: to_decimals(5000),
                         },
                         Cw20Coin {
+                            address: david.to_string(),
+                            amount: to_decimals(5000),
+                        },
+                        Cw20Coin {
                             address: insurance_fund.to_string(),
                             amount: to_decimals(5000),
                         },
                     ],
-                    mint: None,
+                    mint: Some(MinterResponse {
+                        minter: owner.to_string(),
+                        cap: None,
+                    }),
                     marketing: None,
                 },
                 &[],
@@ -192,6 +200,20 @@ impl SimpleScenario {
             )
             .unwrap();
 
+        // create allowance for david
+        router
+            .execute_contract(
+                david.clone(),
+                usdc_addr.clone(),
+                &Cw20ExecuteMsg::IncreaseAllowance {
+                    spender: engine_addr.to_string(),
+                    amount: to_decimals(100),
+                    expires: None,
+                },
+                &[],
+            )
+            .unwrap();
+
         // create allowance for insurance_fund
         router
             .execute_contract(
@@ -212,12 +234,41 @@ impl SimpleScenario {
             alice,
             bob,
             carol,
+            david,
             insurance: insurance_fund,
             fee_pool,
             usdc,
             pricefeed,
             vamm,
             engine,
+        }
+    }
+
+    pub fn open_small_position(
+        &mut self,
+        account: Addr,
+        side: Side,
+        quote_asset_amount: Uint128,
+        leverage: Uint128,
+        count: u64,
+    ) {
+        for _ in 0..count {
+            let msg = self
+                .engine
+                .open_position(
+                    self.vamm.addr().to_string(),
+                    side.clone(),
+                    quote_asset_amount,
+                    leverage,
+                    Uint128::zero(),
+                )
+                .unwrap();
+            self.router.execute(account.clone(), msg).unwrap();
+
+            self.router.update_block(|block| {
+                block.time = block.time.plus_seconds(15);
+                block.height += 1;
+            });
         }
     }
 }
