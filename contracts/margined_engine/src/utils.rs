@@ -434,7 +434,7 @@ pub fn require_not_restriction_mode(
     block_height: u64,
 ) -> StdResult<Response> {
     let vamm_map = read_vamm_map(storage, vamm.clone())?;
-    let position = read_position(storage, &vamm, &trader).unwrap();
+    let position = read_position(storage, vamm, trader).unwrap();
 
     if vamm_map.last_restriction_block == block_height && position.block_number == block_height {
         return Err(StdError::generic_err("Only one action allowed"));

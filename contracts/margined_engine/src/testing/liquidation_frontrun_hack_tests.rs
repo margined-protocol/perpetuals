@@ -2,8 +2,7 @@
 use cosmwasm_std::Uint128;
 use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
-use margined_common::integer::Integer;
-use margined_perp::margined_engine::{PnlCalcOption, Side};
+use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
 
 #[test]
@@ -493,9 +492,9 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
     });
 
     let msg = env
-    .engine
-    .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
-    .unwrap();
+        .engine
+        .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
+        .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     env.router.update_block(|block| {
@@ -851,9 +850,9 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
     });
 
     let msg = env
-    .engine
-    .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
-    .unwrap();
+        .engine
+        .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
+        .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     env.router.update_block(|block| {

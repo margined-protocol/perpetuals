@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Uint128};
 use margined_common::integer::Integer;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
