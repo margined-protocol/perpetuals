@@ -17,8 +17,8 @@ use crate::{
     utils::{
         calc_remain_margin_with_funding_payment, direction_to_side, execute_transfer_from,
         get_position, get_position_notional_unrealized_pnl, require_bad_debt,
-        require_insufficient_margin, require_margin, require_position_not_zero, require_vamm,
-        side_to_direction, withdraw,
+        require_insufficient_margin, require_margin, require_not_restriction_mode,
+        require_position_not_zero, require_vamm, side_to_direction, withdraw,
     },
 };
 use margined_common::integer::Integer;
@@ -122,6 +122,7 @@ pub fn open_position(
 
     require_vamm(deps.storage, &vamm)?;
     require_margin(margin_ratio, config.initial_margin_ratio)?;
+    require_not_restriction_mode(deps.storage, &vamm, &trader, env.block.height)?;
 
     // calc the input amount wrt to leverage and decimals
     let open_notional = quote_asset_amount
@@ -173,7 +174,7 @@ pub fn open_position(
 
 pub fn close_position(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     _info: MessageInfo,
     vamm: String,
     trader: String,
@@ -188,6 +189,7 @@ pub fn close_position(
 
     // check the position isn't zero
     require_position_not_zero(position.size.value)?;
+    require_not_restriction_mode(deps.storage, &vamm, &trader, env.block.height)?;
 
     let msg = internal_close_position(deps, &position, quote_amount_limit, SWAP_CLOSE_REPLY_ID)?;
 

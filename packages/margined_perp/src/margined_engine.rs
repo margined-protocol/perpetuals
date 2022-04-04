@@ -135,7 +135,7 @@ pub struct PositionResponse {
     pub notional: Uint128,
     pub last_updated_premium_fraction: Integer,
     pub liquidity_history_index: Uint128,
-    pub timestamp: Timestamp,
+    pub block_number: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

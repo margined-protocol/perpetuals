@@ -93,7 +93,7 @@ pub struct Position {
     pub notional: Uint128,
     pub last_updated_premium_fraction: Integer,
     pub liquidity_history_index: Uint128,
-    pub timestamp: Timestamp,
+    pub block_number: u64,
 }
 
 impl Default for Position {
@@ -107,7 +107,7 @@ impl Default for Position {
             notional: Uint128::zero(),
             last_updated_premium_fraction: Integer::zero(),
             liquidity_history_index: Uint128::zero(),
-            timestamp: Timestamp::from_seconds(0),
+            block_number: 0u64,
         }
     }
 }
@@ -235,6 +235,18 @@ pub fn append_cumulative_premium_fraction(
                 .push(latest_premium_fraction)
         }
     }
+
+    store_vamm_map(storage, vamm, &vamm_map)
+}
+
+pub fn enter_restriction_mode(
+    storage: &mut dyn Storage,
+    vamm: Addr,
+    block_height: u64,
+) -> StdResult<()> {
+    let mut vamm_map = read_vamm_map(storage, vamm.clone())?;
+
+    vamm_map.last_restriction_block = block_height;
 
     store_vamm_map(storage, vamm, &vamm_map)
 }

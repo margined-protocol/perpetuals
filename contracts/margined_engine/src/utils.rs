@@ -10,7 +10,8 @@ use crate::{
     },
     query::query_cumulative_premium_fraction,
     state::{
-        read_config, read_position, read_state, read_vamm, store_state, Position, State, VammList,
+        read_config, read_position, read_state, read_vamm, read_vamm_map, store_state, Position,
+        State, VammList,
     },
 };
 
@@ -208,7 +209,7 @@ pub fn get_position(
         position.vamm = vamm.clone();
         position.trader = trader.clone();
         position.direction = side_to_direction(side);
-        position.timestamp = env.block.time;
+        position.block_number = env.block.height;
     }
 
     position
@@ -370,7 +371,7 @@ pub fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
     position.margin = Uint128::zero();
     position.notional = Uint128::zero();
     position.last_updated_premium_fraction = Integer::zero();
-    position.timestamp = env.block.time;
+    position.block_number = env.block.height;
 
     Ok(position)
 }
@@ -421,6 +422,22 @@ pub fn require_insufficient_margin(
     let remaining_margin_ratio = margin_ratio - Integer::new_positive(base_margin);
     if remaining_margin_ratio > Integer::zero() {
         return Err(StdError::generic_err("Position is overcollateralized"));
+    }
+
+    Ok(Response::new())
+}
+
+pub fn require_not_restriction_mode(
+    storage: &dyn Storage,
+    vamm: &Addr,
+    trader: &Addr,
+    block_height: u64,
+) -> StdResult<Response> {
+    let vamm_map = read_vamm_map(storage, vamm.clone())?;
+    let position = read_position(storage, &vamm, &trader).unwrap();
+
+    if vamm_map.last_restriction_block == block_height && position.block_number == block_height {
+        return Err(StdError::generic_err("Only one action allowed"));
     }
 
     Ok(Response::new())
