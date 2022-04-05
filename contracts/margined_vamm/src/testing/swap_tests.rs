@@ -152,7 +152,10 @@ fn test_update_config_fail() {
 
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: invalid ratio".to_string());
+    assert_eq!(
+        result.to_string(),
+        "Generic error: invalid ratio".to_string()
+    );
 }
 
 #[test]
