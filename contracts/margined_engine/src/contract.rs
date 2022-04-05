@@ -177,32 +177,32 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
     match msg.result {
         ContractResult::Ok(response) => match msg.id {
             SWAP_INCREASE_REPLY_ID => {
-                let (input, output) = parse_swap(response);
+                let (input, output) = parse_swap(response).unwrap();
                 let response = increase_position_reply(deps, env, input, output)?;
                 Ok(response)
             }
             SWAP_DECREASE_REPLY_ID => {
-                let (input, output) = parse_swap(response);
+                let (input, output) = parse_swap(response).unwrap();
                 let response = decrease_position_reply(deps, env, input, output)?;
                 Ok(response)
             }
             SWAP_REVERSE_REPLY_ID => {
-                let (input, output) = parse_swap(response);
+                let (input, output) = parse_swap(response).unwrap();
                 let response = reverse_position_reply(deps, env, input, output)?;
                 Ok(response)
             }
             SWAP_CLOSE_REPLY_ID => {
-                let (input, output) = parse_swap(response);
+                let (input, output) = parse_swap(response).unwrap();
                 let response = close_position_reply(deps, env, input, output)?;
                 Ok(response)
             }
             SWAP_LIQUIDATE_REPLY_ID => {
-                let (input, output) = parse_swap(response);
+                let (input, output) = parse_swap(response).unwrap();
                 let response = liquidate_reply(deps, env, input, output)?;
                 Ok(response)
             }
             SWAP_PARTIAL_LIQUIDATION_REPLY_ID => {
-                let (input, output) = parse_swap(response);
+                let (input, output) = parse_swap(response).unwrap();
                 let response = partial_liquidation_reply(deps, env, input, output)?;
                 Ok(response)
             }
@@ -223,7 +223,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
     }
 }
 
-fn parse_swap(response: SubMsgExecutionResponse) -> (Uint128, Uint128) {
+fn parse_swap(response: SubMsgExecutionResponse) -> StdResult<(Uint128, Uint128)> {
     // Find swap inputs and output events
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");
     let wasm = wasm.unwrap();
@@ -247,14 +247,12 @@ fn parse_swap(response: SubMsgExecutionResponse) -> (Uint128, Uint128) {
             let output_str = read_event("quote_asset_amount".to_string(), wasm).value;
             output = Uint128::from_str(&output_str).unwrap();
         }
-        // TODO this is bad bit need to deal with it properly
         _ => {
-            input = Uint128::zero();
-            output = Uint128::zero();
+            return Err(StdError::generic_err("can't parse swap"));
         }
     }
 
-    (input, output)
+    Ok((input, output))
 }
 
 fn parse_pay_funding(response: SubMsgExecutionResponse) -> (Integer, String) {

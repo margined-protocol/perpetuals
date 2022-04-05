@@ -4,7 +4,7 @@ use cosmwasm_std::testing::{
 };
 use cosmwasm_std::{Env, OwnedDeps, Uint128};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg, InstantiateMsg};
-use margined_utils::scenarios::to_decimals;
+use margined_utils::scenarios::{to_decimals, parse_event};
 
 pub struct TestingEnv {
     pub deps: OwnedDeps<MockStorage, MockApi, MockQuerier>,
@@ -57,15 +57,8 @@ fn test_swap_input_price_goes_up_within_fluctuation_limit() {
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
-
-    // TODO parse this more nicely, but cba right now
     assert_eq!(
-        result
-            .attributes
-            .iter()
-            .find(|&attr| attr.key == "action")
-            .unwrap()
-            .value,
+        parse_event(&result, "action"),
         "swap_input"
     );
 }
@@ -85,15 +78,8 @@ fn test_swap_input_price_goes_down_within_fluctuation_limit() {
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
-
-    // TODO parse this more nicely, but cba right now
     assert_eq!(
-        result
-            .attributes
-            .iter()
-            .find(|&attr| attr.key == "action")
-            .unwrap()
-            .value,
+        parse_event(&result, "action"),
         "swap_input"
     );
 }
@@ -135,15 +121,8 @@ fn test_swap_input_price_goes_down_then_up_and_down_within_fluctuation_limit() {
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env, info, swap_msg).unwrap();
-
-    // TODO parse this more nicely, but cba right now
     assert_eq!(
-        result
-            .attributes
-            .iter()
-            .find(|&attr| attr.key == "action")
-            .unwrap()
-            .value,
+        parse_event(&result, "action"),
         "swap_input"
     );
 }
@@ -164,15 +143,8 @@ fn test_swap_input_price_goes_can_go_over_fluctuation_limit_once() {
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
-
-    // TODO parse this more nicely, but cba right now
     assert_eq!(
-        result
-            .attributes
-            .iter()
-            .find(|&attr| attr.key == "action")
-            .unwrap()
-            .value,
+        parse_event(&result, "action"),
         "swap_input"
     );
 }
@@ -191,15 +163,8 @@ fn test_swap_output_price_goes_up_within_fluctuation_limit() {
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
-
-    // TODO parse this more nicely, but cba right now
     assert_eq!(
-        result
-            .attributes
-            .iter()
-            .find(|&attr| attr.key == "action")
-            .unwrap()
-            .value,
+        parse_event(&result, "action"),
         "swap_output"
     );
 }
@@ -218,15 +183,8 @@ fn test_swap_output_price_goes_down_within_fluctuation_limit() {
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
-
-    // TODO parse this more nicely, but cba right now
     assert_eq!(
-        result
-            .attributes
-            .iter()
-            .find(|&attr| attr.key == "action")
-            .unwrap()
-            .value,
+        parse_event(&result, "action"),
         "swap_output"
     );
 }
@@ -246,8 +204,6 @@ fn test_force_error_swap_input_price_down_over_limit() {
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap_err();
-
-    // TODO parse this more nicely, but cba right now
     assert_eq!(
         result.to_string(),
         "Generic error: price is over fluctuation limit"
@@ -280,8 +236,6 @@ fn test_force_error_swap_input_can_go_over_limit_but_fails_second_time() {
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap_err();
-
-    // TODO parse this more nicely, but cba right now
     assert_eq!(
         result.to_string(),
         "Generic error: price is already over fluctuation limit"
@@ -314,8 +268,6 @@ fn test_force_error_swap_input_short_can_go_over_limit_but_fails_second_time() {
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap_err();
-
-    // TODO parse this more nicely, but cba right now
     assert_eq!(
         result.to_string(),
         "Generic error: price is already over fluctuation limit"
@@ -345,8 +297,6 @@ fn test_force_error_swap_output_can_go_over_limit_but_fails_second_time() {
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env, info, swap_msg).unwrap_err();
-
-    // TODO parse this more nicely, but cba right now
     assert_eq!(
         result.to_string(),
         "Generic error: price is already over fluctuation limit"
@@ -376,8 +326,6 @@ fn test_force_error_swap_output_short_can_go_over_limit_but_fails_second_time() 
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env, info, swap_msg).unwrap_err();
-
-    // TODO parse this more nicely, but cba right now
     assert_eq!(
         result.to_string(),
         "Generic error: price is already over fluctuation limit"
@@ -407,8 +355,6 @@ fn test_force_error_swap_output_short_can_go_over_limit_but_fails_larger_price()
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap_err();
-
-    // TODO parse this more nicely, but cba right now
     assert_eq!(
         result.to_string(),
         "Generic error: price is already over fluctuation limit"
@@ -486,8 +432,6 @@ fn test_force_error_compare_price_fluctuation_with_previous_blocks() {
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap_err();
-
-    // TODO parse this more nicely, but cba right now
     assert_eq!(
         result.to_string(),
         "Generic error: price is over fluctuation limit"
@@ -503,8 +447,6 @@ fn test_force_error_compare_price_fluctuation_with_previous_blocks() {
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap_err();
-
-    // TODO parse this more nicely, but cba right now
     assert_eq!(
         result.to_string(),
         "Generic error: price is over fluctuation limit"
@@ -531,7 +473,6 @@ fn test_force_error_compare_price_fluctuation_with_previous_blocks() {
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env, info, swap_msg).unwrap_err();
 
-    // TODO parse this more nicely, but cba right now
     assert_eq!(
         result.to_string(),
         "Generic error: price is over fluctuation limit"
@@ -569,7 +510,6 @@ fn test_force_error_value_of_fluctuation_is_same_even_no_trading_for_multiple_bl
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env, info, swap_msg).unwrap_err();
 
-    // TODO parse this more nicely, but cba right now
     assert_eq!(
         result.to_string(),
         "Generic error: price is over fluctuation limit"
