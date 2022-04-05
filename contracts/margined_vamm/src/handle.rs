@@ -2,7 +2,7 @@ use cosmwasm_std::{
     Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, Uint128,
 };
 
-use margined_common::integer::Integer;
+use margined_common::{integer::Integer, validate::validate_ratio};
 use margined_perp::margined_vamm::Direction;
 
 use crate::{
@@ -59,16 +59,19 @@ pub fn update_config(
 
     // change toll ratio
     if let Some(toll_ratio) = toll_ratio {
+        validate_ratio(toll_ratio, config.decimals)?;
         config.toll_ratio = toll_ratio;
     }
 
     // change spread ratio
     if let Some(spread_ratio) = spread_ratio {
+        validate_ratio(spread_ratio, config.decimals)?;
         config.spread_ratio = spread_ratio;
     }
 
     // change fluctuation limit ratio
     if let Some(fluctuation_limit_ratio) = fluctuation_limit_ratio {
+        validate_ratio(fluctuation_limit_ratio, config.decimals)?;
         config.fluctuation_limit_ratio = fluctuation_limit_ratio;
     }
 
