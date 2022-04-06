@@ -94,4 +94,21 @@ fn test_update_config() {
     let info = mock_info(OWNER, &[]);
     let result = execute(deps.as_mut(), mock_env(), info, msg);
     assert!(result.is_err());
+
+    // Update should fail
+    let msg = ExecuteMsg::UpdateConfig {
+        owner: None,
+        insurance_fund: None,
+        fee_pool: None,
+        eligible_collateral: None,
+        decimals: None,
+        initial_margin_ratio: Some(Uint128::MAX),
+        maintenance_margin_ratio: None,
+        partial_liquidation_margin_ratio: None,
+        liquidation_fee: None,
+    };
+
+    let info = mock_info(OWNER, &[]);
+    let result = execute(deps.as_mut(), mock_env(), info, msg);
+    assert!(result.is_err());
 }

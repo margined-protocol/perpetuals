@@ -22,7 +22,7 @@ use crate::{
         withdraw,
     },
 };
-use margined_common::integer::Integer;
+use margined_common::{integer::Integer, validate::validate_ratio};
 use margined_perp::margined_engine::{PnlCalcOption, PositionUnrealizedPnlResponse, Side};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 
@@ -74,21 +74,25 @@ pub fn update_config(
 
     // update initial margin ratio
     if let Some(initial_margin_ratio) = initial_margin_ratio {
+        validate_ratio(initial_margin_ratio, config.decimals)?;
         config.initial_margin_ratio = initial_margin_ratio;
     }
 
     // update maintenance margin ratio
     if let Some(maintenance_margin_ratio) = maintenance_margin_ratio {
+        validate_ratio(maintenance_margin_ratio, config.decimals)?;
         config.maintenance_margin_ratio = maintenance_margin_ratio;
     }
 
     // update partial liquidation ratio
     if let Some(partial_liquidation_margin_ratio) = partial_liquidation_margin_ratio {
+        validate_ratio(partial_liquidation_margin_ratio, config.decimals)?;
         config.partial_liquidation_margin_ratio = partial_liquidation_margin_ratio;
     }
 
     // update liquidation fee
     if let Some(liquidation_fee) = liquidation_fee {
+        validate_ratio(liquidation_fee, config.decimals)?;
         config.liquidation_fee = liquidation_fee;
     }
 

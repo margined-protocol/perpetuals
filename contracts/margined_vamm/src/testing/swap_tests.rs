@@ -119,6 +119,46 @@ fn test_update_config() {
 }
 
 #[test]
+fn test_update_config_fail() {
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        quote_asset: "ETH".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: Uint128::from(100u128),
+        base_asset_reserve: Uint128::from(10_000u128),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // Update the config
+    let msg = ExecuteMsg::UpdateConfig {
+        owner: None,
+        base_asset_holding_cap: None,
+        open_interest_notional_cap: None,
+        toll_ratio: None,
+        spread_ratio: None,
+        fluctuation_limit_ratio: Some(Uint128::MAX),
+        margin_engine: None,
+        pricefeed: None,
+        spot_price_twap_interval: None,
+    };
+
+    let info = mock_info("addr0000", &[]);
+    let result = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+    assert_eq!(
+        result.to_string(),
+        "Generic error: invalid ratio".to_string()
+    );
+}
+
+#[test]
 fn test_swap_input_long() {
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {

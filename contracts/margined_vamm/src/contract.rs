@@ -3,7 +3,7 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
-use margined_common::integer::Integer;
+use margined_common::{integer::Integer, validate::validate_ratio};
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
@@ -17,7 +17,6 @@ use crate::{
     state::{store_config, store_reserve_snapshot, store_state, Config, ReserveSnapshot, State},
 };
 
-// TODO: maybe just hardcoding 10 isnt good
 pub const MAX_ORACLE_SPREAD_RATIO: u64 = 100_000_000; // 0.1 i.e. 10%
 pub const ONE_HOUR_IN_SECONDS: u64 = 60 * 60;
 pub const ONE_DAY_IN_SECONDS: u64 = 24 * 60 * 60;
@@ -29,6 +28,12 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
+    // validate the ratios, note this assumes the decimals is correct
+    let decimals = Uint128::from(10u128.pow(msg.decimals as u32));
+    validate_ratio(msg.toll_ratio, decimals)?;
+    validate_ratio(msg.spread_ratio, decimals)?;
+    validate_ratio(msg.fluctuation_limit_ratio, decimals)?;
+
     let mut config = Config {
         owner: info.sender,
         margin_engine: Addr::unchecked("".to_string()), // default to nothing, must be set
@@ -40,7 +45,7 @@ pub fn instantiate(
         spread_ratio: msg.spread_ratio,
         fluctuation_limit_ratio: msg.fluctuation_limit_ratio,
         pricefeed: deps.api.addr_validate(&msg.pricefeed).unwrap(),
-        decimals: Uint128::from(10u128.pow(msg.decimals as u32)),
+        decimals,
         spot_price_twap_interval: ONE_HOUR_IN_SECONDS,
         funding_period: msg.funding_period,
         funding_buffer_period: msg.funding_period / 2u64,
