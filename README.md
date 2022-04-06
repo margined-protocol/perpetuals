@@ -1,7 +1,7 @@
 # Margined Protocol Perpertuals
 
-[![Continuous Integration](https://github.com/margined-protocol/mrgnd-perpetuals/actions/workflows/ci.yml/badge.svg)](https://github.com/margined-protocol/mrgnd-perpetuals/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/margined-protocol/mrgnd-perpetuals/branch/main/graph/badge.svg?token=FDMKT04UWK)](https://codecov.io/gh/margined-protocol/mrgnd-perpetuals)
+[![Continuous Integration](https://github.com/margined-protocol/perpetuals/actions/workflows/ci.yml/badge.svg)](https://github.com/margined-protocol/perpetuals/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/margined-protocol/perpetuals/branch/main/graph/badge.svg?token=FDMKT04UWK)](https://codecov.io/gh/margined-protocol/perpetuals)
 
 
 This repo contains a the Margined Protocol a decentralized perpetual contract protocol on the Terra Blockchain.
@@ -48,8 +48,8 @@ cargo test
 
 Clone this repository and build the source code:
 ```
-git clone git@github.com:margined-protocol/mrgnd-perpetuals.git
-cd mrgnd-perpetuals
+git clone git@github.com:margined-protocol/perpetuals.git
+cd perpetuals
 cargo build
 ```
 
