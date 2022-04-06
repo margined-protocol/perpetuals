@@ -2,7 +2,7 @@ use crate::contracts::helpers::{
     margined_engine::EngineController, margined_pricefeed::PricefeedController,
     margined_vamm::VammController,
 };
-use cosmwasm_std::{Addr, Empty, Uint128};
+use cosmwasm_std::{Addr, Empty, Response, Uint128};
 use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg, MinterResponse};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use margined_perp::margined_engine::{InstantiateMsg, Side};
@@ -449,4 +449,15 @@ fn contract_mock_pricefeed() -> Box<dyn Contract<Empty>> {
 // takes in a Uint128 and multiplies by the decimals just to make tests more legible
 pub fn to_decimals(input: u64) -> Uint128 {
     Uint128::from(input) * DECIMAL_MULTIPLIER
+}
+
+pub fn parse_event(res: &Response, key: &str) -> String {
+    let res = &res
+        .attributes
+        .iter()
+        .find(|&attr| attr.key == key)
+        .unwrap()
+        .value;
+
+    res.to_string()
 }

@@ -1004,7 +1004,6 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     assert_eq!(bob_balance, Uint128::from(4_980_000_000_000u128));
 
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
-    // TODO should be zero but the is slight rounding error will investigate later
     assert_eq!(engine_balance, Uint128::zero());
 
     let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();

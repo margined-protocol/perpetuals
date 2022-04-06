@@ -118,7 +118,6 @@ pub fn set_pause(deps: DepsMut, _env: Env, info: MessageInfo, pause: bool) -> St
 }
 
 // Opens a position
-// TODO - refactor arguments into a struct
 #[allow(clippy::too_many_arguments)]
 pub fn open_position(
     deps: DepsMut,

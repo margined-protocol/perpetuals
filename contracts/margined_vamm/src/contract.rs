@@ -42,7 +42,7 @@ pub fn instantiate(
         base_asset_holding_cap: Uint128::zero(),
         open_interest_notional_cap: Uint128::zero(),
         toll_ratio: msg.toll_ratio,
-        spread_ratio: msg.spread_ratio, // TODO: validate these ratios, also maybe put them as Decimal256?
+        spread_ratio: msg.spread_ratio,
         fluctuation_limit_ratio: msg.fluctuation_limit_ratio,
         pricefeed: deps.api.addr_validate(&msg.pricefeed).unwrap(),
         decimals,

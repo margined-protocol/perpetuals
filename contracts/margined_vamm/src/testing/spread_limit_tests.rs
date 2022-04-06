@@ -24,8 +24,6 @@ fn test_will_fail_is_pricefeed_zero() {
     router.execute(owner.clone(), msg).unwrap();
 
     let result = vamm.is_over_spread_limit(&router).unwrap_err();
-    // TODO, maybe we can parse the result more nicely but think this is correct
-    // for the time being
     assert_eq!(
         result.to_string(),
         "Generic error: Querier contract error: Generic error: underlying price is 0".to_string()
