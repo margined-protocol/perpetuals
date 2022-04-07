@@ -1,8 +1,9 @@
 use cosmwasm_std::{
-    to_binary, Addr, CosmosMsg, Deps, Env, ReplyOn, Response, StdError, StdResult, Storage, SubMsg,
-    Uint128, WasmMsg,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, Env, ReplyOn, Response, StdError, StdResult,
+    Storage, SubMsg, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
+use terraswap::asset::AssetInfo;
 
 use crate::{
     querier::{
@@ -22,6 +23,34 @@ use margined_perp::{
     querier::query_token_balance,
 };
 
+// // performs a transfer regardless if the eligible collateral is a CW20 or native
+// pub fn generic_transfer_from(
+//     asset: String,
+//     owner: &Addr,
+//     receiver: &Addr,
+//     amount: Uint128,
+// ) -> StdResult<SubMsg> {
+//     let config = read_config(storage)?;
+//     let msg = WasmMsg::Execute {
+//         contract_addr: config.eligible_collateral.to_string(),
+//         funds: vec![],
+//         msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
+//             owner: owner.to_string(),
+//             recipient: receiver.to_string(),
+//             amount,
+//         })?,
+//     };
+
+//     let transfer_msg = SubMsg {
+//         msg: CosmosMsg::Wasm(msg),
+//         gas_limit: None, // probably should set a limit in the config
+//         id: 0u64,
+//         reply_on: ReplyOn::Never,
+//     };
+
+//     Ok(transfer_msg)
+// }
+
 pub fn execute_transfer_from(
     storage: &dyn Storage,
     owner: &Addr,
@@ -29,18 +58,47 @@ pub fn execute_transfer_from(
     amount: Uint128,
 ) -> StdResult<SubMsg> {
     let config = read_config(storage)?;
-    let msg = WasmMsg::Execute {
-        contract_addr: config.eligible_collateral.to_string(),
-        funds: vec![],
-        msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
-            owner: owner.to_string(),
-            recipient: receiver.to_string(),
-            amount,
-        })?,
+
+    // let msg = if let AssetInfo::Token { contract_addr, .. } = &config.eligible_collateral {
+    //     CosmosMsg::Wasm(WasmMsg::Execute {
+    //         contract_addr: contract_addr.to_string(),
+    //         msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
+    //             owner: owner.to_string(),
+    //             recipient: receiver.to_string(),
+    //             amount,
+    //         })?,
+    //         funds: vec![],
+    //     })
+    // } else if
+
+    let msg: CosmosMsg = match config.eligible_collateral {
+        AssetInfo::NativeToken { denom } => CosmosMsg::Bank(BankMsg::Send {
+            to_address: receiver.to_string(),
+            amount: vec![Coin { denom, amount }],
+        }),
+        AssetInfo::Token { contract_addr } => CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr,
+            funds: vec![],
+            msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
+                owner: owner.to_string(),
+                recipient: receiver.to_string(),
+                amount,
+            })?,
+        }),
     };
 
+    // let msg = WasmMsg::Execute {
+    //     contract_addr: config.eligible_collateral.to_string(),
+    //     funds: vec![],
+    //     msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
+    //         owner: owner.to_string(),
+    //         recipient: receiver.to_string(),
+    //         amount,
+    //     })?,
+    // };
+
     let transfer_msg = SubMsg {
-        msg: CosmosMsg::Wasm(msg),
+        msg,
         gas_limit: None, // probably should set a limit in the config
         id: 0u64,
         reply_on: ReplyOn::Never,
@@ -163,13 +221,17 @@ pub fn withdraw(
     state: &mut State,
     receiver: &Addr,
     insurance_fund: &Addr,
-    eligible_collateral: Addr,
+    eligible_collateral: AssetInfo,
     amount: Uint128,
 ) -> StdResult<Vec<SubMsg>> {
+    println!("withdraw");
     let token_balance =
         query_token_balance(deps, eligible_collateral, env.contract.address.clone())?;
+    println!("token balance: {}", token_balance);
     let mut messages: Vec<SubMsg> = vec![];
+
     let mut shortfall = Uint128::zero();
+
     if token_balance < amount {
         shortfall = amount.checked_sub(token_balance)?;
 
@@ -185,7 +247,7 @@ pub fn withdraw(
     }
     messages.push(execute_transfer(deps.storage, receiver, amount).unwrap());
 
-    // this is unecessary but need to find a better way to do it
+    // add any shortfall to bad_debt
     state.bad_debt += shortfall;
 
     Ok(messages)

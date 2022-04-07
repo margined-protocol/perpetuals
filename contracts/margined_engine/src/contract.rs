@@ -3,7 +3,10 @@ use cosmwasm_std::{
     to_binary, Attribute, Binary, ContractResult, Deps, DepsMut, Env, Event, MessageInfo, Reply,
     Response, StdError, StdResult, SubMsgExecutionResponse, Uint128,
 };
-use margined_common::{integer::Integer, validate::validate_ratio};
+use margined_common::{
+    integer::Integer,
+    validate::{validate_eligible_collateral, validate_ratio},
+};
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg};
 #[cfg(not(feature = "library"))]
 use std::str::FromStr;
@@ -47,10 +50,12 @@ pub fn instantiate(
     validate_ratio(msg.maintenance_margin_ratio, decimals)?;
     validate_ratio(msg.liquidation_fee, decimals)?;
 
-    // verify message addresses
-    let eligible_collateral = deps.api.addr_validate(&msg.eligible_collateral)?;
+    // validate message addresses
     let insurance_fund = deps.api.addr_validate(&msg.insurance_fund)?;
     let fee_pool = deps.api.addr_validate(&msg.fee_pool)?;
+
+    // validate eligible collateral
+    let eligible_collateral = validate_eligible_collateral(deps.as_ref(), msg.eligible_collateral)?;
 
     // config parameters
     let config = Config {

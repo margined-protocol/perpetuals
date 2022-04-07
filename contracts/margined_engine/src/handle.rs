@@ -22,7 +22,10 @@ use crate::{
         withdraw,
     },
 };
-use margined_common::{integer::Integer, validate::validate_ratio};
+use margined_common::{
+    integer::Integer,
+    validate::{validate_eligible_collateral, validate_ratio},
+};
 use margined_perp::margined_engine::{PnlCalcOption, PositionUnrealizedPnlResponse, Side};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 
@@ -64,7 +67,9 @@ pub fn update_config(
 
     // update eligible collateral
     if let Some(eligible_collateral) = eligible_collateral {
-        config.eligible_collateral = deps.api.addr_validate(eligible_collateral.as_str())?;
+        // validate eligible collateral
+        config.eligible_collateral =
+            validate_eligible_collateral(deps.as_ref(), eligible_collateral)?;
     }
 
     // update decimals TODO: remove all this

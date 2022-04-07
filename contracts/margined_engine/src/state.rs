@@ -12,6 +12,7 @@ use margined_perp::margined_engine::Side;
 use margined_perp::margined_vamm::Direction;
 
 use sha3::{Digest, Sha3_256};
+use terraswap::asset::AssetInfo;
 
 pub static KEY_CONFIG: &[u8] = b"config";
 pub static KEY_POSITION: &[u8] = b"position";
@@ -26,7 +27,7 @@ pub struct Config {
     pub owner: Addr,
     pub insurance_fund: Addr,
     pub fee_pool: Addr,
-    pub eligible_collateral: Addr,
+    pub eligible_collateral: AssetInfo,
     pub decimals: Uint128,
     pub initial_margin_ratio: Uint128,
     pub maintenance_margin_ratio: Uint128,
