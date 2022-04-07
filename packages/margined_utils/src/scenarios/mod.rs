@@ -43,7 +43,7 @@ impl NativeTokenScenario {
         let fee_pool = Addr::unchecked("fee_pool");
         let native_denom = "uusd";
 
-        let init_funds = vec![Coin::new(5u128.pow(10), native_denom)];
+        let init_funds = vec![Coin::new(5_000u128 * 10u128.pow(6), native_denom)];
         router
             .init_bank_balance(&alice, init_funds.clone())
             .unwrap();
@@ -64,7 +64,7 @@ impl NativeTokenScenario {
                 pricefeed_id,
                 owner.clone(),
                 &PricefeedInstantiateMsg {
-                    decimals: 9u8,
+                    decimals: 6u8,
                     oracle_hub_contract: "oracle_hub0000".to_string(),
                 },
                 &[],
@@ -79,7 +79,7 @@ impl NativeTokenScenario {
                 vamm_id,
                 owner.clone(),
                 &VammInstantiateMsg {
-                    decimals: 9u8,
+                    decimals: 6u8,
                     quote_asset: "ETH".to_string(),
                     base_asset: "USD".to_string(),
                     quote_asset_reserve: to_decimals(1_000),
@@ -107,13 +107,13 @@ impl NativeTokenScenario {
                 engine_id,
                 owner.clone(),
                 &InstantiateMsg {
-                    decimals: 9u8,
+                    decimals: 6u8,
                     insurance_fund: insurance_fund.to_string(),
                     fee_pool: fee_pool.to_string(),
                     eligible_collateral: native_denom.to_string(),
-                    initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
-                    maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
-                    liquidation_fee: Uint128::from(50_000_000u128),      // 0.05
+                    initial_margin_ratio: Uint128::from(50_000u128), // 0.05
+                    maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
+                    liquidation_fee: Uint128::from(50_000u128),      // 0.05
                     vamm: vec![vamm_addr.to_string()],
                 },
                 &[],
@@ -158,33 +158,6 @@ impl NativeTokenScenario {
         }
     }
 
-    pub fn open_small_position(
-        &mut self,
-        account: Addr,
-        side: Side,
-        quote_asset_amount: Uint128,
-        leverage: Uint128,
-        count: u64,
-    ) {
-        for _ in 0..count {
-            let msg = self
-                .engine
-                .open_position(
-                    self.vamm.addr().to_string(),
-                    side.clone(),
-                    quote_asset_amount,
-                    leverage,
-                    Uint128::zero(),
-                )
-                .unwrap();
-            self.router.execute(account.clone(), msg).unwrap();
-
-            self.router.update_block(|block| {
-                block.time = block.time.plus_seconds(15);
-                block.height += 1;
-            });
-        }
-    }
 }
 
 impl Default for NativeTokenScenario {
@@ -438,6 +411,7 @@ impl SimpleScenario {
                     quote_asset_amount,
                     leverage,
                     Uint128::zero(),
+                    vec![],
                 )
                 .unwrap();
             self.router.execute(account.clone(), msg).unwrap();

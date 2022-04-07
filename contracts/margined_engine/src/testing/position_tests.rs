@@ -4,14 +4,7 @@ use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, PositionResponse, Side};
-use margined_utils::scenarios::SimpleScenario;
-
-pub const DECIMAL_MULTIPLIER: Uint128 = Uint128::new(1_000_000_000);
-
-// takes in a Uint128 and multiplies by the decimals just to make tests more legible
-pub fn to_decimals(input: u64) -> Uint128 {
-    Uint128::from(input) * DECIMAL_MULTIPLIER
-}
+use margined_utils::scenarios::{SimpleScenario, to_decimals};
 
 #[test]
 fn test_initialization() {
@@ -54,6 +47,7 @@ fn test_open_position_long() {
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -93,6 +87,7 @@ fn test_open_position_two_longs() {
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -104,6 +99,7 @@ fn test_open_position_two_longs() {
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -138,6 +134,7 @@ fn test_open_position_two_shorts() {
             to_decimals(40u64),
             to_decimals(5u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -149,6 +146,7 @@ fn test_open_position_two_shorts() {
             to_decimals(40u64),
             to_decimals(5u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -184,6 +182,7 @@ fn test_open_position_equal_size_opposite_side() {
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -195,6 +194,7 @@ fn test_open_position_equal_size_opposite_side() {
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -230,6 +230,7 @@ fn test_open_position_one_long_two_shorts() {
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -241,6 +242,7 @@ fn test_open_position_one_long_two_shorts() {
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -259,6 +261,7 @@ fn test_open_position_one_long_two_shorts() {
             to_decimals(50u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -294,6 +297,7 @@ fn test_open_position_short_and_two_longs() {
             to_decimals(40u64),
             to_decimals(5u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -311,6 +315,7 @@ fn test_open_position_short_and_two_longs() {
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -328,6 +333,7 @@ fn test_open_position_short_and_two_longs() {
             to_decimals(10u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -357,6 +363,7 @@ fn test_open_position_short_long_short() {
             to_decimals(20u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -368,6 +375,7 @@ fn test_open_position_short_long_short() {
             to_decimals(150u64),
             to_decimals(3u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -385,6 +393,7 @@ fn test_open_position_short_long_short() {
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -414,6 +423,7 @@ fn test_open_position_long_short_long() {
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -425,6 +435,7 @@ fn test_open_position_long_short_long() {
             to_decimals(150u64),
             to_decimals(3u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -441,6 +452,7 @@ fn test_open_position_long_short_long() {
             to_decimals(20u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -470,6 +482,7 @@ fn test_pnl_zero_no_others_trading() {
             to_decimals(250u64),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -481,6 +494,7 @@ fn test_pnl_zero_no_others_trading() {
             to_decimals(750u64),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -515,6 +529,7 @@ fn test_close_safe_position() {
             to_decimals(50u64),
             to_decimals(2u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -532,6 +547,7 @@ fn test_close_safe_position() {
             to_decimals(10u64),
             to_decimals(6u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -582,6 +598,7 @@ fn test_close_position_over_maintenance_margin_ration() {
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -598,6 +615,7 @@ fn test_close_position_over_maintenance_margin_ration() {
             Uint128::from(35_080_000_000u128),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -640,6 +658,7 @@ fn test_close_under_collateral_position() {
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -656,6 +675,7 @@ fn test_close_under_collateral_position() {
             to_decimals(250u64),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -744,6 +764,7 @@ fn test_openclose_position_to_check_fee_is_charged() {
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -788,6 +809,7 @@ fn test_pnl_unrealized() {
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -809,6 +831,7 @@ fn test_pnl_unrealized() {
             to_decimals(100u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -871,6 +894,7 @@ fn test_error_open_position_insufficient_balance() {
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -882,6 +906,7 @@ fn test_error_open_position_insufficient_balance() {
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     let res = router.execute(alice.clone(), msg).unwrap_err();
@@ -908,6 +933,7 @@ fn test_error_open_position_exceed_margin_ratio() {
             to_decimals(60u64),
             to_decimals(21u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     let res = router.execute(alice.clone(), msg).unwrap_err();
@@ -965,6 +991,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
             to_decimals(20u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -976,6 +1003,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
             to_decimals(20u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();

@@ -2,7 +2,7 @@ use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr, Uint128};
 use margined_perp::margined_engine::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-use terraswap::asset::{Asset, AssetInfo};
+use terraswap::asset::AssetInfo;
 
 const TOKEN: &str = "token";
 const OWNER: &str = "owner";

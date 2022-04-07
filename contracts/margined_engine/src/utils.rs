@@ -1,9 +1,9 @@
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, Env, ReplyOn, Response, StdError, StdResult,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, Env, MessageInfo, ReplyOn, Response, StdError, StdResult,
     Storage, SubMsg, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
-use terraswap::asset::AssetInfo;
+use terraswap::asset::{Asset, AssetInfo};
 
 use crate::{
     querier::{
@@ -57,19 +57,8 @@ pub fn execute_transfer_from(
     receiver: &Addr,
     amount: Uint128,
 ) -> StdResult<SubMsg> {
+    println!("execute_transfer_from");
     let config = read_config(storage)?;
-
-    // let msg = if let AssetInfo::Token { contract_addr, .. } = &config.eligible_collateral {
-    //     CosmosMsg::Wasm(WasmMsg::Execute {
-    //         contract_addr: contract_addr.to_string(),
-    //         msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
-    //             owner: owner.to_string(),
-    //             recipient: receiver.to_string(),
-    //             amount,
-    //         })?,
-    //         funds: vec![],
-    //     })
-    // } else if
 
     let msg: CosmosMsg = match config.eligible_collateral {
         AssetInfo::NativeToken { denom } => CosmosMsg::Bank(BankMsg::Send {
@@ -86,16 +75,6 @@ pub fn execute_transfer_from(
             })?,
         }),
     };
-
-    // let msg = WasmMsg::Execute {
-    //     contract_addr: config.eligible_collateral.to_string(),
-    //     funds: vec![],
-    //     msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
-    //         owner: owner.to_string(),
-    //         recipient: receiver.to_string(),
-    //         amount,
-    //     })?,
-    // };
 
     let transfer_msg = SubMsg {
         msg,
@@ -436,6 +415,19 @@ pub fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
     position.block_number = env.block.height;
 
     Ok(position)
+}
+
+pub fn require_native_token_sent(info: MessageInfo, eligible_collateral: AssetInfo, amount: Uint128) -> StdResult<Response> {
+    if let AssetInfo::NativeToken { .. } = eligible_collateral.clone() {
+        let token = Asset {
+            info: eligible_collateral,
+            amount,
+        };
+
+        token.assert_sent_native_token_balance(&info)?;
+    };
+
+    Ok(Response::new())
 }
 
 pub fn require_vamm(storage: &dyn Storage, vamm: &Addr) -> StdResult<Response> {

@@ -19,7 +19,7 @@ use crate::{
         get_position, get_position_notional_unrealized_pnl, require_bad_debt,
         require_insufficient_margin, require_margin, require_not_paused,
         require_not_restriction_mode, require_position_not_zero, require_vamm, side_to_direction,
-        withdraw,
+        withdraw, require_native_token_sent,
     },
 };
 use margined_common::{
@@ -127,7 +127,7 @@ pub fn set_pause(deps: DepsMut, _env: Env, info: MessageInfo, pause: bool) -> St
 pub fn open_position(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     vamm: String,
     trader: String,
     side: Side,
@@ -146,6 +146,7 @@ pub fn open_position(
         .checked_mul(config.decimals)?
         .checked_div(leverage)?;
 
+    require_native_token_sent(info, config.eligible_collateral, quote_asset_amount)?;
     require_not_paused(state.pause)?;
     require_vamm(deps.storage, &vamm)?;
     require_margin(margin_ratio, config.initial_margin_ratio)?;

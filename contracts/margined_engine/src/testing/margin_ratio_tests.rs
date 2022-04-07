@@ -20,6 +20,7 @@ fn test_get_margin_ratio() {
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -49,6 +50,7 @@ fn test_get_margin_ratio_long() {
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -65,6 +67,7 @@ fn test_get_margin_ratio_long() {
             to_decimals(15u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -99,6 +102,7 @@ fn test_get_margin_ratio_short() {
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -110,6 +114,7 @@ fn test_get_margin_ratio_short() {
             to_decimals(15u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -145,6 +150,7 @@ fn test_get_margin_higher_twap() {
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -161,6 +167,7 @@ fn test_get_margin_higher_twap() {
             to_decimals(15u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
