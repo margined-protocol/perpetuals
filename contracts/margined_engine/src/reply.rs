@@ -110,7 +110,6 @@ pub fn decrease_position_reply(
     output: Uint128,
 ) -> StdResult<Response> {
     println!("decrease position reply");
-    let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
@@ -144,29 +143,39 @@ pub fn decrease_position_reply(
     // now update the position
     position.size += signed_output;
     position.notional = old_position
-        .clone()
         .notional
         .checked_sub(swap.open_notional)?;
 
     let PositionUnrealizedPnlResponse {
-        position_notional: _,
+        position_notional: old_position_notional,
         unrealized_pnl,
     } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)
         .unwrap();
 
-    let realized_pnl =
-        unrealized_pnl.checked_mul(Integer::new_positive(output))? / old_position.size;
-    println!("realized pnl {}:", realized_pnl);
+    // realized_pnl = unrealized_pnl * close_ratio
+    let realized_pnl = if !old_position.size.is_zero() {
+        unrealized_pnl.checked_mul(Integer::new_positive(output))? / old_position.size
+    } else {
+        Integer::zero()
+    };
+
+    let unrealized_pnl_after = unrealized_pnl - realized_pnl;
+
+    let remaining_notional = if old_position.size > Integer::zero() {
+        Integer::new_positive(old_position_notional) - unrealized_pnl_after
+    } else {
+        unrealized_pnl_after + Integer::new_positive(old_position_notional)
+    };
 
     let RemainMarginResponse {
-        funding_payment,
+        funding_payment: _,
         margin,
-        bad_debt,
+        bad_debt: _,
         latest_premium_fraction: _,
     } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), realized_pnl)?;
 
+    position.notional = remaining_notional.value;
     position.margin = margin;
-    position.notional += realized_pnl.value;
 
     store_position(deps.storage, &position)?;
     store_state(deps.storage, &state)?;
