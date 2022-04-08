@@ -324,7 +324,7 @@ fn test_open_position_short_and_two_longs() {
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(11_111_111_112u128));
-    assert_eq!(position.margin, to_decimals(40));
+    assert_eq!(position.margin, Uint128::from(40_000_000_004u128));
 
     let msg = engine
         .open_position(
@@ -343,7 +343,7 @@ fn test_open_position_short_and_two_longs() {
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(1_u128));
-    assert_eq!(position.margin, to_decimals(40u64));
+    assert_eq!(position.margin, Uint128::from(40_000_000_009u128));
 }
 
 #[test]

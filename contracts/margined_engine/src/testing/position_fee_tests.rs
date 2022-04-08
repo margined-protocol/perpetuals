@@ -836,7 +836,6 @@ fn test_ten_percent_fee_reduce_short_position() {
     assert_eq!(pnl.unrealized_pnl, Integer::zero());
 }
 
-
 #[test]
 fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
     let SimpleScenario {
@@ -911,8 +910,8 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(25_000_000_000u128));
-    assert_eq!(position.margin, Uint128::from(145_714_285_715u64));
-    assert_eq!(position.notional, Uint128::from(285_714_285_715u64));
+    assert_eq!(position.margin, Uint128::from(145_714_285_714u64));
+    assert_eq!(position.notional, Uint128::from(285_714_285_714u64));
 
     let pnl = engine
         .get_unrealized_pnl(
@@ -926,5 +925,4 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
         pnl.unrealized_pnl,
         Integer::new_positive(171_428_571_428u64)
     );
-
 }
