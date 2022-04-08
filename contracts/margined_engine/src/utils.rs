@@ -23,41 +23,12 @@ use margined_perp::{
     querier::query_token_balance,
 };
 
-// // performs a transfer regardless if the eligible collateral is a CW20 or native
-// pub fn generic_transfer_from(
-//     asset: String,
-//     owner: &Addr,
-//     receiver: &Addr,
-//     amount: Uint128,
-// ) -> StdResult<SubMsg> {
-//     let config = read_config(storage)?;
-//     let msg = WasmMsg::Execute {
-//         contract_addr: config.eligible_collateral.to_string(),
-//         funds: vec![],
-//         msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
-//             owner: owner.to_string(),
-//             recipient: receiver.to_string(),
-//             amount,
-//         })?,
-//     };
-
-//     let transfer_msg = SubMsg {
-//         msg: CosmosMsg::Wasm(msg),
-//         gas_limit: None, // probably should set a limit in the config
-//         id: 0u64,
-//         reply_on: ReplyOn::Never,
-//     };
-
-//     Ok(transfer_msg)
-// }
-
 pub fn execute_transfer_from(
     storage: &dyn Storage,
     owner: &Addr,
     receiver: &Addr,
     amount: Uint128,
 ) -> StdResult<SubMsg> {
-    println!("execute_transfer_from");
     let config = read_config(storage)?;
 
     let msg: CosmosMsg = match config.eligible_collateral {
@@ -163,9 +134,6 @@ pub fn transfer_fees(
         toll_fee,
     } = query_vamm_calc_fee(&deps, vamm.into_string(), notional)?;
 
-    println!("spread fee: {}", spread_fee);
-    println!("toll fee: {}", toll_fee);
-
     let mut messages: Vec<SubMsg> = vec![];
 
     if !spread_fee.is_zero() {
@@ -191,10 +159,8 @@ pub fn withdraw(
     eligible_collateral: AssetInfo,
     amount: Uint128,
 ) -> StdResult<Vec<SubMsg>> {
-    println!("withdraw");
     let token_balance =
         query_token_balance(deps, eligible_collateral, env.contract.address.clone())?;
-    println!("token balance: {}", token_balance);
     let mut messages: Vec<SubMsg> = vec![];
 
     let mut shortfall = Uint128::zero();
@@ -421,11 +387,9 @@ pub fn require_native_token_sent(
         let CalcFeeResponse {
             spread_fee,
             toll_fee,
-        } = query_vamm_calc_fee(&deps, vamm.into_string(), quote_asset_amount)?;
+        } = query_vamm_calc_fee(deps, vamm.into_string(), quote_asset_amount)?;
 
         let total_amount = amount.checked_add(spread_fee)?.checked_add(toll_fee)?;
-
-        println!("total schaden: {}", total_amount);
 
         let token = Asset {
             info: config.eligible_collateral,

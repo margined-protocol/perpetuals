@@ -452,3 +452,197 @@ fn test_ten_percent_fee_increase_short_position() {
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::zero());
 }
+
+#[test]
+fn test_ten_percent_fee_short_position_price_down_short_again() {
+    let SimpleScenario {
+        mut router,
+        owner,
+        alice,
+        bob,
+        usdc,
+        fee_pool,
+        engine,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // alice opens short position with 100 margin, 2x leverage
+    // (1000 - 200) * (100 + baseAssetDelta) = 100k, baseAssetDelta = 25
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(100_000_000_000u64),
+            Uint128::from(2_000_000_000u64),
+            Uint128::from(25_000_000_000u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let alice_balance_1 = usdc.balance(&router, alice.clone()).unwrap();
+
+    // bob opens short position with 150 margin, 2x leverage, price down
+    // (800 - 300) * (125 + baseAssetDelta) = 100k, baseAssetDelta = 75
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(150_000_000_000u64),
+            Uint128::from(2_000_000_000u64),
+            Uint128::from(75_000_000_000u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    // alice's 25 short position worth 71.43 now
+    // (500 + quoteAssetDelta) * (200 - 25) = 100k, quoteAssetDelta = -71.4285714286
+    // unrealizedPnl = positionValueWhenBorrowed - positionValueWhenReturned = 200 - 71.4285714286 = 128.5714285714
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
+        .unwrap();
+    assert_eq!(
+        pnl.unrealized_pnl,
+        Integer::new_positive(128_571_428_571u64)
+    );
+
+    // alice opens short position with 100 margin, 3x leverage
+    // (500 - 300) * (200 + baseAssetDelta) = 100k, baseAssetDelta = 300
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(100_000_000_000u64),
+            Uint128::from(3_000_000_000u64),
+            Uint128::from(300_000_000_000u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    // transferred margin = margin + fee = 100 + (100 * 3 * 10%) = 130
+    let alice_balance_2 = usdc.balance(&router, alice.clone()).unwrap();
+    assert_eq!(
+        alice_balance_1 - alice_balance_2,
+        Uint128::from(130_000_000_000u128)
+    );
+
+    let position: PositionResponse = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+
+    assert_eq!(position.size, Integer::new_negative(325_000_000_000u128));
+    assert_eq!(position.margin, Uint128::from(200_000_000_000u64));
+    assert_eq!(position.notional, Uint128::from(500_000_000_000u64));
+}
+
+#[test]
+fn test_ten_percent_fee_short_position_price_up_short_again() {
+    let SimpleScenario {
+        mut router,
+        owner,
+        alice,
+        bob,
+        usdc,
+        fee_pool,
+        engine,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // alice opens short position with 200 margin, 1x leverage
+    // (1000 - 200) * (100 + baseAssetDelta) = 100k, baseAssetDelta = 25
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(200_000_000_000u64),
+            Uint128::from(1_000_000_000u64),
+            Uint128::from(25_000_000_000u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let alice_balance_1 = usdc.balance(&router, alice.clone()).unwrap();
+
+    // bob opens long position with 200 margin, 1x leverage, price up
+    // (800 + 200) * (125 + baseAssetDelta) = 100k, baseAssetDelta = -25
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(200_000_000_000u64),
+            Uint128::from(1_000_000_000u64),
+            Uint128::from(25_000_000_000u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    // alice's 25 short position worth 333.33 now
+    // (1000 + quoteAssetDelta) * (100 - 25) = 100k, quoteAssetDelta = 333.3333333333
+    // unrealizedPnl = positionValueWhenBorrowed - positionValueWhenReturned = 200 - 333.3333333333 = -133.3333333333
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
+        .unwrap();
+    assert_eq!(
+        pnl.unrealized_pnl,
+        Integer::new_negative(133_333_333_334u64)
+    );
+
+    // alice opens short position with 50 margin, 4x leverage
+    // (1000 - 200) * (100 + baseAssetDelta) = 100k, baseAssetDelta = 25
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(50_000_000_000u64),
+            Uint128::from(4_000_000_000u64),
+            Uint128::from(25_000_000_000u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    // then transferred margin = margin + fee = 50 + (50 * 4 * 10%) = 70
+    let alice_balance_2 = usdc.balance(&router, alice.clone()).unwrap();
+    assert_eq!(
+        alice_balance_1 - alice_balance_2,
+        Uint128::from(70_000_000_000u128)
+    );
+
+    let position: PositionResponse = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+
+    assert_eq!(position.size, Integer::new_negative(50_000_000_000u128));
+    assert_eq!(position.margin, Uint128::from(250_000_000_000u64));
+    assert_eq!(position.notional, Uint128::from(400_000_000_000u64));
+}

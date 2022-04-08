@@ -26,7 +26,6 @@ pub fn increase_position_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    println!("increase position reply");
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
     let tmp_swap = read_tmp_swap(deps.storage)?;
@@ -63,8 +62,6 @@ pub fn increase_position_reply(
     position.notional = position.notional.checked_add(swap.open_notional)?;
     position.direction = direction;
 
-    println!("margin: {}", position.margin);
-
     // TODO make my own decimal math lib
     let swap_margin = swap
         .open_notional
@@ -72,10 +69,6 @@ pub fn increase_position_reply(
         .checked_div(swap.leverage)?;
 
     position.margin = position.margin.checked_add(swap_margin)?;
-    println!("notional: {}", position.notional);
-    println!("swap notional: {}", swap.open_notional);
-    println!("leverage: {}", swap.leverage);
-    println!("margin: {}", position.margin);
 
     store_position(deps.storage, &position)?;
     store_state(deps.storage, &state)?;
@@ -95,13 +88,10 @@ pub fn increase_position_reply(
         );
     };
 
-    println!("margin: {}", position.margin);
-
     // create messages to pay for toll and spread fees
     msgs.append(
         &mut transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional).unwrap(),
     );
-    println!("finish");
     remove_tmp_swap(deps.storage);
     Ok(Response::new()
         .add_submessages(msgs)
