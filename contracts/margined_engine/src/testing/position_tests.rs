@@ -4,7 +4,7 @@ use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, PositionResponse, Side};
-use margined_utils::scenarios::{SimpleScenario, to_decimals};
+use margined_utils::scenarios::{to_decimals, SimpleScenario};
 
 #[test]
 fn test_initialization() {
@@ -912,7 +912,7 @@ fn test_error_open_position_insufficient_balance() {
     let res = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         res.to_string(),
-        "Overflow: Cannot Sub with 40000000000 and 120000000000".to_string()
+        "Overflow: Cannot Sub with 40000000000 and 60000000000".to_string()
     );
 }
 

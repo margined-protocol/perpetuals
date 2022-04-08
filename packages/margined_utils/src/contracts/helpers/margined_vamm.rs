@@ -56,10 +56,7 @@ impl VammController {
         self.call(msg, vec![])
     }
 
-    pub fn set_toll_ratio(
-        &self,
-        toll_ratio: Uint128,
-    ) -> StdResult<CosmosMsg> {
+    pub fn set_toll_ratio(&self, toll_ratio: Uint128) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
             owner: None,
             base_asset_holding_cap: None,
@@ -74,10 +71,7 @@ impl VammController {
         self.call(msg, vec![])
     }
 
-    pub fn set_spread_ratio(
-        &self,
-        spread_ratio: Uint128,
-    ) -> StdResult<CosmosMsg> {
+    pub fn set_spread_ratio(&self, spread_ratio: Uint128) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
             owner: None,
             base_asset_holding_cap: None,

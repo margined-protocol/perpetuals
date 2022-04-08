@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, Env, MessageInfo, ReplyOn, Response, StdError, StdResult,
-    Storage, SubMsg, Uint128, WasmMsg,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, Env, MessageInfo, ReplyOn, Response, StdError,
+    StdResult, Storage, SubMsg, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use terraswap::asset::{Asset, AssetInfo};
@@ -150,12 +150,12 @@ pub fn execute_transfer_to_insurance_fund(
 }
 
 // Transfers the toll and spread fees to the the insurance fund and fee pool
-pub fn transfer_fee(
+pub fn transfer_fees(
     deps: Deps,
     from: Addr,
     vamm: Addr,
     notional: Uint128,
-) -> StdResult<Vec<WasmMsg>> {
+) -> StdResult<Vec<SubMsg>> {
     let config = read_config(deps.storage)?;
 
     let CalcFeeResponse {
@@ -163,31 +163,19 @@ pub fn transfer_fee(
         toll_fee,
     } = query_vamm_calc_fee(&deps, vamm.into_string(), notional)?;
 
-    let mut messages: Vec<WasmMsg> = vec![];
+    println!("spread fee: {}", spread_fee);
+    println!("toll fee: {}", toll_fee);
+
+    let mut messages: Vec<SubMsg> = vec![];
 
     if !spread_fee.is_zero() {
-        let msg = WasmMsg::Execute {
-            contract_addr: config.eligible_collateral.to_string(),
-            funds: vec![],
-            msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
-                owner: from.to_string(),
-                recipient: config.insurance_fund.to_string(),
-                amount: spread_fee,
-            })?,
-        };
+        let msg =
+            execute_transfer_from(deps.storage, &from, &config.insurance_fund, spread_fee).unwrap();
         messages.push(msg);
     };
 
     if !toll_fee.is_zero() {
-        let msg = WasmMsg::Execute {
-            contract_addr: config.eligible_collateral.to_string(),
-            funds: vec![],
-            msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
-                owner: from.to_string(),
-                recipient: config.fee_pool.to_string(),
-                amount: toll_fee,
-            })?,
-        };
+        let msg = execute_transfer_from(deps.storage, &from, &config.fee_pool, toll_fee).unwrap();
         messages.push(msg);
     };
 
@@ -417,11 +405,31 @@ pub fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
     Ok(position)
 }
 
-pub fn require_native_token_sent(info: MessageInfo, eligible_collateral: AssetInfo, amount: Uint128) -> StdResult<Response> {
-    if let AssetInfo::NativeToken { .. } = eligible_collateral.clone() {
+// ensures that sufficient native token is sent inclusive the fees, TODO consider tax
+pub fn require_native_token_sent(
+    deps: &Deps,
+    info: MessageInfo,
+    vamm: Addr,
+    amount: Uint128,
+    leverage: Uint128,
+) -> StdResult<Response> {
+    let config = read_config(deps.storage)?;
+
+    if let AssetInfo::NativeToken { .. } = config.eligible_collateral.clone() {
+        let quote_asset_amount = amount.checked_mul(leverage)?.checked_div(config.decimals)?;
+
+        let CalcFeeResponse {
+            spread_fee,
+            toll_fee,
+        } = query_vamm_calc_fee(&deps, vamm.into_string(), quote_asset_amount)?;
+
+        let total_amount = amount.checked_add(spread_fee)?.checked_add(toll_fee)?;
+
+        println!("total schaden: {}", total_amount);
+
         let token = Asset {
-            info: eligible_collateral,
-            amount,
+            info: config.eligible_collateral,
+            amount: total_amount,
         };
 
         token.assert_sent_native_token_balance(&info)?;

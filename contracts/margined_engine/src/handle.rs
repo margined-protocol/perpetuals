@@ -17,9 +17,9 @@ use crate::{
     utils::{
         calc_remain_margin_with_funding_payment, direction_to_side, execute_transfer_from,
         get_position, get_position_notional_unrealized_pnl, require_bad_debt,
-        require_insufficient_margin, require_margin, require_not_paused,
+        require_insufficient_margin, require_margin, require_native_token_sent, require_not_paused,
         require_not_restriction_mode, require_position_not_zero, require_vamm, side_to_direction,
-        withdraw, require_native_token_sent,
+        withdraw,
     },
 };
 use margined_common::{
@@ -146,7 +146,13 @@ pub fn open_position(
         .checked_mul(config.decimals)?
         .checked_div(leverage)?;
 
-    require_native_token_sent(info, config.eligible_collateral, quote_asset_amount)?;
+    require_native_token_sent(
+        &deps.as_ref(),
+        info,
+        vamm.clone(),
+        quote_asset_amount,
+        leverage,
+    )?;
     require_not_paused(state.pause)?;
     require_vamm(deps.storage, &vamm)?;
     require_margin(margin_ratio, config.initial_margin_ratio)?;

@@ -1,4 +1,5 @@
 use cosmwasm_std::{DepsMut, Env, Response, StdError, StdResult, SubMsg, Uint128};
+use terraswap::asset::AssetInfo;
 
 use crate::{
     handle::internal_increase_position,
@@ -11,7 +12,7 @@ use crate::{
     utils::{
         calc_remain_margin_with_funding_payment, clear_position, execute_transfer,
         execute_transfer_from, execute_transfer_to_insurance_fund, get_position, realize_bad_debt,
-        side_to_direction, transfer_fee, update_open_interest_notional, withdraw,
+        side_to_direction, transfer_fees, update_open_interest_notional, withdraw,
     },
 };
 
@@ -62,31 +63,48 @@ pub fn increase_position_reply(
     position.notional = position.notional.checked_add(swap.open_notional)?;
     position.direction = direction;
 
+    println!("margin: {}", position.margin);
+
     // TODO make my own decimal math lib
-    position.margin = position
-        .notional
+    let swap_margin = swap
+        .open_notional
         .checked_mul(config.decimals)?
         .checked_div(swap.leverage)?;
+
+    position.margin = position.margin.checked_add(swap_margin)?;
+    println!("notional: {}", position.notional);
+    println!("swap notional: {}", swap.open_notional);
+    println!("leverage: {}", swap.leverage);
+    println!("margin: {}", position.margin);
 
     store_position(deps.storage, &position)?;
     store_state(deps.storage, &state)?;
 
+    let mut msgs: Vec<SubMsg> = vec![];
+
     // create transfer message
-    let msg = execute_transfer_from(
-        deps.storage,
-        &swap.trader,
-        &env.contract.address,
-        position.margin,
-    )
-    .unwrap();
+    if let AssetInfo::Token { .. } = config.eligible_collateral {
+        msgs.push(
+            execute_transfer_from(
+                deps.storage,
+                &swap.trader,
+                &env.contract.address,
+                swap_margin,
+            )
+            .unwrap(),
+        );
+    };
+
+    println!("margin: {}", position.margin);
 
     // create messages to pay for toll and spread fees
-    let fee_msgs = transfer_fee(deps.as_ref(), swap.trader, swap.vamm, position.notional).unwrap();
-
+    msgs.append(
+        &mut transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional).unwrap(),
+    );
+    println!("finish");
     remove_tmp_swap(deps.storage);
     Ok(Response::new()
-        .add_submessage(msg)
-        .add_messages(fee_msgs)
+        .add_submessages(msgs)
         .add_attributes(vec![("action", "increase_position")]))
 }
 
@@ -265,14 +283,14 @@ pub fn close_position_reply(
     response = response.add_submessages(messages.clone());
 
     // create messages to pay for toll and spread fees
-    let fee_msgs = transfer_fee(
+    let fee_msgs = transfer_fees(
         deps.as_ref(),
         swap.trader,
         swap.vamm.clone(),
         position.notional,
     )
     .unwrap();
-    response = response.add_messages(fee_msgs);
+    response = response.add_submessages(fee_msgs);
 
     let value = margin_delta
         + Integer::new_positive(remain_margin.bad_debt)

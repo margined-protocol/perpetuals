@@ -82,8 +82,8 @@ impl NativeTokenScenario {
                     decimals: 6u8,
                     quote_asset: "ETH".to_string(),
                     base_asset: "USD".to_string(),
-                    quote_asset_reserve: to_decimals(1_000),
-                    base_asset_reserve: to_decimals(100),
+                    quote_asset_reserve: Uint128::from(1_000_000_000u128),
+                    base_asset_reserve: Uint128::from(100_000_000u128),
                     funding_period: 86_400_u64, // funding period is 1 day to make calcs easier
                     toll_ratio: Uint128::zero(),
                     spread_ratio: Uint128::zero(),
@@ -157,7 +157,6 @@ impl NativeTokenScenario {
             engine,
         }
     }
-
 }
 
 impl Default for NativeTokenScenario {
