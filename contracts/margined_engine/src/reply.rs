@@ -117,16 +117,6 @@ pub fn decrease_position_reply(
     }
 
     let swap = tmp_swap.unwrap();
-    let old_position = get_position(
-        env,
-        deps.storage,
-        &swap.vamm,
-        &swap.trader,
-        swap.side.clone(),
-    );
-
-    let mut position = old_position.clone();
-
     update_open_interest_notional(
         &deps.as_ref(),
         &mut state,
@@ -139,43 +129,60 @@ pub fn decrease_position_reply(
     } else {
         Integer::new_negative(output)
     };
-
-    // now update the position
-    position.size += signed_output;
-    position.notional = old_position
-        .notional
-        .checked_sub(swap.open_notional)?;
+    
+    let old_position = get_position(
+        env,
+        deps.storage,
+        &swap.vamm,
+        &swap.trader,
+        swap.side.clone(),
+    );
+    let mut position = old_position.clone();
 
     let PositionUnrealizedPnlResponse {
         position_notional: old_position_notional,
         unrealized_pnl,
-    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)
+    } = get_position_notional_unrealized_pnl(deps.as_ref(), &old_position, PnlCalcOption::SPOTPRICE)
         .unwrap();
 
     // realized_pnl = unrealized_pnl * close_ratio
     let realized_pnl = if !old_position.size.is_zero() {
-        unrealized_pnl.checked_mul(Integer::new_positive(output))? / old_position.size
+        unrealized_pnl.checked_mul(signed_output)? / old_position.size
     } else {
         Integer::zero()
-    };
-
-    let unrealized_pnl_after = unrealized_pnl - realized_pnl;
-
-    let remaining_notional = if old_position.size > Integer::zero() {
-        Integer::new_positive(old_position_notional) - unrealized_pnl_after
-    } else {
-        unrealized_pnl_after + Integer::new_positive(old_position_notional)
     };
 
     let RemainMarginResponse {
         funding_payment: _,
         margin,
         bad_debt: _,
-        latest_premium_fraction: _,
+        latest_premium_fraction,
     } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), realized_pnl)?;
+
+    let unrealized_pnl_after = unrealized_pnl - realized_pnl;
+
+    let remaining_notional = if old_position.size > Integer::zero() {
+        Integer::new_positive(old_position_notional) - Integer::new_positive(swap.open_notional) - unrealized_pnl_after
+    } else {
+        unrealized_pnl_after + Integer::new_positive(old_position_notional) - Integer::new_positive(swap.open_notional)
+    };
+
+    // now update the position
+    position.size += signed_output;
+    position.notional = remaining_notional.value;
+
+
+    println!("realized pnl: {}", realized_pnl);
+    println!("output: {}", output);
+    println!("old_position: {}", old_position.size);
+
+    
+
+    
 
     position.notional = remaining_notional.value;
     position.margin = margin;
+    position.last_updated_premium_fraction = latest_premium_fraction;
 
     store_position(deps.storage, &position)?;
     store_state(deps.storage, &state)?;

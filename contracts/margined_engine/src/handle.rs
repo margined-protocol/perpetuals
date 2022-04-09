@@ -182,7 +182,8 @@ pub fn open_position(
             vamm.clone(),
             trader.clone(),
             side.clone(),
-            open_notional,
+            quote_asset_amount,
+            leverage,
             base_asset_limit,
             false,
         )
@@ -439,27 +440,37 @@ fn open_reverse_position(
     vamm: Addr,
     trader: Addr,
     side: Side,
-    open_notional: Uint128,
-    base_amount_limit: Uint128,
+    quote_asset_amount: Uint128,
+    leverage: Uint128,
+    base_asset_limit: Uint128,
     can_go_over_fluctuation: bool,
 ) -> SubMsg {
+    let config: Config = read_config(deps.storage).unwrap();
     let position: Position = get_position(env, deps.storage, &vamm, &trader, side.clone());
-    let current_notional = query_vamm_output_price(
-        &deps.as_ref(),
-        vamm.to_string(),
-        position.direction.clone(),
-        position.size.value,
-    )
-    .unwrap();
 
-    // if position.notional > open_notional {
-    let msg: SubMsg = if current_notional > open_notional {
+    // calc the input amount wrt to leverage and decimals
+    let open_notional = quote_asset_amount
+        .checked_mul(leverage)
+        .unwrap()
+        .checked_div(config.decimals)
+        .unwrap();
+
+    let PositionUnrealizedPnlResponse {
+        position_notional,
+        unrealized_pnl,
+    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)
+        .unwrap();
+
+    println!("unrealized pnl before: {}", unrealized_pnl);
+
+    // reduce position if old position is larger
+    let msg: SubMsg = if position_notional > open_notional {
         // then we are opening a new position or adding to an existing
         swap_input(
             &vamm,
             side,
             open_notional,
-            base_amount_limit,
+            base_asset_limit,
             can_go_over_fluctuation,
             SWAP_DECREASE_REPLY_ID,
         )

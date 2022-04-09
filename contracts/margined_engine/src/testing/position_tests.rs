@@ -296,7 +296,7 @@ fn test_open_position_short_and_two_longs() {
             Side::SELL,
             to_decimals(40u64),
             to_decimals(5u64),
-            to_decimals(0u64),
+            to_decimals(25u64),
             vec![],
         )
         .unwrap();
@@ -307,6 +307,7 @@ fn test_open_position_short_and_two_longs() {
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(25_000_000_000u128));
     assert_eq!(position.margin, to_decimals(40));
+    assert_eq!(position.notional, to_decimals(200));
 
     let msg = engine
         .open_position(
@@ -314,17 +315,31 @@ fn test_open_position_short_and_two_longs() {
             Side::BUY,
             to_decimals(20u64),
             to_decimals(5u64),
-            to_decimals(0u64),
+            Uint128::from(13_800_000_000u128),
             vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
+        .unwrap();
+    // assert_eq!(pnl.unrealized_pnl, Integer::new_negative(8u64));
+    println!("unrealized pnl {}", pnl.unrealized_pnl);
+
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
+
+    println!("position {:?}", position);
     assert_eq!(position.size, Integer::new_negative(11_111_111_112u128));
-    assert_eq!(position.margin, Uint128::from(40_000_000_004u128));
+    assert_eq!(position.notional, to_decimals(100));
+    assert_eq!(position.margin, Uint128::from(40_000_000_000u128));
 
     let msg = engine
         .open_position(
