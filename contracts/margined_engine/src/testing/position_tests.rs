@@ -358,7 +358,7 @@ fn test_open_position_short_and_two_longs() {
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(1_u128));
-    assert_eq!(position.margin, Uint128::from(40_000_000_009u128));
+    assert_eq!(position.margin, Uint128::from(39_999_999_993u128));
 }
 
 #[test]

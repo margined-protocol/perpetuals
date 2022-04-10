@@ -161,6 +161,7 @@ pub struct Swap {
     pub quote_asset_amount: Uint128,
     pub leverage: Uint128,
     pub open_notional: Uint128,
+    pub position_notional: Uint128,
     pub unrealized_pnl: Integer,
 }
 

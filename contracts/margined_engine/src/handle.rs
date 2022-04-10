@@ -189,6 +189,14 @@ pub fn open_position(
         )
     };
 
+    let PositionUnrealizedPnlResponse {
+        position_notional,
+        unrealized_pnl,
+    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)
+        .unwrap();
+
+    println!("unrealized pnl: {}", unrealized_pnl);
+
     store_tmp_swap(
         deps.storage,
         &Swap {
@@ -198,7 +206,8 @@ pub fn open_position(
             quote_asset_amount,
             leverage,
             open_notional,
-            unrealized_pnl: Integer::zero(),
+            position_notional,
+            unrealized_pnl,
         },
     )?;
 
@@ -420,6 +429,7 @@ pub fn internal_close_position(
             quote_asset_amount: position.size.value,
             leverage: Uint128::zero(),
             open_notional: position.notional,
+            position_notional: Uint128::zero(),
             unrealized_pnl: Integer::zero(),
         },
     )?;
@@ -461,7 +471,7 @@ fn open_reverse_position(
     } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)
         .unwrap();
 
-    println!("unrealized pnl before: {}", unrealized_pnl);
+    println!("unrealized pnl before: {:?}", unrealized_pnl);
 
     // reduce position if old position is larger
     let msg: SubMsg = if position_notional > open_notional {
@@ -550,6 +560,7 @@ fn partial_liquidation(
             quote_asset_amount: partial_position_size,
             leverage: Uint128::zero(),
             open_notional: current_notional,
+            position_notional: Uint128::zero(),
             unrealized_pnl,
         },
     )
