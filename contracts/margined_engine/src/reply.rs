@@ -11,17 +11,13 @@ use crate::{
     },
     utils::{
         calc_remain_margin_with_funding_payment, clear_position, execute_transfer,
-        execute_transfer_from, execute_transfer_to_insurance_fund, get_position,
-        get_position_notional_unrealized_pnl, realize_bad_debt, side_to_direction, transfer_fees,
-        update_open_interest_notional, withdraw,
+        execute_transfer_from, execute_transfer_to_insurance_fund, get_position, realize_bad_debt,
+        side_to_direction, transfer_fees, update_open_interest_notional, withdraw,
     },
 };
 
 use margined_common::integer::Integer;
-use margined_perp::{
-    margined_engine::{PnlCalcOption, PositionUnrealizedPnlResponse, RemainMarginResponse},
-    margined_vamm::Direction,
-};
+use margined_perp::{margined_engine::RemainMarginResponse, margined_vamm::Direction};
 
 // Increases position after successful execution of the swap
 pub fn increase_position_reply(
@@ -129,7 +125,7 @@ pub fn decrease_position_reply(
     } else {
         Integer::new_negative(output)
     };
-    
+
     let mut position = get_position(
         env,
         deps.storage,
@@ -155,9 +151,12 @@ pub fn decrease_position_reply(
     let unrealized_pnl_after = swap.unrealized_pnl - realized_pnl;
 
     let remaining_notional = if position.size > Integer::zero() {
-        Integer::new_positive(swap.position_notional) - Integer::new_positive(swap.open_notional) - unrealized_pnl_after
+        Integer::new_positive(swap.position_notional)
+            - Integer::new_positive(swap.open_notional)
+            - unrealized_pnl_after
     } else {
-        unrealized_pnl_after + Integer::new_positive(swap.position_notional) - Integer::new_positive(swap.open_notional)
+        unrealized_pnl_after + Integer::new_positive(swap.position_notional)
+            - Integer::new_positive(swap.open_notional)
     };
 
     // now update the position
