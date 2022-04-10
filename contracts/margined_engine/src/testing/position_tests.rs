@@ -329,14 +329,12 @@ fn test_open_position_short_and_two_longs() {
             PnlCalcOption::SPOTPRICE,
         )
         .unwrap();
-    // assert_eq!(pnl.unrealized_pnl, Integer::new_negative(8u64));
-    println!("unrealized pnl {}", pnl.unrealized_pnl);
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(8u64));
 
     let position: PositionResponse = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
 
-    println!("position {:?}", position);
     assert_eq!(position.size, Integer::new_negative(11_111_111_112u128));
     assert_eq!(position.notional, to_decimals(100));
     assert_eq!(position.margin, Uint128::from(40_000_000_000u128));

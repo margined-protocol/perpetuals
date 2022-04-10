@@ -330,10 +330,6 @@ pub fn calc_remain_margin_with_funding_payment(
         margin_delta - funding_payment + Integer::new_positive(position.margin);
     let mut bad_debt = Integer::zero();
 
-    println!("\nmargin delta: {}", margin_delta);
-    println!("funding_payment: {}", funding_payment);
-    println!("position.margin: {}\n", position.margin);
-
     if remaining_margin.is_negative() {
         bad_debt = remaining_margin.invert_sign();
         remaining_margin = Integer::zero();

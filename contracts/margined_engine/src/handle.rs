@@ -195,8 +195,6 @@ pub fn open_position(
     } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)
         .unwrap();
 
-    println!("unrealized pnl: {}", unrealized_pnl);
-
     store_tmp_swap(
         deps.storage,
         &Swap {
@@ -467,11 +465,9 @@ fn open_reverse_position(
 
     let PositionUnrealizedPnlResponse {
         position_notional,
-        unrealized_pnl,
+        unrealized_pnl: _,
     } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)
         .unwrap();
-
-    println!("unrealized pnl before: {:?}", unrealized_pnl);
 
     // reduce position if old position is larger
     let msg: SubMsg = if position_notional > open_notional {
