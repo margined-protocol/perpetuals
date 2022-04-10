@@ -195,18 +195,32 @@ pub fn open_position(
     } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)
         .unwrap();
 
+    let swap = Swap {
+        vamm,
+        trader,
+        side,
+        quote_asset_amount,
+        leverage,
+        open_notional,
+        position_notional,
+        unrealized_pnl,
+    };
+
+    println!("swap: {:?}", swap);
+
     store_tmp_swap(
         deps.storage,
-        &Swap {
-            vamm,
-            trader,
-            side,
-            quote_asset_amount,
-            leverage,
-            open_notional,
-            position_notional,
-            unrealized_pnl,
-        },
+        &swap,
+        // &Swap {
+        //     vamm,
+        //     trader,
+        //     side,
+        //     quote_asset_amount,
+        //     leverage,
+        //     open_notional,
+        //     position_notional,
+        //     unrealized_pnl,
+        // },
     )?;
 
     Ok(Response::new()

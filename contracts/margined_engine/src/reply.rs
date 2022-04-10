@@ -208,32 +208,42 @@ pub fn reverse_position_reply(
 
     position = clear_position(env, position)?;
 
-    let msg: SubMsg;
     // now increase the position again if there is additional position
-    let open_notional: Uint128;
-    if swap.open_notional > output {
-        open_notional = swap.open_notional.checked_sub(output)?;
-        swap.open_notional = swap.open_notional.checked_sub(output)?;
+    let current_open_notional = swap.open_notional;
+    let update_open_notional: Uint128 = if swap.open_notional > output {
+        swap.open_notional.checked_sub(output)?
     } else {
-        open_notional = output.checked_sub(swap.open_notional)?;
-        swap.open_notional = output.checked_sub(swap.open_notional)?;
-    }
-    if open_notional.checked_div(swap.leverage)? == Uint128::zero() {
+        output.checked_sub(swap.open_notional)?
+    };
+
+    let mut msgs: Vec<SubMsg> = vec![];
+    if update_open_notional.checked_div(swap.leverage)? == Uint128::zero() {
         // create transfer message
-        msg = execute_transfer(deps.storage, &swap.trader, margin_amount).unwrap();
         remove_tmp_swap(deps.storage);
+        msgs.push(execute_transfer(deps.storage, &swap.trader, margin_amount).unwrap());
     } else {
+        swap.open_notional = update_open_notional;
+
         store_tmp_swap(deps.storage, &swap)?;
 
         // TODO maybe we need to actually let the user define this limit
-        msg = internal_increase_position(swap.vamm, swap.side, open_notional, Uint128::zero())?
+        msgs.push(internal_increase_position(
+            swap.vamm.clone(),
+            swap.side.clone(),
+            update_open_notional,
+            Uint128::zero(),
+        )?);
     }
+
+    msgs.append(
+        &mut transfer_fees(deps.as_ref(), swap.trader, swap.vamm, current_open_notional).unwrap(),
+    );
 
     store_position(deps.storage, &position)?;
     store_state(deps.storage, &state)?;
 
     Ok(Response::new()
-        .add_submessage(msg)
+        .add_submessages(msgs)
         .add_attributes(vec![("action", "reverse_position")]))
 }
 
