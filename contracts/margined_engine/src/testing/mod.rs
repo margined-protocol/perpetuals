@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod add_remove_margin_tests;
+mod fee_calculation_tests;
 mod fluctuation_tests;
 mod liquidation_frontrun_hack_tests;
 mod liquidation_tests;
