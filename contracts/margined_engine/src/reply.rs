@@ -29,6 +29,7 @@ pub fn increase_position_reply(
 ) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
+    
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
         return Err(StdError::generic_err("no temporary position"));
@@ -246,33 +247,32 @@ pub fn reverse_position_reply(
 
     // now increase the position again if there is additional position
     let current_open_notional = swap.open_notional;
-    let update_open_notional: Uint128 = if swap.open_notional > output {
+    swap.open_notional = if swap.open_notional > output {
         swap.open_notional.checked_sub(output)?
     } else {
         output.checked_sub(swap.open_notional)?
     };
 
     let mut msgs: Vec<SubMsg> = vec![];
-    if update_open_notional.checked_div(swap.leverage)? == Uint128::zero() {
+    if swap.open_notional.checked_div(swap.leverage)? == Uint128::zero() {
         // create transfer message
         remove_tmp_swap(deps.storage);
         msgs.push(execute_transfer(deps.storage, &swap.trader, margin_amount).unwrap());
     } else {
-        swap.open_notional = update_open_notional;
         swap.margin_to_vault =
             Integer::new_negative(margin_amount).checked_sub(swap.unrealized_pnl)?;
         swap.unrealized_pnl = Integer::zero();
         swap.fees_paid = true;
 
-        store_tmp_swap(deps.storage, &swap)?;
-
-        // TODO maybe we need to actually let the user define this limit
         msgs.push(internal_increase_position(
             swap.vamm.clone(),
             swap.side.clone(),
-            update_open_notional,
+            swap.open_notional,
             Uint128::zero(),
         )?);
+
+        store_tmp_swap(deps.storage, &swap)?;
+
     }
 
     msgs.append(
