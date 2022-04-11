@@ -54,6 +54,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
             to_decimals(20u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -65,6 +66,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
             to_decimals(20u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -153,6 +155,7 @@ fn test_alice_has_enough_margin_cant_get_liquidated() {
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -164,6 +167,7 @@ fn test_alice_has_enough_margin_cant_get_liquidated() {
             to_decimals(500u64),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -235,6 +239,7 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
             to_decimals(150u64),
             to_decimals(4u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -246,6 +251,7 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
             to_decimals(500u64),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();

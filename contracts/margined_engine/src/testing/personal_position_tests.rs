@@ -42,6 +42,7 @@ fn test_get_personal_position_with_funding_payments() {
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();

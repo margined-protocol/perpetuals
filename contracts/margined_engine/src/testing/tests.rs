@@ -2,6 +2,7 @@ use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr, Uint128};
 use margined_perp::margined_engine::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use terraswap::asset::AssetInfo;
 
 const TOKEN: &str = "token";
 const OWNER: &str = "owner";
@@ -31,7 +32,9 @@ fn test_instantiation() {
         config,
         ConfigResponse {
             owner: info.sender,
-            eligible_collateral: Addr::unchecked(TOKEN),
+            eligible_collateral: AssetInfo::Token {
+                contract_addr: TOKEN.to_string()
+            },
         }
     );
 }
@@ -74,7 +77,9 @@ fn test_update_config() {
         config,
         ConfigResponse {
             owner: Addr::unchecked("addr0001".to_string()),
-            eligible_collateral: Addr::unchecked(TOKEN),
+            eligible_collateral: AssetInfo::Token {
+                contract_addr: TOKEN.to_string()
+            },
         }
     );
 

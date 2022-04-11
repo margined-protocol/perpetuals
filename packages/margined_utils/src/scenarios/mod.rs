@@ -2,7 +2,7 @@ use crate::contracts::helpers::{
     margined_engine::EngineController, margined_pricefeed::PricefeedController,
     margined_vamm::VammController,
 };
-use cosmwasm_std::{Addr, Empty, Response, Uint128};
+use cosmwasm_std::{Addr, Coin, Empty, Response, Uint128};
 use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg, MinterResponse};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use margined_perp::margined_engine::{InstantiateMsg, Side};
@@ -14,6 +14,155 @@ use margined_perp::margined_vamm::{
 pub struct ContractInfo {
     pub addr: Addr,
     pub id: u64,
+}
+
+pub struct NativeTokenScenario {
+    pub router: App,
+    pub owner: Addr,
+    pub alice: Addr,
+    pub bob: Addr,
+    pub carol: Addr,
+    pub david: Addr,
+    pub insurance: Addr,
+    pub fee_pool: Addr,
+    pub vamm: VammController,
+    pub engine: EngineController,
+    pub pricefeed: PricefeedController,
+}
+
+impl NativeTokenScenario {
+    pub fn new() -> Self {
+        let mut router: App = AppBuilder::new().build();
+
+        let owner = Addr::unchecked("owner");
+        let alice = Addr::unchecked("alice");
+        let bob = Addr::unchecked("bob");
+        let carol = Addr::unchecked("carol");
+        let david = Addr::unchecked("david");
+        let insurance_fund = Addr::unchecked("insurance_fund");
+        let fee_pool = Addr::unchecked("fee_pool");
+        let native_denom = "uusd";
+
+        let init_funds = vec![Coin::new(5_000u128 * 10u128.pow(6), native_denom)];
+        router
+            .init_bank_balance(&alice, init_funds.clone())
+            .unwrap();
+        router.init_bank_balance(&bob, init_funds.clone()).unwrap();
+        router
+            .init_bank_balance(&david, init_funds.clone())
+            .unwrap();
+        router
+            .init_bank_balance(&insurance_fund, init_funds)
+            .unwrap();
+
+        let engine_id = router.store_code(contract_engine());
+        let vamm_id = router.store_code(contract_vamm());
+        let pricefeed_id = router.store_code(contract_mock_pricefeed());
+
+        let pricefeed_addr = router
+            .instantiate_contract(
+                pricefeed_id,
+                owner.clone(),
+                &PricefeedInstantiateMsg {
+                    decimals: 6u8,
+                    oracle_hub_contract: "oracle_hub0000".to_string(),
+                },
+                &[],
+                "pricefeed",
+                None,
+            )
+            .unwrap();
+        let pricefeed = PricefeedController(pricefeed_addr.clone());
+
+        let vamm_addr = router
+            .instantiate_contract(
+                vamm_id,
+                owner.clone(),
+                &VammInstantiateMsg {
+                    decimals: 6u8,
+                    quote_asset: "ETH".to_string(),
+                    base_asset: "USD".to_string(),
+                    quote_asset_reserve: Uint128::from(1_000_000_000u128),
+                    base_asset_reserve: Uint128::from(100_000_000u128),
+                    funding_period: 86_400_u64, // funding period is 1 day to make calcs easier
+                    toll_ratio: Uint128::zero(),
+                    spread_ratio: Uint128::zero(),
+                    fluctuation_limit_ratio: Uint128::zero(),
+                    pricefeed: pricefeed_addr.to_string(),
+                    margin_engine: None,
+                },
+                &[],
+                "vamm",
+                None,
+            )
+            .unwrap();
+        let vamm = VammController(vamm_addr.clone());
+
+        let msg = vamm.set_open(true).unwrap();
+        router.execute(owner.clone(), msg).unwrap();
+
+        // set up margined engine contract
+        let engine_addr = router
+            .instantiate_contract(
+                engine_id,
+                owner.clone(),
+                &InstantiateMsg {
+                    decimals: 6u8,
+                    insurance_fund: insurance_fund.to_string(),
+                    fee_pool: fee_pool.to_string(),
+                    eligible_collateral: native_denom.to_string(),
+                    initial_margin_ratio: Uint128::from(50_000u128), // 0.05
+                    maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
+                    liquidation_fee: Uint128::from(50_000u128),      // 0.05
+                    vamm: vec![vamm_addr.to_string()],
+                },
+                &[],
+                "engine",
+                None,
+            )
+            .unwrap();
+        let engine = EngineController(engine_addr.clone());
+
+        // set margin engine in vamm
+        router
+            .execute_contract(
+                owner.clone(),
+                vamm_addr,
+                &VammExecuteMsg::UpdateConfig {
+                    owner: None,
+                    base_asset_holding_cap: None,
+                    open_interest_notional_cap: None,
+                    toll_ratio: None,
+                    spread_ratio: None,
+                    fluctuation_limit_ratio: None,
+                    margin_engine: Some(engine_addr.to_string()),
+                    pricefeed: None,
+                    spot_price_twap_interval: None,
+                },
+                &[],
+            )
+            .unwrap();
+
+        Self {
+            router,
+            owner,
+            alice,
+            bob,
+            carol,
+            david,
+            insurance: insurance_fund,
+            fee_pool,
+            pricefeed,
+            vamm,
+            engine,
+        }
+    }
+}
+
+impl Default for NativeTokenScenario {
+    fn default() -> Self {
+        NativeTokenScenario::new()
+    }
 }
 
 pub struct SimpleScenario {
@@ -261,6 +410,7 @@ impl SimpleScenario {
                     quote_asset_amount,
                     leverage,
                     Uint128::zero(),
+                    vec![],
                 )
                 .unwrap();
             self.router.execute(account.clone(), msg).unwrap();

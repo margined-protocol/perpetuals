@@ -45,6 +45,7 @@ fn test_force_error_open_position_exceeds_fluctuation_limit() {
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     let result = router.execute(alice.clone(), msg).unwrap_err();
@@ -89,6 +90,7 @@ fn test_force_error_reduce_position_exceeds_fluctuation_limit() {
             to_decimals(250u64),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -107,6 +109,7 @@ fn test_force_error_reduce_position_exceeds_fluctuation_limit() {
             to_decimals(50u64),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     let result = router.execute(alice.clone(), msg).unwrap_err();
@@ -164,6 +167,7 @@ fn test_close_position_limit_force_error_exceeding_fluctuation_limit_twice_in_sa
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -182,6 +186,7 @@ fn test_close_position_limit_force_error_exceeding_fluctuation_limit_twice_in_sa
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -269,6 +274,7 @@ fn test_close_position_slippage_limit_originally_long() {
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -287,6 +293,7 @@ fn test_close_position_slippage_limit_originally_long() {
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -363,6 +370,7 @@ fn test_close_position_slippage_limit_originally_short() {
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::from(11_111_111_112u128),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -381,6 +389,7 @@ fn test_close_position_slippage_limit_originally_short() {
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::from(13_890_000_000u128),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -455,6 +464,7 @@ fn test_force_error_close_position_slippage_limit_originally_long() {
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(9u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -471,6 +481,7 @@ fn test_force_error_close_position_slippage_limit_originally_long() {
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::from(7_500_000_000u128),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -540,6 +551,7 @@ fn test_force_error_close_position_slippage_limit_originally_short() {
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::from(11_111_111_112u128),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -556,6 +568,7 @@ fn test_force_error_close_position_slippage_limit_originally_short() {
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::from(13_890_000_000u128),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
