@@ -1230,3 +1230,64 @@ fn test_ten_percent_fee_open_long_price_remains_close_manually() {
     assert_eq!(position.notional, Uint128::zero());
     assert_eq!(position.margin, Uint128::zero());
 }
+
+#[test]
+fn test_ten_percent_fee_open_long_price_remains_close_opening_larger_short() {
+    let SimpleScenario {
+        mut router,
+        owner,
+        alice,
+        usdc,
+        engine,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(125_000_000_000u64),
+            Uint128::from(2_000_000_000u64),
+            Uint128::from(20_000_000_000u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let alice_balance_1 = usdc.balance(&router, alice.clone()).unwrap();
+    println!("{}", alice_balance_1);
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(45_000_000_000u64),
+            Uint128::from(10_000_000_000u64),
+            Uint128::from(45_000_000_000u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let alice_balance_2 = usdc.balance(&router, alice.clone()).unwrap();
+    println!("{}", alice_balance_2);
+    assert_eq!(
+        alice_balance_2 - alice_balance_1,
+        Uint128::from(60_000_000_000u64)
+    );
+
+    // let position: PositionResponse = engine
+    //     .position(&router, vamm.addr().to_string(), alice.to_string())
+    //     .unwrap();
+    // assert_eq!(position.size, Integer::zero());
+    // assert_eq!(position.notional, Uint128::zero());
+    // assert_eq!(position.margin, Uint128::zero());
+}

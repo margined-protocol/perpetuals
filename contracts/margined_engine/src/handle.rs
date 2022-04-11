@@ -204,6 +204,7 @@ pub fn open_position(
         open_notional,
         position_notional,
         unrealized_pnl,
+        margin_to_vault: Integer::zero(),
     };
 
     println!("swap: {:?}", swap);
@@ -443,6 +444,7 @@ pub fn internal_close_position(
             open_notional: position.notional,
             position_notional: Uint128::zero(),
             unrealized_pnl: Integer::zero(),
+            margin_to_vault: Integer::zero(),
         },
     )?;
 
@@ -572,6 +574,7 @@ fn partial_liquidation(
             open_notional: current_notional,
             position_notional: Uint128::zero(),
             unrealized_pnl,
+            margin_to_vault: Integer::zero(),
         },
     )
     .unwrap();

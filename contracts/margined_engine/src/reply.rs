@@ -26,6 +26,7 @@ pub fn increase_position_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    println!("\nincrease position reply");
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
     let tmp_swap = read_tmp_swap(deps.storage)?;
@@ -33,7 +34,7 @@ pub fn increase_position_reply(
         return Err(StdError::generic_err("no temporary position"));
     }
 
-    let swap = tmp_swap.unwrap();
+    let mut swap = tmp_swap.unwrap();
     let mut position = get_position(
         env.clone(),
         deps.storage,
@@ -68,6 +69,12 @@ pub fn increase_position_reply(
         .checked_mul(config.decimals)?
         .checked_div(swap.leverage)?;
 
+    println!("margin to vault: {}", swap.margin_to_vault);
+    println!("swap_margin: {}", swap_margin);
+    swap.margin_to_vault = swap
+        .margin_to_vault
+        .checked_add(Integer::new_positive(swap_margin))?;
+    println!("margin to vault: {}", swap.margin_to_vault);
     position.margin = position.margin.checked_add(swap_margin)?;
 
     store_position(deps.storage, &position)?;
@@ -75,18 +82,33 @@ pub fn increase_position_reply(
 
     let mut msgs: Vec<SubMsg> = vec![];
 
-    // create transfer message
-    if let AssetInfo::Token { .. } = config.eligible_collateral {
-        msgs.push(
-            execute_transfer_from(
-                deps.storage,
+    // create transfer messages TODO make this a nice function for use in each
+    if swap.margin_to_vault > Integer::zero() {
+        if let AssetInfo::Token { .. } = config.eligible_collateral {
+            msgs.push(
+                execute_transfer_from(
+                    deps.storage,
+                    &swap.trader,
+                    &env.contract.address,
+                    swap.margin_to_vault.value,
+                )
+                .unwrap(),
+            );
+        };
+    } else if swap.margin_to_vault < Integer::zero() {
+        msgs.append(
+            &mut withdraw(
+                deps.as_ref(),
+                env.clone(),
+                &mut state,
                 &swap.trader,
-                &env.contract.address,
-                swap_margin,
+                &config.insurance_fund,
+                config.eligible_collateral,
+                swap.margin_to_vault.value,
             )
             .unwrap(),
         );
-    };
+    }
 
     // create messages to pay for toll and spread fees
     msgs.append(
@@ -105,7 +127,7 @@ pub fn decrease_position_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    println!("decrease position reply");
+    println!("\ndecrease position reply");
     let mut state = read_state(deps.storage)?;
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
@@ -181,7 +203,7 @@ pub fn reverse_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    println!("reverse position reply");
+    println!("\nreverse position reply");
     let mut state = read_state(deps.storage)?;
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
@@ -223,6 +245,8 @@ pub fn reverse_position_reply(
         msgs.push(execute_transfer(deps.storage, &swap.trader, margin_amount).unwrap());
     } else {
         swap.open_notional = update_open_notional;
+        swap.margin_to_vault = Integer::new_negative(margin_amount);
+        println!("margin_amount: {}", margin_amount);
 
         store_tmp_swap(deps.storage, &swap)?;
 

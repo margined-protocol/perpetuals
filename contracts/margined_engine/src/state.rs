@@ -163,6 +163,7 @@ pub struct Swap {
     pub open_notional: Uint128,
     pub position_notional: Uint128,
     pub unrealized_pnl: Integer,
+    pub margin_to_vault: Integer,
 }
 
 pub fn store_tmp_swap(storage: &mut dyn Storage, swap: &Swap) -> StdResult<()> {
