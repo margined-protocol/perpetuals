@@ -1,4 +1,5 @@
 use cosmwasm_std::{DepsMut, Env, Response, StdError, StdResult, SubMsg, Uint128};
+use std::cmp::Ordering;
 use terraswap::asset::AssetInfo;
 
 use crate::{
@@ -26,7 +27,6 @@ pub fn increase_position_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    println!("\nincrease position reply");
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
     let tmp_swap = read_tmp_swap(deps.storage)?;
@@ -69,13 +69,22 @@ pub fn increase_position_reply(
         .checked_mul(config.decimals)?
         .checked_div(swap.leverage)?;
 
-    println!("margin to vault: {}", swap.margin_to_vault);
-    println!("swap_margin: {}", swap_margin);
     swap.margin_to_vault = swap
         .margin_to_vault
         .checked_add(Integer::new_positive(swap_margin))?;
-    println!("margin to vault: {}", swap.margin_to_vault);
-    position.margin = position.margin.checked_add(swap_margin)?;
+
+    let RemainMarginResponse {
+        funding_payment: _,
+        margin,
+        bad_debt: _,
+        latest_premium_fraction: _,
+    } = calc_remain_margin_with_funding_payment(
+        deps.as_ref(),
+        position.clone(),
+        Integer::new_positive(swap_margin),
+    )?;
+
+    position.margin = margin;
 
     store_position(deps.storage, &position)?;
     store_state(deps.storage, &state)?;
@@ -83,37 +92,44 @@ pub fn increase_position_reply(
     let mut msgs: Vec<SubMsg> = vec![];
 
     // create transfer messages TODO make this a nice function for use in each
-    if swap.margin_to_vault > Integer::zero() {
-        if let AssetInfo::Token { .. } = config.eligible_collateral {
-            msgs.push(
-                execute_transfer_from(
-                    deps.storage,
+    match swap.margin_to_vault.cmp(&Integer::zero()) {
+        Ordering::Less => {
+            msgs.append(
+                &mut withdraw(
+                    deps.as_ref(),
+                    env,
+                    &mut state,
                     &swap.trader,
-                    &env.contract.address,
+                    &config.insurance_fund,
+                    config.eligible_collateral,
                     swap.margin_to_vault.value,
                 )
                 .unwrap(),
             );
-        };
-    } else if swap.margin_to_vault < Integer::zero() {
-        msgs.append(
-            &mut withdraw(
-                deps.as_ref(),
-                env.clone(),
-                &mut state,
-                &swap.trader,
-                &config.insurance_fund,
-                config.eligible_collateral,
-                swap.margin_to_vault.value,
-            )
-            .unwrap(),
-        );
+        }
+        Ordering::Greater => {
+            if let AssetInfo::Token { .. } = config.eligible_collateral {
+                msgs.push(
+                    execute_transfer_from(
+                        deps.storage,
+                        &swap.trader,
+                        &env.contract.address,
+                        swap.margin_to_vault.value,
+                    )
+                    .unwrap(),
+                );
+            };
+        }
+        _ => {}
     }
 
-    // create messages to pay for toll and spread fees
-    msgs.append(
-        &mut transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional).unwrap(),
-    );
+    // create messages to pay for toll and spread fees, check flag is true if this follows a reverse
+    if !swap.fees_paid {
+        msgs.append(
+            &mut transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional).unwrap(),
+        )
+    };
+
     remove_tmp_swap(deps.storage);
     Ok(Response::new()
         .add_submessages(msgs)
@@ -127,7 +143,6 @@ pub fn decrease_position_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    println!("\ndecrease position reply");
     let mut state = read_state(deps.storage)?;
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
@@ -203,7 +218,6 @@ pub fn reverse_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    println!("\nreverse position reply");
     let mut state = read_state(deps.storage)?;
     let tmp_swap = read_tmp_swap(deps.storage)?;
     if tmp_swap.is_none() {
@@ -245,8 +259,10 @@ pub fn reverse_position_reply(
         msgs.push(execute_transfer(deps.storage, &swap.trader, margin_amount).unwrap());
     } else {
         swap.open_notional = update_open_notional;
-        swap.margin_to_vault = Integer::new_negative(margin_amount);
-        println!("margin_amount: {}", margin_amount);
+        swap.margin_to_vault =
+            Integer::new_negative(margin_amount).checked_sub(swap.unrealized_pnl)?;
+        swap.unrealized_pnl = Integer::zero();
+        swap.fees_paid = true;
 
         store_tmp_swap(deps.storage, &swap)?;
 

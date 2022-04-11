@@ -195,33 +195,20 @@ pub fn open_position(
     } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)
         .unwrap();
 
-    let swap = Swap {
-        vamm,
-        trader,
-        side,
-        quote_asset_amount,
-        leverage,
-        open_notional,
-        position_notional,
-        unrealized_pnl,
-        margin_to_vault: Integer::zero(),
-    };
-
-    println!("swap: {:?}", swap);
-
     store_tmp_swap(
         deps.storage,
-        &swap,
-        // &Swap {
-        //     vamm,
-        //     trader,
-        //     side,
-        //     quote_asset_amount,
-        //     leverage,
-        //     open_notional,
-        //     position_notional,
-        //     unrealized_pnl,
-        // },
+        &Swap {
+            vamm,
+            trader,
+            side,
+            quote_asset_amount,
+            leverage,
+            open_notional,
+            position_notional,
+            unrealized_pnl,
+            margin_to_vault: Integer::zero(),
+            fees_paid: false,
+        },
     )?;
 
     Ok(Response::new()
@@ -445,6 +432,7 @@ pub fn internal_close_position(
             position_notional: Uint128::zero(),
             unrealized_pnl: Integer::zero(),
             margin_to_vault: Integer::zero(),
+            fees_paid: false,
         },
     )?;
 
@@ -575,6 +563,7 @@ fn partial_liquidation(
             position_notional: Uint128::zero(),
             unrealized_pnl,
             margin_to_vault: Integer::zero(),
+            fees_paid: false,
         },
     )
     .unwrap();
