@@ -8,6 +8,7 @@ use crate::{
         PAY_FUNDING_REPLY_ID, SWAP_CLOSE_REPLY_ID, SWAP_DECREASE_REPLY_ID, SWAP_INCREASE_REPLY_ID,
         SWAP_LIQUIDATE_REPLY_ID, SWAP_PARTIAL_LIQUIDATION_REPLY_ID, SWAP_REVERSE_REPLY_ID,
     },
+    messages::{execute_transfer_from, withdraw},
     querier::query_vamm_output_price,
     query::query_margin_ratio,
     state::{
@@ -15,11 +16,10 @@ use crate::{
         store_tmp_liquidator, store_tmp_swap, Config, Position, State, Swap,
     },
     utils::{
-        calc_remain_margin_with_funding_payment, direction_to_side, execute_transfer_from,
-        get_position, get_position_notional_unrealized_pnl, require_bad_debt,
-        require_insufficient_margin, require_margin, require_native_token_sent, require_not_paused,
+        calc_remain_margin_with_funding_payment, direction_to_side, get_position,
+        get_position_notional_unrealized_pnl, require_bad_debt, require_insufficient_margin,
+        require_margin, require_native_token_sent, require_not_paused,
         require_not_restriction_mode, require_position_not_zero, require_vamm, side_to_direction,
-        withdraw,
     },
 };
 use margined_common::{
@@ -144,9 +144,9 @@ pub fn open_position(
 
     // calculate the margin ratio of new position wrt to leverage
     let margin_ratio = config
-    .decimals
-    .checked_mul(config.decimals)?
-    .checked_div(leverage)?;
+        .decimals
+        .checked_mul(config.decimals)?
+        .checked_div(leverage)?;
 
     require_native_token_sent(
         &deps.as_ref(),
@@ -158,21 +158,14 @@ pub fn open_position(
     require_not_paused(state.pause)?;
     require_vamm(deps.storage, &vamm)?;
     require_not_restriction_mode(deps.storage, &vamm, &trader, env.block.height)?;
-    require_margin(
-        margin_ratio,
-        config.initial_margin_ratio,
-    )?;
+    require_margin(margin_ratio, config.initial_margin_ratio)?;
 
     // retrieves existing position or creates a new one
     let position: Position = get_position(env.clone(), deps.storage, &vamm, &trader, side.clone());
 
-    let is_increase: bool = if !(position.direction == Direction::AddToAmm && side == Side::BUY
-        || position.direction == Direction::RemoveFromAmm && side == Side::SELL)
-    {
-        false
-    } else {
-        true
-    };
+    // note: if direction and side are same way then increasing else we are reversing
+    let is_increase: bool = !(!(position.direction == Direction::AddToAmm && side == Side::BUY
+        || position.direction == Direction::RemoveFromAmm && side == Side::SELL));
 
     // calculate the position size
     let open_notional = quote_asset_amount

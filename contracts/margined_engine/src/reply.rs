@@ -4,6 +4,10 @@ use terraswap::asset::AssetInfo;
 
 use crate::{
     handle::internal_increase_position,
+    messages::{
+        execute_transfer, execute_transfer_from, execute_transfer_to_insurance_fund, transfer_fees,
+        withdraw,
+    },
     querier::query_vamm_state,
     state::{
         append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_state,
@@ -11,9 +15,8 @@ use crate::{
         store_state, store_tmp_swap,
     },
     utils::{
-        calc_remain_margin_with_funding_payment, clear_position, execute_transfer,
-        execute_transfer_from, execute_transfer_to_insurance_fund, get_position, realize_bad_debt,
-        side_to_direction, transfer_fees, update_open_interest_notional, withdraw,
+        calc_remain_margin_with_funding_payment, clear_position, get_position, realize_bad_debt,
+        side_to_direction, update_open_interest_notional,
     },
 };
 
