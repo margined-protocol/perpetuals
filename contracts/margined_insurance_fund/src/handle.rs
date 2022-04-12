@@ -1,8 +1,8 @@
-use cosmwasm_std::{DepsMut, MessageInfo, Response, Addr};
+use cosmwasm_std::{Addr, DepsMut, MessageInfo, Response};
 
 use crate::{
     error::ContractError,
-    state::{read_config, store_config, Config, read_vamm, save_vamm},
+    state::{read_config, remove_vamm, save_vamm, store_config, Config},
 };
 
 pub fn update_config(
@@ -27,45 +27,33 @@ pub fn update_config(
     Ok(Response::default())
 }
 
-pub fn add_amm(
-    deps: DepsMut,
-    info: MessageInfo,
-    amm: Addr,
-) -> Result<Response, ContractError> {
-    let mut config: Config = read_config(deps.storage)?;
-
-    // check permission
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    } 
-
-    // check if the address is actually an amm
-    // TODO
-
-    // add the amm
-    save_vamm(deps, amm);
-
-    Ok(Response::default())
-}
-
-pub fn remove_amm(
-    deps: DepsMut,
-    info: MessageInfo,
-    amm: Addr,
-) -> Result<Response, ContractError> {
-    let mut config: Config = read_config(deps.storage)?;
+pub fn add_amm(deps: DepsMut, info: MessageInfo, amm: Addr) -> Result<Response, ContractError> {
+    let config: Config = read_config(deps.storage)?;
 
     // check permission
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
 
-    // pop the vamm off here
-    let mut vamms = read_vamm(deps.storage)?.vamms;
+    // check if the address is actually an amm
+    // TODO
 
+    // add the amm
+    save_vamm(deps, amm)?;
 
-    // check if the amm is there
-    
+    Ok(Response::default())
+}
+
+pub fn remove_amm(deps: DepsMut, info: MessageInfo, amm: Addr) -> Result<Response, ContractError> {
+    let config: Config = read_config(deps.storage)?;
+
+    // check permission
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // remove vamm here
+    remove_vamm(deps, amm)?;
 
     Ok(Response::default())
 }

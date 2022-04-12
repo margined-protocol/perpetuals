@@ -1,7 +1,7 @@
-use cosmwasm_std::{Deps, StdResult, Addr, StdError};
-use margined_perp::margined_insurance_fund::{ConfigResponse, AmmResponse};
+use cosmwasm_std::{Addr, Deps, StdError, StdResult};
+use margined_perp::margined_insurance_fund::{AmmResponse, ConfigResponse};
 
-use crate::state::{read_config,Config, read_vamm};
+use crate::state::{read_config, read_vamm, Config};
 
 /// Queries contract Config
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
@@ -16,15 +16,15 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 pub fn query_amm(deps: Deps, amm: Addr) -> StdResult<AmmResponse> {
     let amm_list = read_vamm(deps.storage)?.vamms;
 
-    let amm_new: Addr = if amm_list.contains(&amm) { 
+    let amm_new: Addr = if amm_list.contains(&amm) {
         amm
     } else {
-        return Err(StdError::NotFound { kind: "AMM".to_string() })
+        return Err(StdError::NotFound {
+            kind: "AMM".to_string(),
+        });
     };
 
-    Ok(AmmResponse {
-        amm: amm_new
-    })
+    Ok(AmmResponse { amm: amm_new })
 }
 
 //Queries all of the current AMMs

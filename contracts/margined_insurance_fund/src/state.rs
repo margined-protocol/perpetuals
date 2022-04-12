@@ -1,9 +1,9 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, StdResult, Storage, DepsMut, Api};
+use cosmwasm_std::{Addr, Api, DepsMut, StdResult, Storage, StdError};
 use cosmwasm_storage::{singleton, singleton_read};
-use cw_storage_plus::Item;
+use cw_storage_plus::Item; //, Map
 
 pub static KEY_CONFIG: &[u8] = b"config";
 pub const VAMM_LIST: Item<VammList> = Item::new("vamm-list");
@@ -20,9 +20,32 @@ impl VammList {
     }
 }
 
+// function saves a given Addr by either pushing it into the existing Vec or instantiating a new Vec
+
 pub fn save_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
+    // match because the data might not exist yet
+    let amm_list = match VAMM_LIST.may_load(deps.storage)? {
+        Some(mut loaded_list) => {
+            loaded_list.vamms.push(input);
+            loaded_list
+        }
+        None => VammList { vamms: vec![input] },
+    };
+    VAMM_LIST.save(deps.storage, &amm_list)
+}
+
+// function removes a given Addr - one issue is pulling the index of the Addr
+
+pub fn remove_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
+    // first check that there is data there
     let mut amm_list = VAMM_LIST.load(deps.storage)?;
-    amm_list.vamms.push(input);
+
+    // find the index (possible that the data isn't in the vec) and swap_remove it
+    let index = match amm_list.vamms.iter().position(|x| x.eq(&input)) {
+        Some(value) => value,
+        None => return Err(StdError::NotFound{kind: "AMM".to_string()}),
+    };
+    amm_list.vamms.swap_remove(index);
 
     VAMM_LIST.save(deps.storage, &amm_list)
 }
@@ -41,7 +64,6 @@ pub fn store_vamm(deps: DepsMut, input: &[String]) -> StdResult<()> {
     };
     VAMM_LIST.save(deps.storage, &cfg)
 }
-
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
