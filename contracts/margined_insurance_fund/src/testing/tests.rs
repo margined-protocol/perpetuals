@@ -55,7 +55,7 @@ fn query_amm() {
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddAMM { amm: addr1 };
+    let msg = ExecuteMsg::AddAmm { amm: addr1 };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -63,7 +63,7 @@ fn query_amm() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::GetAMM {
+        QueryMsg::GetAmm {
             amm: "addr0001".to_string(),
         },
     )
@@ -99,7 +99,7 @@ fn add_amm() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::GetAMM {
+        QueryMsg::GetAmm {
             amm: "addr0001".to_string(),
         },
     );
@@ -113,7 +113,7 @@ fn add_amm() {
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddAMM { amm: addr1 };
+    let msg = ExecuteMsg::AddAmm { amm: addr1 };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -121,7 +121,7 @@ fn add_amm() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::GetAMM {
+        QueryMsg::GetAmm {
             amm: "addr0001".to_string(),
         },
     )
@@ -146,7 +146,7 @@ fn add_two_amms() {
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddAMM { amm: addr1 };
+    let msg = ExecuteMsg::AddAmm { amm: addr1 };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -154,7 +154,7 @@ fn add_two_amms() {
     let addr2 = "addr0002".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddAMM { amm: addr2 };
+    let msg = ExecuteMsg::AddAmm { amm: addr2 };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -162,7 +162,7 @@ fn add_two_amms() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::GetAMM {
+        QueryMsg::GetAmm {
             amm: "addr0002".to_string(),
         },
     )
@@ -187,7 +187,7 @@ fn remove_amm() {
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddAMM { amm: addr1 };
+    let msg = ExecuteMsg::AddAmm { amm: addr1 };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -195,7 +195,7 @@ fn remove_amm() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::GetAMM {
+        QueryMsg::GetAmm {
             amm: "addr0001".to_string(),
         },
     )
@@ -210,7 +210,7 @@ fn remove_amm() {
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::RemoveAMM { amm: addr1 };
+    let msg = ExecuteMsg::RemoveAmm { amm: addr1 };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -218,7 +218,7 @@ fn remove_amm() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::GetAMM {
+        QueryMsg::GetAmm {
             amm: "addr0001".to_string(),
         },
     );
