@@ -205,7 +205,7 @@ fn index_error() {
         },
     );
 
-    let res =  res.unwrap_err();
+    let res = res.unwrap_err();
 
     assert_eq!(res.to_string(), "AMM not found");
 }
