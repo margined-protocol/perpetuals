@@ -70,9 +70,10 @@ fn query_amm() {
     .unwrap();
 
     let res: AmmResponse = from_binary(&res).unwrap();
+    let amm_addr = res.amm;
     let addr1 = "addr0001".to_string();
 
-    assert_eq!(res.amm.to_string(), addr1);
+    assert_eq!(amm_addr.to_string(), addr1);
 }
 
 #[test]
@@ -130,9 +131,10 @@ fn add_amm() {
     .unwrap();
 
     let res: AmmResponse = from_binary(&res).unwrap();
+    let amm_addr = res.amm;
     let addr1 = "addr0001".to_string();
 
-    assert_eq!(res.amm.to_string(), addr1);
+    assert_eq!(amm_addr.to_string(), addr1);
 }
 
 #[test]
@@ -173,9 +175,10 @@ fn add_second_amm() {
     .unwrap();
 
     let res: AmmResponse = from_binary(&res).unwrap();
+    let amm_addr = res.amm;
     let addr2 = "addr0002".to_string();
 
-    assert_eq!(res.amm.to_string(), addr2);
+    assert_eq!(amm_addr.to_string(), addr2);
 }
 #[test]
 fn index_error() {
@@ -238,9 +241,10 @@ fn remove_amm() {
     .unwrap();
 
     let res: AmmResponse = from_binary(&res).unwrap();
+    let amm_addr = res.amm;
     let addr1 = "addr0001".to_string();
 
-    assert_eq!(res.amm.to_string(), addr1);
+    assert_eq!(amm_addr.to_string(), addr1);
 
     //remove an AMM
     let addr1 = "addr0001".to_string();
