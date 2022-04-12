@@ -13,12 +13,14 @@ pub struct VammList {
     pub vamms: Vec<Addr>,
 }
 
+/* 
 impl VammList {
     /// returns true if the address is a registered vamm
     pub fn is_vamm(&self, addr: &str) -> bool {
         self.vamms.iter().any(|a| a.as_ref() == addr)
     }
 }
+*/
 
 // function saves a given Addr by either pushing it into the existing Vec or instantiating a new Vec
 
@@ -58,6 +60,7 @@ pub fn read_vamm(storage: &dyn Storage) -> StdResult<VammList> {
     VAMM_LIST.load(storage)
 }
 
+/* 
 pub fn map_validate(api: &dyn Api, input: &[String]) -> StdResult<Vec<Addr>> {
     input.iter().map(|addr| api.addr_validate(addr)).collect()
 }
@@ -68,7 +71,7 @@ pub fn store_vamm(deps: DepsMut, input: &[String]) -> StdResult<()> {
     };
     VAMM_LIST.save(deps.storage, &cfg)
 }
-
+*/
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
