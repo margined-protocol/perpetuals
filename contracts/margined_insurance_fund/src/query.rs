@@ -3,7 +3,7 @@ use margined_perp::margined_insurance_fund::{AmmResponse, ConfigResponse};
 
 use crate::state::{read_config, read_vamm, Config};
 
-/// Queries contract Config
+/// Queries contract config
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config: Config = read_config(deps.storage)?;
 
