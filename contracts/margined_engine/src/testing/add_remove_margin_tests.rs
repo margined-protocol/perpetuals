@@ -23,6 +23,7 @@ fn test_add_margin() {
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -68,6 +69,7 @@ fn test_remove_margin() {
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -115,6 +117,7 @@ fn test_remove_margin_after_paying_funding() {
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -178,6 +181,7 @@ fn test_remove_margin_insufficient_margin() {
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -210,6 +214,7 @@ fn test_remove_margin_incorrect_ratio_four_percent() {
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();

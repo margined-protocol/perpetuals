@@ -137,6 +137,7 @@ impl EngineController {
         quote_asset_amount: Uint128,
         leverage: Uint128,
         base_asset_limit: Uint128,
+        funds: Vec<Coin>,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::OpenPosition {
             vamm,
@@ -145,7 +146,7 @@ impl EngineController {
             leverage,
             base_asset_limit,
         };
-        self.call(msg, vec![])
+        self.call(msg, funds)
     }
 
     pub fn close_position(&self, vamm: String, quote_asset_limit: Uint128) -> StdResult<CosmosMsg> {

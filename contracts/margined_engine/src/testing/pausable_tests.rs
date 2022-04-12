@@ -23,6 +23,7 @@ fn test_paused_by_admin() {
             to_decimals(1u64),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     let response = router.execute(alice.clone(), msg).unwrap_err();
@@ -100,6 +101,7 @@ fn test_pause_then_unpause_by_admin() {
             to_decimals(1u64),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();

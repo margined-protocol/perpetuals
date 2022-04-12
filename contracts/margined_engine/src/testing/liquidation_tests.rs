@@ -88,6 +88,7 @@ fn test_partially_liquidate_long_position() {
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -106,6 +107,7 @@ fn test_partially_liquidate_long_position() {
             Uint128::from(45_180_722_890u128),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -219,6 +221,7 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -237,6 +240,7 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
             Uint128::from(45_180_722_890u128),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -347,6 +351,7 @@ fn test_partially_liquidate_short_position() {
             to_decimals(20u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -365,6 +370,7 @@ fn test_partially_liquidate_short_position() {
             Uint128::from(19_672_131_150u128),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -477,6 +483,7 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
             to_decimals(20u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -495,6 +502,7 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
             Uint128::from(19_672_131_150u128),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -605,6 +613,7 @@ fn test_long_position_complete_liquidation() {
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -623,6 +632,7 @@ fn test_long_position_complete_liquidation() {
             Uint128::from(73_529_411_760u128),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -726,6 +736,7 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -744,6 +755,7 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
             Uint128::from(73_529_411_760u128),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -850,6 +862,7 @@ fn test_short_position_complete_liquidation() {
             to_decimals(20u64),
             to_decimals(10u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -868,6 +881,7 @@ fn test_short_position_complete_liquidation() {
             Uint128::from(40_336_134_450u128),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -971,6 +985,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -989,6 +1004,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1007,6 +1023,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -1145,6 +1162,7 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -2179,6 +2197,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
             to_decimals(44u64),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     let response = env.router.execute(env.alice.clone(), msg).unwrap_err();

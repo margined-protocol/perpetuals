@@ -28,6 +28,7 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -39,6 +40,7 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
             to_decimals(1200u64),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -124,6 +126,7 @@ fn test_will_keep_generating_same_loss_when_funding_rate_is_positive() {
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -135,6 +138,7 @@ fn test_will_keep_generating_same_loss_when_funding_rate_is_positive() {
             to_decimals(1200u64),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -200,6 +204,7 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -211,6 +216,7 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
             to_decimals(1200u64),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -316,6 +322,7 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -327,6 +334,7 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
             to_decimals(1200u64),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -393,6 +401,7 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -404,6 +413,7 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
             to_decimals(1200u64),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -467,6 +477,7 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -478,6 +489,7 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
             to_decimals(1200u64),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -540,6 +552,7 @@ fn test_have_huge_funding_payment_margin_zero_cannot_remove_margin() {
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -551,6 +564,7 @@ fn test_have_huge_funding_payment_margin_zero_cannot_remove_margin() {
             to_decimals(1200u64),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -609,6 +623,7 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -620,6 +635,7 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
             to_decimals(1200u64),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -690,6 +706,7 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -701,6 +718,7 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
             to_decimals(1200u64),
             to_decimals(1u64),
             to_decimals(0u64),
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();

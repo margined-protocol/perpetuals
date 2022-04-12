@@ -17,12 +17,15 @@ use crate::{
     utils::{
         calc_remain_margin_with_funding_payment, direction_to_side, execute_transfer_from,
         get_position, get_position_notional_unrealized_pnl, require_bad_debt,
-        require_insufficient_margin, require_margin, require_not_paused,
+        require_insufficient_margin, require_margin, require_native_token_sent, require_not_paused,
         require_not_restriction_mode, require_position_not_zero, require_vamm, side_to_direction,
         withdraw,
     },
 };
-use margined_common::{integer::Integer, validate::validate_ratio};
+use margined_common::{
+    integer::Integer,
+    validate::{validate_eligible_collateral, validate_ratio},
+};
 use margined_perp::margined_engine::{PnlCalcOption, PositionUnrealizedPnlResponse, Side};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 
@@ -64,7 +67,9 @@ pub fn update_config(
 
     // update eligible collateral
     if let Some(eligible_collateral) = eligible_collateral {
-        config.eligible_collateral = deps.api.addr_validate(eligible_collateral.as_str())?;
+        // validate eligible collateral
+        config.eligible_collateral =
+            validate_eligible_collateral(deps.as_ref(), eligible_collateral)?;
     }
 
     // update decimals TODO: remove all this
@@ -122,7 +127,7 @@ pub fn set_pause(deps: DepsMut, _env: Env, info: MessageInfo, pause: bool) -> St
 pub fn open_position(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     vamm: String,
     trader: String,
     side: Side,
@@ -141,6 +146,13 @@ pub fn open_position(
         .checked_mul(config.decimals)?
         .checked_div(leverage)?;
 
+    require_native_token_sent(
+        &deps.as_ref(),
+        info,
+        vamm.clone(),
+        quote_asset_amount,
+        leverage,
+    )?;
     require_not_paused(state.pause)?;
     require_vamm(deps.storage, &vamm)?;
     require_margin(margin_ratio, config.initial_margin_ratio)?;
@@ -170,11 +182,18 @@ pub fn open_position(
             vamm.clone(),
             trader.clone(),
             side.clone(),
-            open_notional,
+            quote_asset_amount,
+            leverage,
             base_asset_limit,
             false,
         )
     };
+
+    let PositionUnrealizedPnlResponse {
+        position_notional,
+        unrealized_pnl,
+    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)
+        .unwrap();
 
     store_tmp_swap(
         deps.storage,
@@ -185,7 +204,10 @@ pub fn open_position(
             quote_asset_amount,
             leverage,
             open_notional,
-            unrealized_pnl: Integer::zero(),
+            position_notional,
+            unrealized_pnl,
+            margin_to_vault: Integer::zero(),
+            fees_paid: false,
         },
     )?;
 
@@ -407,7 +429,10 @@ pub fn internal_close_position(
             quote_asset_amount: position.size.value,
             leverage: Uint128::zero(),
             open_notional: position.notional,
+            position_notional: Uint128::zero(),
             unrealized_pnl: Integer::zero(),
+            margin_to_vault: Integer::zero(),
+            fees_paid: false,
         },
     )?;
 
@@ -427,27 +452,35 @@ fn open_reverse_position(
     vamm: Addr,
     trader: Addr,
     side: Side,
-    open_notional: Uint128,
-    base_amount_limit: Uint128,
+    quote_asset_amount: Uint128,
+    leverage: Uint128,
+    base_asset_limit: Uint128,
     can_go_over_fluctuation: bool,
 ) -> SubMsg {
+    let config: Config = read_config(deps.storage).unwrap();
     let position: Position = get_position(env, deps.storage, &vamm, &trader, side.clone());
-    let current_notional = query_vamm_output_price(
-        &deps.as_ref(),
-        vamm.to_string(),
-        position.direction.clone(),
-        position.size.value,
-    )
-    .unwrap();
 
-    // if position.notional > open_notional {
-    let msg: SubMsg = if current_notional > open_notional {
+    // calc the input amount wrt to leverage and decimals
+    let open_notional = quote_asset_amount
+        .checked_mul(leverage)
+        .unwrap()
+        .checked_div(config.decimals)
+        .unwrap();
+
+    let PositionUnrealizedPnlResponse {
+        position_notional,
+        unrealized_pnl: _,
+    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)
+        .unwrap();
+
+    // reduce position if old position is larger
+    let msg: SubMsg = if position_notional > open_notional {
         // then we are opening a new position or adding to an existing
         swap_input(
             &vamm,
             side,
             open_notional,
-            base_amount_limit,
+            base_asset_limit,
             can_go_over_fluctuation,
             SWAP_DECREASE_REPLY_ID,
         )
@@ -527,7 +560,10 @@ fn partial_liquidation(
             quote_asset_amount: partial_position_size,
             leverage: Uint128::zero(),
             open_notional: current_notional,
+            position_notional: Uint128::zero(),
             unrealized_pnl,
+            margin_to_vault: Integer::zero(),
+            fees_paid: false,
         },
     )
     .unwrap();
