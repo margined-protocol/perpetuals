@@ -13,7 +13,7 @@ pub struct VammList {
     pub vamms: Vec<Addr>,
 }
 
-/* 
+/*
 impl VammList {
     /// returns true if the address is a registered vamm
     pub fn is_vamm(&self, addr: &str) -> bool {
@@ -60,7 +60,7 @@ pub fn read_vamm(storage: &dyn Storage) -> StdResult<VammList> {
     VAMM_LIST.load(storage)
 }
 
-/* 
+/*
 pub fn map_validate(api: &dyn Api, input: &[String]) -> StdResult<Vec<Addr>> {
     input.iter().map(|addr| api.addr_validate(addr)).collect()
 }
