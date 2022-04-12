@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Api, DepsMut, StdResult, Storage, StdError};
+use cosmwasm_std::{Addr, Api, DepsMut, StdError, StdResult, Storage};
 use cosmwasm_storage::{singleton, singleton_read};
 use cw_storage_plus::Item; //, Map
 
@@ -43,7 +43,11 @@ pub fn remove_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
     // find the index (possible that the data isn't in the vec) and swap_remove it
     let index = match amm_list.vamms.iter().position(|x| x.eq(&input)) {
         Some(value) => value,
-        None => return Err(StdError::NotFound{kind: "AMM".to_string()}),
+        None => {
+            return Err(StdError::NotFound {
+                kind: "AMM".to_string(),
+            })
+        }
     };
     amm_list.vamms.swap_remove(index);
 

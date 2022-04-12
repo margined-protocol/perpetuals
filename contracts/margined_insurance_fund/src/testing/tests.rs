@@ -72,7 +72,7 @@ fn query_amm() {
     let amm: AmmResponse = from_binary(&res).unwrap();
     let addr1 = Addr::unchecked("addr0001".to_string());
 
-    assert_eq!(amm, AmmResponse {amm: addr1});
+    assert_eq!(amm, AmmResponse { amm: addr1 });
 }
 
 #[test]
@@ -104,7 +104,9 @@ fn add_amm() {
         },
     );
 
-    let e_no_amm = Err(StdError::NotFound { kind: "margined_insurance_fund::state::VammList".to_string()});
+    let e_no_amm = Err(StdError::NotFound {
+        kind: "margined_insurance_fund::state::VammList".to_string(),
+    });
     assert_eq!(res, e_no_amm);
 
     //add an AMM
@@ -128,7 +130,7 @@ fn add_amm() {
     let amm: AmmResponse = from_binary(&res).unwrap();
     let addr1 = Addr::unchecked("addr0001".to_string());
 
-    assert_eq!(amm, AmmResponse {amm: addr1});
+    assert_eq!(amm, AmmResponse { amm: addr1 });
 }
 
 #[test]
@@ -161,13 +163,13 @@ fn remove_amm() {
     let amm: AmmResponse = from_binary(&res).unwrap();
     let addr1 = Addr::unchecked("addr0001".to_string());
 
-    assert_eq!(amm, AmmResponse {amm: addr1});
+    assert_eq!(amm, AmmResponse { amm: addr1 });
 
     //remove an AMM
     let addr1 = Addr::unchecked("addr0001".to_string());
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::RemoveAMM { amm:  addr1 };
+    let msg = ExecuteMsg::RemoveAMM { amm: addr1 };
 
     execute(deps.as_mut(), mock_env(), info, msg);
 
@@ -180,8 +182,9 @@ fn remove_amm() {
         },
     );
 
-    let e_no_amm = Err(StdError::NotFound { kind: "AMM".to_string()});
+    let e_no_amm = Err(StdError::NotFound {
+        kind: "AMM".to_string(),
+    });
 
     assert_eq!(res, e_no_amm);
-
 }
