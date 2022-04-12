@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Api, DepsMut, StdError, StdResult, Storage};
+use cosmwasm_std::{Addr, DepsMut, StdError, StdResult, Storage}; // Api,
 use cosmwasm_storage::{singleton, singleton_read};
 use cw_storage_plus::Item; //, Map
 

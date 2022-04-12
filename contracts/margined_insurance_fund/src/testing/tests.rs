@@ -57,7 +57,7 @@ fn query_amm() {
     let info = mock_info("addr0000", &[]);
     let msg = ExecuteMsg::AddAMM { amm: addr1 };
 
-    execute(deps.as_mut(), mock_env(), info, msg);
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //check for the added AMM
     let res = query(
@@ -115,7 +115,7 @@ fn add_amm() {
     let info = mock_info("addr0000", &[]);
     let msg = ExecuteMsg::AddAMM { amm: addr1 };
 
-    execute(deps.as_mut(), mock_env(), info, msg);
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //check for the added AMM
     let res = query(
@@ -148,7 +148,7 @@ fn remove_amm() {
     let info = mock_info("addr0000", &[]);
     let msg = ExecuteMsg::AddAMM { amm: addr1 };
 
-    execute(deps.as_mut(), mock_env(), info, msg);
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //check to see that there is one AMM
     let res = query(
@@ -171,7 +171,7 @@ fn remove_amm() {
     let info = mock_info("addr0000", &[]);
     let msg = ExecuteMsg::RemoveAMM { amm: addr1 };
 
-    execute(deps.as_mut(), mock_env(), info, msg);
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //check that there are zero AMMs
     let res = query(
