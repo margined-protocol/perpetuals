@@ -32,8 +32,8 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::UpdateConfig { owner } => update_config(deps, info, owner),
-        ExecuteMsg::AddAMM { amm } => add_amm(deps, info, amm),
-        ExecuteMsg::RemoveAMM { amm } => remove_amm(deps, info, amm),
+        ExecuteMsg::AddAmm { amm } => add_amm(deps, info, amm),
+        ExecuteMsg::RemoveAmm { amm } => remove_amm(deps, info, amm),
     }
 }
 
@@ -41,6 +41,6 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
-        QueryMsg::GetAMM { amm } => to_binary(&query_amm(deps, amm)?),
+        QueryMsg::GetAmm { amm } => to_binary(&query_amm(deps, amm)?),
     }
 }

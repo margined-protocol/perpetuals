@@ -52,7 +52,7 @@ fn query_amm() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add an AMM
-    let addr1 = Addr::unchecked("addr0001".to_string());
+    let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
     let msg = ExecuteMsg::AddAMM { amm: addr1 };
@@ -64,15 +64,15 @@ fn query_amm() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::GetAMM {
-            amm: Addr::unchecked("addr0001".to_string()),
+            amm: "addr0001".to_string(),
         },
     )
     .unwrap();
 
-    let amm: AmmResponse = from_binary(&res).unwrap();
-    let addr1 = Addr::unchecked("addr0001".to_string());
+    let res: AmmResponse = from_binary(&res).unwrap();
+    let addr1 = "addr0001".to_string();
 
-    assert_eq!(amm, AmmResponse { amm: addr1 });
+    assert_eq!(res.amm.to_string(), addr1);
 }
 
 #[test]
@@ -100,7 +100,7 @@ fn add_amm() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::GetAMM {
-            amm: Addr::unchecked("addr0001".to_string()),
+            amm: "addr0001".to_string(),
         },
     );
 
@@ -110,7 +110,7 @@ fn add_amm() {
     assert_eq!(res, e_no_amm);
 
     //add an AMM
-    let addr1 = Addr::unchecked("addr0001".to_string());
+    let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
     let msg = ExecuteMsg::AddAMM { amm: addr1 };
@@ -122,15 +122,56 @@ fn add_amm() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::GetAMM {
-            amm: Addr::unchecked("addr0001".to_string()),
+            amm: "addr0001".to_string(),
         },
     )
     .unwrap();
 
-    let amm: AmmResponse = from_binary(&res).unwrap();
-    let addr1 = Addr::unchecked("addr0001".to_string());
+    let res: AmmResponse = from_binary(&res).unwrap();
+    let addr1 = "addr0001".to_string();
 
-    assert_eq!(amm, AmmResponse { amm: addr1 });
+    assert_eq!(res.amm.to_string(), addr1);
+}
+
+#[test]
+fn add_two_amms() {
+    //instantiate contract here
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {};
+    let info = mock_info("addr0000", &[]);
+
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    //add first AMM
+    let addr1 = "addr0001".to_string();
+
+    let info = mock_info("addr0000", &[]);
+    let msg = ExecuteMsg::AddAMM { amm: addr1 };
+
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    //add second AMM
+    let addr2 = "addr0002".to_string();
+
+    let info = mock_info("addr0000", &[]);
+    let msg = ExecuteMsg::AddAMM { amm: addr2 };
+
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    //check for the second added AMM
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetAMM {
+            amm: "addr0002".to_string(),
+        },
+    )
+    .unwrap();
+
+    let res: AmmResponse = from_binary(&res).unwrap();
+    let addr2 = "addr0002".to_string();
+
+    assert_eq!(res.amm.to_string(), addr2);
 }
 
 #[test]
@@ -143,7 +184,7 @@ fn remove_amm() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add an AMM
-    let addr1 = Addr::unchecked("addr0001".to_string());
+    let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
     let msg = ExecuteMsg::AddAMM { amm: addr1 };
@@ -155,18 +196,18 @@ fn remove_amm() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::GetAMM {
-            amm: Addr::unchecked("addr0001".to_string()),
+            amm: "addr0001".to_string(),
         },
     )
     .unwrap();
 
-    let amm: AmmResponse = from_binary(&res).unwrap();
-    let addr1 = Addr::unchecked("addr0001".to_string());
+    let res: AmmResponse = from_binary(&res).unwrap();
+    let addr1 = "addr0001".to_string();
 
-    assert_eq!(amm, AmmResponse { amm: addr1 });
+    assert_eq!(res.amm.to_string(), addr1);
 
     //remove an AMM
-    let addr1 = Addr::unchecked("addr0001".to_string());
+    let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
     let msg = ExecuteMsg::RemoveAMM { amm: addr1 };
@@ -178,7 +219,7 @@ fn remove_amm() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::GetAMM {
-            amm: Addr::unchecked("addr0001".to_string()),
+            amm: "addr0001".to_string(),
         },
     );
 

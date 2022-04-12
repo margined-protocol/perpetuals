@@ -12,12 +12,14 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     })
 }
 
-///Queries the AMM with given address
-pub fn query_amm(deps: Deps, amm: Addr) -> StdResult<AmmResponse> {
+/// Queries the AMM with given address
+pub fn query_amm(deps: Deps, amm: String) -> StdResult<AmmResponse> {
+    let amm_valid = deps.api.addr_validate(&amm)?;
+
     let amm_list = read_vamm(deps.storage)?.vamms;
 
-    let amm_new: Addr = if amm_list.contains(&amm) {
-        amm
+    let amm_new: Addr = if amm_list.contains(&amm_valid) {
+        amm_valid
     } else {
         return Err(StdError::NotFound {
             kind: "AMM".to_string(),

@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, DepsMut, MessageInfo, Response};
+use cosmwasm_std::{DepsMut, MessageInfo, Response};
 
 use crate::{
     error::ContractError,
@@ -17,7 +17,7 @@ pub fn update_config(
         return Err(ContractError::Unauthorized {});
     }
 
-    // change owner of amm
+    // change owner of insurance fund contract
     if let Some(owner) = owner {
         config.owner = deps.api.addr_validate(owner.as_str())?;
     }
@@ -27,7 +27,7 @@ pub fn update_config(
     Ok(Response::default())
 }
 
-pub fn add_amm(deps: DepsMut, info: MessageInfo, amm: Addr) -> Result<Response, ContractError> {
+pub fn add_amm(deps: DepsMut, info: MessageInfo, amm: String) -> Result<Response, ContractError> {
     let config: Config = read_config(deps.storage)?;
 
     // check permission
@@ -35,16 +35,20 @@ pub fn add_amm(deps: DepsMut, info: MessageInfo, amm: Addr) -> Result<Response, 
         return Err(ContractError::Unauthorized {});
     }
 
-    // check if the address is actually an amm
-    // TODO
+    // validate address
+    let amm_valid = deps.api.addr_validate(&amm)?;
 
     // add the amm
-    save_vamm(deps, amm)?;
+    save_vamm(deps, amm_valid)?;
 
     Ok(Response::default())
 }
 
-pub fn remove_amm(deps: DepsMut, info: MessageInfo, amm: Addr) -> Result<Response, ContractError> {
+pub fn remove_amm(
+    deps: DepsMut,
+    info: MessageInfo,
+    amm: String,
+) -> Result<Response, ContractError> {
     let config: Config = read_config(deps.storage)?;
 
     // check permission
@@ -52,8 +56,11 @@ pub fn remove_amm(deps: DepsMut, info: MessageInfo, amm: Addr) -> Result<Respons
         return Err(ContractError::Unauthorized {});
     }
 
+    // validate address
+    let amm_valid = deps.api.addr_validate(&amm)?;
+
     // remove vamm here
-    remove_vamm(deps, amm)?;
+    remove_vamm(deps, amm_valid)?;
 
     Ok(Response::default())
 }
