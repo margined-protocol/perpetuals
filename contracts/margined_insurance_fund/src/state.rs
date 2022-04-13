@@ -39,44 +39,6 @@ pub fn delist_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
     VAMM_LIST.remove(deps.storage, input);
     Ok(())
 }
-
-/*
-// function changes the bool stored under an address to 'false'
-// note that that means this can only be given an *existing* vamm
-pub fn vamm_off(deps: DepsMut, input: Addr) -> StdResult<()> {
-    // first check that there is data there
-    if VAMM_LIST.may_load(deps.storage, input.clone())?.is_none() {
-        return Err(StdError::GenericErr {
-            msg: "This vAMM has not been added".to_string(),
-        })
-    };
-    VAMM_LIST.save(deps.storage, input, &false)
-}
-
-// this function reads the bool stored under an addr, and if there is no addr stored there then throws an error
-// use this function when you want to check the 'on/off' status of a vAmm
-pub fn read_vamm(storage: &dyn Storage, input: Addr) -> StdResult<bool> {
-    VAMM_LIST
-        .load(storage, input)
-        .map_err(|_e| StdError::GenericErr {
-            msg: "No vAMM stored".to_string(),
-        })
-}
-*/
-
-//TODO Need to rewrite these fn to work with a Map instead of Vec
-/*
-pub fn map_validate(api: &dyn Api, input: &[String]) -> StdResult<Vec<Addr>> {
-    input.iter().map(|addr| api.addr_validate(addr)).collect()
-}
-
-pub fn store_vamm(deps: DepsMut, input: &[String]) -> StdResult<()> {
-    let cfg = VammList {
-        vamms: map_validate(deps.api, input)?,
-    };
-    VAMM_LIST.save(deps.storage, &cfg)
-}
-*/
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,

@@ -43,7 +43,7 @@ fn test_update_config() {
     );
 }
 #[test]
-fn query_vamm_test() {
+fn test_query_vamm() {
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
@@ -76,7 +76,7 @@ fn query_vamm_test() {
 }
 
 #[test]
-fn query_all_vamm_test() {
+fn test_query_all_vamm() {
     //instantiate contract here
 
     //check to see that there are no vAMMs
@@ -89,7 +89,7 @@ fn query_all_vamm_test() {
 }
 
 #[test]
-fn add_vamm_test() {
+fn test_add_vamm() {
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
@@ -137,7 +137,7 @@ fn add_vamm_test() {
 }
 
 #[test]
-fn add_second_vamm_test() {
+fn test_add_second_vamm() {
     // this tests for adding a second vAMM, to ensure the 'push' match arm of save_vamm is used
 
     //instantiate contract here
@@ -179,46 +179,8 @@ fn add_second_vamm_test() {
     assert_eq!(is_vamm, true);
 }
 
-// tentatively say, we don't need this test anymore
-/*
 #[test]
-fn index_error() {
-    //This tests for the case where some data is stored, but not the right data (the index won't be found)
-
-    //instantiate contract here
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
-
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add first vAMM
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //check for a second vAMM
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::IsVamm {
-            vamm: "addr0002".to_string(),
-        },
-    )
-    .unwrap();
-
-    let res: VammResponse = from_binary(&res).unwrap();
-    let is_vamm = res.is_vamm;
-
-    assert_eq!(is_vamm, false);
-}
-*/
-
-#[test]
-fn remove_vamm_test() {
+fn test_remove_vamm() {
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
@@ -274,7 +236,7 @@ fn remove_vamm_test() {
 }
 
 #[test]
-fn not_owner_test() {
+fn test_not_owner() {
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
