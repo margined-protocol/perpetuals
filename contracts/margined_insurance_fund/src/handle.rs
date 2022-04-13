@@ -2,7 +2,7 @@ use cosmwasm_std::{DepsMut, MessageInfo, Response};
 
 use crate::{
     error::ContractError,
-    state::{delist_vamm, read_config, save_vamm, store_config, Config},
+    state::{read_config, remove_amm, save_vamm, store_config, Config},
 };
 
 pub fn update_config(
