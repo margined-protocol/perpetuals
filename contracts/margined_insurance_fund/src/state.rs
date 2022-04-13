@@ -13,13 +13,10 @@ pub fn save_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
     // we match because the data might not exist yet
     // In the case there is data, we force an error
     // In the case there is not data, we add the Addr and set its bool to true
-    match VAMM_LIST.may_load(deps.storage, input.clone())? {
-        Some(_is_vamm) => {
-            return Err(StdError::GenericErr {
-                msg: "This vAMM is already added".to_string(),
-            })
-        }
-        None => {}
+    if let Some(_is_vamm) = VAMM_LIST.may_load(deps.storage, input.clone())? {
+        return Err(StdError::GenericErr {
+            msg: "This vAMM is already added".to_string(),
+        });
     };
     VAMM_LIST.save(deps.storage, input, &true)
 }
@@ -32,29 +29,26 @@ pub fn is_vamm(storage: &dyn Storage, input: Addr) -> bool {
 // this function deletes the entry under the given key
 pub fn delist_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
     // first check that there is data there
-    match VAMM_LIST.may_load(deps.storage, input.clone())? {
-        Some(_is_vamm) => {}
-        None => {
-            return Err(StdError::GenericErr {
-                msg: "This vAMM has not been added".to_string(),
-            })
-        }
+    if VAMM_LIST.may_load(deps.storage, input.clone())?.is_none() {
+        return Err(StdError::GenericErr {
+            msg: "This vAMM has not been added".to_string(),
+        });
     };
+
     // removes the entry from the Map
-    Ok(VAMM_LIST.remove(deps.storage, input))
+    VAMM_LIST.remove(deps.storage, input);
+    Ok(())
 }
 
+/*
 // function changes the bool stored under an address to 'false'
 // note that that means this can only be given an *existing* vamm
 pub fn vamm_off(deps: DepsMut, input: Addr) -> StdResult<()> {
     // first check that there is data there
-    match VAMM_LIST.may_load(deps.storage, input.clone())? {
-        Some(_is_vamm) => {}
-        None => {
-            return Err(StdError::GenericErr {
-                msg: "This vAMM has not been added".to_string(),
-            })
-        }
+    if VAMM_LIST.may_load(deps.storage, input.clone())?.is_none() {
+        return Err(StdError::GenericErr {
+            msg: "This vAMM has not been added".to_string(),
+        })
     };
     VAMM_LIST.save(deps.storage, input, &false)
 }
@@ -68,7 +62,9 @@ pub fn read_vamm(storage: &dyn Storage, input: Addr) -> StdResult<bool> {
             msg: "No vAMM stored".to_string(),
         })
 }
+*/
 
+//TODO Need to rewrite these fn to work with a Map instead of Vec
 /*
 pub fn map_validate(api: &dyn Api, input: &[String]) -> StdResult<Vec<Addr>> {
     input.iter().map(|addr| api.addr_validate(addr)).collect()

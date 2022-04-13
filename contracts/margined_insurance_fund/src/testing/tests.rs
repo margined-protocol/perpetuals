@@ -1,6 +1,6 @@
 use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{from_binary, Addr, StdError};
+use cosmwasm_std::{from_binary, Addr};
 use margined_perp::margined_insurance_fund::{
     ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, VammResponse,
 };
