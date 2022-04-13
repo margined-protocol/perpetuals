@@ -27,7 +27,7 @@ pub fn is_vamm(storage: &dyn Storage, input: Addr) -> bool {
 }
 
 // this function deletes the entry under the given key
-pub fn delist_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
+pub fn remove_amm(deps: DepsMut, input: Addr) -> StdResult<()> {
     // first check that there is data there
     if VAMM_LIST.may_load(deps.storage, input.clone())?.is_none() {
         return Err(StdError::GenericErr {

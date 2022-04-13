@@ -60,7 +60,7 @@ pub fn remove_vamm(
     let vamm_valid = deps.api.addr_validate(&vamm)?;
 
     // remove vamm here
-    delist_vamm(deps, vamm_valid)?;
+    remove_amm(deps, vamm_valid)?;
 
     Ok(Response::default())
 }
