@@ -144,7 +144,7 @@ fn test_ten_percent_fee_increase_long_position() {
     router.execute(alice.clone(), msg).unwrap();
 
     let alice_balance_1 = usdc.balance(&router, alice.clone()).unwrap();
-    // assert_eq!(alice_balance_1, Uint128::from(4_950_000_000_000u128));
+    assert_eq!(alice_balance_1, Uint128::from(4_950_000_000_000u128));
 
     // alice opens long position with 175 margin, 2x leverage
     // (1250 + 350) * (80 + baseAssetDelta) = 100k, baseAssetDelta = -17.5
@@ -179,6 +179,7 @@ fn test_ten_percent_fee_increase_long_position() {
     assert_eq!(fee_pool_balance, Uint128::from(60_000_000_000u64));
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(200_000_000_000u64));
+    assert_eq!(engine_balance, Uint128::from(200_000_000_001u64));
 }
 
 #[test]

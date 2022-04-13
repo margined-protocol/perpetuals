@@ -221,8 +221,8 @@ fn test_ten_percent_fee_increase_long_position() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
-    assert_eq!(alice_balance, Uint128::new(4_950_000_000));
+    let alice_balance_1 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+    assert_eq!(alice_balance_1, Uint128::new(4_950_000_000));
 
     // alice opens long position with 175 margin, 2x leverage
     // (1250 + 350) * (80 + baseAssetDelta) = 100k, baseAssetDelta = -17.5
@@ -233,13 +233,18 @@ fn test_ten_percent_fee_increase_long_position() {
             Uint128::from(175_000_000u64),
             Uint128::from(2_000_000u64),
             Uint128::from(17_500_000u64),
-            vec![Coin::new(210_000_000u128, "uusd")],
+            vec![Coin::new(350_000_000u128, "uusd")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
-    assert_eq!(alice_balance, Uint128::new(4_740_000_000));
+    let alice_balance_2 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+    assert_eq!(alice_balance_2, Uint128::new(4_950_000_000));
+    
+    assert_eq!(
+        alice_balance_1 - alice_balance_2,
+        Uint128::from(210_000_000_000u128)
+    );
 
 
     let position: PositionResponse = engine
