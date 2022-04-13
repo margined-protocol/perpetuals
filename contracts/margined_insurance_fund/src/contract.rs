@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 use crate::{
-    handle::{add_amm, remove_amm, update_config},
-    query::{query_amm, query_config},
+    handle::{add_vamm, remove_vamm, update_config},
+    query::{query_config, query_is_vamm},
     state::{store_config, Config},
 };
 #[cfg(not(feature = "library"))]
@@ -32,8 +32,8 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::UpdateConfig { owner } => update_config(deps, info, owner),
-        ExecuteMsg::AddAmm { amm } => add_amm(deps, info, amm),
-        ExecuteMsg::RemoveAmm { amm } => remove_amm(deps, info, amm),
+        ExecuteMsg::AddVamm { vamm } => add_vamm(deps, info, vamm),
+        ExecuteMsg::RemoveVamm { vamm } => remove_vamm(deps, info, vamm),
     }
 }
 
@@ -41,6 +41,6 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
-        QueryMsg::GetAmm { amm } => to_binary(&query_amm(deps, amm)?),
+        QueryMsg::IsVamm { vamm } => to_binary(&query_is_vamm(deps, vamm)?),
     }
 }

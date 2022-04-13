@@ -1,63 +1,72 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, DepsMut, StdError, StdResult, Storage}; // Api,
+use cosmwasm_std::{Addr, DepsMut, StdError, StdResult, Storage};
 use cosmwasm_storage::{singleton, singleton_read};
-use cw_storage_plus::Item; //, Map
+use cw_storage_plus::Map;
 
 pub static KEY_CONFIG: &[u8] = b"config";
-pub const VAMM_LIST: Item<VammList> = Item::new("vamm-list");
+pub const VAMM_LIST: Map<Addr, bool> = Map::new("vamm-list");
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct VammList {
-    pub vamms: Vec<Addr>,
-}
-
-/*
-impl VammList {
-    /// returns true if the address is a registered vamm
-    pub fn is_vamm(&self, addr: &str) -> bool {
-        self.vamms.iter().any(|a| a.as_ref() == addr)
-    }
-}
-*/
-
-// function saves a given Addr by either pushing it into the existing Vec or instantiating a new Vec
-
+// function checks if an addr is already added and adds it if not
 pub fn save_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
-    // match because the data might not exist yet
-    let amm_list = match VAMM_LIST.may_load(deps.storage)? {
-        Some(mut loaded_list) => {
-            loaded_list.vamms.push(input);
-            loaded_list
+    // we match because the data might not exist yet
+    // In the case there is data, we force an error
+    // In the case there is not data, we add the Addr and set its bool to true
+    match VAMM_LIST.may_load(deps.storage, input.clone())? {
+        Some(_is_vamm) => {
+            return Err(StdError::GenericErr {
+                msg: "This vAMM is already added".to_string(),
+            })
         }
-        None => VammList { vamms: vec![input] },
+        None => {}
     };
-    VAMM_LIST.save(deps.storage, &amm_list)
+    VAMM_LIST.save(deps.storage, input, &true)
 }
 
-// function removes a given Addr - one issue is pulling the index of the Addr
+// this function checks whether the vamm is stored
+pub fn is_vamm(storage: &dyn Storage, input: Addr) -> bool {
+    VAMM_LIST.has(storage, input)
+}
 
-pub fn remove_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
+// this function deletes the entry under the given key
+pub fn delist_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
     // first check that there is data there
-    let mut amm_list = VAMM_LIST.load(deps.storage)?;
-
-    // find the index (possible that the data isn't in the vec) and swap_remove it
-    let index = match amm_list.vamms.iter().position(|x| x.eq(&input)) {
-        Some(value) => value,
+    match VAMM_LIST.may_load(deps.storage, input.clone())? {
+        Some(_is_vamm) => {}
         None => {
-            return Err(StdError::NotFound {
-                kind: "AMM".to_string(),
+            return Err(StdError::GenericErr {
+                msg: "This vAMM has not been added".to_string(),
             })
         }
     };
-    amm_list.vamms.swap_remove(index);
-
-    VAMM_LIST.save(deps.storage, &amm_list)
+    // removes the entry from the Map
+    Ok(VAMM_LIST.remove(deps.storage, input))
 }
 
-pub fn read_vamm(storage: &dyn Storage) -> StdResult<VammList> {
-    VAMM_LIST.load(storage)
+// function changes the bool stored under an address to 'false'
+// note that that means this can only be given an *existing* vamm
+pub fn vamm_off(deps: DepsMut, input: Addr) -> StdResult<()> {
+    // first check that there is data there
+    match VAMM_LIST.may_load(deps.storage, input.clone())? {
+        Some(_is_vamm) => {}
+        None => {
+            return Err(StdError::GenericErr {
+                msg: "This vAMM has not been added".to_string(),
+            })
+        }
+    };
+    VAMM_LIST.save(deps.storage, input, &false)
+}
+
+// this function reads the bool stored under an addr, and if there is no addr stored there then throws an error
+// use this function when you want to check the 'on/off' status of a vAmm
+pub fn read_vamm(storage: &dyn Storage, input: Addr) -> StdResult<bool> {
+    VAMM_LIST
+        .load(storage, input)
+        .map_err(|_e| StdError::GenericErr {
+            msg: "No vAMM stored".to_string(),
+        })
 }
 
 /*

@@ -2,7 +2,7 @@ use cosmwasm_std::{DepsMut, MessageInfo, Response};
 
 use crate::{
     error::ContractError,
-    state::{read_config, remove_vamm, save_vamm, store_config, Config},
+    state::{delist_vamm, read_config, save_vamm, store_config, Config},
 };
 
 pub fn update_config(
@@ -27,7 +27,7 @@ pub fn update_config(
     Ok(Response::default())
 }
 
-pub fn add_amm(deps: DepsMut, info: MessageInfo, amm: String) -> Result<Response, ContractError> {
+pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> Result<Response, ContractError> {
     let config: Config = read_config(deps.storage)?;
 
     // check permission
@@ -36,18 +36,18 @@ pub fn add_amm(deps: DepsMut, info: MessageInfo, amm: String) -> Result<Response
     }
 
     // validate address
-    let amm_valid = deps.api.addr_validate(&amm)?;
+    let vamm_valid = deps.api.addr_validate(&vamm)?;
 
     // add the amm
-    save_vamm(deps, amm_valid)?;
+    save_vamm(deps, vamm_valid)?;
 
     Ok(Response::default())
 }
 
-pub fn remove_amm(
+pub fn remove_vamm(
     deps: DepsMut,
     info: MessageInfo,
-    amm: String,
+    vamm: String,
 ) -> Result<Response, ContractError> {
     let config: Config = read_config(deps.storage)?;
 
@@ -57,10 +57,10 @@ pub fn remove_amm(
     }
 
     // validate address
-    let amm_valid = deps.api.addr_validate(&amm)?;
+    let vamm_valid = deps.api.addr_validate(&vamm)?;
 
     // remove vamm here
-    remove_vamm(deps, amm_valid)?;
+    delist_vamm(deps, vamm_valid)?;
 
     Ok(Response::default())
 }

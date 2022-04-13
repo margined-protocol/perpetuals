@@ -9,15 +9,15 @@ pub struct InstantiateMsg {}
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     UpdateConfig { owner: Option<String> },
-    AddAmm { amm: String },
-    RemoveAmm { amm: String },
+    AddVamm { vamm: String },
+    RemoveVamm { vamm: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
-    GetAmm { amm: String },
+    IsVamm { vamm: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -26,6 +26,6 @@ pub struct ConfigResponse {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct AmmResponse {
-    pub amm: Addr,
+pub struct VammResponse {
+    pub is_vamm: bool,
 }

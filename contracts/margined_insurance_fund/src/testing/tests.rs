@@ -2,7 +2,7 @@ use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr, StdError};
 use margined_perp::margined_insurance_fund::{
-    AmmResponse, ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg,
+    ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, VammResponse,
 };
 
 #[test]
@@ -43,7 +43,7 @@ fn test_update_config() {
     );
 }
 #[test]
-fn query_amm() {
+fn query_vamm_test() {
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
@@ -51,46 +51,45 @@ fn query_amm() {
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //add an AMM
+    //add an vAMM
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddAmm { amm: addr1 };
+    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //check for the added AMM
+    //check for the added vAMM
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::GetAmm {
-            amm: "addr0001".to_string(),
+        QueryMsg::IsVamm {
+            vamm: "addr0001".to_string(),
         },
     )
     .unwrap();
 
-    let res: AmmResponse = from_binary(&res).unwrap();
-    let amm_addr = res.amm;
-    let addr1 = "addr0001".to_string();
+    let res: VammResponse = from_binary(&res).unwrap();
+    let is_vamm = res.is_vamm;
 
-    assert_eq!(amm_addr.to_string(), addr1);
+    assert_eq!(is_vamm, true);
 }
 
 #[test]
-fn query_all_amm() {
+fn query_all_vamm_test() {
     //instantiate contract here
 
-    //check to see that there are no AMMs
+    //check to see that there are no vAMMs
 
-    //add an AMM
+    //add an vAMM
 
-    //add another AMM
+    //add another vAMM
 
-    //check for the added AMMs
+    //check for the added vAMMs
 }
 
 #[test]
-fn add_amm() {
+fn add_vamm_test() {
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
@@ -98,48 +97,48 @@ fn add_amm() {
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //query the AMM we want to add
+    //query the vAMM we want to add
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::GetAmm {
-            amm: "addr0001".to_string(),
-        },
-    );
-
-    let e_no_amm = Err(StdError::NotFound {
-        kind: "margined_insurance_fund::state::VammList".to_string(),
-    });
-    assert_eq!(res, e_no_amm);
-
-    //add an AMM
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddAmm { amm: addr1 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //check for the added AMM
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAmm {
-            amm: "addr0001".to_string(),
+        QueryMsg::IsVamm {
+            vamm: "addr0001".to_string(),
         },
     )
     .unwrap();
 
-    let res: AmmResponse = from_binary(&res).unwrap();
-    let amm_addr = res.amm;
+    let res: VammResponse = from_binary(&res).unwrap();
+    let is_vamm = res.is_vamm;
+
+    assert_eq!(is_vamm, false);
+
+    //add an vAMM
     let addr1 = "addr0001".to_string();
 
-    assert_eq!(amm_addr.to_string(), addr1);
+    let info = mock_info("addr0000", &[]);
+    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
+
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    //check for the added vAMM
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::IsVamm {
+            vamm: "addr0001".to_string(),
+        },
+    )
+    .unwrap();
+
+    let res: VammResponse = from_binary(&res).unwrap();
+    let is_vamm = res.is_vamm;
+
+    assert_eq!(is_vamm, true);
 }
 
 #[test]
-fn add_second_amm() {
-    // this tests for adding a second AMM, to ensure the 'push' match arm of save_amm is used
+fn add_second_vamm_test() {
+    // this tests for adding a second vAMM, to ensure the 'push' match arm of save_vamm is used
 
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
@@ -148,38 +147,40 @@ fn add_second_amm() {
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //add first AMM
+    //add first vAMM
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddAmm { amm: addr1 };
+    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //add second AMM
+    //add second vAMM
     let addr2 = "addr0002".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddAmm { amm: addr2 };
+    let msg = ExecuteMsg::AddVamm { vamm: addr2 };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //check for the second added AMM
+    //check for the second added vAMM
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::GetAmm {
-            amm: "addr0002".to_string(),
+        QueryMsg::IsVamm {
+            vamm: "addr0002".to_string(),
         },
     )
     .unwrap();
 
-    let res: AmmResponse = from_binary(&res).unwrap();
-    let amm_addr = res.amm;
-    let addr2 = "addr0002".to_string();
+    let res: VammResponse = from_binary(&res).unwrap();
+    let is_vamm = res.is_vamm;
 
-    assert_eq!(amm_addr.to_string(), addr2);
+    assert_eq!(is_vamm, true);
 }
+
+// tentatively say, we don't need this test anymore
+/*
 #[test]
 fn index_error() {
     //This tests for the case where some data is stored, but not the right data (the index won't be found)
@@ -191,30 +192,33 @@ fn index_error() {
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //add first AMM
+    //add first vAMM
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddAmm { amm: addr1 };
+    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //check for a second AMM
+    //check for a second vAMM
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::GetAmm {
-            amm: "addr0002".to_string(),
+        QueryMsg::IsVamm {
+            vamm: "addr0002".to_string(),
         },
-    );
+    )
+    .unwrap();
 
-    let res = res.unwrap_err();
+    let res: VammResponse = from_binary(&res).unwrap();
+    let is_vamm = res.is_vamm;
 
-    assert_eq!(res.to_string(), "AMM not found");
+    assert_eq!(is_vamm, false);
 }
+*/
 
 #[test]
-fn remove_amm() {
+fn remove_vamm_test() {
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
@@ -222,35 +226,34 @@ fn remove_amm() {
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //add an AMM
+    //add an vAMM
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddAmm { amm: addr1 };
+    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //check to see that there is one AMM
+    //check to see that there is one vAMM
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::GetAmm {
-            amm: "addr0001".to_string(),
+        QueryMsg::IsVamm {
+            vamm: "addr0001".to_string(),
         },
     )
     .unwrap();
 
-    let res: AmmResponse = from_binary(&res).unwrap();
-    let amm_addr = res.amm;
-    let addr1 = "addr0001".to_string();
+    let res: VammResponse = from_binary(&res).unwrap();
+    let is_vamm = res.is_vamm;
 
-    assert_eq!(amm_addr.to_string(), addr1);
+    assert_eq!(is_vamm, true);
 
     //remove an AMM
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::RemoveAmm { amm: addr1 };
+    let msg = ExecuteMsg::RemoveVamm { vamm: addr1 };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -258,20 +261,20 @@ fn remove_amm() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::GetAmm {
-            amm: "addr0001".to_string(),
+        QueryMsg::IsVamm {
+            vamm: "addr0001".to_string(),
         },
-    );
+    )
+    .unwrap();
 
-    let e_no_amm = Err(StdError::NotFound {
-        kind: "AMM".to_string(),
-    });
+    let res: VammResponse = from_binary(&res).unwrap();
+    let is_vamm = res.is_vamm;
 
-    assert_eq!(res, e_no_amm);
+    assert_eq!(is_vamm, false);
 }
 
 #[test]
-fn not_owner() {
+fn not_owner_test() {
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
@@ -290,21 +293,21 @@ fn not_owner() {
 
     assert_eq!(res.to_string(), "Unauthorized");
 
-    // try to add an AMM
+    // try to add a vAMM
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("not_the_owner", &[]);
-    let msg = ExecuteMsg::AddAmm { amm: addr1 };
+    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
     assert_eq!(res.to_string(), "Unauthorized");
 
-    //try to remove an AMM
+    //try to remove an vAMM
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("not_the_owner", &[]);
-    let msg = ExecuteMsg::RemoveAmm { amm: addr1 };
+    let msg = ExecuteMsg::RemoveVamm { vamm: addr1 };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
