@@ -33,12 +33,8 @@ pub fn increase_position_reply(
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
 
-    let tmp_swap = read_tmp_swap(deps.storage)?;
-    if tmp_swap.is_none() {
-        return Err(StdError::generic_err("no temporary position"));
-    }
+    let mut swap = read_tmp_swap(deps.storage)?;
 
-    let mut swap = tmp_swap.unwrap();
     let mut position = get_position(
         env.clone(),
         deps.storage,
@@ -149,12 +145,7 @@ pub fn decrease_position_reply(
     output: Uint128,
 ) -> StdResult<Response> {
     let mut state = read_state(deps.storage)?;
-    let tmp_swap = read_tmp_swap(deps.storage)?;
-    if tmp_swap.is_none() {
-        return Err(StdError::generic_err("no temporary position"));
-    }
-
-    let swap = tmp_swap.unwrap();
+    let swap = read_tmp_swap(deps.storage)?;
     update_open_interest_notional(
         &deps.as_ref(),
         &mut state,
@@ -224,12 +215,7 @@ pub fn reverse_position_reply(
     output: Uint128,
 ) -> StdResult<Response> {
     let mut state = read_state(deps.storage)?;
-    let tmp_swap = read_tmp_swap(deps.storage)?;
-    if tmp_swap.is_none() {
-        return Err(StdError::generic_err("no temporary position"));
-    }
-
-    let mut swap = tmp_swap.unwrap();
+    let mut swap = read_tmp_swap(deps.storage)?;
     let mut position = get_position(
         env.clone(),
         deps.storage,
@@ -301,12 +287,7 @@ pub fn close_position_reply(
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
 
-    let tmp_swap = read_tmp_swap(deps.storage)?;
-    if tmp_swap.is_none() {
-        return Err(StdError::generic_err("no temporary position"));
-    }
-
-    let swap = tmp_swap.unwrap();
+    let swap = read_tmp_swap(deps.storage)?;
     let mut position = get_position(
         env.clone(),
         deps.storage,
@@ -392,17 +373,13 @@ pub fn liquidate_reply(
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
 
-    let tmp_swap = read_tmp_swap(deps.storage)?;
-    if tmp_swap.is_none() {
-        return Err(StdError::generic_err("no temporary position"));
-    }
+    let swap = read_tmp_swap(deps.storage)?;
 
     let liquidator = read_tmp_liquidator(deps.storage)?;
     if liquidator.is_none() {
         return Err(StdError::generic_err("no liquidator"));
     }
 
-    let swap = tmp_swap.unwrap();
     let mut position = get_position(
         env.clone(),
         deps.storage,
@@ -502,17 +479,13 @@ pub fn partial_liquidation_reply(
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
 
-    let tmp_swap = read_tmp_swap(deps.storage)?;
-    if tmp_swap.is_none() {
-        return Err(StdError::generic_err("no temporary position"));
-    }
+    let swap = read_tmp_swap(deps.storage)?;
 
     let liquidator = read_tmp_liquidator(deps.storage)?;
     if liquidator.is_none() {
         return Err(StdError::generic_err("no liquidator"));
     }
 
-    let swap = tmp_swap.unwrap();
     let mut position = get_position(
         env.clone(),
         deps.storage,

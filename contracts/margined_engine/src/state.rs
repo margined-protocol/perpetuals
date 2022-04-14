@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Api, DepsMut, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, Api, DepsMut, StdError, StdResult, Storage, Uint128};
 use cosmwasm_storage::{
     bucket, bucket_read, singleton, singleton_read, Bucket, ReadonlyBucket, Singleton,
 };
@@ -197,8 +197,15 @@ pub fn remove_tmp_swap(storage: &mut dyn Storage) {
     store.remove()
 }
 
-pub fn read_tmp_swap(storage: &dyn Storage) -> StdResult<Option<Swap>> {
-    singleton_read(storage, KEY_TMP_SWAP).may_load()
+pub fn read_tmp_swap(storage: &dyn Storage) -> StdResult<Swap> {
+    let res = singleton_read(storage, KEY_TMP_SWAP).may_load();
+    match res {
+        Ok(_) => {
+            let swap = res.unwrap();
+            Ok(swap.unwrap())
+        }
+        Err(_) => Err(StdError::generic_err("no temporary position")),
+    }
 }
 
 pub fn store_tmp_liquidator(storage: &mut dyn Storage, liquidator: &Addr) -> StdResult<()> {
