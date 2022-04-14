@@ -161,6 +161,7 @@ fn test_ten_percent_fee_increase_long_position() {
     router.execute(alice.clone(), msg).unwrap();
 
     let alice_balance_2 = usdc.balance(&router, alice.clone()).unwrap();
+    println!("alice {}", alice_balance_2);
     assert_eq!(
         alice_balance_1 - alice_balance_2,
         Uint128::from(210_000_000_000u128)

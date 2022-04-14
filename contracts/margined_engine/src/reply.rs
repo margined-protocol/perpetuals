@@ -12,7 +12,7 @@ use crate::{
     state::{
         append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_state,
         read_tmp_liquidator, read_tmp_swap, remove_tmp_liquidator, remove_tmp_swap, store_position,
-        store_state, store_tmp_swap,
+        store_state, store_tmp_swap, read_sent_funds,
     },
     utils::{
         calc_remain_margin_with_funding_payment, clear_position, get_position, realize_bad_debt,
@@ -48,7 +48,6 @@ pub fn increase_position_reply(
     );
 
     let direction = side_to_direction(swap.side);
-
     let signed_output = if direction == Direction::AddToAmm {
         Integer::new_positive(output)
     } else {
@@ -61,11 +60,6 @@ pub fn increase_position_reply(
         swap.vamm.clone(),
         Integer::new_positive(input),
     )?;
-
-    // now update the position
-    position.size += signed_output;
-    position.notional = position.notional.checked_add(swap.open_notional)?;
-    position.direction = direction;
 
     // TODO make my own decimal math lib
     let swap_margin = swap
@@ -89,6 +83,9 @@ pub fn increase_position_reply(
     )?;
 
     position.margin = margin;
+    position.size += signed_output;
+    position.notional = position.notional.checked_add(swap.open_notional)?;
+    position.direction = direction;
 
     store_position(deps.storage, &position)?;
     store_state(deps.storage, &state)?;
@@ -122,7 +119,11 @@ pub fn increase_position_reply(
                     )
                     .unwrap(),
                 );
-            };
+            } else if let AssetInfo::NativeToken { .. }  = config.eligible_collateral {
+                let asset = read_sent_funds(deps.storage)?;
+                println!("amount sent: {:?}", asset);
+                println!("margin: {}", swap.margin_to_vault);
+            }
         }
         _ => {}
     }

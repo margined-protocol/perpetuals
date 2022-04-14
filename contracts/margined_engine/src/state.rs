@@ -12,11 +12,12 @@ use margined_perp::margined_engine::Side;
 use margined_perp::margined_vamm::Direction;
 
 use sha3::{Digest, Sha3_256};
-use terraswap::asset::AssetInfo;
+use terraswap::asset::{Asset, AssetInfo};
 
 pub static KEY_CONFIG: &[u8] = b"config";
 pub static KEY_POSITION: &[u8] = b"position";
 pub static KEY_STATE: &[u8] = b"state";
+pub static KEY_SENT_FUNDS: &[u8] = b"sent-funds";
 pub static KEY_TMP_SWAP: &[u8] = b"tmp-swap";
 pub static KEY_TMP_LIQUIDATOR: &[u8] = b"tmp-liquidator";
 pub static KEY_VAMM_MAP: &[u8] = b"vamm-map";
@@ -152,6 +153,20 @@ pub fn read_position(storage: &dyn Storage, vamm: &Addr, trader: &Addr) -> StdRe
 
     Ok(result)
 }
+
+pub fn store_sent_funds(storage: &mut dyn Storage, asset: &Asset) -> StdResult<()> {
+    singleton(storage, KEY_SENT_FUNDS).save(asset)
+}
+
+pub fn remove_sent_funds(storage: &mut dyn Storage) {
+    let mut store: Singleton<Asset> = singleton(storage, KEY_SENT_FUNDS);
+    store.remove()
+}
+
+pub fn read_sent_funds(storage: &dyn Storage) -> StdResult<Option<Asset>> {
+    singleton_read(storage, KEY_SENT_FUNDS).may_load()
+}
+
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Swap {

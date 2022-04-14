@@ -10,7 +10,7 @@ use crate::{
     },
     query::query_cumulative_premium_fraction,
     state::{
-        read_config, read_position, read_state, read_vamm, read_vamm_map, store_state, Position,
+        read_config, read_position, read_state, read_vamm, read_vamm_map, store_state, Config, Position,
         State, VammList,
     },
 };
@@ -43,6 +43,35 @@ pub fn get_position(
     }
 
     position
+}
+
+// Create's an asset from the eligible collateral and msg sent
+pub fn get_asset(
+    info: MessageInfo,
+    config: Config,
+) -> Asset {
+    match config.eligible_collateral.clone() {
+        AssetInfo::Token { .. } => {
+            Asset {
+                info: config.eligible_collateral,
+                amount: Uint128::zero(),
+            }
+        }
+        AssetInfo::NativeToken { denom } => {
+            let sent = match info.funds.iter().find(|x| x.denom == *denom) {
+                Some(coin) => {
+                    coin.amount
+                }
+                None => {
+                    Uint128::zero()
+                }
+            };
+            Asset {
+                info: config.eligible_collateral,
+                amount: sent,
+            }
+        }
+    }
 }
 
 pub fn realize_bad_debt(
