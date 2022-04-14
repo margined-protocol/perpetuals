@@ -8,6 +8,7 @@ use crate::{
         PAY_FUNDING_REPLY_ID, SWAP_CLOSE_REPLY_ID, SWAP_DECREASE_REPLY_ID, SWAP_INCREASE_REPLY_ID,
         SWAP_LIQUIDATE_REPLY_ID, SWAP_PARTIAL_LIQUIDATION_REPLY_ID, SWAP_REVERSE_REPLY_ID,
     },
+    messages::{execute_transfer_from, withdraw},
     querier::query_vamm_output_price,
     query::query_margin_ratio,
     state::{
@@ -15,11 +16,10 @@ use crate::{
         store_tmp_liquidator, store_tmp_swap, Config, Position, State, Swap,
     },
     utils::{
-        calc_remain_margin_with_funding_payment, direction_to_side, execute_transfer_from,
-        get_position, get_position_notional_unrealized_pnl, require_bad_debt,
-        require_insufficient_margin, require_margin, require_native_token_sent, require_not_paused,
+        calc_remain_margin_with_funding_payment, direction_to_side, get_position,
+        get_position_notional_unrealized_pnl, require_bad_debt, require_insufficient_margin,
+        require_margin, require_native_token_sent, require_not_paused,
         require_not_restriction_mode, require_position_not_zero, require_vamm, side_to_direction,
-        withdraw,
     },
 };
 use margined_common::{
@@ -138,9 +138,11 @@ pub fn open_position(
     let config: Config = read_config(deps.storage)?;
     let state: State = read_state(deps.storage)?;
 
+    // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = deps.api.addr_validate(&trader)?;
 
+    // calculate the margin ratio of new position wrt to leverage
     let margin_ratio = config
         .decimals
         .checked_mul(config.decimals)?
@@ -155,23 +157,22 @@ pub fn open_position(
     )?;
     require_not_paused(state.pause)?;
     require_vamm(deps.storage, &vamm)?;
-    require_margin(margin_ratio, config.initial_margin_ratio)?;
     require_not_restriction_mode(deps.storage, &vamm, &trader, env.block.height)?;
+    require_margin(margin_ratio, config.initial_margin_ratio)?;
 
-    // calc the input amount wrt to leverage and decimals
+    // retrieves existing position or creates a new one
+    let position: Position = get_position(env.clone(), deps.storage, &vamm, &trader, side.clone());
+
+    // note: if direction and side are same way then increasing else we are reversing
+    let is_increase: bool = position.direction == Direction::AddToAmm && side == Side::BUY
+        || position.direction == Direction::RemoveFromAmm && side == Side::SELL;
+
+    // calculate the position size
     let open_notional = quote_asset_amount
         .checked_mul(leverage)?
         .checked_div(config.decimals)?;
 
-    let position: Position = get_position(env.clone(), deps.storage, &vamm, &trader, side.clone());
-
-    let mut is_increase: bool = true;
-    if !(position.direction == Direction::AddToAmm && side == Side::BUY
-        || position.direction == Direction::RemoveFromAmm && side == Side::SELL)
-    {
-        is_increase = false;
-    }
-
+    // check if the position is new or being increased, else position is being reversed
     let msg: SubMsg = if is_increase {
         internal_increase_position(vamm.clone(), side.clone(), open_notional, base_asset_limit)
             .unwrap()
@@ -260,7 +261,7 @@ pub fn liquidate(
     // store the liquidator
     store_tmp_liquidator(deps.storage, &info.sender)?;
 
-    // check if margin ratio has been
+    // retrieve the margin ratio of the position
     let margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
 
     require_vamm(deps.storage, &vamm)?;
@@ -272,7 +273,7 @@ pub fn liquidate(
     // check the position isn't zero
     require_position_not_zero(position.size.value)?;
 
-    // first see if this is a partial liquidation, else trader is rekt
+    // first see if this is a partial liquidation, else get rekt
     let msg = if margin_ratio.value > config.liquidation_fee
         && !config.partial_liquidation_margin_ratio.is_zero()
     {
@@ -284,6 +285,7 @@ pub fn liquidate(
     Ok(Response::default().add_submessage(msg))
 }
 
+/// settles funding in amm specified
 pub fn pay_funding(
     deps: DepsMut,
     _env: Env,
