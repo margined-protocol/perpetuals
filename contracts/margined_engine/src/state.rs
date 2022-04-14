@@ -154,17 +154,23 @@ pub fn read_position(storage: &dyn Storage, vamm: &Addr, trader: &Addr) -> StdRe
     Ok(result)
 }
 
-pub fn store_sent_funds(storage: &mut dyn Storage, asset: &Asset) -> StdResult<()> {
-    singleton(storage, KEY_SENT_FUNDS).save(asset)
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct SentFunds {
+    pub asset: Asset,
+    pub sent: Uint128,
+}
+
+pub fn store_sent_funds(storage: &mut dyn Storage, funds: &SentFunds) -> StdResult<()> {
+    singleton(storage, KEY_SENT_FUNDS).save(funds)
 }
 
 pub fn remove_sent_funds(storage: &mut dyn Storage) {
-    let mut store: Singleton<Asset> = singleton(storage, KEY_SENT_FUNDS);
+    let mut store: Singleton<SentFunds> = singleton(storage, KEY_SENT_FUNDS);
     store.remove()
 }
 
-pub fn read_sent_funds(storage: &dyn Storage) -> StdResult<Option<Asset>> {
-    singleton_read(storage, KEY_SENT_FUNDS).may_load()
+pub fn read_sent_funds(storage: &dyn Storage) -> StdResult<SentFunds> {
+    let res = singleton_read(storage, KEY_SENT_FUNDS).may_load();
 }
 
 
