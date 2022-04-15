@@ -78,14 +78,35 @@ fn test_query_vamm() {
 #[test]
 fn test_query_all_vamm() {
     //instantiate contract here
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {};
+    let info = mock_info("addr0000", &[]);
+
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //check to see that there are no vAMMs
 
     //add an vAMM
+    let addr1 = "addr0001".to_string();
+
+    let info = mock_info("addr0000", &[]);
+    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
+
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add another vAMM
+    let addr2 = "addr0002".to_string();
+
+    let info = mock_info("addr0000", &[]);
+    let msg = ExecuteMsg::AddVamm { vamm: addr2 };
+
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //check for the added vAMMs
+
+    //////////////////
+    //query all here//
+    //////////////////
 }
 
 #[test]

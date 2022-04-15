@@ -18,6 +18,8 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     Config {},
     IsVamm { vamm: String },
+    GetAllVamm {},
+    //GetMultVamm {min: Option<Bound<>> , max: },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -28,4 +30,9 @@ pub struct ConfigResponse {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct VammResponse {
     pub is_vamm: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct AllVammResponse {
+    pub vamm_list: Vec<Addr>
 }

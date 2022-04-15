@@ -1,8 +1,7 @@
 use cosmwasm_std::{Deps, StdResult};
-use margined_perp::margined_insurance_fund::{ConfigResponse, VammResponse};
+use margined_perp::margined_insurance_fund::{AllVammResponse, ConfigResponse, VammResponse};
 
-use crate::state::{is_vamm, read_config, Config};
-
+use crate::state::{is_vamm, read_config, read_vammlist, Config};
 /// Queries contract config
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config: Config = read_config(deps.storage)?;
@@ -23,4 +22,8 @@ pub fn query_is_vamm(deps: Deps, vamm: String) -> StdResult<VammResponse> {
     Ok(VammResponse { is_vamm: vamm_bool })
 }
 
-//Queries all of the current vAMMs
+//Queries multiple vAMMs TODO: add the option to query a slice
+pub fn query_mult_vamm(deps: Deps) -> StdResult<AllVammResponse> {
+    let out = read_vammlist(deps.storage)?;
+    Ok(AllVammResponse { vamm_list: out })
+}

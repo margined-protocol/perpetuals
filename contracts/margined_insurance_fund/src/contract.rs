@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 use crate::{
     handle::{add_vamm, remove_vamm, update_config},
-    query::{query_config, query_is_vamm},
+    query::{query_config, query_is_vamm, query_mult_vamm},
     state::{store_config, Config},
 };
 #[cfg(not(feature = "library"))]
@@ -42,5 +42,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::IsVamm { vamm } => to_binary(&query_is_vamm(deps, vamm)?),
+        QueryMsg::GetAllVamm {} => to_binary(&query_mult_vamm(deps)?),
+        //QueryMsg::GetMultVamm {min: ,max:} => to_binary(&query_mult_vamm(deps, min, max)?),
     }
 }
