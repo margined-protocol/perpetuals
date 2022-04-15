@@ -10,9 +10,9 @@ use crate::{
     },
     querier::query_vamm_state,
     state::{
-        append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_state,
-        read_tmp_liquidator, read_tmp_swap, remove_tmp_liquidator, remove_tmp_swap, store_position,
-        store_state, store_tmp_swap, read_sent_funds, store_sent_funds
+        append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_sent_funds,
+        read_state, read_tmp_liquidator, read_tmp_swap, remove_sent_funds, remove_tmp_liquidator,
+        remove_tmp_swap, store_position, store_state, store_tmp_swap,
     },
     utils::{
         calc_remain_margin_with_funding_payment, clear_position, get_position, realize_bad_debt,
@@ -34,6 +34,7 @@ pub fn increase_position_reply(
     let mut state = read_state(deps.storage)?;
 
     let mut swap = read_tmp_swap(deps.storage)?;
+    let mut funds = read_sent_funds(deps.storage)?;
 
     let mut position = get_position(
         env.clone(),
@@ -98,14 +99,14 @@ pub fn increase_position_reply(
                     &mut state,
                     &swap.trader,
                     &config.insurance_fund,
-                    config.eligible_collateral,
+                    config.eligible_collateral.clone(),
                     swap.margin_to_vault.value,
                 )
                 .unwrap(),
             );
         }
         Ordering::Greater => {
-            if let AssetInfo::Token { .. } = config.eligible_collateral {
+            if let AssetInfo::Token { .. } = config.eligible_collateral.clone() {
                 msgs.push(
                     execute_transfer_from(
                         deps.storage,
@@ -115,16 +116,8 @@ pub fn increase_position_reply(
                     )
                     .unwrap(),
                 );
-            } else if let AssetInfo::NativeToken { .. }  = config.eligible_collateral {
-                let mut funds = read_sent_funds(deps.storage)?;
-
+            } else if let AssetInfo::NativeToken { .. } = config.eligible_collateral.clone() {
                 funds.required = funds.required.checked_add(swap.margin_to_vault.value)?;
-
-                funds.is_sufficient()?;
-
-                store_sent_funds(deps.storage, &funds)?;
-                println!("amount sent: {:?}", funds);
-                println!("margin: {}", swap.margin_to_vault);
             }
         }
         _ => {}
@@ -132,15 +125,23 @@ pub fn increase_position_reply(
 
     // create messages to pay for toll and spread fees, check flag is true if this follows a reverse
     if !swap.fees_paid {
-        let mut result = transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional).unwrap();
-        msgs.append(
-            &mut result.messages
-        );
+        let mut fees =
+            transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional).unwrap();
 
-        println!("fees sent: {:?}", result.total);
+        // add the fee transfer messages
+        msgs.append(&mut fees.messages);
+
+        // add the total fees to the required funds counter
+        funds.required = funds.required.checked_add(fees.amount)?;
     };
 
+    // check if native tokens are sufficient
+    if let AssetInfo::NativeToken { .. } = config.eligible_collateral {
+        funds.are_sufficient()?;
+    }
+
     remove_tmp_swap(deps.storage);
+    remove_sent_funds(deps.storage);
     Ok(Response::new()
         .add_submessages(msgs)
         .add_attributes(vec![("action", "increase_position")]))
@@ -275,7 +276,9 @@ pub fn reverse_position_reply(
     }
 
     msgs.append(
-        &mut transfer_fees(deps.as_ref(), swap.trader, swap.vamm, current_open_notional).unwrap().messages,
+        &mut transfer_fees(deps.as_ref(), swap.trader, swap.vamm, current_open_notional)
+            .unwrap()
+            .messages,
     );
 
     store_position(deps.storage, &position)?;
@@ -351,7 +354,8 @@ pub fn close_position_reply(
             swap.vamm.clone(),
             position.notional,
         )
-        .unwrap().messages,
+        .unwrap()
+        .messages,
     );
 
     let value =

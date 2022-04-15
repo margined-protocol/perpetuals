@@ -12,14 +12,15 @@ use crate::{
     querier::query_vamm_output_price,
     query::query_margin_ratio,
     state::{
-        read_config, read_position, read_state, store_config, store_position, store_state,
-        store_tmp_liquidator, store_tmp_swap, Config, Position, SentFunds, State, Swap, store_sent_funds,
+        read_config, read_position, read_state, store_config, store_position, store_sent_funds,
+        store_state, store_tmp_liquidator, store_tmp_swap, Config, Position, SentFunds, State,
+        Swap,
     },
     utils::{
-        calc_remain_margin_with_funding_payment, direction_to_side, get_position,
+        calc_remain_margin_with_funding_payment, direction_to_side, get_asset, get_position,
         get_position_notional_unrealized_pnl, require_bad_debt, require_insufficient_margin,
         require_margin, require_native_token_sent, require_not_paused,
-        require_not_restriction_mode, require_position_not_zero, require_vamm, side_to_direction, get_asset,
+        require_not_restriction_mode, require_position_not_zero, require_vamm, side_to_direction,
     },
 };
 use margined_common::{
@@ -213,10 +214,13 @@ pub fn open_position(
     )?;
 
     let asset = get_asset(info, config);
-    store_sent_funds(deps.storage, &SentFunds {
-        asset,
-        required: Uint128::zero(),
-    })?;
+    store_sent_funds(
+        deps.storage,
+        &SentFunds {
+            asset,
+            required: Uint128::zero(),
+        },
+    )?;
 
     Ok(Response::new()
         .add_submessage(msg)

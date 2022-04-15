@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Uint128, SubMsg};
+use cosmwasm_std::{Addr, SubMsg, Uint128};
 use margined_common::integer::Integer;
 use terraswap::asset::AssetInfo;
 
@@ -168,9 +168,8 @@ pub struct RemainMarginResponse {
     pub latest_premium_fraction: Integer,
 }
 
-
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct TransferResponse {
     pub messages: Vec<SubMsg>,
-    pub total: Uint128,
+    pub amount: Uint128,
 }

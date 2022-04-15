@@ -161,12 +161,12 @@ pub struct SentFunds {
 }
 
 impl SentFunds {
-    /// throws an error if the required funds is less than the asset amount 
-    pub fn is_sufficient(&self) -> StdResult<()> {
+    /// throws an error if the required funds is less than the asset amount
+    pub fn are_sufficient(&self) -> StdResult<()> {
         if self.asset.amount < self.required {
-            return Err(StdError::generic_err("no sent funds"));
+            return Err(StdError::generic_err("sent funds are insufficient"));
         };
-        
+
         Ok(())
     }
 }
@@ -190,7 +190,6 @@ pub fn read_sent_funds(storage: &dyn Storage) -> StdResult<SentFunds> {
         Err(_) => Err(StdError::generic_err("no sent funds")),
     }
 }
-
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Swap {
