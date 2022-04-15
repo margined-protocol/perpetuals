@@ -13,7 +13,7 @@ use crate::{
     query::query_margin_ratio,
     state::{
         read_config, read_position, read_state, store_config, store_position, store_state,
-        store_tmp_liquidator, store_tmp_swap, Config, Position, State, Swap, store_sent_funds,
+        store_tmp_liquidator, store_tmp_swap, Config, Position, SentFunds, State, Swap, store_sent_funds,
     },
     utils::{
         calc_remain_margin_with_funding_payment, direction_to_side, get_position,
@@ -213,7 +213,10 @@ pub fn open_position(
     )?;
 
     let asset = get_asset(info, config);
-    store_sent_funds(deps.storage, &asset);
+    store_sent_funds(deps.storage, &SentFunds {
+        asset,
+        required: Uint128::zero(),
+    })?;
 
     Ok(Response::new()
         .add_submessage(msg)

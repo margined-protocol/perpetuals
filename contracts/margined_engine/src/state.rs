@@ -157,7 +157,18 @@ pub fn read_position(storage: &dyn Storage, vamm: &Addr, trader: &Addr) -> StdRe
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct SentFunds {
     pub asset: Asset,
-    pub sent: Uint128,
+    pub required: Uint128,
+}
+
+impl SentFunds {
+    /// throws an error if the required funds is less than the asset amount 
+    pub fn is_sufficient(&self) -> StdResult<()> {
+        if self.asset.amount < self.required {
+            return Err(StdError::generic_err("no sent funds"));
+        };
+        
+        Ok(())
+    }
 }
 
 pub fn store_sent_funds(storage: &mut dyn Storage, funds: &SentFunds) -> StdResult<()> {
@@ -171,6 +182,13 @@ pub fn remove_sent_funds(storage: &mut dyn Storage) {
 
 pub fn read_sent_funds(storage: &dyn Storage) -> StdResult<SentFunds> {
     let res = singleton_read(storage, KEY_SENT_FUNDS).may_load();
+    match res {
+        Ok(_) => {
+            let funds = res.unwrap();
+            Ok(funds.unwrap())
+        }
+        Err(_) => Err(StdError::generic_err("no sent funds")),
+    }
 }
 
 

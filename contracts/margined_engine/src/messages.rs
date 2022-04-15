@@ -7,9 +7,10 @@ use terraswap::asset::AssetInfo;
 
 use crate::{
     querier::query_vamm_calc_fee,
-    state::{read_config, State},
+    state::{read_config, State, read_sent_funds, store_sent_funds},
 };
 
+use margined_perp::margined_engine::TransferResponse;
 use margined_perp::margined_vamm::CalcFeeResponse;
 use margined_perp::querier::query_token_balance;
 
@@ -23,19 +24,28 @@ pub fn execute_transfer_from(
     let config = read_config(storage)?;
 
     let msg: CosmosMsg = match config.eligible_collateral {
-        AssetInfo::NativeToken { denom } => CosmosMsg::Bank(BankMsg::Send {
-            to_address: receiver.to_string(),
-            amount: vec![Coin { denom, amount }],
-        }),
-        AssetInfo::Token { contract_addr } => CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr,
-            funds: vec![],
-            msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
-                owner: owner.to_string(),
-                recipient: receiver.to_string(),
-                amount,
-            })?,
-        }),
+        AssetInfo::NativeToken { denom } => {
+            let mut funds = read_sent_funds(storage)?;
+
+            funds.required = funds.required.checked_add(amount)?;
+
+            funds.is_sufficient()?;
+            CosmosMsg::Bank(BankMsg::Send {
+                to_address: receiver.to_string(),
+                amount: vec![Coin { denom, amount }],
+            })
+        },
+        AssetInfo::Token { contract_addr } => {
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr,
+                funds: vec![],
+                msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
+                    owner: owner.to_string(),
+                    recipient: receiver.to_string(),
+                    amount,
+                })?,
+            })
+        },
     };
 
     let transfer_msg = SubMsg {
@@ -118,7 +128,7 @@ pub fn transfer_fees(
     from: Addr,
     vamm: Addr,
     notional: Uint128,
-) -> StdResult<Vec<SubMsg>> {
+) -> StdResult<TransferResponse> {
     println!("transfer fees");
     let config = read_config(deps.storage)?;
 
@@ -140,7 +150,10 @@ pub fn transfer_fees(
         messages.push(msg);
     };
 
-    Ok(messages)
+    Ok(TransferResponse {
+        messages,
+        total: spread_fee + toll_fee,
+    })
 }
 
 pub fn withdraw(

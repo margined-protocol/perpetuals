@@ -12,7 +12,7 @@ use crate::{
     state::{
         append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_state,
         read_tmp_liquidator, read_tmp_swap, remove_tmp_liquidator, remove_tmp_swap, store_position,
-        store_state, store_tmp_swap, read_sent_funds,
+        store_state, store_tmp_swap, read_sent_funds, store_sent_funds
     },
     utils::{
         calc_remain_margin_with_funding_payment, clear_position, get_position, realize_bad_debt,
@@ -116,8 +116,14 @@ pub fn increase_position_reply(
                     .unwrap(),
                 );
             } else if let AssetInfo::NativeToken { .. }  = config.eligible_collateral {
-                let asset = read_sent_funds(deps.storage)?;
-                println!("amount sent: {:?}", asset);
+                let mut funds = read_sent_funds(deps.storage)?;
+
+                funds.required = funds.required.checked_add(swap.margin_to_vault.value)?;
+
+                funds.is_sufficient()?;
+
+                store_sent_funds(deps.storage, &funds)?;
+                println!("amount sent: {:?}", funds);
                 println!("margin: {}", swap.margin_to_vault);
             }
         }
@@ -126,9 +132,12 @@ pub fn increase_position_reply(
 
     // create messages to pay for toll and spread fees, check flag is true if this follows a reverse
     if !swap.fees_paid {
+        let mut result = transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional).unwrap();
         msgs.append(
-            &mut transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional).unwrap(),
-        )
+            &mut result.messages
+        );
+
+        println!("fees sent: {:?}", result.total);
     };
 
     remove_tmp_swap(deps.storage);
@@ -266,7 +275,7 @@ pub fn reverse_position_reply(
     }
 
     msgs.append(
-        &mut transfer_fees(deps.as_ref(), swap.trader, swap.vamm, current_open_notional).unwrap(),
+        &mut transfer_fees(deps.as_ref(), swap.trader, swap.vamm, current_open_notional).unwrap().messages,
     );
 
     store_position(deps.storage, &position)?;
@@ -342,7 +351,7 @@ pub fn close_position_reply(
             swap.vamm.clone(),
             position.notional,
         )
-        .unwrap(),
+        .unwrap().messages,
     );
 
     let value =
