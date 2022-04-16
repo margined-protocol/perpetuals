@@ -5,9 +5,7 @@ use terraswap::asset::{Asset, AssetInfo};
 
 use crate::{
     messages::execute_transfer_from,
-    querier::{
-        query_vamm_calc_fee, query_vamm_config, query_vamm_output_price, query_vamm_output_twap,
-    },
+    querier::{query_vamm_config, query_vamm_output_price, query_vamm_output_twap},
     query::query_cumulative_premium_fraction,
     state::{
         read_config, read_position, read_state, read_vamm, read_vamm_map, store_state, Config,
@@ -19,7 +17,7 @@ use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
     PnlCalcOption, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
 };
-use margined_perp::margined_vamm::{CalcFeeResponse, Direction};
+use margined_perp::margined_vamm::Direction;
 
 // reads position from storage but also handles the case where there is no
 // previously stored position, i.e. a new position
@@ -224,37 +222,6 @@ pub fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
     position.block_number = env.block.height;
 
     Ok(position)
-}
-
-// ensures that sufficient native token is sent inclusive the fees, TODO consider tax
-pub fn require_native_token_sent(
-    deps: &Deps,
-    info: MessageInfo,
-    vamm: Addr,
-    amount: Uint128,
-    leverage: Uint128,
-) -> StdResult<Response> {
-    let config = read_config(deps.storage)?;
-
-    if let AssetInfo::NativeToken { .. } = config.eligible_collateral.clone() {
-        let quote_asset_amount = amount.checked_mul(leverage)?.checked_div(config.decimals)?;
-
-        let CalcFeeResponse {
-            spread_fee,
-            toll_fee,
-        } = query_vamm_calc_fee(deps, vamm.into_string(), quote_asset_amount)?;
-
-        let total_amount = amount.checked_add(spread_fee)?.checked_add(toll_fee)?;
-
-        let token = Asset {
-            info: config.eligible_collateral,
-            amount: total_amount,
-        };
-
-        token.assert_sent_native_token_balance(&info)?;
-    };
-
-    Ok(Response::new())
 }
 
 pub fn require_vamm(storage: &dyn Storage, vamm: &Addr) -> StdResult<Response> {

@@ -1,9 +1,8 @@
 use cosmwasm_std::{Coin, Uint128};
-use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, PositionResponse, Side};
-use margined_utils::scenarios::{NativeTokenScenario, SimpleScenario};
+use margined_utils::scenarios::NativeTokenScenario;
 
 // Note: these tests also verify the 10% fees for the amm are functioning
 
@@ -383,8 +382,8 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
             Side::BUY,
             Uint128::from(35_000_000u64),
             Uint128::from(10_000_000u64),
-            Uint128::from(17_500_000_000u64),
-            vec![],
+            Uint128::from(17_500_000u64),
+            vec![Coin::new(70_000_000u128, "uusd")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -397,10 +396,7 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
             PnlCalcOption::SPOTPRICE,
         )
         .unwrap();
-    assert_eq!(
-        pnl.unrealized_pnl,
-        Integer::new_positive(137_878_787_878u64)
-    );
+    assert_eq!(pnl.unrealized_pnl, Integer::new_positive(137_878_787u64));
 
     // alice opens long position with 175 margin, 2x leverage
     // (1250 + 350) * (80 + baseAssetDelta) = 100k, baseAssetDelta = -17.5
@@ -410,8 +406,8 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
             Side::BUY,
             Uint128::from(200_000_000u64),
             Uint128::from(2_000_000u64),
-            Uint128::from(12_500_000_000u64),
-            vec![],
+            Uint128::from(12_500_000u64),
+            vec![Coin::new(240_000_000u128, "uusd")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -424,7 +420,7 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
         .unwrap();
 
     // transferred margin = margin + fee = 200 + (200 * 2 * 10%) = 240
-    assert_eq!(position.size, Integer::new_positive(32_500_000_000u128));
+    assert_eq!(position.size, Integer::new_positive(32_500_000u128));
     assert_eq!(position.margin, Uint128::from(225_000_000u64));
     assert_eq!(position.notional, Uint128::from(650_000_000u64));
 
@@ -440,4 +436,96 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
         .unwrap()
         .amount;
     assert_eq!(engine_balance, Uint128::from(260_000_000u64));
+}
+
+#[test]
+fn test_ten_percent_fee_long_position_price_down_long_again() {
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // alice opens long position with 125 margin, 2x leverage
+    // (1000 + 250) * (100 + baseAssetDelta) = 100k, baseAssetDelta = -20
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(125_000_000u64),
+            Uint128::from(2_000_000u64),
+            Uint128::from(20_000_000u64),
+            vec![Coin::new(150_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let alice_balance_1 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+
+    // bob opens short position with 125 margin, 2x leverage, price down
+    // (1250 - 250) * (80 + baseAssetDelta) = 100k, baseAssetDelta = 20
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(125_000_000u64),
+            Uint128::from(2_000_000u64),
+            Uint128::from(20_000_000u64),
+            vec![Coin::new(150_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    // alice's 20 long position worth 166.67 now
+    // (1000 + quoteAssetDelta) * (100 + 20) = 100k, quoteAssetDelta = -166.666666666666666666
+    // unrealizedPnl = positionValue - cost = 166.666666666666666666 - 250 = -83.333333333333333333
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
+        .unwrap();
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(83_333_334u64));
+
+    // alice opens long position with 50 margin, 5x leverage
+    // (1000 + 250) * (100 + baseAssetDelta) = 100k, baseAssetDelta = -20
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(50_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(20_000_000u64),
+            vec![Coin::new(75_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let alice_balance_2 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+    assert_eq!(
+        alice_balance_1 - alice_balance_2,
+        Uint128::from(75_000_000u128)
+    );
+
+    let position: PositionResponse = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+
+    // transferred margin = margin + fee = 50 + (50 * 5 * 10%) = 75
+    assert_eq!(position.size, Integer::new_positive(40_000_000u128));
+    assert_eq!(position.margin, Uint128::from(175_000_000u64));
+    assert_eq!(position.notional, Uint128::from(500_000_000u64));
 }

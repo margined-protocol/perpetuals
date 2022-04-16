@@ -20,7 +20,6 @@ pub fn execute_transfer_from(
     receiver: &Addr,
     amount: Uint128,
 ) -> StdResult<SubMsg> {
-    println!("execute transfer from");
     let config = read_config(storage)?;
 
     let msg: CosmosMsg = match config.eligible_collateral {
@@ -79,7 +78,6 @@ pub fn execute_transfer_to_insurance_fund(
     env: Env,
     amount: Uint128,
 ) -> StdResult<SubMsg> {
-    println!("execute transfer to insurance fund");
     let config = read_config(deps.storage)?;
 
     let token_balance = query_token_balance(
@@ -120,7 +118,6 @@ pub fn transfer_fees(
     vamm: Addr,
     notional: Uint128,
 ) -> StdResult<TransferResponse> {
-    println!("transfer fees");
     let config = read_config(deps.storage)?;
 
     let CalcFeeResponse {

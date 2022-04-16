@@ -19,8 +19,8 @@ use crate::{
     utils::{
         calc_remain_margin_with_funding_payment, direction_to_side, get_asset, get_position,
         get_position_notional_unrealized_pnl, require_bad_debt, require_insufficient_margin,
-        require_margin, require_native_token_sent, require_not_paused,
-        require_not_restriction_mode, require_position_not_zero, require_vamm, side_to_direction,
+        require_margin, require_not_paused, require_not_restriction_mode,
+        require_position_not_zero, require_vamm, side_to_direction,
     },
 };
 use margined_common::{
