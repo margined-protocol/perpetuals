@@ -1,4 +1,4 @@
-use cosmwasm_std::{BankMsg, CosmosMsg, Coin, Uint128};
+use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Uint128};
 use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, PositionResponse, Side};
@@ -1592,18 +1592,19 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
             PnlCalcOption::SPOTPRICE,
         )
         .unwrap();
-    assert_eq!(
-        pnl.unrealized_pnl,
-        Integer::new_positive(137_878_787u64)
-    );
-
+    assert_eq!(pnl.unrealized_pnl, Integer::new_positive(137_878_787u64));
 
     // TODO: this transfer is needed since the native token transfer from
     // doesnt function
-    router.execute(bob.clone(), CosmosMsg::Bank(BankMsg::Send {
-        to_address: engine.addr().to_string(),
-        amount: vec![Coin::new(500_000_000u128, "uusd")],
-    })).unwrap();
+    router
+        .execute(
+            bob.clone(),
+            CosmosMsg::Bank(BankMsg::Send {
+                to_address: engine.addr().to_string(),
+                amount: vec![Coin::new(500_000_000u128, "uusd")],
+            }),
+        )
+        .unwrap();
 
     let msg = engine
         .open_position(
@@ -1617,7 +1618,7 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_2 =  router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+    let alice_balance_2 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
     assert_eq!(
         alice_balance_2 - alice_balance_1,
         Uint128::from(31_363_636u64)
@@ -1640,7 +1641,11 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::zero());
 
-    let fee_pool_balance = router.wrap().query_balance(&fee_pool, "uusd").unwrap().amount;
+    let fee_pool_balance = router
+        .wrap()
+        .query_balance(&fee_pool, "uusd")
+        .unwrap()
+        .amount;
     assert_eq!(fee_pool_balance, Uint128::from(140_000_000u64));
 }
 
@@ -1711,7 +1716,7 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_2 =  router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+    let alice_balance_2 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
     assert_eq!(
         alice_balance_1 - alice_balance_2,
         Uint128::from(61_666_667u64)
@@ -1786,10 +1791,7 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
             PnlCalcOption::SPOTPRICE,
         )
         .unwrap();
-    assert_eq!(
-        pnl.unrealized_pnl,
-        Integer::new_negative(133_333_334u64)
-    );
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(133_333_334u64));
 
     let msg = engine
         .open_position(
@@ -1851,7 +1853,7 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_1 =  router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+    let alice_balance_1 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
 
     let msg = engine
         .open_position(
@@ -1873,17 +1875,19 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
             PnlCalcOption::SPOTPRICE,
         )
         .unwrap();
-    assert_eq!(
-        pnl.unrealized_pnl,
-        Integer::new_positive(233_333_333u64)
-    );
+    assert_eq!(pnl.unrealized_pnl, Integer::new_positive(233_333_333u64));
 
     // TODO: this transfer is needed since the native token transfer from
     // doesnt function
-    router.execute(bob.clone(), CosmosMsg::Bank(BankMsg::Send {
-        to_address: engine.addr().to_string(),
-        amount: vec![Coin::new(500_000_000u128, "uusd")],
-    })).unwrap();
+    router
+        .execute(
+            bob.clone(),
+            CosmosMsg::Bank(BankMsg::Send {
+                to_address: engine.addr().to_string(),
+                amount: vec![Coin::new(500_000_000u128, "uusd")],
+            }),
+        )
+        .unwrap();
 
     let msg = engine
         .open_position(
@@ -1897,7 +1901,7 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_2 =  router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+    let alice_balance_2 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
     assert_eq!(
         alice_balance_2 - alice_balance_1,
         Uint128::from(640_000_000u64)
