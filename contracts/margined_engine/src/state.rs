@@ -163,8 +163,11 @@ pub struct SentFunds {
 impl SentFunds {
     /// throws an error if the required funds is less than the asset amount
     pub fn are_sufficient(&self) -> StdResult<()> {
+        // this should only pass if asset.amount == required
         if self.asset.amount < self.required {
             return Err(StdError::generic_err("sent funds are insufficient"));
+        } else if self.asset.amount > self.required {
+            return Err(StdError::generic_err("sent funds are excessive"));
         };
 
         Ok(())

@@ -529,3 +529,1369 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
     assert_eq!(position.margin, Uint128::from(175_000_000u64));
     assert_eq!(position.notional, Uint128::from(500_000_000u64));
 }
+
+#[test]
+fn test_ten_percent_fee_increase_short_position() {
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // alice opens short position with 100 margin, 2x leverage
+    // (1000 - 200) * (100 + baseAssetDelta) = 100k, baseAssetDelta = 25
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(100_000_000u64),
+            Uint128::from(2_000_000u64),
+            Uint128::from(25_000_000u64),
+            vec![Coin::new(120_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let alice_balance_1 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+
+    // alice opens short position with 50 margin, 8x leverage
+    // (800 - 400) * (125 + baseAssetDelta) = 100k, baseAssetDelta = 125
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(50_000_000u64),
+            Uint128::from(8_000_000u64),
+            Uint128::from(125_000_000u64),
+            vec![Coin::new(90_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let alice_balance_2 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+    assert_eq!(
+        alice_balance_1 - alice_balance_2,
+        Uint128::from(90_000_000u128)
+    );
+
+    let position: PositionResponse = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+
+    // then transferred margin = margin + fee = 50 + (50 * 8 * 10%) = 90
+    assert_eq!(position.size, Integer::new_negative(150_000_000u128));
+    assert_eq!(position.margin, Uint128::from(150_000_000u64));
+    assert_eq!(position.notional, Uint128::from(600_000_000u64));
+
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
+        .unwrap();
+    assert_eq!(pnl.unrealized_pnl, Integer::zero());
+}
+
+#[test]
+fn test_ten_percent_fee_short_position_price_down_short_again() {
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // alice opens short position with 100 margin, 2x leverage
+    // (1000 - 200) * (100 + baseAssetDelta) = 100k, baseAssetDelta = 25
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(100_000_000u64),
+            Uint128::from(2_000_000u64),
+            Uint128::from(25_000_000u64),
+            vec![Coin::new(120_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let alice_balance_1 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+
+    // bob opens short position with 150 margin, 2x leverage, price down
+    // (800 - 300) * (125 + baseAssetDelta) = 100k, baseAssetDelta = 75
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(150_000_000u64),
+            Uint128::from(2_000_000u64),
+            Uint128::from(75_000_000u64),
+            vec![Coin::new(180_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    // alice's 25 short position worth 71.43 now
+    // (500 + quoteAssetDelta) * (200 - 25) = 100k, quoteAssetDelta = -71.4285714286
+    // unrealizedPnl = positionValueWhenBorrowed - positionValueWhenReturned = 200 - 71.4285714286 = 128.5714285714
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
+        .unwrap();
+    assert_eq!(pnl.unrealized_pnl, Integer::new_positive(128_571_428u64));
+
+    // alice opens short position with 100 margin, 3x leverage
+    // (500 - 300) * (200 + baseAssetDelta) = 100k, baseAssetDelta = 300
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(100_000_000u64),
+            Uint128::from(3_000_000u64),
+            Uint128::from(300_000_000u64),
+            vec![Coin::new(130_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    // transferred margin = margin + fee = 100 + (100 * 3 * 10%) = 130
+    let alice_balance_2 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+    assert_eq!(
+        alice_balance_1 - alice_balance_2,
+        Uint128::from(130_000_000u128)
+    );
+
+    let position: PositionResponse = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+
+    assert_eq!(position.size, Integer::new_negative(325_000_000u128));
+    assert_eq!(position.margin, Uint128::from(200_000_000u64));
+    assert_eq!(position.notional, Uint128::from(500_000_000u64));
+}
+
+#[test]
+fn test_ten_percent_fee_short_position_price_up_short_again() {
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // alice opens short position with 200 margin, 1x leverage
+    // (1000 - 200) * (100 + baseAssetDelta) = 100k, baseAssetDelta = 25
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(200_000_000u64),
+            Uint128::from(1_000_000u64),
+            Uint128::from(25_000_000u64),
+            vec![Coin::new(220_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let alice_balance_1 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+
+    // bob opens long position with 200 margin, 1x leverage, price up
+    // (800 + 200) * (125 + baseAssetDelta) = 100k, baseAssetDelta = -25
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(200_000_000u64),
+            Uint128::from(1_000_000u64),
+            Uint128::from(25_000_000u64),
+            vec![Coin::new(220_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    // alice's 25 short position worth 333.33 now
+    // (1000 + quoteAssetDelta) * (100 - 25) = 100k, quoteAssetDelta = 333.3333333333
+    // unrealizedPnl = positionValueWhenBorrowed - positionValueWhenReturned = 200 - 333.3333333333 = -133.3333333333
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
+        .unwrap();
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(133_333_334u64));
+
+    // alice opens short position with 50 margin, 4x leverage
+    // (1000 - 200) * (100 + baseAssetDelta) = 100k, baseAssetDelta = 25
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(50_000_000u64),
+            Uint128::from(4_000_000u64),
+            Uint128::from(25_000_000u64),
+            vec![Coin::new(70_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    // then transferred margin = margin + fee = 50 + (50 * 4 * 10%) = 70
+    let alice_balance_2 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+    assert_eq!(
+        alice_balance_1 - alice_balance_2,
+        Uint128::from(70_000_000u128)
+    );
+
+    let position: PositionResponse = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+
+    assert_eq!(position.size, Integer::new_negative(50_000_000u128));
+    assert_eq!(position.margin, Uint128::from(250_000_000u64));
+    assert_eq!(position.notional, Uint128::from(400_000_000u64));
+}
+
+#[test]
+fn test_ten_percent_fee_reduce_long_position() {
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(60_000_000u64),
+            Uint128::from(10_000_000u64),
+            Uint128::from(37_500_000u64),
+            vec![Coin::new(120_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(350_000_000u64),
+            Uint128::from(1_000_000u64),
+            Uint128::from(17_500_000u64),
+            vec![Coin::new(385_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let position: PositionResponse = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::new_positive(20_000_000u128));
+    assert_eq!(position.notional, Uint128::from(250_000_000u64));
+    assert_eq!(position.margin, Uint128::from(60_000_000u64));
+
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
+        .unwrap();
+    assert_eq!(pnl.unrealized_pnl, Integer::zero());
+}
+
+#[test]
+fn test_ten_percent_fee_reduce_long_position_zero_fee() {
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    let msg = vamm.set_toll_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(60_000_000u64),
+            Uint128::from(10_000_000u64),
+            Uint128::from(37_500_000u64),
+            vec![Coin::new(60_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(350_000_000u64),
+            Uint128::from(1_000_000u64),
+            Uint128::from(17_500_000u64),
+            vec![Coin::new(350_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let position: PositionResponse = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::new_positive(20_000_000u128));
+    assert_eq!(position.notional, Uint128::from(250_000_000u64));
+    assert_eq!(position.margin, Uint128::from(60_000_000u64));
+
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
+        .unwrap();
+    assert_eq!(pnl.unrealized_pnl, Integer::zero());
+}
+
+#[test]
+fn test_ten_percent_fee_reduce_short_position() {
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(60_000_000u64),
+            Uint128::from(10_000_000u64),
+            Uint128::from(150_000_000u64),
+            vec![Coin::new(120_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(400_000_000u64),
+            Uint128::from(1_000_000u64),
+            Uint128::from(125_000_000u64),
+            vec![Coin::new(440_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let position: PositionResponse = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::new_negative(25_000_000u128));
+    assert_eq!(position.notional, Uint128::from(200_000_000u64));
+    assert_eq!(position.margin, Uint128::from(60_000_000u64));
+
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
+        .unwrap();
+    assert_eq!(pnl.unrealized_pnl, Integer::zero());
+}
+
+#[test]
+fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(60_000_000u64),
+            Uint128::from(10_000_000u64),
+            Uint128::from(37_500_000u64),
+            vec![Coin::new(120_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(400_000_000u64),
+            Uint128::from(1_000_000u64),
+            Uint128::from(12_500_000u64),
+            vec![Coin::new(440_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
+        .unwrap();
+    assert_eq!(pnl.unrealized_pnl, Integer::new_positive(257_142_857u64));
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(400_000_000u64),
+            Uint128::from(1_000_000u64),
+            Uint128::from(12_500_000u64),
+            vec![Coin::new(440_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let position: PositionResponse = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::new_positive(25_000_000u128));
+    assert_eq!(position.margin, Uint128::from(145_714_285u64));
+    assert_eq!(position.notional, Uint128::from(285_714_285u64));
+
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
+        .unwrap();
+    assert_eq!(pnl.unrealized_pnl, Integer::new_positive(171_428_572u64));
+}
+
+#[test]
+fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(500_000_000u64),
+            Uint128::from(2_000_000u64),
+            Uint128::from(50_000_000u64),
+            vec![Coin::new(600_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(400_000_000u64),
+            Uint128::from(1_000_000u64),
+            Uint128::from(12_500_000u64),
+            vec![Coin::new(440_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
+        .unwrap();
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(288_888_889u64));
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(350_000_000u64),
+            Uint128::from(1_000_000u64),
+            Uint128::from(17_500_000u64),
+            vec![Coin::new(385_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let position: PositionResponse = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::new_positive(32_500_000u128));
+    assert_eq!(position.notional, Uint128::from(548_888_889u64));
+    assert_eq!(position.margin, Uint128::from(398_888_889u64));
+
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
+        .unwrap();
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(187_777_778u64));
+}
+
+#[test]
+fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(100_000_000u64),
+            Uint128::from(2_000_000u64),
+            Uint128::from(25_000_000u64),
+            vec![Coin::new(120_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(50_000_000u64),
+            Uint128::from(1_000_000u64),
+            Uint128::from(7_350_000u64),
+            vec![Coin::new(55_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
+        .unwrap();
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(29_365_079u64));
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(150_000_000u64),
+            Uint128::from(1_000_000u64),
+            Uint128::from(17_640_000u64),
+            vec![Coin::new(165_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let position: PositionResponse = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::new_negative(7_352_941u128));
+    assert_eq!(position.notional, Uint128::from(70_728_291u64));
+    assert_eq!(position.margin, Uint128::from(79_271_709u64));
+
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
+        .unwrap();
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(8_636_787u64));
+}
+
+#[test]
+fn test_ten_percent_fee_reduce_short_position_price_down_short_again() {
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(250_000_000u64),
+            Uint128::from(2_000_000u64),
+            Uint128::from(100_000_000u64),
+            vec![Coin::new(300_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(100_000_000u64),
+            Uint128::from(1_000_000u64),
+            Uint128::from(50_000_000u64),
+            vec![Coin::new(110_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
+        .unwrap();
+    assert_eq!(pnl.unrealized_pnl, Integer::new_positive(233_333_333u64));
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(100_000_000u64),
+            Uint128::from(1_000_000u64),
+            Uint128::from(50_000_000u64),
+            vec![Coin::new(110_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let position: PositionResponse = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::new_negative(50_000_000u128));
+    assert_eq!(position.notional, Uint128::from(283_333_334u64));
+    assert_eq!(position.margin, Uint128::from(366_666_666u64));
+
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SPOTPRICE,
+        )
+        .unwrap();
+    assert_eq!(pnl.unrealized_pnl, Integer::new_positive(116_666_667u64));
+}
+
+#[test]
+fn test_ten_percent_fee_open_long_price_remains_close_manually() {
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(50_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(20_000_000u64),
+            vec![Coin::new(75_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let alice_balance_1 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(250_000_000u64),
+            Uint128::from(1_000_000u64),
+            Uint128::from(20_000_000u64),
+            vec![Coin::new(25_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let alice_balance_2 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+    assert_eq!(
+        alice_balance_2 - alice_balance_1,
+        Uint128::from(25_000_000u64)
+    );
+
+    let position: PositionResponse = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::zero());
+    assert_eq!(position.notional, Uint128::zero());
+    assert_eq!(position.margin, Uint128::zero());
+}
+
+#[test]
+fn test_ten_percent_fee_open_short_price_remains_close_manually() {
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(100_000_000u64),
+            Uint128::from(2_000_000u64),
+            Uint128::from(25_000_000u64),
+            vec![Coin::new(120_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let alice_balance_1 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(200_000_000u64),
+            Uint128::from(1_000_000u64),
+            Uint128::from(25_000_000u64),
+            vec![Coin::new(20_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let alice_balance_2 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+    assert_eq!(
+        alice_balance_2 - alice_balance_1,
+        Uint128::from(80_000_000u64)
+    );
+
+    let position: PositionResponse = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::zero());
+    assert_eq!(position.notional, Uint128::zero());
+    assert_eq!(position.margin, Uint128::zero());
+}
+
+#[test]
+fn test_ten_percent_fee_open_long_price_remains_close_opening_larger_short() {
+let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(125_000_000u64),
+            Uint128::from(2_000_000u64),
+            Uint128::from(20_000_000u64),
+            vec![Coin::new(150_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let alice_balance_1 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(45_000_000u64),
+            Uint128::from(10_000_000u64),
+            Uint128::from(45_000_000u64),
+            vec![Coin::new(44_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let alice_balance_2 =  router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+    assert_eq!(
+        alice_balance_2 - alice_balance_1,
+        Uint128::from(60_000_000u64)
+    );
+
+    let position: PositionResponse = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::new_negative(25_000_000u64));
+    assert_eq!(position.notional, Uint128::from(200_000_000u64));
+    assert_eq!(position.margin, Uint128::from(20_000_000u64));
+}
+
+// #[test]
+// fn test_ten_percent_fee_open_short_price_remains_close_opening_larger_long() {
+// let NativeTokenScenario {
+//         mut router,
+//         owner,
+//         alice,
+//         bob,
+//         engine,
+//         vamm,
+//         ..
+//     } = NativeTokenScenario::new();
+//     // 10% fee
+//     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+//     router.execute(owner.clone(), msg).unwrap();
+
+//     let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+//     router.execute(owner.clone(), msg).unwrap();
+
+//     let msg = engine
+//         .open_position(
+//             vamm.addr().to_string(),
+//             Side::SELL,
+//             Uint128::from(20_000_000_000u64),
+//             Uint128::from(10_000_000_000u64),
+//             Uint128::from(25_000_000_000u64),
+//             vec![],
+//         )
+//         .unwrap();
+//     router.execute(alice.clone(), msg).unwrap();
+
+//     let alice_balance_1 =  router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+
+//     let msg = engine
+//         .open_position(
+//             vamm.addr().to_string(),
+//             Side::BUY,
+//             Uint128::from(90_000_000_000u64),
+//             Uint128::from(5_000_000_000u64),
+//             Uint128::from(45_000_000_000u64),
+//             vec![],
+//         )
+//         .unwrap();
+//     router.execute(alice.clone(), msg).unwrap();
+
+//     let alice_balance_2 =  router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+//     assert_eq!(
+//         alice_balance_1 - alice_balance_2,
+//         Uint128::from(75_000_000_000u64)
+//     );
+
+//     let position: PositionResponse = engine
+//         .position(&router, vamm.addr().to_string(), alice.to_string())
+//         .unwrap();
+//     assert_eq!(position.size, Integer::new_positive(20_000_000_000u64));
+//     assert_eq!(position.notional, Uint128::from(250_000_000_000u64));
+//     assert_eq!(position.margin, Uint128::from(50_000_000_000u64));
+
+//     let pnl = engine
+//         .get_unrealized_pnl(
+//             &router,
+//             vamm.addr().to_string(),
+//             alice.to_string(),
+//             PnlCalcOption::SPOTPRICE,
+//         )
+//         .unwrap();
+//     assert_eq!(pnl.unrealized_pnl, Integer::zero());
+// }
+
+// #[test]
+// fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
+//     let NativeTokenScenario {
+//         mut router,
+//         owner,
+//         alice,
+//         bob,
+//         engine,
+//         vamm,
+//         ..
+//     } = NativeTokenScenario::new();
+
+//     // 10% fee
+//     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+//     router.execute(owner.clone(), msg).unwrap();
+
+//     let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+//     router.execute(owner.clone(), msg).unwrap();
+
+//     let msg = engine
+//         .open_position(
+//             vamm.addr().to_string(),
+//             Side::BUY,
+//             Uint128::from(25_000_000_000u64),
+//             Uint128::from(10_000_000_000u64),
+//             Uint128::from(20_000_000_000u64),
+//             vec![],
+//         )
+//         .unwrap();
+//     router.execute(alice.clone(), msg).unwrap();
+
+//     let alice_balance_1 =  router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+
+//     let msg = engine
+//         .open_position(
+//             vamm.addr().to_string(),
+//             Side::BUY,
+//             Uint128::from(35_000_000_000u64),
+//             Uint128::from(10_000_000_000u64),
+//             Uint128::from(17_500_000_000u64),
+//             vec![],
+//         )
+//         .unwrap();
+//     router.execute(bob.clone(), msg).unwrap();
+
+//     let pnl = engine
+//         .get_unrealized_pnl(
+//             &router,
+//             vamm.addr().to_string(),
+//             alice.to_string(),
+//             PnlCalcOption::SPOTPRICE,
+//         )
+//         .unwrap();
+//     assert_eq!(
+//         pnl.unrealized_pnl,
+//         Integer::new_positive(137_878_787_878u64)
+//     );
+
+//     let msg = engine
+//         .open_position(
+//             vamm.addr().to_string(),
+//             Side::SELL,
+//             Uint128::from(100_000_000_000u64),
+//             Uint128::from(8_000_000_000u64),
+//             Uint128::from(62_510_000_000u64),
+//             vec![],
+//         )
+//         .unwrap();
+//     router.execute(alice.clone(), msg).unwrap();
+
+//     let alice_balance_2 =  router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+//     assert_eq!(
+//         alice_balance_2 - alice_balance_1,
+//         Uint128::from(31_363_636_363u64)
+//     );
+
+//     let position: PositionResponse = engine
+//         .position(&router, vamm.addr().to_string(), alice.to_string())
+//         .unwrap();
+//     assert_eq!(position.size, Integer::new_negative(42_500_000_001u64));
+//     assert_eq!(position.notional, Uint128::from(412_121_212_122u64));
+//     assert_eq!(position.margin, Uint128::from(51_515_151_515u64));
+
+//     let pnl = engine
+//         .get_unrealized_pnl(
+//             &router,
+//             vamm.addr().to_string(),
+//             alice.to_string(),
+//             PnlCalcOption::SPOTPRICE,
+//         )
+//         .unwrap();
+//     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(9u64));
+
+//     let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
+//     assert_eq!(fee_pool_balance, Uint128::from(140_000_000_000u64));
+// }
+
+// #[test]
+// fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
+//     let NativeTokenScenario {
+//         mut router,
+//         owner,
+//         alice,
+//         bob,
+//         engine,
+//         vamm,
+//         ..
+//     } = NativeTokenScenario::new();
+
+//     // 10% fee
+//     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+//     router.execute(owner.clone(), msg).unwrap();
+
+//     let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+//     router.execute(owner.clone(), msg).unwrap();
+
+//     let msg = engine
+//         .open_position(
+//             vamm.addr().to_string(),
+//             Side::BUY,
+//             Uint128::from(125_000_000_000u64),
+//             Uint128::from(2_000_000_000u64),
+//             Uint128::from(20_000_000_000u64),
+//             vec![],
+//         )
+//         .unwrap();
+//     router.execute(alice.clone(), msg).unwrap();
+
+//     let alice_balance_1 =  router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+
+//     let msg = engine
+//         .open_position(
+//             vamm.addr().to_string(),
+//             Side::SELL,
+//             Uint128::from(125_000_000_000u64),
+//             Uint128::from(2_000_000_000u64),
+//             Uint128::from(20_000_000_000u64),
+//             vec![],
+//         )
+//         .unwrap();
+//     router.execute(bob.clone(), msg).unwrap();
+
+//     let pnl = engine
+//         .get_unrealized_pnl(
+//             &router,
+//             vamm.addr().to_string(),
+//             alice.to_string(),
+//             PnlCalcOption::SPOTPRICE,
+//         )
+//         .unwrap();
+//     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(83_333_333_334u64));
+
+//     let msg = engine
+//         .open_position(
+//             vamm.addr().to_string(),
+//             Side::SELL,
+//             Uint128::from(60_000_000_000u64),
+//             Uint128::from(10_000_000_000u64),
+//             Uint128::from(1_450_000_000_000u64),
+//             vec![],
+//         )
+//         .unwrap();
+//     router.execute(alice.clone(), msg).unwrap();
+
+//     let alice_balance_2 =  router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+//     assert_eq!(
+//         alice_balance_1 - alice_balance_2,
+//         Uint128::from(61_666_666_667u64)
+//     );
+
+//     let position: PositionResponse = engine
+//         .position(&router, vamm.addr().to_string(), alice.to_string())
+//         .unwrap();
+//     assert_eq!(position.size, Integer::new_negative(130_000_000_001u64));
+//     assert_eq!(position.notional, Uint128::from(433_333_333_334u64));
+//     assert_eq!(position.margin, Uint128::from(43_333_333_333u64));
+
+//     let pnl = engine
+//         .get_unrealized_pnl(
+//             &router,
+//             vamm.addr().to_string(),
+//             alice.to_string(),
+//             PnlCalcOption::SPOTPRICE,
+//         )
+//         .unwrap();
+//     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(3u64));
+// }
+
+// #[test]
+// fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
+//     let NativeTokenScenario {
+//         mut router,
+//         owner,
+//         alice,
+//         bob,
+//         engine,
+//         vamm,
+//         ..
+//     } = NativeTokenScenario::new();
+
+//     // 10% fee
+//     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+//     router.execute(owner.clone(), msg).unwrap();
+
+//     let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+//     router.execute(owner.clone(), msg).unwrap();
+
+//     let msg = engine
+//         .open_position(
+//             vamm.addr().to_string(),
+//             Side::SELL,
+//             Uint128::from(200_000_000_000u64),
+//             Uint128::from(1_000_000_000u64),
+//             Uint128::from(25_000_000_000u64),
+//             vec![],
+//         )
+//         .unwrap();
+//     router.execute(alice.clone(), msg).unwrap();
+
+//     let msg = engine
+//         .open_position(
+//             vamm.addr().to_string(),
+//             Side::BUY,
+//             Uint128::from(50_000_000_000u64),
+//             Uint128::from(4_000_000_000u64),
+//             Uint128::from(7_349_000_000u64),
+//             vec![],
+//         )
+//         .unwrap();
+//     router.execute(bob.clone(), msg).unwrap();
+
+//     let pnl = engine
+//         .get_unrealized_pnl(
+//             &router,
+//             vamm.addr().to_string(),
+//             alice.to_string(),
+//             PnlCalcOption::SPOTPRICE,
+//         )
+//         .unwrap();
+//     assert_eq!(
+//         pnl.unrealized_pnl,
+//         Integer::new_negative(133_333_333_334u64)
+//     );
+
+//     let msg = engine
+//         .open_position(
+//             vamm.addr().to_string(),
+//             Side::BUY,
+//             Uint128::from(60_000_000_000u64),
+//             Uint128::from(10_000_000_000u64),
+//             Uint128::from(37_490_000_000u64),
+//             vec![],
+//         )
+//         .unwrap();
+//     router.execute(alice.clone(), msg).unwrap();
+
+//     let position: PositionResponse = engine
+//         .position(&router, vamm.addr().to_string(), alice.to_string())
+//         .unwrap();
+//     assert_eq!(position.size, Integer::new_positive(12_499_999_999u64));
+//     assert_eq!(position.notional, Uint128::from(266_666_666_666u64));
+//     assert_eq!(position.margin, Uint128::from(26_666_666_666u64));
+
+//     let pnl = engine
+//         .get_unrealized_pnl(
+//             &router,
+//             vamm.addr().to_string(),
+//             alice.to_string(),
+//             PnlCalcOption::SPOTPRICE,
+//         )
+//         .unwrap();
+//     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(21u64));
+// }
+
+// #[test]
+// fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
+//     let NativeTokenScenario {
+//         mut router,
+//         owner,
+//         alice,
+//         bob,
+//         engine,
+//         vamm,
+//         ..
+//     } = NativeTokenScenario::new();
+//     // 10% fee
+//     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+//     router.execute(owner.clone(), msg).unwrap();
+
+//     let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+//     router.execute(owner.clone(), msg).unwrap();
+
+//     let msg = engine
+//         .open_position(
+//             vamm.addr().to_string(),
+//             Side::SELL,
+//             Uint128::from(500_000_000_000u64),
+//             Uint128::from(1_000_000_000u64),
+//             Uint128::from(100_000_000_000u64),
+//             vec![],
+//         )
+//         .unwrap();
+//     router.execute(alice.clone(), msg).unwrap();
+
+//     let alice_balance_1 =  router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+
+//     let msg = engine
+//         .open_position(
+//             vamm.addr().to_string(),
+//             Side::SELL,
+//             Uint128::from(100_000_000_000u64),
+//             Uint128::from(1_000_000_000u64),
+//             Uint128::from(50_000_000_000u64),
+//             vec![],
+//         )
+//         .unwrap();
+//     router.execute(bob.clone(), msg).unwrap();
+
+//     let pnl = engine
+//         .get_unrealized_pnl(
+//             &router,
+//             vamm.addr().to_string(),
+//             alice.to_string(),
+//             PnlCalcOption::SPOTPRICE,
+//         )
+//         .unwrap();
+//     assert_eq!(
+//         pnl.unrealized_pnl,
+//         Integer::new_positive(233_333_333_333u64)
+//     );
+
+//     let msg = engine
+//         .open_position(
+//             vamm.addr().to_string(),
+//             Side::BUY,
+//             Uint128::from(60_000_000_000u64),
+//             Uint128::from(10_000_000_000u64),
+//             Uint128::from(149_990_000_000u64),
+//             vec![],
+//         )
+//         .unwrap();
+//     router.execute(alice.clone(), msg).unwrap();
+
+//     let alice_balance_2 =  router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+//     assert_eq!(
+//         alice_balance_2 - alice_balance_1,
+//         Uint128::from(640_000_000_000u64)
+//     );
+
+//     let position: PositionResponse = engine
+//         .position(&router, vamm.addr().to_string(), alice.to_string())
+//         .unwrap();
+//     assert_eq!(position.size, Integer::new_positive(49_999_999_999u64));
+//     assert_eq!(position.notional, Uint128::from(333_333_333_333u64));
+//     assert_eq!(position.margin, Uint128::from(33_333_333_333u64));
+// }

@@ -156,6 +156,7 @@ pub fn decrease_position_reply(
 ) -> StdResult<Response> {
     let mut state = read_state(deps.storage)?;
     let swap = read_tmp_swap(deps.storage)?;
+
     update_open_interest_notional(
         &deps.as_ref(),
         &mut state,
@@ -224,8 +225,11 @@ pub fn reverse_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
     let mut swap = read_tmp_swap(deps.storage)?;
+    let mut funds = read_sent_funds(deps.storage)?;
+
     let mut position = get_position(
         env.clone(),
         deps.storage,
@@ -243,7 +247,7 @@ pub fn reverse_position_reply(
 
     let margin_amount = position.margin;
 
-    position = clear_position(env, position)?;
+    position = clear_position(env.clone(), position)?;
 
     // now increase the position again if there is additional position
     let current_open_notional = swap.open_notional;
@@ -253,13 +257,35 @@ pub fn reverse_position_reply(
         output.checked_sub(swap.open_notional)?
     };
 
-    let mut msgs: Vec<SubMsg> = vec![];
-    if swap.open_notional.checked_div(swap.leverage)? == Uint128::zero() {
-        // create transfer message
-        msgs.push(execute_transfer(deps.storage, &swap.trader, margin_amount).unwrap());
+    // create messages to pay for toll and spread fees, check flag is true if this follows a reverse
+    let fees = transfer_fees(
+        deps.as_ref(),
+        swap.trader.clone(),
+        swap.vamm.clone(),
+        current_open_notional,
+    )
+    .unwrap();
 
+    // add the fee transfer messages
+    let mut msgs: Vec<SubMsg> = fees.messages;
+
+    // add the total fees to the required funds counter
+    funds.required = funds.required.checked_add(fees.amount)?;
+
+    if swap.open_notional.checked_div(swap.leverage)? == Uint128::zero() {
+        println!("this");
+        // create transfer message
+        msgs.push(execute_transfer(deps.storage, &swap.trader.clone(), margin_amount).unwrap());
+
+        // check if native tokens are sufficient
+        if let AssetInfo::NativeToken { .. } = config.eligible_collateral {
+            funds.are_sufficient()?;
+        }
+
+        remove_sent_funds(deps.storage);
         remove_tmp_swap(deps.storage);
     } else {
+        println!("that");
         swap.margin_to_vault =
             Integer::new_negative(margin_amount).checked_sub(swap.unrealized_pnl)?;
         swap.unrealized_pnl = Integer::zero();
@@ -275,14 +301,10 @@ pub fn reverse_position_reply(
         store_tmp_swap(deps.storage, &swap)?;
     }
 
-    msgs.append(
-        &mut transfer_fees(deps.as_ref(), swap.trader, swap.vamm, current_open_notional)
-            .unwrap()
-            .messages,
-    );
-
     store_position(deps.storage, &position)?;
     store_state(deps.storage, &state)?;
+
+    println!("here?");
 
     Ok(Response::new()
         .add_submessages(msgs)

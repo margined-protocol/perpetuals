@@ -149,13 +149,6 @@ pub fn open_position(
         .checked_mul(config.decimals)?
         .checked_div(leverage)?;
 
-    // require_native_token_sent(
-    //     &deps.as_ref(),
-    //     info,
-    //     vamm.clone(),
-    //     quote_asset_amount,
-    //     leverage,
-    // )?;
     require_not_paused(state.pause)?;
     require_vamm(deps.storage, &vamm)?;
     require_not_restriction_mode(deps.storage, &vamm, &trader, env.block.height)?;
@@ -221,6 +214,8 @@ pub fn open_position(
             required: Uint128::zero(),
         },
     )?;
+
+    println!("here?");
 
     Ok(Response::new()
         .add_submessage(msg)
