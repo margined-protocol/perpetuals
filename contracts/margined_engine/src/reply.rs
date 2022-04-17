@@ -89,6 +89,7 @@ pub fn increase_position_reply(
 
     let mut msgs: Vec<SubMsg> = vec![];
 
+
     // create transfer messages TODO make this a nice function for use in each
     match swap.margin_to_vault.cmp(&Integer::zero()) {
         Ordering::Less => {
@@ -292,8 +293,7 @@ pub fn reverse_position_reply(
         // TODO not certain this is entirely correct
         funds.required = if swap.margin_to_vault.is_positive() {
             funds.required.checked_add(swap.margin_to_vault.value)?
-        } else if swap.margin_to_vault.is_negative() && funds.required > swap.margin_to_vault.value
-        {
+        } else if swap.margin_to_vault.is_negative() && funds.required > swap.margin_to_vault.value {
             funds.required.checked_sub(swap.margin_to_vault.value)?
         } else {
             // } else if swap.margin_to_vault.is_negative() && funds.required < swap.margin_to_vault.value {
