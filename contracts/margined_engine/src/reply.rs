@@ -106,17 +106,18 @@ pub fn increase_position_reply(
             );
         }
         Ordering::Greater => {
-            msgs.push(
-                execute_transfer_from(
-                    deps.storage,
-                    &swap.trader,
-                    &env.contract.address,
-                    swap.margin_to_vault.value,
-                )
-                .unwrap(),
-            );
             if let AssetInfo::NativeToken { .. } = config.eligible_collateral.clone() {
-                funds.required = funds.required.checked_add(swap.margin_to_vault.value)?;
+                funds.required = funds.required.checked_add(swap_margin)?;
+            } else if let AssetInfo::Token { .. } = config.eligible_collateral.clone() {
+                msgs.push(
+                    execute_transfer_from(
+                        deps.storage,
+                        &swap.trader,
+                        &env.contract.address,
+                        swap.margin_to_vault.value,
+                    )
+                    .unwrap(),
+                );
             }
         }
         _ => {}
@@ -288,12 +289,22 @@ pub fn reverse_position_reply(
         swap.unrealized_pnl = Integer::zero();
         swap.fees_paid = true;
 
-        // TODO not certain this is entirely correect
-        funds.required = if funds.required > swap.margin_to_vault.value {
+        // TODO not certain this is entirely correct
+        funds.required = if swap.margin_to_vault.is_positive() {
+            funds.required.checked_add(swap.margin_to_vault.value)?
+        } else if swap.margin_to_vault.is_negative() && funds.required > swap.margin_to_vault.value
+        {
             funds.required.checked_sub(swap.margin_to_vault.value)?
         } else {
+            // } else if swap.margin_to_vault.is_negative() && funds.required < swap.margin_to_vault.value {
             fees.amount
         };
+
+        // funds.required = if funds.required > swap.margin_to_vault.value {
+        //     funds.required.checked_sub(swap.margin_to_vault.value)?
+        // } else {
+        //     fees.amount
+        // };
 
         msgs.push(internal_increase_position(
             swap.vamm.clone(),
