@@ -8,8 +8,8 @@ use crate::{
     querier::{query_vamm_config, query_vamm_output_price, query_vamm_output_twap},
     query::query_cumulative_premium_fraction,
     state::{
-        read_config, read_position, read_state, read_vamm, read_vamm_map, store_state, Config,
-        Position, State, VammList,
+        read_config, read_position, read_state, read_vamm, read_vamm_map, store_state, Position,
+        State, VammList,
     },
 };
 
@@ -44,10 +44,10 @@ pub fn get_position(
 }
 
 // Create's an asset from the eligible collateral and msg sent
-pub fn get_asset(info: MessageInfo, config: Config) -> Asset {
-    match config.eligible_collateral.clone() {
+pub fn get_asset(info: MessageInfo, eligible_collateral: AssetInfo) -> Asset {
+    match eligible_collateral.clone() {
         AssetInfo::Token { .. } => Asset {
-            info: config.eligible_collateral,
+            info: eligible_collateral,
             amount: Uint128::zero(),
         },
         AssetInfo::NativeToken { denom } => {
@@ -56,7 +56,7 @@ pub fn get_asset(info: MessageInfo, config: Config) -> Asset {
                 None => Uint128::zero(),
             };
             Asset {
-                info: config.eligible_collateral,
+                info: eligible_collateral,
                 amount: sent,
             }
         }

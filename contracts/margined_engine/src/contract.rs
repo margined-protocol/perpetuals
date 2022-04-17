@@ -183,7 +183,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
-    println!("message reply id: {}", msg.id);
     match msg.result {
         ContractResult::Ok(response) => match msg.id {
             SWAP_INCREASE_REPLY_ID => {

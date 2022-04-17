@@ -206,7 +206,7 @@ pub fn open_position(
         },
     )?;
 
-    let asset = get_asset(info, config);
+    let asset = get_asset(info, config.eligible_collateral);
     store_sent_funds(
         deps.storage,
         &SentFunds {
@@ -214,8 +214,6 @@ pub fn open_position(
             required: Uint128::zero(),
         },
     )?;
-
-    println!("here?");
 
     Ok(Response::new()
         .add_submessage(msg)

@@ -1,5 +1,6 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 
 use cosmwasm_std::{Addr, Api, DepsMut, StdError, StdResult, Storage, Uint128};
 use cosmwasm_storage::{
@@ -164,13 +165,11 @@ impl SentFunds {
     /// throws an error if the required funds is less than the asset amount
     pub fn are_sufficient(&self) -> StdResult<()> {
         // this should only pass if asset.amount == required
-        if self.asset.amount < self.required {
-            return Err(StdError::generic_err("sent funds are insufficient"));
-        } else if self.asset.amount > self.required {
-            return Err(StdError::generic_err("sent funds are excessive"));
-        };
-
-        Ok(())
+        match self.asset.amount.cmp(&self.required) {
+            Ordering::Less => Err(StdError::generic_err("sent funds are insufficient")),
+            Ordering::Greater => Err(StdError::generic_err("sent funds are excessive")),
+            _ => Ok(()),
+        }
     }
 }
 

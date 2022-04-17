@@ -54,14 +54,6 @@ pub fn execute_transfer(
     amount: Uint128,
 ) -> StdResult<SubMsg> {
     let config = read_config(storage)?;
-    // let msg = WasmMsg::Execute {
-    //     contract_addr: config.eligible_collateral.to_string(),
-    //     funds: vec![],
-    //     msg: to_binary(&Cw20ExecuteMsg::Transfer {
-    //         recipient: receiver.to_string(),
-    //         amount,
-    //     })?,
-    // };
 
     let msg: CosmosMsg = match config.eligible_collateral {
         AssetInfo::NativeToken { denom } => CosmosMsg::Bank(BankMsg::Send {

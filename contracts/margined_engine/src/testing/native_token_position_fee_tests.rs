@@ -1416,7 +1416,7 @@ fn test_ten_percent_fee_open_short_price_remains_close_manually() {
 
 #[test]
 fn test_ten_percent_fee_open_long_price_remains_close_opening_larger_short() {
-let NativeTokenScenario {
+    let NativeTokenScenario {
         mut router,
         owner,
         alice,
@@ -1452,12 +1452,12 @@ let NativeTokenScenario {
             Uint128::from(45_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(45_000_000u64),
-            vec![Coin::new(44_000_000u128, "uusd")],
+            vec![Coin::new(45_000_000u128, "uusd")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_2 =  router.wrap().query_balance(&alice, "uusd").unwrap().amount;
+    let alice_balance_2 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
     assert_eq!(
         alice_balance_2 - alice_balance_1,
         Uint128::from(60_000_000u64)

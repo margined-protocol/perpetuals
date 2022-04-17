@@ -12,7 +12,7 @@ use crate::{
     state::{
         append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_sent_funds,
         read_state, read_tmp_liquidator, read_tmp_swap, remove_sent_funds, remove_tmp_liquidator,
-        remove_tmp_swap, store_position, store_state, store_tmp_swap,
+        remove_tmp_swap, store_position, store_sent_funds, store_state, store_tmp_swap,
     },
     utils::{
         calc_remain_margin_with_funding_payment, clear_position, get_position, realize_bad_debt,
@@ -106,17 +106,16 @@ pub fn increase_position_reply(
             );
         }
         Ordering::Greater => {
-            if let AssetInfo::Token { .. } = config.eligible_collateral.clone() {
-                msgs.push(
-                    execute_transfer_from(
-                        deps.storage,
-                        &swap.trader,
-                        &env.contract.address,
-                        swap.margin_to_vault.value,
-                    )
-                    .unwrap(),
-                );
-            } else if let AssetInfo::NativeToken { .. } = config.eligible_collateral.clone() {
+            msgs.push(
+                execute_transfer_from(
+                    deps.storage,
+                    &swap.trader,
+                    &env.contract.address,
+                    swap.margin_to_vault.value,
+                )
+                .unwrap(),
+            );
+            if let AssetInfo::NativeToken { .. } = config.eligible_collateral.clone() {
                 funds.required = funds.required.checked_add(swap.margin_to_vault.value)?;
             }
         }
@@ -247,7 +246,7 @@ pub fn reverse_position_reply(
 
     let margin_amount = position.margin;
 
-    position = clear_position(env.clone(), position)?;
+    position = clear_position(env, position)?;
 
     // now increase the position again if there is additional position
     let current_open_notional = swap.open_notional;
@@ -273,7 +272,6 @@ pub fn reverse_position_reply(
     funds.required = funds.required.checked_add(fees.amount)?;
 
     if swap.open_notional.checked_div(swap.leverage)? == Uint128::zero() {
-        println!("this");
         // create transfer message
         msgs.push(execute_transfer(deps.storage, &swap.trader.clone(), margin_amount).unwrap());
 
@@ -285,11 +283,17 @@ pub fn reverse_position_reply(
         remove_sent_funds(deps.storage);
         remove_tmp_swap(deps.storage);
     } else {
-        println!("that");
         swap.margin_to_vault =
             Integer::new_negative(margin_amount).checked_sub(swap.unrealized_pnl)?;
         swap.unrealized_pnl = Integer::zero();
         swap.fees_paid = true;
+
+        // TODO not certain this is entirely correect
+        funds.required = if funds.required > swap.margin_to_vault.value {
+            funds.required.checked_sub(swap.margin_to_vault.value)?
+        } else {
+            fees.amount
+        };
 
         msgs.push(internal_increase_position(
             swap.vamm.clone(),
@@ -299,12 +303,11 @@ pub fn reverse_position_reply(
         )?);
 
         store_tmp_swap(deps.storage, &swap)?;
+        store_sent_funds(deps.storage, &funds)?;
     }
 
     store_position(deps.storage, &position)?;
     store_state(deps.storage, &state)?;
-
-    println!("here?");
 
     Ok(Response::new()
         .add_submessages(msgs)
