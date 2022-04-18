@@ -32,7 +32,7 @@ fn test_add_margin() {
     assert_eq!(engine_balance, to_decimals(60u64));
 
     let msg = engine
-        .deposit_margin(vamm.addr().to_string(), to_decimals(80u64))
+        .deposit_margin(vamm.addr().to_string(), to_decimals(80u64), vec![])
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 

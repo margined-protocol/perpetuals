@@ -284,6 +284,7 @@ pub fn reverse_position_reply(
         remove_sent_funds(deps.storage);
         remove_tmp_swap(deps.storage);
     } else {
+        // determine new position
         swap.margin_to_vault =
             Integer::new_negative(margin_amount).checked_sub(swap.unrealized_pnl)?;
         swap.unrealized_pnl = Integer::zero();

@@ -518,7 +518,7 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
     // funding payment: -187.5 x 2000% = -3750, margin is 1200 so bad debt = -3750 + 1200 = 2550
     // margin can be added but will still shows 0 until it's larger than bad debt
     let msg = engine
-        .deposit_margin(vamm.addr().to_string(), to_decimals(1u64))
+        .deposit_margin(vamm.addr().to_string(), to_decimals(1u64), vec![])
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
@@ -665,7 +665,7 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
     // margin can be added but will still shows 0 until it's larger than bad debt
     // margin can't removed
     let msg = engine
-        .deposit_margin(vamm.addr().to_string(), to_decimals(10u64))
+        .deposit_margin(vamm.addr().to_string(), to_decimals(10u64), vec![])
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
