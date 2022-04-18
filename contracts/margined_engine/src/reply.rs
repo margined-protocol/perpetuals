@@ -296,15 +296,8 @@ pub fn reverse_position_reply(
         {
             funds.required.checked_sub(swap.margin_to_vault.value)?
         } else {
-            // } else if swap.margin_to_vault.is_negative() && funds.required < swap.margin_to_vault.value {
             fees.amount
         };
-
-        // funds.required = if funds.required > swap.margin_to_vault.value {
-        //     funds.required.checked_sub(swap.margin_to_vault.value)?
-        // } else {
-        //     fees.amount
-        // };
 
         msgs.push(internal_increase_position(
             swap.vamm.clone(),
