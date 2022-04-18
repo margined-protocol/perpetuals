@@ -574,9 +574,11 @@ dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
  "cw-storage-plus 0.8.1",
+ "cw20 0.9.1",
  "margined_perp",
  "schemars",
  "serde",
+ "terraswap",
  "thiserror",
 ]
 

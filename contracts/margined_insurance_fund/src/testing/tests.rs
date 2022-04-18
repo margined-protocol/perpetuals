@@ -5,23 +5,35 @@ use margined_perp::margined_insurance_fund::{
     ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, VammResponse,
 };
 
+const BENEFICIARY: &str = "beneficiary";
+
 #[test]
 fn test_instantiation() {
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
+    let msg = InstantiateMsg {
+        beneficiary: BENEFICIARY.to_string(),
+    };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
     let info = mock_info("addr0000", &[]);
-    assert_eq!(config, ConfigResponse { owner: info.sender });
+    assert_eq!(
+        config,
+        ConfigResponse {
+            beneficiary: Addr::unchecked(BENEFICIARY.to_string()),
+            owner: info.sender
+        }
+    );
 }
 
 #[test]
 fn test_update_config() {
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
+    let msg = InstantiateMsg {
+        beneficiary: BENEFICIARY.to_string(),
+    };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -38,6 +50,8 @@ fn test_update_config() {
     assert_eq!(
         config,
         ConfigResponse {
+            beneficiary: Addr::unchecked(BENEFICIARY.to_string()),
+
             owner: Addr::unchecked("addr0001".to_string()),
         }
     );
@@ -46,7 +60,9 @@ fn test_update_config() {
 fn test_query_vamm() {
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
+    let msg = InstantiateMsg {
+        beneficiary: BENEFICIARY.to_string(),
+    };
     let info = mock_info("addr0000", &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -92,7 +108,9 @@ fn test_query_all_vamm() {
 fn test_add_vamm() {
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
+    let msg = InstantiateMsg {
+        beneficiary: BENEFICIARY.to_string(),
+    };
     let info = mock_info("addr0000", &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -142,7 +160,9 @@ fn test_add_second_vamm() {
 
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
+    let msg = InstantiateMsg {
+        beneficiary: BENEFICIARY.to_string(),
+    };
     let info = mock_info("addr0000", &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -183,7 +203,9 @@ fn test_add_second_vamm() {
 fn test_remove_vamm() {
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
+    let msg = InstantiateMsg {
+        beneficiary: BENEFICIARY.to_string(),
+    };
     let info = mock_info("addr0000", &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -239,7 +261,9 @@ fn test_remove_vamm() {
 fn test_not_owner() {
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
+    let msg = InstantiateMsg {
+        beneficiary: BENEFICIARY.to_string(),
+    };
     let info = mock_info("addr0000", &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();

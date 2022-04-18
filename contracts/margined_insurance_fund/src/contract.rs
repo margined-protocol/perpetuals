@@ -1,6 +1,6 @@
 use crate::error::ContractError;
 use crate::{
-    handle::{add_vamm, remove_vamm, update_config},
+    handle::{add_vamm, remove_vamm, update_config, withdraw},
     query::{query_config, query_is_vamm},
     state::{store_config, Config},
 };
@@ -14,9 +14,13 @@ pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    _msg: InstantiateMsg,
+    msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    let config = Config { owner: info.sender };
+    let beneficiary = deps.api.addr_validate(&msg.beneficiary)?;
+    let config = Config {
+        owner: info.sender,
+        beneficiary,
+    };
 
     store_config(deps.storage, &config)?;
 
@@ -34,6 +38,7 @@ pub fn execute(
         ExecuteMsg::UpdateConfig { owner } => update_config(deps, info, owner),
         ExecuteMsg::AddVamm { vamm } => add_vamm(deps, info, vamm),
         ExecuteMsg::RemoveVamm { vamm } => remove_vamm(deps, info, vamm),
+        ExecuteMsg::Withdraw { token, amount } => withdraw(deps, info, token, amount),
     }
 }
 
