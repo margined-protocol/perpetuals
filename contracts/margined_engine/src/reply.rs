@@ -539,7 +539,6 @@ pub fn partial_liquidation_reply(
             env.clone(),
             &mut state,
             &liquidator.unwrap(),
-            // &config.insurance_fund,
             config.eligible_collateral,
             liquidation_fee,
         )
