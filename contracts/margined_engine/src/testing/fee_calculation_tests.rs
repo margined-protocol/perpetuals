@@ -10,11 +10,11 @@ fn test_open_position_total_fee_ten_percent() {
         mut router,
         owner,
         alice,
-        insurance,
         usdc,
         fee_pool,
         engine,
         vamm,
+        insurance_fund,
         ..
     } = SimpleScenario::new();
 
@@ -53,7 +53,9 @@ fn test_open_position_total_fee_ten_percent() {
     let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(30_000_000_000u128));
 
-    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    let insurance_balance = usdc
+        .balance(&router, insurance_fund.addr().clone())
+        .unwrap();
     assert_eq!(insurance_balance, Uint128::from(5030_000_000_000u128));
 }
 
@@ -63,11 +65,11 @@ fn test_open_short_position_twice_total_fee_ten_percent() {
         mut router,
         owner,
         alice,
-        insurance,
         usdc,
         fee_pool,
         engine,
         vamm,
+        insurance_fund,
         ..
     } = SimpleScenario::new();
 
@@ -121,7 +123,9 @@ fn test_open_short_position_twice_total_fee_ten_percent() {
     let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(10_000_000_000u128));
 
-    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    let insurance_balance = usdc
+        .balance(&router, insurance_fund.addr().clone())
+        .unwrap();
     assert_eq!(insurance_balance, Uint128::from(5010_000_000_000u128));
 }
 
@@ -131,11 +135,11 @@ fn test_open_and_close_position_fee_ten_percent() {
         mut router,
         owner,
         alice,
-        insurance,
         usdc,
         fee_pool,
         engine,
         vamm,
+        insurance_fund,
         ..
     } = SimpleScenario::new();
 
@@ -174,7 +178,9 @@ fn test_open_and_close_position_fee_ten_percent() {
     let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(60_000_000_000u128));
 
-    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    let insurance_balance = usdc
+        .balance(&router, insurance_fund.addr().clone())
+        .unwrap();
     assert_eq!(insurance_balance, Uint128::from(5060_000_000_000u128));
 }
 
@@ -184,11 +190,11 @@ fn test_open_position_close_manually_open_reverse_position_total_fee_ten_percent
         mut router,
         owner,
         alice,
-        insurance,
         usdc,
         fee_pool,
         engine,
         vamm,
+        insurance_fund,
         ..
     } = SimpleScenario::new();
 
@@ -241,7 +247,9 @@ fn test_open_position_close_manually_open_reverse_position_total_fee_ten_percent
     let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(60_000_000_000u128));
 
-    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    let insurance_balance = usdc
+        .balance(&router, insurance_fund.addr().clone())
+        .unwrap();
     assert_eq!(insurance_balance, Uint128::from(5060_000_000_000u128));
 }
 
@@ -251,11 +259,11 @@ fn test_open_position_close_manually_open_reverse_position_short_then_long_total
         mut router,
         owner,
         alice,
-        insurance,
         usdc,
         fee_pool,
         engine,
         vamm,
+        insurance_fund,
         ..
     } = SimpleScenario::new();
 
@@ -308,7 +316,9 @@ fn test_open_position_close_manually_open_reverse_position_short_then_long_total
     let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(60_000_000_000u128));
 
-    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    let insurance_balance = usdc
+        .balance(&router, insurance_fund.addr().clone())
+        .unwrap();
     assert_eq!(insurance_balance, Uint128::from(5060_000_000_000u128));
 }
 
@@ -441,11 +451,11 @@ fn test_has_spread_no_toll() {
         mut router,
         owner,
         alice,
-        insurance,
         usdc,
         fee_pool,
         engine,
         vamm,
+        insurance_fund,
         ..
     } = SimpleScenario::new();
 
@@ -473,6 +483,8 @@ fn test_has_spread_no_toll() {
     let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
     assert_eq!(fee_pool_balance, Uint128::zero());
 
-    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    let insurance_balance = usdc
+        .balance(&router, insurance_fund.addr().clone())
+        .unwrap();
     assert_eq!(insurance_balance, Uint128::from(5060_000_000_000u128));
 }

@@ -14,6 +14,7 @@ pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,
     owner: Option<String>,
+    beneficiary: Option<String>,
 ) -> Result<Response, ContractError> {
     let mut config: Config = read_config(deps.storage)?;
 
@@ -25,6 +26,11 @@ pub fn update_config(
     // change owner of insurance fund contract
     if let Some(owner) = owner {
         config.owner = deps.api.addr_validate(owner.as_str())?;
+    }
+
+    // change owner of insurance fund contract
+    if let Some(beneficiary) = beneficiary {
+        config.beneficiary = deps.api.addr_validate(beneficiary.as_str())?;
     }
 
     store_config(deps.storage, &config)?;
