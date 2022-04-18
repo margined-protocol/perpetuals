@@ -13,7 +13,7 @@ pub fn save_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
     // we match because the data might not exist yet
     // In the case there is data, we force an error
     // In the case there is not data, we add the Addr and set its bool to true
-    if let Some(_) = VAMM_LIST.may_load(deps.storage, &input.clone())? {
+    if VAMM_LIST.may_load(deps.storage, &input.clone())?.is_some() {
         return Err(StdError::GenericErr {
             msg: "This vAMM is already added".to_string(),
         });

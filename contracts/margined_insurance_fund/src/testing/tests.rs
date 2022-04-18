@@ -116,17 +116,18 @@ fn test_query_all_vamm() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //check for the added vAMMs
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVamm {},
-    )
-    .unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVamm {}).unwrap();
 
     let res: AllVammResponse = from_binary(&res).unwrap();
     let list = res.vamm_list;
 
-    assert_eq!(list, vec![Addr::unchecked("addr0001".to_string()), Addr::unchecked("addr0002".to_string())]);
+    assert_eq!(
+        list,
+        vec![
+            Addr::unchecked("addr0001".to_string()),
+            Addr::unchecked("addr0002".to_string())
+        ]
+    );
 
     //////////////////
     //query all here//
