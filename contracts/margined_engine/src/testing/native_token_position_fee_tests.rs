@@ -1878,7 +1878,7 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
     assert_eq!(pnl.unrealized_pnl, Integer::new_positive(233_333_333u64));
 
     // TODO: this transfer is needed since the native token transfer from
-    // doesnt function
+    // doesnt function for the funds held by the insurance contract
     router
         .execute(
             bob.clone(),
