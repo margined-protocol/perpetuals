@@ -24,6 +24,6 @@ pub fn query_is_vamm(deps: Deps, vamm: String) -> StdResult<VammResponse> {
 
 //Queries multiple vAMMs TODO: add the option to query a slice
 pub fn query_mult_vamm(deps: Deps) -> StdResult<AllVammResponse> {
-    let out = read_vammlist(deps.storage)?;
+    let out = read_vammlist(deps, deps.storage)?;
     Ok(AllVammResponse { vamm_list: out })
 }

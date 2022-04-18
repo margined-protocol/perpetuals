@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, DepsMut, Order, StdError, StdResult, Storage};
+use cosmwasm_std::{Addr, Deps, DepsMut, Order, StdError, StdResult, Storage};
 use cosmwasm_storage::{singleton, singleton_read};
 use cw_storage_plus::Map;
 
@@ -22,14 +22,14 @@ pub fn save_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
 }
 
 // this function reads Addrs stored in the VAMM_LIST (hopefully)...
-pub fn read_vammlist(storage: &dyn Storage) -> StdResult<Vec<Addr>> {
+pub fn read_vammlist(deps: Deps, storage: &dyn Storage) -> StdResult<Vec<Addr>> {
     let keys = VAMM_LIST
         .keys(storage, None, None, Order::Ascending)
-        .map(|x| x.)
+        .map(|x| deps.api.addr_validate(&String::from_utf8(x)?))
         .collect();
-    Ok(keys)
+    keys
 }
-
+//Addr::unchecked
 // this function checks whether the vamm is stored
 pub fn is_vamm(storage: &dyn Storage, input: Addr) -> bool {
     VAMM_LIST.has(storage, &input)

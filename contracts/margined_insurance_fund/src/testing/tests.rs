@@ -2,7 +2,7 @@ use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr};
 use margined_perp::margined_insurance_fund::{
-    ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, VammResponse,
+    AllVammResponse, ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, VammResponse,
 };
 
 #[test]
@@ -85,6 +85,19 @@ fn test_query_all_vamm() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //check to see that there are no vAMMs
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::IsVamm {
+            vamm: "addr0001".to_string(),
+        },
+    )
+    .unwrap();
+
+    let res: VammResponse = from_binary(&res).unwrap();
+    let is_vamm = res.is_vamm;
+
+    assert_eq!(is_vamm, false);
 
     //add an vAMM
     let addr1 = "addr0001".to_string();
@@ -103,6 +116,17 @@ fn test_query_all_vamm() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //check for the added vAMMs
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetAllVamm {},
+    )
+    .unwrap();
+
+    let res: AllVammResponse = from_binary(&res).unwrap();
+    let list = res.vamm_list;
+
+    assert_eq!(list, vec![Addr::unchecked("addr0001".to_string()), Addr::unchecked("addr0002".to_string())]);
 
     //////////////////
     //query all here//
