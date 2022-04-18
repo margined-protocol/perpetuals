@@ -128,10 +128,6 @@ fn test_query_all_vamm() {
             Addr::unchecked("addr0002".to_string())
         ]
     );
-
-    //////////////////
-    //query all here//
-    //////////////////
 }
 
 #[test]

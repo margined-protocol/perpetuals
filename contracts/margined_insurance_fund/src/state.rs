@@ -29,7 +29,7 @@ pub fn read_vammlist(deps: Deps, storage: &dyn Storage) -> StdResult<Vec<Addr>> 
         .collect();
     keys
 }
-//Addr::unchecked
+
 // this function checks whether the vamm is stored
 pub fn is_vamm(storage: &dyn Storage, input: Addr) -> bool {
     VAMM_LIST.has(storage, &input)

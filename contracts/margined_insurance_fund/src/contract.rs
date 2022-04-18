@@ -43,6 +43,5 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::IsVamm { vamm } => to_binary(&query_is_vamm(deps, vamm)?),
         QueryMsg::GetAllVamm {} => to_binary(&query_mult_vamm(deps)?),
-        //QueryMsg::GetMultVamm {min: ,max:} => to_binary(&query_mult_vamm(deps, min, max)?),
     }
 }
