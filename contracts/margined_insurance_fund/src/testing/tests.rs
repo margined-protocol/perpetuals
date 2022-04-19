@@ -2,7 +2,7 @@ use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr};
 use margined_perp::margined_insurance_fund::{
-    ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, VammResponse,
+    AllVammResponse, ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, VammResponse,
 };
 
 const BENEFICIARY: &str = "beneficiary";
@@ -89,14 +89,49 @@ fn test_query_vamm() {
 #[test]
 fn test_query_all_vamm() {
     //instantiate contract here
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {};
+    let info = mock_info("addr0000", &[]);
+
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //check to see that there are no vAMMs
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVamm {}).unwrap();
+
+    let res: AllVammResponse = from_binary(&res).unwrap();
+    let empty: Vec<Addr> = vec![];
+
+    assert_eq!(res.vamm_list, empty);
 
     //add an vAMM
+    let addr1 = "addr0001".to_string();
+
+    let info = mock_info("addr0000", &[]);
+    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
+
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add another vAMM
+    let addr2 = "addr0002".to_string();
+
+    let info = mock_info("addr0000", &[]);
+    let msg = ExecuteMsg::AddVamm { vamm: addr2 };
+
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //check for the added vAMMs
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVamm {}).unwrap();
+
+    let res: AllVammResponse = from_binary(&res).unwrap();
+    let list = res.vamm_list;
+
+    assert_eq!(
+        list,
+        vec![
+            Addr::unchecked("addr0001".to_string()),
+            Addr::unchecked("addr0002".to_string())
+        ]
+    );
 }
 
 #[test]

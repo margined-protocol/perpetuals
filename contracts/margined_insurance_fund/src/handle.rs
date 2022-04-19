@@ -7,7 +7,7 @@ use terraswap::asset::AssetInfo;
 
 use crate::{
     error::ContractError,
-    state::{read_config, remove_amm, save_vamm, store_config, Config},
+    state::{read_config, remove_vamm as remove_amm, save_vamm, store_config, Config},
 };
 
 pub fn update_config(
