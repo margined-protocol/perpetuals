@@ -21,7 +21,7 @@ pub fn save_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
     VAMM_LIST.save(deps.storage, &input, &true)
 }
 
-// this function reads Addrs stored in the VAMM_LIST (hopefully)...
+// this function reads Addrs stored in the VAMM_LIST TODO: case there is no info in VAMM_LIST
 pub fn read_vammlist(deps: Deps, storage: &dyn Storage) -> StdResult<Vec<Addr>> {
     let keys = VAMM_LIST
         .keys(storage, None, None, Order::Ascending)
