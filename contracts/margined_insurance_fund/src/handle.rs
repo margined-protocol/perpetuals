@@ -7,7 +7,10 @@ use terraswap::asset::AssetInfo;
 
 use crate::{
     error::ContractError,
-    state::{read_config, remove_vamm as remove_amm, save_vamm, store_config, Config, vamm_on, vamm_off, read_vammlist},
+    state::{
+        read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, store_config, vamm_off,
+        vamm_on, Config,
+    },
 };
 
 pub fn update_config(
@@ -76,10 +79,7 @@ pub fn remove_vamm(
     Ok(Response::default())
 }
 
-pub fn shutdown_all_vamm(
-    mut deps: DepsMut,
-    info: MessageInfo,
-) -> Result<Response, ContractError> {
+pub fn shutdown_all_vamm(mut deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     let config: Config = read_config(deps.storage)?;
 
     // check permission

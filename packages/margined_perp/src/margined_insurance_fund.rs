@@ -39,7 +39,7 @@ pub enum QueryMsg {
     IsVamm { vamm: String },
     GetAllVamm {},
     GetAllVammStatus {},
-    GetVammStatus {vamm: String},
+    GetVammStatus { vamm: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

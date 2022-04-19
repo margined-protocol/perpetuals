@@ -2,7 +2,8 @@ use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr};
 use margined_perp::margined_insurance_fund::{
-    AllVammStatusResponse, AllVammResponse, ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, VammStatusResponse, VammResponse,
+    AllVammResponse, AllVammStatusResponse, ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg,
+    VammResponse, VammStatusResponse,
 };
 
 const BENEFICIARY: &str = "beneficiary";
@@ -320,7 +321,6 @@ fn test_vamm_off() {
     let status = res.vamm_status;
 
     assert_eq!(status, false);
-
 }
 
 #[test]
@@ -330,9 +330,9 @@ fn test_vamm_on() {
     let msg = InstantiateMsg {};
     let info = mock_info("addr0000", &[]);
 
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();    
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //add vamm 
+    //add vamm
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
@@ -394,7 +394,7 @@ fn test_vamm_shutdown() {
     let msg = InstantiateMsg {};
     let info = mock_info("addr0000", &[]);
 
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();    
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add vamm
     let addr1 = "addr0001".to_string();
@@ -413,17 +413,18 @@ fn test_vamm_shutdown() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //query all vamms' status
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVammStatus {},
-    )
-    .unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVammStatus {}).unwrap();
 
     let res: AllVammStatusResponse = from_binary(&res).unwrap();
     let vamms_status = res.vamm_list_status;
 
-    assert_eq!(vamms_status, vec![(Addr::unchecked("addr0001".to_string()), true),(Addr::unchecked("addr0002".to_string()), true)]);
+    assert_eq!(
+        vamms_status,
+        vec![
+            (Addr::unchecked("addr0001".to_string()), true),
+            (Addr::unchecked("addr0002".to_string()), true)
+        ]
+    );
 
     //shutdown all vamms
     let info = mock_info("addr0000", &[]);
@@ -432,18 +433,18 @@ fn test_vamm_shutdown() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //query all vamms' status
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVammStatus {},
-    )
-    .unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVammStatus {}).unwrap();
 
     let res: AllVammStatusResponse = from_binary(&res).unwrap();
     let vamms_status = res.vamm_list_status;
 
-    assert_eq!(vamms_status, vec![(Addr::unchecked("addr0001".to_string()), false),(Addr::unchecked("addr0002".to_string()), false)]);
-
+    assert_eq!(
+        vamms_status,
+        vec![
+            (Addr::unchecked("addr0001".to_string()), false),
+            (Addr::unchecked("addr0002".to_string()), false)
+        ]
+    );
 }
 
 #[test]
@@ -453,7 +454,7 @@ fn test_vamm_status() {
     let msg = InstantiateMsg {};
     let info = mock_info("addr0000", &[]);
 
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();    
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add vamm
     let addr1 = "addr0001".to_string();
@@ -509,15 +510,10 @@ fn test_all_vamm_status() {
     let msg = InstantiateMsg {};
     let info = mock_info("addr0000", &[]);
 
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();    
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //query all vamms' status (there aren't any yet)
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVammStatus {},
-    )
-    .unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVammStatus {}).unwrap();
 
     let res: AllVammStatusResponse = from_binary(&res).unwrap();
     let vamms_status = res.vamm_list_status;
@@ -541,17 +537,18 @@ fn test_all_vamm_status() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //query all vamms' status
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVammStatus {},
-    )
-    .unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVammStatus {}).unwrap();
 
     let res: AllVammStatusResponse = from_binary(&res).unwrap();
     let vamms_status = res.vamm_list_status;
 
-    assert_eq!(vamms_status, vec![(Addr::unchecked("addr0001".to_string()), true),(Addr::unchecked("addr0002".to_string()), true)]);
+    assert_eq!(
+        vamms_status,
+        vec![
+            (Addr::unchecked("addr0001".to_string()), true),
+            (Addr::unchecked("addr0002".to_string()), true)
+        ]
+    );
 
     //switch first vamm off
     let addr1 = "addr0001".to_string();
@@ -562,17 +559,18 @@ fn test_all_vamm_status() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //query all vamms' status
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVammStatus {},
-    )
-    .unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVammStatus {}).unwrap();
 
     let res: AllVammStatusResponse = from_binary(&res).unwrap();
     let vamms_status = res.vamm_list_status;
 
-    assert_eq!(vamms_status, vec![(Addr::unchecked("addr0001".to_string()), false),(Addr::unchecked("addr0002".to_string()), true)]);
+    assert_eq!(
+        vamms_status,
+        vec![
+            (Addr::unchecked("addr0001".to_string()), false),
+            (Addr::unchecked("addr0002".to_string()), true)
+        ]
+    );
 }
 
 #[test]

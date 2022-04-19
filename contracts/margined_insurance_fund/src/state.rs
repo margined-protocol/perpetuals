@@ -37,7 +37,7 @@ pub fn vamm_off(deps: DepsMut, input: Addr) -> StdResult<()> {
     if VAMM_LIST.may_load(deps.storage, &input)?.is_none() {
         return Err(StdError::GenericErr {
             msg: "This vAMM has not been added".to_string(),
-        })
+        });
     };
     VAMM_LIST.save(deps.storage, &input, &false)
 }
@@ -49,7 +49,7 @@ pub fn vamm_on(deps: DepsMut, input: Addr) -> StdResult<()> {
     if VAMM_LIST.may_load(deps.storage, &input)?.is_none() {
         return Err(StdError::GenericErr {
             msg: "This vAMM has not been added".to_string(),
-        })
+        });
     };
     VAMM_LIST.save(deps.storage, &input, &true)
 }
@@ -66,19 +66,24 @@ pub fn read_vamm_status(storage: &dyn Storage, input: Addr) -> StdResult<bool> {
 
 // this function reads the bools stored in the Map, and if there are no vAMMs stored, returns empty vec
 // use this function when you want to check the 'on/off' status of a vAMM
-pub fn read_all_vamm_status(storage: &dyn Storage) -> StdResult<Vec<(Addr,bool)>> {
+pub fn read_all_vamm_status(storage: &dyn Storage) -> StdResult<Vec<(Addr, bool)>> {
     let status_vec = VAMM_LIST
         .range(storage, None, None, Order::Ascending)
-        .collect::<StdResult<Vec<(Vec<u8>,bool)>>>()?
+        .collect::<StdResult<Vec<(Vec<u8>, bool)>>>()?
         .iter()
-        .map(|tup| (Addr::unchecked(&String::from_utf8(tup.0.clone()).unwrap()), tup.1))
+        .map(|tup| {
+            (
+                Addr::unchecked(&String::from_utf8(tup.0.clone()).unwrap()),
+                tup.1,
+            )
+        })
         .collect();
 
     // This takes the Map in storage, loads the key-value pairs but the keys are still UTF-8 encoded
     // We collect into a StdResult<Vec> of key-value pairs but the keys are still Vec<u8>
     // Unwrap the Result and then transform back to an iterator so we can map (Vec<u8>, bool) -> (Addr, bool)
     // finally re-collect into a vec
-    
+
     Ok(status_vec)
 }
 
