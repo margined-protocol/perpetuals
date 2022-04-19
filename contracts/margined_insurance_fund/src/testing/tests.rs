@@ -85,19 +85,12 @@ fn test_query_all_vamm() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //check to see that there are no vAMMs
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::IsVamm {
-            vamm: "addr0001".to_string(),
-        },
-    )
-    .unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVamm {}).unwrap();
 
-    let res: VammResponse = from_binary(&res).unwrap();
-    let is_vamm = res.is_vamm;
+    let res: AllVammResponse = from_binary(&res).unwrap();
+    let empty: Vec<Addr> = vec![];
 
-    assert_eq!(is_vamm, false);
+    assert_eq!(res.vamm_list, empty);
 
     //add an vAMM
     let addr1 = "addr0001".to_string();
