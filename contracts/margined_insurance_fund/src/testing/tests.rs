@@ -5,6 +5,8 @@ use margined_perp::margined_insurance_fund::{
     ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, VammResponse,
 };
 
+const BENEFICIARY: &str = "beneficiary";
+
 #[test]
 fn test_instantiation() {
     let mut deps = mock_dependencies(&[]);
@@ -15,7 +17,13 @@ fn test_instantiation() {
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
     let info = mock_info("addr0000", &[]);
-    assert_eq!(config, ConfigResponse { owner: info.sender });
+    assert_eq!(
+        config,
+        ConfigResponse {
+            beneficiary: Addr::unchecked("".to_string()),
+            owner: info.sender
+        }
+    );
 }
 
 #[test]
@@ -28,6 +36,7 @@ fn test_update_config() {
     // Update the config
     let msg = ExecuteMsg::UpdateConfig {
         owner: Some("addr0001".to_string()),
+        beneficiary: Some(BENEFICIARY.to_string()),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -38,6 +47,8 @@ fn test_update_config() {
     assert_eq!(
         config,
         ConfigResponse {
+            beneficiary: Addr::unchecked(BENEFICIARY.to_string()),
+
             owner: Addr::unchecked("addr0001".to_string()),
         }
     );
@@ -247,6 +258,7 @@ fn test_not_owner() {
     // try to update the config
     let msg = ExecuteMsg::UpdateConfig {
         owner: Some("addr0001".to_string()),
+        beneficiary: None,
     };
 
     let info = mock_info("not_the_owner", &[]);

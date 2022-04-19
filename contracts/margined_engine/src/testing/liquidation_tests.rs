@@ -14,11 +14,11 @@ fn test_partially_liquidate_long_position() {
         bob,
         carol,
         owner,
-        insurance,
         engine,
         usdc,
         vamm,
         pricefeed,
+        insurance_fund,
         ..
     } = SimpleScenario::new();
 
@@ -136,7 +136,9 @@ fn test_partially_liquidate_long_position() {
     let carol_balance = usdc.balance(&router, carol.clone()).unwrap();
     assert_eq!(carol_balance, Uint128::from(855_695_509u128));
 
-    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    let insurance_balance = usdc
+        .balance(&router, insurance_fund.addr().clone())
+        .unwrap();
     assert_eq!(insurance_balance, Uint128::from(5_000_855_695_509u128));
 }
 
@@ -277,11 +279,11 @@ fn test_partially_liquidate_short_position() {
         bob,
         carol,
         owner,
-        insurance,
         engine,
         usdc,
         vamm,
         pricefeed,
+        insurance_fund,
         ..
     } = SimpleScenario::new();
 
@@ -398,7 +400,9 @@ fn test_partially_liquidate_short_position() {
     let carol_balance = usdc.balance(&router, carol.clone()).unwrap();
     assert_eq!(carol_balance, Uint128::from(553_234_429u128));
 
-    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    let insurance_balance = usdc
+        .balance(&router, insurance_fund.addr().clone())
+        .unwrap();
     assert_eq!(insurance_balance, Uint128::from(5_000_553_234_429u128));
 }
 
@@ -539,11 +543,11 @@ fn test_long_position_complete_liquidation() {
         bob,
         carol,
         owner,
-        insurance,
         engine,
         usdc,
         vamm,
         pricefeed,
+        insurance_fund,
         ..
     } = SimpleScenario::new();
 
@@ -651,7 +655,9 @@ fn test_long_position_complete_liquidation() {
     assert_eq!(carol_balance, Uint128::from(2_801_120_448u128));
 
     // 5000 - 0.91 - 2.8
-    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    let insurance_balance = usdc
+        .balance(&router, insurance_fund.addr().clone())
+        .unwrap();
     assert_eq!(insurance_balance, Uint128::from(4_996_288_515_407u128));
 }
 
@@ -788,11 +794,11 @@ fn test_short_position_complete_liquidation() {
         bob,
         carol,
         owner,
-        insurance,
         engine,
         usdc,
         vamm,
         pricefeed,
+        insurance_fund,
         ..
     } = SimpleScenario::new();
 
@@ -900,7 +906,9 @@ fn test_short_position_complete_liquidation() {
     assert_eq!(carol_balance, Uint128::from(2_793_670_659u128));
 
     // 5000 - 3.49 - 2.79
-    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    let insurance_balance = usdc
+        .balance(&router, insurance_fund.addr().clone())
+        .unwrap();
     assert_eq!(insurance_balance, Uint128::from(4_993_712_676_564u128));
 }
 
