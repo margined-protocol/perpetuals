@@ -10,7 +10,7 @@ use crate::{
     state::{read_config, State},
 };
 
-use margined_perp::margined_insurance_fund::ExecuteMsg as InsuranceFundExectureMessage;
+use margined_perp::margined_insurance_fund::ExecuteMsg as InsuranceFundExecuteMessage;
 use margined_perp::margined_vamm::CalcFeeResponse;
 use margined_perp::querier::query_token_balance;
 
@@ -117,7 +117,7 @@ pub fn execute_insurance_fund_withdrawal(deps: Deps, amount: Uint128) -> StdResu
     let msg = WasmMsg::Execute {
         contract_addr: config.insurance_fund.to_string(),
         funds: vec![],
-        msg: to_binary(&InsuranceFundExectureMessage::Withdraw {
+        msg: to_binary(&InsuranceFundExecuteMessage::Withdraw {
             token: config.eligible_collateral,
             amount,
         })?,
