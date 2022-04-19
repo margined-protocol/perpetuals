@@ -4,13 +4,10 @@ use cosmwasm_std::{
 use terraswap::asset::{Asset, AssetInfo};
 
 use crate::{
-    messages::execute_transfer_from,
     querier::{query_vamm_config, query_vamm_output_price, query_vamm_output_twap},
+    messages::execute_insurance_fund_withdrawal,
     query::query_cumulative_premium_fraction,
-    state::{
-        read_config, read_position, read_state, read_vamm, read_vamm_map, store_state, Position,
-        State, VammList,
-    },
+    state::{read_config, read_position, read_vamm, read_vamm_map, Position, State, VammList},
 };
 
 use margined_common::integer::Integer;
@@ -64,31 +61,18 @@ pub fn get_asset(info: MessageInfo, eligible_collateral: AssetInfo) -> Asset {
 }
 
 pub fn realize_bad_debt(
-    storage: &mut dyn Storage,
-    contract_address: Addr,
+    deps: Deps,
     bad_debt: Uint128,
     messages: &mut Vec<SubMsg>,
+    state: &mut State,
 ) -> StdResult<Response> {
-    let config = read_config(storage)?;
-    let mut state = read_state(storage)?;
-
     if state.bad_debt.is_zero() {
         // create transfer from message
-        messages.push(
-            execute_transfer_from(
-                storage,
-                &config.insurance_fund,
-                &contract_address,
-                bad_debt, // Uint128::from(1000000000u64),
-            )
-            .unwrap(),
-        );
+        messages.push(execute_insurance_fund_withdrawal(deps, bad_debt).unwrap());
         state.bad_debt = bad_debt;
     } else {
         state.bad_debt = Uint128::zero();
     };
-
-    store_state(storage, &state)?;
 
     Ok(Response::new())
 }

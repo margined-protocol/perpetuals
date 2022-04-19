@@ -389,7 +389,6 @@ pub fn withdraw_margin(
         env,
         &mut state,
         &trader,
-        &config.insurance_fund,
         config.eligible_collateral,
         amount,
     )

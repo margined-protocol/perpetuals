@@ -5,8 +5,8 @@ use terraswap::asset::AssetInfo;
 use crate::{
     handle::internal_increase_position,
     messages::{
-        execute_transfer, execute_transfer_from, execute_transfer_to_insurance_fund, transfer_fees,
-        withdraw,
+        execute_insurance_fund_withdrawal, execute_transfer, execute_transfer_from,
+        execute_transfer_to_insurance_fund, transfer_fees, withdraw,
     },
     querier::query_vamm_state,
     state::{
@@ -98,7 +98,6 @@ pub fn increase_position_reply(
                     env,
                     &mut state,
                     &swap.trader,
-                    &config.insurance_fund,
                     config.eligible_collateral.clone(),
                     swap.margin_to_vault.value,
                 )
@@ -353,12 +352,7 @@ pub fn close_position_reply(
     let mut msgs: Vec<SubMsg> = vec![];
 
     if !bad_debt.is_zero() {
-        realize_bad_debt(
-            deps.storage,
-            env.contract.address.clone(),
-            bad_debt,
-            &mut msgs,
-        )?;
+        realize_bad_debt(deps.as_ref(), bad_debt, &mut msgs, &mut state)?;
     }
 
     if !margin.is_zero() {
@@ -368,7 +362,6 @@ pub fn close_position_reply(
                 env.clone(),
                 &mut state,
                 &swap.trader,
-                &config.insurance_fund,
                 config.eligible_collateral,
                 margin,
             )
@@ -376,16 +369,17 @@ pub fn close_position_reply(
         );
     }
 
-    msgs.append(
-        &mut transfer_fees(
-            deps.as_ref(),
-            swap.trader,
-            swap.vamm.clone(),
-            position.notional,
-        )
-        .unwrap()
-        .messages,
-    );
+    if !position.notional.is_zero() {
+        msgs.append(
+            &mut transfer_fees(
+                deps.as_ref(),
+                swap.trader,
+                swap.vamm.clone(),
+                position.notional,
+            )
+            .unwrap().messages,
+        );
+    }
 
     let value =
         margin_delta + Integer::new_positive(bad_debt) + Integer::new_positive(position.notional);
@@ -398,6 +392,7 @@ pub fn close_position_reply(
     store_state(deps.storage, &state)?;
 
     remove_tmp_swap(deps.storage);
+
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "close_position_reply"),
         ("funding_payment", &funding_payment.to_string()),
@@ -457,12 +452,7 @@ pub fn liquidate_reply(
     let mut msgs: Vec<SubMsg> = vec![];
 
     if !remain_margin.bad_debt.is_zero() {
-        realize_bad_debt(
-            deps.storage,
-            env.contract.address.clone(),
-            remain_margin.bad_debt,
-            &mut msgs,
-        )?;
+        realize_bad_debt(deps.as_ref(), remain_margin.bad_debt, &mut msgs, &mut state)?;
     }
 
     let fee_to_insurance = if !remain_margin.margin.is_zero() {
@@ -488,7 +478,6 @@ pub fn liquidate_reply(
             env.clone(),
             &mut state,
             &liquidator,
-            &config.insurance_fund,
             config.eligible_collateral,
             liquidation_fee,
         )
@@ -590,7 +579,6 @@ pub fn partial_liquidation_reply(
             env.clone(),
             &mut state,
             &liquidator.unwrap(),
-            &config.insurance_fund,
             config.eligible_collateral,
             liquidation_fee,
         )
@@ -633,18 +621,15 @@ pub fn pay_funding_reply(
     let funding_payment =
         total_position_size * premium_fraction / Integer::new_positive(config.decimals);
 
-    let msg: SubMsg = if funding_payment.is_negative() {
-        execute_transfer_from(
-            deps.storage,
-            &config.insurance_fund,
-            &env.contract.address,
-            funding_payment.value,
-        )?
-    } else {
-        execute_transfer_to_insurance_fund(deps.as_ref(), env, funding_payment.value)?
+    let mut response: Response = Response::new();
+
+    if funding_payment.is_negative() && !funding_payment.is_zero() {
+        let msg = execute_insurance_fund_withdrawal(deps.as_ref(), funding_payment.value)?;
+        response = response.add_submessage(msg);
+    } else if funding_payment.is_positive() && !funding_payment.is_zero() {
+        let msg = execute_transfer_to_insurance_fund(deps.as_ref(), env, funding_payment.value)?;
+        response = response.add_submessage(msg);
     };
 
-    Ok(Response::new()
-        .add_submessage(msg)
-        .add_attributes(vec![("action", "pay_funding_reply")]))
+    Ok(response.add_attributes(vec![("action", "pay_funding_reply")]))
 }

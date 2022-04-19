@@ -11,6 +11,7 @@ use crate::{
 };
 
 use margined_perp::margined_engine::TransferResponse;
+use margined_perp::margined_insurance_fund::ExecuteMsg as InsuranceFundExecuteMessage;
 use margined_perp::margined_vamm::CalcFeeResponse;
 use margined_perp::querier::query_token_balance;
 
@@ -118,6 +119,28 @@ pub fn execute_transfer_to_insurance_fund(
     Ok(transfer_msg)
 }
 
+pub fn execute_insurance_fund_withdrawal(deps: Deps, amount: Uint128) -> StdResult<SubMsg> {
+    let config = read_config(deps.storage)?;
+
+    let msg = WasmMsg::Execute {
+        contract_addr: config.insurance_fund.to_string(),
+        funds: vec![],
+        msg: to_binary(&InsuranceFundExecuteMessage::Withdraw {
+            token: config.eligible_collateral,
+            amount,
+        })?,
+    };
+
+    let transfer_msg = SubMsg {
+        msg: CosmosMsg::Wasm(msg),
+        gas_limit: None, // probably should set a limit in the config
+        id: 0u64,
+        reply_on: ReplyOn::Never,
+    };
+
+    Ok(transfer_msg)
+}
+
 // Transfers the toll and spread fees to the the insurance fund and fee pool
 pub fn transfer_fees(
     deps: Deps,
@@ -156,12 +179,11 @@ pub fn withdraw(
     env: Env,
     state: &mut State,
     receiver: &Addr,
-    insurance_fund: &Addr,
     eligible_collateral: AssetInfo,
     amount: Uint128,
 ) -> StdResult<Vec<SubMsg>> {
-    let token_balance =
-        query_token_balance(deps, eligible_collateral, env.contract.address.clone())?;
+    let token_balance = query_token_balance(deps, eligible_collateral, env.contract.address)?;
+
     let mut messages: Vec<SubMsg> = vec![];
 
     let mut shortfall = Uint128::zero();
@@ -169,16 +191,9 @@ pub fn withdraw(
     if token_balance < amount {
         shortfall = amount.checked_sub(token_balance)?;
 
-        messages.push(
-            execute_transfer_from(
-                deps.storage,
-                insurance_fund,
-                &env.contract.address,
-                shortfall,
-            )
-            .unwrap(),
-        );
+        messages.push(execute_insurance_fund_withdrawal(deps, shortfall).unwrap());
     }
+
     messages.push(execute_transfer(deps.storage, receiver, amount).unwrap());
 
     // add any shortfall to bad_debt

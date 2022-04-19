@@ -657,7 +657,7 @@ fn test_close_under_collateral_position() {
         mut router,
         alice,
         bob,
-        insurance,
+        insurance_fund,
         engine,
         vamm,
         usdc,
@@ -714,7 +714,9 @@ fn test_close_under_collateral_position() {
     let alice_balance = usdc.balance(&router, alice.clone()).unwrap();
     assert_eq!(alice_balance, Uint128::from(4_975_000_000_000u128));
 
-    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    let insurance_balance = usdc
+        .balance(&router, insurance_fund.addr().clone())
+        .unwrap();
     assert_eq!(insurance_balance, Uint128::from(4_941_666_666_666u128));
 
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
@@ -747,7 +749,7 @@ fn test_openclose_position_to_check_fee_is_charged() {
         mut router,
         alice,
         owner,
-        insurance,
+        insurance_fund,
         fee_pool,
         engine,
         vamm,
@@ -793,7 +795,9 @@ fn test_openclose_position_to_check_fee_is_charged() {
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, to_decimals(0u64));
 
-    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    let insurance_balance = usdc
+        .balance(&router, insurance_fund.addr().clone())
+        .unwrap();
     assert_eq!(insurance_balance, to_decimals(5024u64));
 
     let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
@@ -962,7 +966,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
         mut router,
         alice,
         bob,
-        insurance,
+        insurance_fund,
         engine,
         usdc,
         vamm,
@@ -1031,7 +1035,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     let alice_balance = usdc.balance(&router, alice.clone()).unwrap();
     assert_eq!(alice_balance, Uint128::from(5_094_117_647_059u128));
 
-    // bob close her under collateral position, positionValue is -294.11
+    // bob close his under collateral position, positionValue is -294.11
     // bob's pnl = 200 - 294.11 ~= -94.12
     // bob loss all his margin (20) with additional 74.12 badDebt
     // which is already prepaid by insurance fund when alice close the position before
@@ -1047,6 +1051,8 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::zero());
 
-    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    let insurance_balance = usdc
+        .balance(&router, insurance_fund.addr().clone())
+        .unwrap();
     assert_eq!(insurance_balance, Uint128::from(4_925_882_352_941u128));
 }
