@@ -120,7 +120,6 @@ pub fn execute_insurance_fund_withdrawal(deps: Deps, amount: Uint128) -> StdResu
         msg: to_binary(&InsuranceFundExectureMessage::Withdraw {
             token: config.eligible_collateral,
             amount,
-            // amount: amount_to_send,
         })?,
     };
 
