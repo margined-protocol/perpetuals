@@ -100,7 +100,6 @@ pub fn increase_position_reply(
                     env,
                     &mut state,
                     &swap.trader,
-                    // &config.insurance_fund,
                     config.eligible_collateral,
                     swap.margin_to_vault.value,
                 )
@@ -437,7 +436,6 @@ pub fn liquidate_reply(
             env.clone(),
             &mut state,
             &liquidator,
-            // &config.insurance_fund,
             config.eligible_collateral,
             liquidation_fee,
         )
