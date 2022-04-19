@@ -30,6 +30,58 @@ pub fn read_vammlist(deps: Deps, storage: &dyn Storage) -> StdResult<Vec<Addr>> 
     keys
 }
 
+// function changes the bool stored under an address to 'false'
+// note that that means this can only be given an *existing* vamm
+pub fn vamm_off(deps: DepsMut, input: Addr) -> StdResult<()> {
+    // first check that there is data there
+    if VAMM_LIST.may_load(deps.storage, &input)?.is_none() {
+        return Err(StdError::GenericErr {
+            msg: "This vAMM has not been added".to_string(),
+        })
+    };
+    VAMM_LIST.save(deps.storage, &input, &false)
+}
+
+// function changes the bool stored under an address to 'true'
+// note that that means this can only be given an *existing* vamm
+pub fn vamm_on(deps: DepsMut, input: Addr) -> StdResult<()> {
+    // first check that there is data there
+    if VAMM_LIST.may_load(deps.storage, &input)?.is_none() {
+        return Err(StdError::GenericErr {
+            msg: "This vAMM has not been added".to_string(),
+        })
+    };
+    VAMM_LIST.save(deps.storage, &input, &true)
+}
+
+// this function reads the bool stored under an addr, and if there is no addr stored there then throws an error
+// use this function when you want to check the 'on/off' status of a vAMM
+pub fn read_vamm_status(storage: &dyn Storage, input: Addr) -> StdResult<bool> {
+    VAMM_LIST
+        .load(storage, &input)
+        .map_err(|_| StdError::GenericErr {
+            msg: "No vAMM stored".to_string(),
+        })
+}
+
+// this function reads the bools stored in the Map, and if there are no vAMMs stored, returns empty vec
+// use this function when you want to check the 'on/off' status of a vAMM
+pub fn read_all_vamm_status(storage: &dyn Storage) -> StdResult<Vec<(Addr,bool)>> {
+    let status_vec = VAMM_LIST
+        .range(storage, None, None, Order::Ascending)
+        .collect::<StdResult<Vec<(Vec<u8>,bool)>>>()?
+        .iter()
+        .map(|tup| (Addr::unchecked(&String::from_utf8(tup.0.clone()).unwrap()), tup.1))
+        .collect();
+
+    // This takes the Map in storage, loads the key-value pairs but the keys are still UTF-8 encoded
+    // We collect into a StdResult<Vec> of key-value pairs but the keys are still Vec<u8>
+    // Unwrap the Result and then transform back to an iterator so we can map (Vec<u8>, bool) -> (Addr, bool)
+    // finally re-collect into a vec
+    
+    Ok(status_vec)
+}
+
 // this function checks whether the vamm is stored
 pub fn is_vamm(storage: &dyn Storage, input: Addr) -> bool {
     VAMM_LIST.has(storage, &input)

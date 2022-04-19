@@ -23,6 +23,13 @@ pub enum ExecuteMsg {
         token: AssetInfo,
         amount: Uint128,
     },
+    SwitchVammOn {
+        vamm: String,
+    },
+    SwitchVammOff {
+        vamm: String,
+    },
+    ShutdownAllVamm {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -31,7 +38,8 @@ pub enum QueryMsg {
     Config {},
     IsVamm { vamm: String },
     GetAllVamm {},
-    //GetMultVamm {min: Option<Bound<>> , max: },
+    GetAllVammStatus {},
+    GetVammStatus {vamm: String},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -46,6 +54,16 @@ pub struct VammResponse {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct VammStatusResponse {
+    pub vamm_status: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct AllVammResponse {
     pub vamm_list: Vec<Addr>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct AllVammStatusResponse {
+    pub vamm_list_status: Vec<(Addr, bool)>,
 }
