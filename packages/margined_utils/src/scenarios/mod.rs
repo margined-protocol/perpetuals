@@ -1,11 +1,14 @@
 use crate::contracts::helpers::{
-    margined_engine::EngineController, margined_pricefeed::PricefeedController,
-    margined_vamm::VammController,
+    margined_engine::EngineController, margined_insurance_fund::InsuranceFundController,
+    margined_pricefeed::PricefeedController, margined_vamm::VammController,
 };
 use cosmwasm_std::{Addr, Coin, Empty, Response, Uint128};
 use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg, MinterResponse};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use margined_perp::margined_engine::{InstantiateMsg, Side};
+use margined_perp::margined_insurance_fund::{
+    ExecuteMsg as InsuranceFundExecuteMsg, InstantiateMsg as InsuranceFundInstantiateMsg,
+};
 use margined_perp::margined_pricefeed::InstantiateMsg as PricefeedInstantiateMsg;
 use margined_perp::margined_vamm::{
     ExecuteMsg as VammExecuteMsg, InstantiateMsg as VammInstantiateMsg,
@@ -172,12 +175,12 @@ pub struct SimpleScenario {
     pub bob: Addr,
     pub carol: Addr,
     pub david: Addr,
-    pub insurance: Addr,
     pub fee_pool: Addr,
     pub usdc: Cw20Contract,
     pub vamm: VammController,
     pub engine: EngineController,
     pub pricefeed: PricefeedController,
+    pub insurance_fund: InsuranceFundController,
 }
 
 impl SimpleScenario {
@@ -189,13 +192,25 @@ impl SimpleScenario {
         let bob = Addr::unchecked("bob");
         let carol = Addr::unchecked("carol");
         let david = Addr::unchecked("david");
-        let insurance_fund = Addr::unchecked("insurance_fund");
         let fee_pool = Addr::unchecked("fee_pool");
 
         let usdc_id = router.store_code(contract_cw20());
         let engine_id = router.store_code(contract_engine());
         let vamm_id = router.store_code(contract_vamm());
+        let insurance_fund_id = router.store_code(contract_insurance_fund());
         let pricefeed_id = router.store_code(contract_mock_pricefeed());
+
+        let insurance_fund_addr = router
+            .instantiate_contract(
+                insurance_fund_id,
+                owner.clone(),
+                &InsuranceFundInstantiateMsg {},
+                &[],
+                "insurance_fund",
+                None,
+            )
+            .unwrap();
+        let insurance_fund = InsuranceFundController(insurance_fund_addr.clone());
 
         let usdc_addr = router
             .instantiate_contract(
@@ -219,7 +234,7 @@ impl SimpleScenario {
                             amount: to_decimals(5000),
                         },
                         Cw20Coin {
-                            address: insurance_fund.to_string(),
+                            address: insurance_fund.addr().to_string(),
                             amount: to_decimals(5000),
                         },
                     ],
@@ -286,7 +301,7 @@ impl SimpleScenario {
                 owner.clone(),
                 &InstantiateMsg {
                     decimals: 9u8,
-                    insurance_fund: insurance_fund.to_string(),
+                    insurance_fund: insurance_fund.addr().to_string(),
                     fee_pool: fee_pool.to_string(),
                     eligible_collateral: usdc_addr.to_string(),
                     initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
@@ -300,6 +315,19 @@ impl SimpleScenario {
             )
             .unwrap();
         let engine = EngineController(engine_addr.clone());
+
+        // set margin engine as beneficiary in insurance fund
+        router
+            .execute_contract(
+                owner.clone(),
+                insurance_fund_addr,
+                &InsuranceFundExecuteMsg::UpdateConfig {
+                    owner: None,
+                    beneficiary: Some(engine_addr.to_string()),
+                },
+                &[],
+            )
+            .unwrap();
 
         // set margin engine in vamm
         router
@@ -353,24 +381,10 @@ impl SimpleScenario {
         router
             .execute_contract(
                 david.clone(),
-                usdc_addr.clone(),
-                &Cw20ExecuteMsg::IncreaseAllowance {
-                    spender: engine_addr.to_string(),
-                    amount: to_decimals(100),
-                    expires: None,
-                },
-                &[],
-            )
-            .unwrap();
-
-        // create allowance for insurance_fund
-        router
-            .execute_contract(
-                insurance_fund.clone(),
                 usdc_addr,
                 &Cw20ExecuteMsg::IncreaseAllowance {
                     spender: engine_addr.to_string(),
-                    amount: to_decimals(5000),
+                    amount: to_decimals(100),
                     expires: None,
                 },
                 &[],
@@ -384,12 +398,12 @@ impl SimpleScenario {
             bob,
             carol,
             david,
-            insurance: insurance_fund,
             fee_pool,
             usdc,
             pricefeed,
             vamm,
             engine,
+            insurance_fund,
         }
     }
 
@@ -563,6 +577,15 @@ fn contract_vamm() -> Box<dyn Contract<Empty>> {
         margined_vamm::contract::execute,
         margined_vamm::contract::instantiate,
         margined_vamm::contract::query,
+    );
+    Box::new(contract)
+}
+
+fn contract_insurance_fund() -> Box<dyn Contract<Empty>> {
+    let contract = ContractWrapper::new_with_empty(
+        margined_insurance_fund::contract::execute,
+        margined_insurance_fund::contract::instantiate,
+        margined_insurance_fund::contract::query,
     );
     Box::new(contract)
 }
