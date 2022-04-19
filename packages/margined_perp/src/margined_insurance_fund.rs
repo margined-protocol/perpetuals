@@ -34,5 +34,5 @@ pub struct VammResponse {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct AllVammResponse {
-    pub vamm_list: Vec<Addr>
+    pub vamm_list: Vec<Addr>,
 }
