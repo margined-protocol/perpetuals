@@ -105,9 +105,9 @@ pub fn increase_position_reply(
             );
         }
         Ordering::Greater => {
-            if let AssetInfo::NativeToken { .. } = config.eligible_collateral.clone() {
+            if let AssetInfo::NativeToken { .. } = config.eligible_collateral {
                 funds.required = funds.required.checked_add(swap_margin)?;
-            } else if let AssetInfo::Token { .. } = config.eligible_collateral.clone() {
+            } else if let AssetInfo::Token { .. } = config.eligible_collateral {
                 msgs.push(
                     execute_transfer_from(
                         deps.storage,
@@ -377,7 +377,8 @@ pub fn close_position_reply(
                 swap.vamm.clone(),
                 position.notional,
             )
-            .unwrap().messages,
+            .unwrap()
+            .messages,
         );
     }
 

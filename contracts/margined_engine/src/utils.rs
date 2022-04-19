@@ -4,8 +4,8 @@ use cosmwasm_std::{
 use terraswap::asset::{Asset, AssetInfo};
 
 use crate::{
-    querier::{query_vamm_config, query_vamm_output_price, query_vamm_output_twap},
     messages::execute_insurance_fund_withdrawal,
+    querier::{query_vamm_config, query_vamm_output_price, query_vamm_output_twap},
     query::query_cumulative_premium_fraction,
     state::{read_config, read_position, read_vamm, read_vamm_map, Position, State, VammList},
 };
