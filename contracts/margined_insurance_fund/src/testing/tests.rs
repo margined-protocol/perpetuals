@@ -324,6 +324,42 @@ fn test_vamm_off() {
 }
 
 #[test]
+fn try_vamm_off_and_on() {
+    //instantiate contract here
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {};
+    let info = mock_info("addr0000", &[]);
+
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    //try to switch vamm off
+    let addr1 = "addr0001".to_string();
+
+    let info = mock_info("addr0000", &[]);
+    let msg = ExecuteMsg::SwitchVammOff { vamm: addr1 };
+
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+
+    assert_eq!(
+        res.to_string(),
+        "Generic error: This vAMM has not been added"
+    );
+
+    //try to switch vamm on
+    let addr1 = "addr0001".to_string();
+
+    let info = mock_info("addr0000", &[]);
+    let msg = ExecuteMsg::SwitchVammOn { vamm: addr1 };
+
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+
+    assert_eq!(
+        res.to_string(),
+        "Generic error: This vAMM has not been added"
+    );
+}
+
+#[test]
 fn test_vamm_on() {
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
@@ -615,8 +651,30 @@ fn test_not_owner() {
     assert_eq!(res.to_string(), "Unauthorized");
 
     //try to switch vamm on
+    let addr1 = "addr0001".to_string();
+
+    let info = mock_info("not_the_owner", &[]);
+    let msg = ExecuteMsg::SwitchVammOn { vamm: addr1 };
+
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+
+    assert_eq!(res.to_string(), "Unauthorized");
 
     //try to switch vamm off
+    let addr1 = "addr0001".to_string();
+
+    let info = mock_info("not_the_owner", &[]);
+    let msg = ExecuteMsg::SwitchVammOff { vamm: addr1 };
+
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+
+    assert_eq!(res.to_string(), "Unauthorized");
 
     //try to shutdown all vamms
+    let info = mock_info("not_the_owner", &[]);
+    let msg = ExecuteMsg::ShutdownAllVamm {};
+
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+
+    assert_eq!(res.to_string(), "Unauthorized");
 }
