@@ -48,9 +48,11 @@ pub fn remove_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
     VAMM_LIST.remove(deps.storage, &input);
     Ok(())
 }
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
+    pub beneficiary: Addr,
 }
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {

@@ -1,12 +1,14 @@
 use crate::error::ContractError;
 use crate::{
-    handle::{add_vamm, remove_vamm, update_config},
+    handle::{add_vamm, remove_vamm, update_config, withdraw},
     query::{query_config, query_is_vamm, query_mult_vamm},
     state::{store_config, Config},
 };
+
 #[cfg(not(feature = "library"))]
-use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{
+    entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+};
 use margined_perp::margined_insurance_fund::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -16,7 +18,10 @@ pub fn instantiate(
     info: MessageInfo,
     _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    let config = Config { owner: info.sender };
+    let config = Config {
+        owner: info.sender,
+        beneficiary: Addr::unchecked(""),
+    };
 
     store_config(deps.storage, &config)?;
 
@@ -31,9 +36,12 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::UpdateConfig { owner } => update_config(deps, info, owner),
+        ExecuteMsg::UpdateConfig { owner, beneficiary } => {
+            update_config(deps, info, owner, beneficiary)
+        }
         ExecuteMsg::AddVamm { vamm } => add_vamm(deps, info, vamm),
         ExecuteMsg::RemoveVamm { vamm } => remove_vamm(deps, info, vamm),
+        ExecuteMsg::Withdraw { token, amount } => withdraw(deps, info, token, amount),
     }
 }
 

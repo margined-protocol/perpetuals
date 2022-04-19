@@ -4,6 +4,10 @@ use terraswap::asset::AssetInfo;
 
 use crate::{
     handle::internal_increase_position,
+    messages::{
+        execute_insurance_fund_withdrawal, execute_transfer, execute_transfer_from,
+        execute_transfer_to_insurance_fund, transfer_fees, withdraw,
+    },
     querier::query_vamm_state,
     state::{
         append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_state,
@@ -11,9 +15,8 @@ use crate::{
         store_state, store_tmp_swap,
     },
     utils::{
-        calc_remain_margin_with_funding_payment, clear_position, execute_transfer,
-        execute_transfer_from, execute_transfer_to_insurance_fund, get_position, realize_bad_debt,
-        side_to_direction, transfer_fees, update_open_interest_notional, withdraw,
+        calc_remain_margin_with_funding_payment, clear_position, get_position, realize_bad_debt,
+        side_to_direction, update_open_interest_notional,
     },
 };
 
@@ -29,12 +32,9 @@ pub fn increase_position_reply(
 ) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
-    let tmp_swap = read_tmp_swap(deps.storage)?;
-    if tmp_swap.is_none() {
-        return Err(StdError::generic_err("no temporary position"));
-    }
 
-    let mut swap = tmp_swap.unwrap();
+    let mut swap = read_tmp_swap(deps.storage)?;
+
     let mut position = get_position(
         env.clone(),
         deps.storage,
@@ -100,7 +100,6 @@ pub fn increase_position_reply(
                     env,
                     &mut state,
                     &swap.trader,
-                    &config.insurance_fund,
                     config.eligible_collateral,
                     swap.margin_to_vault.value,
                 )
@@ -144,12 +143,7 @@ pub fn decrease_position_reply(
     output: Uint128,
 ) -> StdResult<Response> {
     let mut state = read_state(deps.storage)?;
-    let tmp_swap = read_tmp_swap(deps.storage)?;
-    if tmp_swap.is_none() {
-        return Err(StdError::generic_err("no temporary position"));
-    }
-
-    let swap = tmp_swap.unwrap();
+    let swap = read_tmp_swap(deps.storage)?;
     update_open_interest_notional(
         &deps.as_ref(),
         &mut state,
@@ -219,12 +213,7 @@ pub fn reverse_position_reply(
     output: Uint128,
 ) -> StdResult<Response> {
     let mut state = read_state(deps.storage)?;
-    let tmp_swap = read_tmp_swap(deps.storage)?;
-    if tmp_swap.is_none() {
-        return Err(StdError::generic_err("no temporary position"));
-    }
-
-    let mut swap = tmp_swap.unwrap();
+    let mut swap = read_tmp_swap(deps.storage)?;
     let mut position = get_position(
         env.clone(),
         deps.storage,
@@ -246,33 +235,32 @@ pub fn reverse_position_reply(
 
     // now increase the position again if there is additional position
     let current_open_notional = swap.open_notional;
-    let update_open_notional: Uint128 = if swap.open_notional > output {
+    swap.open_notional = if swap.open_notional > output {
         swap.open_notional.checked_sub(output)?
     } else {
         output.checked_sub(swap.open_notional)?
     };
 
     let mut msgs: Vec<SubMsg> = vec![];
-    if update_open_notional.checked_div(swap.leverage)? == Uint128::zero() {
+    if swap.open_notional.checked_div(swap.leverage)? == Uint128::zero() {
         // create transfer message
-        remove_tmp_swap(deps.storage);
         msgs.push(execute_transfer(deps.storage, &swap.trader, margin_amount).unwrap());
+
+        remove_tmp_swap(deps.storage);
     } else {
-        swap.open_notional = update_open_notional;
         swap.margin_to_vault =
             Integer::new_negative(margin_amount).checked_sub(swap.unrealized_pnl)?;
         swap.unrealized_pnl = Integer::zero();
         swap.fees_paid = true;
 
-        store_tmp_swap(deps.storage, &swap)?;
-
-        // TODO maybe we need to actually let the user define this limit
         msgs.push(internal_increase_position(
             swap.vamm.clone(),
             swap.side.clone(),
-            update_open_notional,
+            swap.open_notional,
             Uint128::zero(),
         )?);
+
+        store_tmp_swap(deps.storage, &swap)?;
     }
 
     msgs.append(
@@ -297,12 +285,7 @@ pub fn close_position_reply(
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
 
-    let tmp_swap = read_tmp_swap(deps.storage)?;
-    if tmp_swap.is_none() {
-        return Err(StdError::generic_err("no temporary position"));
-    }
-
-    let swap = tmp_swap.unwrap();
+    let swap = read_tmp_swap(deps.storage)?;
     let mut position = get_position(
         env.clone(),
         deps.storage,
@@ -324,66 +307,51 @@ pub fn close_position_reply(
         latest_premium_fraction: _,
     } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), margin_delta)?;
 
-    let mut messages: Vec<SubMsg> = vec![];
+    let mut msgs: Vec<SubMsg> = vec![];
 
     if !bad_debt.is_zero() {
-        realize_bad_debt(
-            deps.storage,
-            env.contract.address.clone(),
-            bad_debt,
-            &mut messages,
-        )?;
+        realize_bad_debt(deps.as_ref(), bad_debt, &mut msgs, &mut state)?;
     }
+
     if !margin.is_zero() {
-        let withdraw_messages = withdraw(
-            deps.as_ref(),
-            env.clone(),
-            &mut state,
-            &swap.trader,
-            &config.insurance_fund,
-            config.eligible_collateral,
-            margin,
-        )
-        .unwrap();
-
-        for message in withdraw_messages.iter() {
-            messages.push(message.clone());
-        }
+        msgs.append(
+            &mut withdraw(
+                deps.as_ref(),
+                env.clone(),
+                &mut state,
+                &swap.trader,
+                config.eligible_collateral,
+                margin,
+            )
+            .unwrap(),
+        );
     }
 
-    // now start putting the response together
-    let mut response = Response::new();
-    response = response.add_submessages(messages.clone());
-
-    // create messages to pay for toll and spread fees
-    let fee_msgs = transfer_fees(
-        deps.as_ref(),
-        swap.trader,
-        swap.vamm.clone(),
-        position.notional,
-    )
-    .unwrap();
-    response = response.add_submessages(fee_msgs);
+    if !position.notional.is_zero() {
+        msgs.append(
+            &mut transfer_fees(
+                deps.as_ref(),
+                swap.trader,
+                swap.vamm.clone(),
+                position.notional,
+            )
+            .unwrap(),
+        );
+    }
 
     let value =
         margin_delta + Integer::new_positive(bad_debt) + Integer::new_positive(position.notional);
 
-    update_open_interest_notional(
-        &deps.as_ref(),
-        &mut state,
-        swap.vamm,
-        value.invert_sign(),
-        // Integer::new_negative(output),
-    )?;
+    update_open_interest_notional(&deps.as_ref(), &mut state, swap.vamm, value.invert_sign())?;
 
     position = clear_position(env, position)?;
 
-    // remove_position(deps.storage, &position)?;
     store_position(deps.storage, &position)?;
     store_state(deps.storage, &state)?;
 
     remove_tmp_swap(deps.storage);
-    Ok(response.add_attributes(vec![
+
+    Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "close_position_reply"),
         ("funding_payment", &funding_payment.to_string()),
         ("bad_debt", &bad_debt.to_string()),
@@ -400,17 +368,13 @@ pub fn liquidate_reply(
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
 
-    let tmp_swap = read_tmp_swap(deps.storage)?;
-    if tmp_swap.is_none() {
-        return Err(StdError::generic_err("no temporary position"));
-    }
+    let swap = read_tmp_swap(deps.storage)?;
 
     let liquidator = read_tmp_liquidator(deps.storage)?;
     if liquidator.is_none() {
         return Err(StdError::generic_err("no liquidator"));
     }
 
-    let swap = tmp_swap.unwrap();
     let mut position = get_position(
         env.clone(),
         deps.storage,
@@ -443,15 +407,10 @@ pub fn liquidate_reply(
         remain_margin.margin = remain_margin.margin.checked_sub(liquidation_fee)?;
     }
 
-    let mut messages: Vec<SubMsg> = vec![];
+    let mut msgs: Vec<SubMsg> = vec![];
 
     if !remain_margin.bad_debt.is_zero() {
-        realize_bad_debt(
-            deps.storage,
-            env.contract.address.clone(),
-            remain_margin.bad_debt,
-            &mut messages,
-        )?;
+        realize_bad_debt(deps.as_ref(), remain_margin.bad_debt, &mut msgs, &mut state)?;
     }
 
     let fee_to_insurance = if !remain_margin.margin.is_zero() {
@@ -461,7 +420,7 @@ pub fn liquidate_reply(
     };
 
     if !fee_to_insurance.is_zero() {
-        messages.push(
+        msgs.push(
             execute_transfer(deps.storage, &config.insurance_fund, fee_to_insurance).unwrap(),
         );
     }
@@ -471,20 +430,17 @@ pub fn liquidate_reply(
 
     // calculate token balance that should be remaining once
     // insurance fees have been paid
-    let withdraw_messages = withdraw(
-        deps.as_ref(),
-        env.clone(),
-        &mut state,
-        &liquidator,
-        &config.insurance_fund,
-        config.eligible_collateral,
-        liquidation_fee,
-    )
-    .unwrap();
-
-    for message in withdraw_messages.iter() {
-        messages.push(message.clone());
-    }
+    msgs.append(
+        &mut withdraw(
+            deps.as_ref(),
+            env.clone(),
+            &mut state,
+            &liquidator,
+            config.eligible_collateral,
+            liquidation_fee,
+        )
+        .unwrap(),
+    );
 
     position = clear_position(env.clone(), position)?;
 
@@ -495,13 +451,11 @@ pub fn liquidate_reply(
 
     enter_restriction_mode(deps.storage, swap.vamm, env.block.height)?;
 
-    Ok(Response::new()
-        .add_submessages(messages)
-        .add_attributes(vec![
-            ("action", "liquidate_reply"),
-            ("liquidation_fee", &liquidation_fee.to_string()),
-            ("pnl", &margin_delta.to_string()),
-        ]))
+    Ok(Response::new().add_submessages(msgs).add_attributes(vec![
+        ("action", "liquidate_reply"),
+        ("liquidation_fee", &liquidation_fee.to_string()),
+        ("pnl", &margin_delta.to_string()),
+    ]))
 }
 
 // Partially liquidates the position
@@ -514,17 +468,13 @@ pub fn partial_liquidation_reply(
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
 
-    let tmp_swap = read_tmp_swap(deps.storage)?;
-    if tmp_swap.is_none() {
-        return Err(StdError::generic_err("no temporary position"));
-    }
+    let swap = read_tmp_swap(deps.storage)?;
 
     let liquidator = read_tmp_liquidator(deps.storage)?;
     if liquidator.is_none() {
         return Err(StdError::generic_err("no liquidator"));
     }
 
-    let swap = tmp_swap.unwrap();
     let mut position = get_position(
         env.clone(),
         deps.storage,
@@ -574,31 +524,24 @@ pub fn partial_liquidation_reply(
     };
 
     let mut messages: Vec<SubMsg> = vec![];
-
     if !liquidation_fee.is_zero() {
         messages
             .push(execute_transfer(deps.storage, &config.insurance_fund, liquidation_fee).unwrap());
     }
 
-    // pay liquidation fees
-    let liquidator = liquidator.unwrap();
-
     // calculate token balance that should be remaining once
     // insurance fees have been paid
-    let withdraw_messages = withdraw(
-        deps.as_ref(),
-        env.clone(),
-        &mut state,
-        &liquidator,
-        &config.insurance_fund,
-        config.eligible_collateral,
-        liquidation_fee,
-    )
-    .unwrap();
-
-    for message in withdraw_messages.iter() {
-        messages.push(message.clone());
-    }
+    messages.append(
+        &mut withdraw(
+            deps.as_ref(),
+            env.clone(),
+            &mut state,
+            &liquidator.unwrap(),
+            config.eligible_collateral,
+            liquidation_fee,
+        )
+        .unwrap(),
+    );
 
     store_position(deps.storage, &position)?;
 
@@ -635,18 +578,16 @@ pub fn pay_funding_reply(
 
     let funding_payment =
         total_position_size * premium_fraction / Integer::new_positive(config.decimals);
-    let msg: SubMsg = if funding_payment.is_negative() {
-        execute_transfer_from(
-            deps.storage,
-            &config.insurance_fund,
-            &env.contract.address,
-            funding_payment.value,
-        )?
-    } else {
-        execute_transfer_to_insurance_fund(deps.as_ref(), env, funding_payment.value)?
+
+    let mut response: Response = Response::new();
+
+    if funding_payment.is_negative() && !funding_payment.is_zero() {
+        let msg = execute_insurance_fund_withdrawal(deps.as_ref(), funding_payment.value)?;
+        response = response.add_submessage(msg);
+    } else if funding_payment.is_positive() && !funding_payment.is_zero() {
+        let msg = execute_transfer_to_insurance_fund(deps.as_ref(), env, funding_payment.value)?;
+        response = response.add_submessage(msg);
     };
 
-    Ok(Response::new()
-        .add_submessage(msg)
-        .add_attributes(vec![("action", "pay_funding_reply")]))
+    Ok(response.add_attributes(vec![("action", "pay_funding_reply")]))
 }
