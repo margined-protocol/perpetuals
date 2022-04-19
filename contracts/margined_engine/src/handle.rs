@@ -12,14 +12,15 @@ use crate::{
     querier::query_vamm_output_price,
     query::query_margin_ratio,
     state::{
-        read_config, read_position, read_state, store_config, store_position, store_state,
-        store_tmp_liquidator, store_tmp_swap, Config, Position, State, Swap,
+        read_config, read_position, read_state, store_config, store_position, store_sent_funds,
+        store_state, store_tmp_liquidator, store_tmp_swap, Config, Position, SentFunds, State,
+        Swap,
     },
     utils::{
-        calc_remain_margin_with_funding_payment, direction_to_side, get_position,
+        calc_remain_margin_with_funding_payment, direction_to_side, get_asset, get_position,
         get_position_notional_unrealized_pnl, require_bad_debt, require_insufficient_margin,
-        require_margin, require_native_token_sent, require_not_paused,
-        require_not_restriction_mode, require_position_not_zero, require_vamm, side_to_direction,
+        require_margin, require_not_paused, require_not_restriction_mode,
+        require_position_not_zero, require_vamm, side_to_direction,
     },
 };
 use margined_common::{
@@ -148,13 +149,6 @@ pub fn open_position(
         .checked_mul(config.decimals)?
         .checked_div(leverage)?;
 
-    require_native_token_sent(
-        &deps.as_ref(),
-        info,
-        vamm.clone(),
-        quote_asset_amount,
-        leverage,
-    )?;
     require_not_paused(state.pause)?;
     require_vamm(deps.storage, &vamm)?;
     require_not_restriction_mode(deps.storage, &vamm, &trader, env.block.height)?;
@@ -209,6 +203,15 @@ pub fn open_position(
             unrealized_pnl,
             margin_to_vault: Integer::zero(),
             fees_paid: false,
+        },
+    )?;
+
+    let asset = get_asset(info, config.eligible_collateral);
+    store_sent_funds(
+        deps.storage,
+        &SentFunds {
+            asset,
+            required: Uint128::zero(),
         },
     )?;
 

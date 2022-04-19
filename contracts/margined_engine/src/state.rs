@@ -1,5 +1,6 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 
 use cosmwasm_std::{Addr, Api, DepsMut, StdError, StdResult, Storage, Uint128};
 use cosmwasm_storage::{
@@ -12,11 +13,12 @@ use margined_perp::margined_engine::Side;
 use margined_perp::margined_vamm::Direction;
 
 use sha3::{Digest, Sha3_256};
-use terraswap::asset::AssetInfo;
+use terraswap::asset::{Asset, AssetInfo};
 
 pub static KEY_CONFIG: &[u8] = b"config";
 pub static KEY_POSITION: &[u8] = b"position";
 pub static KEY_STATE: &[u8] = b"state";
+pub static KEY_SENT_FUNDS: &[u8] = b"sent-funds";
 pub static KEY_TMP_SWAP: &[u8] = b"tmp-swap";
 pub static KEY_TMP_LIQUIDATOR: &[u8] = b"tmp-liquidator";
 pub static KEY_VAMM_MAP: &[u8] = b"vamm-map";
@@ -151,6 +153,44 @@ pub fn read_position(storage: &dyn Storage, vamm: &Addr, trader: &Addr) -> StdRe
         .unwrap_or_default();
 
     Ok(result)
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct SentFunds {
+    pub asset: Asset,
+    pub required: Uint128,
+}
+
+impl SentFunds {
+    /// throws an error if the required funds is less than the asset amount
+    pub fn are_sufficient(&self) -> StdResult<()> {
+        // this should only pass if asset.amount == required
+        match self.asset.amount.cmp(&self.required) {
+            Ordering::Less => Err(StdError::generic_err("sent funds are insufficient")),
+            Ordering::Greater => Err(StdError::generic_err("sent funds are excessive")),
+            _ => Ok(()),
+        }
+    }
+}
+
+pub fn store_sent_funds(storage: &mut dyn Storage, funds: &SentFunds) -> StdResult<()> {
+    singleton(storage, KEY_SENT_FUNDS).save(funds)
+}
+
+pub fn remove_sent_funds(storage: &mut dyn Storage) {
+    let mut store: Singleton<SentFunds> = singleton(storage, KEY_SENT_FUNDS);
+    store.remove()
+}
+
+pub fn read_sent_funds(storage: &dyn Storage) -> StdResult<SentFunds> {
+    let res = singleton_read(storage, KEY_SENT_FUNDS).may_load();
+    match res {
+        Ok(_) => {
+            let funds = res.unwrap();
+            Ok(funds.unwrap())
+        }
+        Err(_) => Err(StdError::generic_err("no sent funds")),
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

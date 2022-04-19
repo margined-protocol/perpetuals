@@ -6,7 +6,7 @@ mod liquidation_frontrun_hack_tests;
 mod liquidation_tests;
 mod margin_engine_tests;
 mod margin_ratio_tests;
-// mod native_token_tests;
+mod native_token_position_fee_tests;
 mod open_notional_tests;
 mod pausable_tests;
 mod pay_funding_tests;

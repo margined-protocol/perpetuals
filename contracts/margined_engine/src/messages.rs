@@ -10,6 +10,7 @@ use crate::{
     state::{read_config, State},
 };
 
+use margined_perp::margined_engine::TransferResponse;
 use margined_perp::margined_insurance_fund::ExecuteMsg as InsuranceFundExecuteMessage;
 use margined_perp::margined_vamm::CalcFeeResponse;
 use margined_perp::querier::query_token_balance;
@@ -54,17 +55,24 @@ pub fn execute_transfer(
     amount: Uint128,
 ) -> StdResult<SubMsg> {
     let config = read_config(storage)?;
-    let msg = WasmMsg::Execute {
-        contract_addr: config.eligible_collateral.to_string(),
-        funds: vec![],
-        msg: to_binary(&Cw20ExecuteMsg::Transfer {
-            recipient: receiver.to_string(),
-            amount,
-        })?,
+
+    let msg: CosmosMsg = match config.eligible_collateral {
+        AssetInfo::NativeToken { denom } => CosmosMsg::Bank(BankMsg::Send {
+            to_address: receiver.to_string(),
+            amount: vec![Coin { denom, amount }],
+        }),
+        AssetInfo::Token { contract_addr } => CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr,
+            funds: vec![],
+            msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                recipient: receiver.to_string(),
+                amount,
+            })?,
+        }),
     };
 
     let transfer_msg = SubMsg {
-        msg: CosmosMsg::Wasm(msg),
+        msg,
         gas_limit: None, // probably should set a limit in the config
         id: 0u64,
         reply_on: ReplyOn::Never,
@@ -139,7 +147,7 @@ pub fn transfer_fees(
     from: Addr,
     vamm: Addr,
     notional: Uint128,
-) -> StdResult<Vec<SubMsg>> {
+) -> StdResult<TransferResponse> {
     let config = read_config(deps.storage)?;
 
     let CalcFeeResponse {
@@ -160,7 +168,10 @@ pub fn transfer_fees(
         messages.push(msg);
     };
 
-    Ok(messages)
+    Ok(TransferResponse {
+        messages,
+        amount: spread_fee + toll_fee,
+    })
 }
 
 pub fn withdraw(
