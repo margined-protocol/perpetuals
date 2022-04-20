@@ -36,7 +36,7 @@ pub fn read_vammlist(deps: Deps, storage: &dyn Storage, limit: usize) -> StdResu
 pub fn vamm_off(deps: DepsMut, input: Addr) -> StdResult<()> {
     // read_vamm_status will throw an error if there is no data
     // this statement will throw an error if the vamm status is already off
-    if read_vamm_status(deps.storage, input.clone())? == false {
+    if !read_vamm_status(deps.storage, input.clone())? {
         return Err(StdError::GenericErr {
             msg: "This vAMM is already off".to_string(),
         });
@@ -49,7 +49,7 @@ pub fn vamm_off(deps: DepsMut, input: Addr) -> StdResult<()> {
 pub fn vamm_on(deps: DepsMut, input: Addr) -> StdResult<()> {
     // read_vamm_status will throw an error if there is no data
     // this statement will throw an error if the vamm status is already on
-    if read_vamm_status(deps.storage, input.clone())? == true {
+    if read_vamm_status(deps.storage, input.clone())? {
         return Err(StdError::GenericErr {
             msg: "This vAMM is already on".to_string(),
         });

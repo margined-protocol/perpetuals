@@ -82,13 +82,17 @@ pub fn remove_vamm(
     Ok(Response::default())
 }
 
-pub fn shutdown_all_vamm(mut deps: DepsMut, info: MessageInfo, limit: Option<u32>,) -> Result<Response, ContractError> {
+pub fn shutdown_all_vamm(
+    mut deps: DepsMut,
+    info: MessageInfo,
+    limit: Option<u32>,
+) -> Result<Response, ContractError> {
     let config: Config = read_config(deps.storage)?;
 
     // set a limit for pagination
     let limit = limit
-    .unwrap_or(DEFAULT_PAGINATION_LIMIT)
-    .min(MAX_PAGINATION_LIMIT) as usize;
+        .unwrap_or(DEFAULT_PAGINATION_LIMIT)
+        .min(MAX_PAGINATION_LIMIT) as usize;
 
     // check permission
     if info.sender != config.owner {

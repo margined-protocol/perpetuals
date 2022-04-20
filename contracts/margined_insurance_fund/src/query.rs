@@ -48,8 +48,8 @@ pub fn query_vamm_status(deps: Deps, vamm: String) -> StdResult<VammStatusRespon
 pub fn query_mult_vamm(deps: Deps, limit: Option<u32>) -> StdResult<AllVammResponse> {
     // set the limit for pagination
     let limit = limit
-    .unwrap_or(DEFAULT_PAGINATION_LIMIT)
-    .min(MAX_PAGINATION_LIMIT) as usize;
+        .unwrap_or(DEFAULT_PAGINATION_LIMIT)
+        .min(MAX_PAGINATION_LIMIT) as usize;
 
     let list = read_vammlist(deps, deps.storage, limit)?;
     Ok(AllVammResponse { vamm_list: list })
@@ -59,8 +59,8 @@ pub fn query_mult_vamm(deps: Deps, limit: Option<u32>) -> StdResult<AllVammRespo
 pub fn query_status_mult_vamm(deps: Deps, limit: Option<u32>) -> StdResult<AllVammStatusResponse> {
     // set the limit for pagination
     let limit = limit
-    .unwrap_or(DEFAULT_PAGINATION_LIMIT)
-    .min(MAX_PAGINATION_LIMIT) as usize;
+        .unwrap_or(DEFAULT_PAGINATION_LIMIT)
+        .min(MAX_PAGINATION_LIMIT) as usize;
 
     let status_list = read_all_vamm_status(deps.storage, limit)?;
     Ok(AllVammStatusResponse {

@@ -97,7 +97,12 @@ fn test_query_all_vamm() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //check to see that there are no vAMMs
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVamm { limit: None }).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetAllVamm { limit: None },
+    )
+    .unwrap();
 
     let res: AllVammResponse = from_binary(&res).unwrap();
     let empty: Vec<Addr> = vec![];
@@ -121,7 +126,12 @@ fn test_query_all_vamm() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //check for the added vAMMs
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVamm { limit: None }).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetAllVamm { limit: None },
+    )
+    .unwrap();
 
     let res: AllVammResponse = from_binary(&res).unwrap();
     let list = res.vamm_list;
@@ -303,7 +313,10 @@ fn test_vamm_off() {
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus { vamm: addr1, status: false };
+    let msg = ExecuteMsg::SwitchVammStatus {
+        vamm: addr1,
+        status: false,
+    };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -336,27 +349,27 @@ fn try_vamm_off_and_on() {
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus { vamm: addr1, status: false };
+    let msg = ExecuteMsg::SwitchVammStatus {
+        vamm: addr1,
+        status: false,
+    };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
-    assert_eq!(
-        res.to_string(),
-        "Generic error: No vAMM stored"
-    );
+    assert_eq!(res.to_string(), "Generic error: No vAMM stored");
 
     //try to switch vamm on
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus { vamm: addr1, status: true };
+    let msg = ExecuteMsg::SwitchVammStatus {
+        vamm: addr1,
+        status: true,
+    };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
-    assert_eq!(
-        res.to_string(),
-        "Generic error: No vAMM stored"
-    );
+    assert_eq!(res.to_string(), "Generic error: No vAMM stored");
 }
 
 #[test]
@@ -380,7 +393,10 @@ fn test_vamm_on() {
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus { vamm: addr1, status: false };
+    let msg = ExecuteMsg::SwitchVammStatus {
+        vamm: addr1,
+        status: false,
+    };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -403,7 +419,10 @@ fn test_vamm_on() {
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus { vamm: addr1, status: true };
+    let msg = ExecuteMsg::SwitchVammStatus {
+        vamm: addr1,
+        status: true,
+    };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -444,7 +463,10 @@ fn test_off_vamm_off_again() {
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus { vamm: addr1, status: false };
+    let msg = ExecuteMsg::SwitchVammStatus {
+        vamm: addr1,
+        status: false,
+    };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -452,7 +474,10 @@ fn test_off_vamm_off_again() {
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus { vamm: addr1, status: false };
+    let msg = ExecuteMsg::SwitchVammStatus {
+        vamm: addr1,
+        status: false,
+    };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
@@ -480,7 +505,10 @@ fn test_on_vamm_on_again() {
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus { vamm: addr1, status: true };
+    let msg = ExecuteMsg::SwitchVammStatus {
+        vamm: addr1,
+        status: true,
+    };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
@@ -513,7 +541,12 @@ fn test_vamm_shutdown() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //query all vamms' status
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVammStatus { limit: None }).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetAllVammStatus { limit: None },
+    )
+    .unwrap();
 
     let res: AllVammStatusResponse = from_binary(&res).unwrap();
     let vamms_status = res.vamm_list_status;
@@ -533,7 +566,12 @@ fn test_vamm_shutdown() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //query all vamms' status
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVammStatus { limit: None }).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetAllVammStatus { limit: None },
+    )
+    .unwrap();
 
     let res: AllVammStatusResponse = from_binary(&res).unwrap();
     let vamms_status = res.vamm_list_status;
@@ -583,7 +621,10 @@ fn test_query_vamm_status() {
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus { vamm: addr1, status: false };
+    let msg = ExecuteMsg::SwitchVammStatus {
+        vamm: addr1,
+        status: false,
+    };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -613,7 +654,12 @@ fn test_all_vamm_status() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //query all vamms' status (there aren't any yet)
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVammStatus { limit: None }).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetAllVammStatus { limit: None },
+    )
+    .unwrap();
 
     let res: AllVammStatusResponse = from_binary(&res).unwrap();
     let vamms_status = res.vamm_list_status;
@@ -637,7 +683,12 @@ fn test_all_vamm_status() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //query all vamms' status
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVammStatus { limit: None }).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetAllVammStatus { limit: None },
+    )
+    .unwrap();
 
     let res: AllVammStatusResponse = from_binary(&res).unwrap();
     let vamms_status = res.vamm_list_status;
@@ -654,12 +705,20 @@ fn test_all_vamm_status() {
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus { vamm: addr1, status: false };
+    let msg = ExecuteMsg::SwitchVammStatus {
+        vamm: addr1,
+        status: false,
+    };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //query all vamms' status
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVammStatus { limit: None }).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetAllVammStatus { limit: None },
+    )
+    .unwrap();
 
     let res: AllVammStatusResponse = from_binary(&res).unwrap();
     let vamms_status = res.vamm_list_status;
@@ -718,7 +777,10 @@ fn test_not_owner() {
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("not_the_owner", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus { vamm: addr1, status: true };
+    let msg = ExecuteMsg::SwitchVammStatus {
+        vamm: addr1,
+        status: true,
+    };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
@@ -728,7 +790,10 @@ fn test_not_owner() {
     let addr1 = "addr0001".to_string();
 
     let info = mock_info("not_the_owner", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus { vamm: addr1, status: false };
+    let msg = ExecuteMsg::SwitchVammStatus {
+        vamm: addr1,
+        status: false,
+    };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
@@ -769,7 +834,12 @@ fn test_pagination() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //query all vamms' status
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVammStatus { limit: None }).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetAllVammStatus { limit: None },
+    )
+    .unwrap();
 
     let res: AllVammStatusResponse = from_binary(&res).unwrap();
     let vamms_status = res.vamm_list_status;
@@ -789,7 +859,12 @@ fn test_pagination() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //query all vamms' status again to see that only the first vamm has changed
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVammStatus { limit: None }).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetAllVammStatus { limit: None },
+    )
+    .unwrap();
 
     let res: AllVammStatusResponse = from_binary(&res).unwrap();
     let vamms_status = res.vamm_list_status;
@@ -801,18 +876,21 @@ fn test_pagination() {
             (Addr::unchecked("addr0002".to_string()), true)
         ]
     );
-    
+
     //query only the first vamm (because we gave it limit of 1)
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVammStatus { limit: Some(1u32) }).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetAllVammStatus { limit: Some(1u32) },
+    )
+    .unwrap();
 
     let res: AllVammStatusResponse = from_binary(&res).unwrap();
     let vamms_status = res.vamm_list_status;
 
     assert_eq!(
         vamms_status,
-        vec![
-            (Addr::unchecked("addr0001".to_string()), false),
-        ]
+        vec![(Addr::unchecked("addr0001".to_string()), false),]
     );
 }
 #[test]
@@ -846,7 +924,7 @@ fn test_pagination_limit() {
     let info = mock_info("addr0000", &[]);
     let msg = ExecuteMsg::AddVamm { vamm: addr3 };
 
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();    
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add fourth vamm
     let addr4 = "addr0004".to_string();
@@ -855,7 +933,7 @@ fn test_pagination_limit() {
     let msg = ExecuteMsg::AddVamm { vamm: addr4 };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
- 
+
     //add fifth vamm
     let addr5 = "addr0005".to_string();
 
@@ -871,7 +949,7 @@ fn test_pagination_limit() {
     let msg = ExecuteMsg::AddVamm { vamm: addr6 };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-    
+
     //add seventh vamm
     let addr7 = "addr0007".to_string();
 
@@ -879,7 +957,7 @@ fn test_pagination_limit() {
     let msg = ExecuteMsg::AddVamm { vamm: addr7 };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-    
+
     //add eighth vamm
     let addr8 = "addr0008".to_string();
 
@@ -887,14 +965,14 @@ fn test_pagination_limit() {
     let msg = ExecuteMsg::AddVamm { vamm: addr8 };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-    
+
     //add ninth vamm
     let addr9 = "addr0009".to_string();
 
     let info = mock_info("addr0000", &[]);
     let msg = ExecuteMsg::AddVamm { vamm: addr9 };
 
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();    
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add tenth vamm
     let addr10 = "addr0010".to_string();
@@ -903,7 +981,7 @@ fn test_pagination_limit() {
     let msg = ExecuteMsg::AddVamm { vamm: addr10 };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-    
+
     //add eleventh vamm
     let addr11 = "addr0011".to_string();
 
@@ -913,7 +991,12 @@ fn test_pagination_limit() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //query all vamms status
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVammStatus { limit: Some(11u32) }).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetAllVammStatus { limit: Some(11u32) },
+    )
+    .unwrap();
 
     let res: AllVammStatusResponse = from_binary(&res).unwrap();
     let vamms_status = res.vamm_list_status;
@@ -942,7 +1025,12 @@ fn test_pagination_limit() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //query all vamms' status again to see that only the first ten vamms have changed
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVammStatus { limit: Some(11u32) }).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetAllVammStatus { limit: Some(11u32) },
+    )
+    .unwrap();
 
     let res: AllVammStatusResponse = from_binary(&res).unwrap();
     let vamms_status = res.vamm_list_status;
@@ -963,9 +1051,14 @@ fn test_pagination_limit() {
             (Addr::unchecked("addr0011".to_string()), true),
         ]
     );
-    
+
     //query only the first ten vamms (default limit)
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetAllVammStatus { limit: None }).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetAllVammStatus { limit: None },
+    )
+    .unwrap();
 
     let res: AllVammStatusResponse = from_binary(&res).unwrap();
     let vamms_status = res.vamm_list_status;
@@ -986,5 +1079,4 @@ fn test_pagination_limit() {
         ]
     );
     // should really test the limit of 30 vamms that is currently there
-
 }

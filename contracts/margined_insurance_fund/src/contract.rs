@@ -1,8 +1,7 @@
 use crate::error::ContractError;
 use crate::{
     handle::{
-        add_vamm, remove_vamm, shutdown_all_vamm, switch_vamm_status, update_config,
-        withdraw,
+        add_vamm, remove_vamm, shutdown_all_vamm, switch_vamm_status, update_config, withdraw,
     },
     query::{
         query_config, query_is_vamm, query_mult_vamm, query_status_mult_vamm, query_vamm_status,
@@ -47,8 +46,10 @@ pub fn execute(
         ExecuteMsg::AddVamm { vamm } => add_vamm(deps, info, vamm),
         ExecuteMsg::RemoveVamm { vamm } => remove_vamm(deps, info, vamm),
         ExecuteMsg::Withdraw { token, amount } => withdraw(deps, info, token, amount),
-        ExecuteMsg::SwitchVammStatus { vamm, status } => switch_vamm_status(deps, info, vamm, status),
-        ExecuteMsg::ShutdownAllVamm {limit} => shutdown_all_vamm(deps, info, limit),
+        ExecuteMsg::SwitchVammStatus { vamm, status } => {
+            switch_vamm_status(deps, info, vamm, status)
+        }
+        ExecuteMsg::ShutdownAllVamm { limit } => shutdown_all_vamm(deps, info, limit),
     }
 }
 

@@ -37,8 +37,8 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     Config {},
     IsVamm { vamm: String },
-    GetAllVamm {limit: Option<u32>},
-    GetAllVammStatus {limit: Option<u32>},
+    GetAllVamm { limit: Option<u32> },
+    GetAllVammStatus { limit: Option<u32> },
     GetVammStatus { vamm: String },
 }
 
