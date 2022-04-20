@@ -49,7 +49,7 @@ pub fn execute(
         ExecuteMsg::SwitchVammStatus { vamm, status } => {
             switch_vamm_status(deps, info, vamm, status)
         }
-        ExecuteMsg::ShutdownAllVamm { limit } => shutdown_all_vamm(deps, info, limit),
+        ExecuteMsg::ShutdownAllVamm {} => shutdown_all_vamm(deps, info),
     }
 }
 

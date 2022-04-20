@@ -7,8 +7,10 @@ use cw_storage_plus::Map;
 
 pub static KEY_CONFIG: &[u8] = b"config";
 pub const VAMM_LIST: Map<&Addr, bool> = Map::new("vamm-list");
+pub const VAMM_LIMIT: usize = 10usize;
 
 // function checks if an addr is already added and adds it if not
+// We also check that we have not reached the limit of vAMMs here
 pub fn save_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
     // we match because the data might not exist yet
     // In the case there is data, we force an error
@@ -18,6 +20,17 @@ pub fn save_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
             msg: "This vAMM is already added".to_string(),
         });
     };
+
+    if VAMM_LIST
+        .keys(deps.storage, None, None, Order::Ascending)
+        .count()
+        >= VAMM_LIMIT
+    {
+        return Err(StdError::GenericErr {
+            msg: "The vAMM capacity is already reached".to_string(),
+        });
+    };
+
     VAMM_LIST.save(deps.storage, &input, &true)
 }
 

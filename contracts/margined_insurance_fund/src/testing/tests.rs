@@ -561,7 +561,7 @@ fn test_vamm_shutdown() {
 
     //shutdown all vamms
     let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::ShutdownAllVamm { limit: None };
+    let msg = ExecuteMsg::ShutdownAllVamm {};
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -801,7 +801,7 @@ fn test_not_owner() {
 
     //try to shutdown all vamms
     let info = mock_info("not_the_owner", &[]);
-    let msg = ExecuteMsg::ShutdownAllVamm { limit: None };
+    let msg = ExecuteMsg::ShutdownAllVamm {};
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
@@ -833,50 +833,6 @@ fn test_pagination() {
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //query all vamms' status
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVammStatus { limit: None },
-    )
-    .unwrap();
-
-    let res: AllVammStatusResponse = from_binary(&res).unwrap();
-    let vamms_status = res.vamm_list_status;
-
-    assert_eq!(
-        vamms_status,
-        vec![
-            (Addr::unchecked("addr0001".to_string()), true),
-            (Addr::unchecked("addr0002".to_string()), true),
-        ]
-    );
-
-    //shutdown only the first vamm (because we give it limit of 1)
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::ShutdownAllVamm { limit: Some(1u32) };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //query all vamms' status again to see that only the first vamm has changed
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVammStatus { limit: None },
-    )
-    .unwrap();
-
-    let res: AllVammStatusResponse = from_binary(&res).unwrap();
-    let vamms_status = res.vamm_list_status;
-
-    assert_eq!(
-        vamms_status,
-        vec![
-            (Addr::unchecked("addr0001".to_string()), false),
-            (Addr::unchecked("addr0002".to_string()), true)
-        ]
-    );
-
     //query only the first vamm (because we gave it limit of 1)
     let res = query(
         deps.as_ref(),
@@ -890,7 +846,7 @@ fn test_pagination() {
 
     assert_eq!(
         vamms_status,
-        vec![(Addr::unchecked("addr0001".to_string()), false),]
+        vec![(Addr::unchecked("addr0001".to_string()), true),]
     );
 }
 #[test]
@@ -902,7 +858,7 @@ fn test_pagination_limit() {
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //add eleven vamms
+    //add ten vamms
     for n in 1..11 {
         let mut addr = "addr000".to_string();
         addr.push_str(&n.to_string());
@@ -911,72 +867,9 @@ fn test_pagination_limit() {
         let msg = ExecuteMsg::AddVamm { vamm: addr };
 
         execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-        //if n == 9 { break }
     }
 
     //query all vamms status
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVammStatus { limit: Some(11u32) },
-    )
-    .unwrap();
-
-    let res: AllVammStatusResponse = from_binary(&res).unwrap();
-    let vamms_status = res.vamm_list_status;
-
-    assert_eq!(
-        vamms_status,
-        vec![
-            (Addr::unchecked("addr0001".to_string()), true),
-            (Addr::unchecked("addr0002".to_string()), true),
-            (Addr::unchecked("addr0003".to_string()), true),
-            (Addr::unchecked("addr0004".to_string()), true),
-            (Addr::unchecked("addr0005".to_string()), true),
-            (Addr::unchecked("addr0006".to_string()), true),
-            (Addr::unchecked("addr0007".to_string()), true),
-            (Addr::unchecked("addr0008".to_string()), true),
-            (Addr::unchecked("addr0009".to_string()), true),
-            (Addr::unchecked("addr00010".to_string()), true),
-            (Addr::unchecked("addr00011".to_string()), true),
-        ]
-    );
-
-    //shutdown the first 10 vamms (base limit of 10)
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::ShutdownAllVamm { limit: None };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //query all vamms' status again to see that only the first ten vamms have changed
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVammStatus { limit: Some(11u32) },
-    )
-    .unwrap();
-
-    let res: AllVammStatusResponse = from_binary(&res).unwrap();
-    let vamms_status = res.vamm_list_status;
-
-    assert_eq!(
-        vamms_status,
-        vec![
-            (Addr::unchecked("addr0001".to_string()), false),
-            (Addr::unchecked("addr0002".to_string()), false),
-            (Addr::unchecked("addr0003".to_string()), false),
-            (Addr::unchecked("addr0004".to_string()), false),
-            (Addr::unchecked("addr0005".to_string()), false),
-            (Addr::unchecked("addr0006".to_string()), false),
-            (Addr::unchecked("addr0007".to_string()), false),
-            (Addr::unchecked("addr0008".to_string()), false),
-            (Addr::unchecked("addr0009".to_string()), false),
-            (Addr::unchecked("addr00010".to_string()), false),
-            (Addr::unchecked("addr00011".to_string()), true),
-        ]
-    );
-
-    //query only the first ten vamms (default limit)
     let res = query(
         deps.as_ref(),
         mock_env(),
@@ -990,17 +883,106 @@ fn test_pagination_limit() {
     assert_eq!(
         vamms_status,
         vec![
-            (Addr::unchecked("addr0001".to_string()), false),
-            (Addr::unchecked("addr0002".to_string()), false),
-            (Addr::unchecked("addr0003".to_string()), false),
-            (Addr::unchecked("addr0004".to_string()), false),
-            (Addr::unchecked("addr0005".to_string()), false),
-            (Addr::unchecked("addr0006".to_string()), false),
-            (Addr::unchecked("addr0007".to_string()), false),
-            (Addr::unchecked("addr0008".to_string()), false),
-            (Addr::unchecked("addr0009".to_string()), false),
-            (Addr::unchecked("addr0010".to_string()), false),
+            (Addr::unchecked("addr0001".to_string()), true),
+            (Addr::unchecked("addr00010".to_string()), true),
+            (Addr::unchecked("addr0002".to_string()), true),
+            (Addr::unchecked("addr0003".to_string()), true),
+            (Addr::unchecked("addr0004".to_string()), true),
+            (Addr::unchecked("addr0005".to_string()), true),
+            (Addr::unchecked("addr0006".to_string()), true),
+            (Addr::unchecked("addr0007".to_string()), true),
+            (Addr::unchecked("addr0008".to_string()), true),
+            (Addr::unchecked("addr0009".to_string()), true),
         ]
     );
-    // should really test the limit of 30 vamms that is currently there
+
+    //query only the first five vamms
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetAllVammStatus { limit: Some(5u32) },
+    )
+    .unwrap();
+
+    let res: AllVammStatusResponse = from_binary(&res).unwrap();
+    let vamms_status = res.vamm_list_status;
+
+    assert_eq!(
+        vamms_status,
+        vec![
+            (Addr::unchecked("addr0001".to_string()), true),
+            (Addr::unchecked("addr00010".to_string()), true),
+            (Addr::unchecked("addr0002".to_string()), true),
+            (Addr::unchecked("addr0003".to_string()), true),
+            (Addr::unchecked("addr0004".to_string()), true),
+        ]
+    );
+}
+
+#[test]
+fn test_vamm_capacity() {
+    ///////////////////////////////////////////////////////
+    // Test exceeding VAMM_LIMIT by adding a single vAMM //
+    ///////////////////////////////////////////////////////
+
+    //instantiate contract here
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {};
+    let info = mock_info("addr0000", &[]);
+
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    //add ten vamms
+    for n in 1..11 {
+        let mut addr = "addr000".to_string();
+        addr.push_str(&n.to_string());
+
+        let info = mock_info("addr0000", &[]);
+        let msg = ExecuteMsg::AddVamm { vamm: addr };
+
+        execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    }
+
+    //try to add an eleventh vamm
+    let addr1 = "addr00011".to_string();
+
+    let info = mock_info("addr0000", &[]);
+    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
+
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+
+    assert_eq!(
+        res.to_string(),
+        "Generic error: The vAMM capacity is already reached"
+    );
+
+    ////////////////////////////////////////////
+    // Test exceeding VAMM_LIMIT via for loop //
+    ////////////////////////////////////////////
+
+    //instantiate contract again here
+    let mut deps = mock_dependencies(&[]);
+    let msg = InstantiateMsg {};
+    let info = mock_info("addr0000", &[]);
+
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    //add eleven vamms
+    for n in 1..12 {
+        let mut addr = "addr000".to_string();
+        addr.push_str(&n.to_string());
+
+        let info = mock_info("addr0000", &[]);
+        let msg = ExecuteMsg::AddVamm { vamm: addr };
+        if n == 11 {
+            let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+
+            assert_eq!(
+                res.to_string(),
+                "Generic error: The vAMM capacity is already reached"
+            );
+            break;
+        }
+        execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    }
 }

@@ -9,12 +9,9 @@ use crate::{
     error::ContractError,
     state::{
         read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, store_config,
-        vamm_switch, Config,
+        vamm_switch, Config, VAMM_LIMIT,
     },
 };
-
-const DEFAULT_PAGINATION_LIMIT: u32 = 10u32;
-const MAX_PAGINATION_LIMIT: u32 = 30u32;
 
 pub fn update_config(
     deps: DepsMut,
@@ -82,17 +79,8 @@ pub fn remove_vamm(
     Ok(Response::default())
 }
 
-pub fn shutdown_all_vamm(
-    mut deps: DepsMut,
-    info: MessageInfo,
-    limit: Option<u32>,
-) -> Result<Response, ContractError> {
+pub fn shutdown_all_vamm(mut deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     let config: Config = read_config(deps.storage)?;
-
-    // set a limit for pagination
-    let limit = limit
-        .unwrap_or(DEFAULT_PAGINATION_LIMIT)
-        .min(MAX_PAGINATION_LIMIT) as usize;
 
     // check permission
     if info.sender != config.owner {
@@ -100,7 +88,7 @@ pub fn shutdown_all_vamm(
     }
 
     // shutdown all vamms here
-    let keys = read_vammlist(deps.as_ref(), deps.storage, limit)?;
+    let keys = read_vammlist(deps.as_ref(), deps.storage, VAMM_LIMIT)?;
     for vamm in keys.iter() {
         vamm_switch(deps.branch(), vamm.clone(), false)?;
     }

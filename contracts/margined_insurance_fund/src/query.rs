@@ -4,11 +4,11 @@ use margined_perp::margined_insurance_fund::{
 };
 
 use crate::state::{
-    is_vamm, read_all_vamm_status, read_config, read_vamm_status, read_vammlist, Config,
+    is_vamm, read_all_vamm_status, read_config, read_vamm_status, read_vammlist, Config, VAMM_LIMIT,
 };
 
 const DEFAULT_PAGINATION_LIMIT: u32 = 10u32;
-const MAX_PAGINATION_LIMIT: u32 = 30u32;
+const MAX_PAGINATION_LIMIT: u32 = VAMM_LIMIT as u32;
 
 /// Queries contract config
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {

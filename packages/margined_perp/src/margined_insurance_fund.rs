@@ -27,9 +27,7 @@ pub enum ExecuteMsg {
         vamm: String,
         status: bool,
     },
-    ShutdownAllVamm {
-        limit: Option<u32>,
-    },
+    ShutdownAllVamm {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
