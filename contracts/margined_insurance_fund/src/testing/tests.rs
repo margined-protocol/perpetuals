@@ -902,93 +902,17 @@ fn test_pagination_limit() {
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //add vamm
-    let addr1 = "addr0001".to_string();
+    //add eleven vamms
+    for n in 1..11 {
+        let mut addr = "addr000".to_string();
+        addr.push_str(&n.to_string());
 
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
+        let info = mock_info("addr0000", &[]);
+        let msg = ExecuteMsg::AddVamm { vamm: addr };
 
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add second vamm
-    let addr2 = "addr0002".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr2 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add third vamm
-    let addr3 = "addr0003".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr3 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add fourth vamm
-    let addr4 = "addr0004".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr4 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add fifth vamm
-    let addr5 = "addr0005".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr5 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add sixth vamm
-    let addr6 = "addr0006".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr6 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add seventh vamm
-    let addr7 = "addr0007".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr7 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add eighth vamm
-    let addr8 = "addr0008".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr8 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add ninth vamm
-    let addr9 = "addr0009".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr9 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add tenth vamm
-    let addr10 = "addr0010".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr10 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add eleventh vamm
-    let addr11 = "addr0011".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr11 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        //if n == 9 { break }
+    }
 
     //query all vamms status
     let res = query(
@@ -1013,8 +937,8 @@ fn test_pagination_limit() {
             (Addr::unchecked("addr0007".to_string()), true),
             (Addr::unchecked("addr0008".to_string()), true),
             (Addr::unchecked("addr0009".to_string()), true),
-            (Addr::unchecked("addr0010".to_string()), true),
-            (Addr::unchecked("addr0011".to_string()), true),
+            (Addr::unchecked("addr00010".to_string()), true),
+            (Addr::unchecked("addr00011".to_string()), true),
         ]
     );
 
@@ -1047,8 +971,8 @@ fn test_pagination_limit() {
             (Addr::unchecked("addr0007".to_string()), false),
             (Addr::unchecked("addr0008".to_string()), false),
             (Addr::unchecked("addr0009".to_string()), false),
-            (Addr::unchecked("addr0010".to_string()), false),
-            (Addr::unchecked("addr0011".to_string()), true),
+            (Addr::unchecked("addr00010".to_string()), false),
+            (Addr::unchecked("addr00011".to_string()), true),
         ]
     );
 

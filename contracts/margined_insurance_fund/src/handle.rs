@@ -8,8 +8,8 @@ use terraswap::asset::AssetInfo;
 use crate::{
     error::ContractError,
     state::{
-        read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, store_config, vamm_off,
-        vamm_on, Config,
+        read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, store_config,
+        vamm_switch, Config,
     },
 };
 
@@ -102,7 +102,7 @@ pub fn shutdown_all_vamm(
     // shutdown all vamms here
     let keys = read_vammlist(deps.as_ref(), deps.storage, limit)?;
     for vamm in keys.iter() {
-        vamm_off(deps.branch(), vamm.clone())?;
+        vamm_switch(deps.branch(), vamm.clone(), false)?;
     }
     Ok(Response::default())
 }
@@ -124,10 +124,7 @@ pub fn switch_vamm_status(
     let vamm_valid = deps.api.addr_validate(&vamm)?;
 
     // switch vamm status here
-    match status {
-        true => vamm_on(deps, vamm_valid)?,
-        false => vamm_off(deps, vamm_valid)?,
-    };
+    vamm_switch(deps, vamm_valid, status)?;
 
     Ok(Response::default())
 }

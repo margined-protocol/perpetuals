@@ -21,7 +21,7 @@ pub fn save_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
     VAMM_LIST.save(deps.storage, &input, &true)
 }
 
-// this function reads Addrs stored in the VAMM_LIST TODO: case there is no info in VAMM_LIST
+// this function reads Addrs stored in the VAMM_LIST
 pub fn read_vammlist(deps: Deps, storage: &dyn Storage, limit: usize) -> StdResult<Vec<Addr>> {
     let keys = VAMM_LIST
         .keys(storage, None, None, Order::Ascending)
@@ -31,30 +31,23 @@ pub fn read_vammlist(deps: Deps, storage: &dyn Storage, limit: usize) -> StdResu
     keys
 }
 
-// function changes the bool stored under an address to 'false'
+// function changes the bool stored under an address to the value of status
 // note that that means this can only be given an *existing* vamm
-pub fn vamm_off(deps: DepsMut, input: Addr) -> StdResult<()> {
+pub fn vamm_switch(deps: DepsMut, input: Addr, status: bool) -> StdResult<()> {
     // read_vamm_status will throw an error if there is no data
-    // this statement will throw an error if the vamm status is already off
-    if !read_vamm_status(deps.storage, input.clone())? {
-        return Err(StdError::GenericErr {
-            msg: "This vAMM is already off".to_string(),
-        });
+    // this statement will throw an error if the vamm status is already on/off
+    if read_vamm_status(deps.storage, input.clone())? == status {
+        if status {
+            return Err(StdError::GenericErr {
+                msg: "This vAMM is already on".to_string(),
+            });
+        } else {
+            return Err(StdError::GenericErr {
+                msg: "This vAMM is already off".to_string(),
+            });
+        }
     };
-    VAMM_LIST.save(deps.storage, &input, &false)
-}
-
-// function changes the bool stored under an address to 'true'
-// note that that means this can only be given an *existing* vamm
-pub fn vamm_on(deps: DepsMut, input: Addr) -> StdResult<()> {
-    // read_vamm_status will throw an error if there is no data
-    // this statement will throw an error if the vamm status is already on
-    if read_vamm_status(deps.storage, input.clone())? {
-        return Err(StdError::GenericErr {
-            msg: "This vAMM is already on".to_string(),
-        });
-    };
-    VAMM_LIST.save(deps.storage, &input, &true)
+    VAMM_LIST.save(deps.storage, &input, &status)
 }
 
 // this function reads the bool stored under an addr, and if there is no addr stored there then throws an error
@@ -83,7 +76,7 @@ pub fn read_all_vamm_status(storage: &dyn Storage, limit: usize) -> StdResult<Ve
         })
         .collect();
 
-    // This takes the Map in storage, loads the key-value pairs but the keys are still UTF-8 encoded
+    // This takes the Map in storage, loads the key-value pairs but the keys are UTF-8 encoded
     // We collect into a StdResult<Vec> of key-value pairs but the keys are still Vec<u8>
     // Unwrap the Result and then transform back to an iterator so we can map (Vec<u8>, bool) -> (Addr, bool)
     // finally re-collect into a vec
