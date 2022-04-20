@@ -23,13 +23,13 @@ pub enum ExecuteMsg {
         token: AssetInfo,
         amount: Uint128,
     },
-    SwitchVammOn {
+    SwitchVammStatus {
         vamm: String,
+        status: bool,
     },
-    SwitchVammOff {
-        vamm: String,
+    ShutdownAllVamm {
+        limit: Option<u32>,
     },
-    ShutdownAllVamm {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -37,8 +37,8 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     Config {},
     IsVamm { vamm: String },
-    GetAllVamm {},
-    GetAllVammStatus {},
+    GetAllVamm {limit: Option<u32>},
+    GetAllVammStatus {limit: Option<u32>},
     GetVammStatus { vamm: String },
 }
 

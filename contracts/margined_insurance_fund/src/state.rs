@@ -22,9 +22,10 @@ pub fn save_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
 }
 
 // this function reads Addrs stored in the VAMM_LIST TODO: case there is no info in VAMM_LIST
-pub fn read_vammlist(deps: Deps, storage: &dyn Storage) -> StdResult<Vec<Addr>> {
+pub fn read_vammlist(deps: Deps, storage: &dyn Storage, limit: usize) -> StdResult<Vec<Addr>> {
     let keys = VAMM_LIST
         .keys(storage, None, None, Order::Ascending)
+        .take(limit)
         .map(|x| deps.api.addr_validate(&String::from_utf8(x)?))
         .collect();
     keys
@@ -33,10 +34,11 @@ pub fn read_vammlist(deps: Deps, storage: &dyn Storage) -> StdResult<Vec<Addr>> 
 // function changes the bool stored under an address to 'false'
 // note that that means this can only be given an *existing* vamm
 pub fn vamm_off(deps: DepsMut, input: Addr) -> StdResult<()> {
-    // first check that there is data there
-    if VAMM_LIST.may_load(deps.storage, &input)?.is_none() {
+    // read_vamm_status will throw an error if there is no data
+    // this statement will throw an error if the vamm status is already off
+    if read_vamm_status(deps.storage, input.clone())? == false {
         return Err(StdError::GenericErr {
-            msg: "This vAMM has not been added".to_string(),
+            msg: "This vAMM is already off".to_string(),
         });
     };
     VAMM_LIST.save(deps.storage, &input, &false)
@@ -45,10 +47,11 @@ pub fn vamm_off(deps: DepsMut, input: Addr) -> StdResult<()> {
 // function changes the bool stored under an address to 'true'
 // note that that means this can only be given an *existing* vamm
 pub fn vamm_on(deps: DepsMut, input: Addr) -> StdResult<()> {
-    // first check that there is data there
-    if VAMM_LIST.may_load(deps.storage, &input)?.is_none() {
+    // read_vamm_status will throw an error if there is no data
+    // this statement will throw an error if the vamm status is already on
+    if read_vamm_status(deps.storage, input.clone())? == true {
         return Err(StdError::GenericErr {
-            msg: "This vAMM has not been added".to_string(),
+            msg: "This vAMM is already on".to_string(),
         });
     };
     VAMM_LIST.save(deps.storage, &input, &true)
@@ -66,9 +69,10 @@ pub fn read_vamm_status(storage: &dyn Storage, input: Addr) -> StdResult<bool> {
 
 // this function reads the bools stored in the Map, and if there are no vAMMs stored, returns empty vec
 // use this function when you want to check the 'on/off' status of a vAMM
-pub fn read_all_vamm_status(storage: &dyn Storage) -> StdResult<Vec<(Addr, bool)>> {
+pub fn read_all_vamm_status(storage: &dyn Storage, limit: usize) -> StdResult<Vec<(Addr, bool)>> {
     let status_vec = VAMM_LIST
         .range(storage, None, None, Order::Ascending)
+        .take(limit)
         .collect::<StdResult<Vec<(Vec<u8>, bool)>>>()?
         .iter()
         .map(|tup| {

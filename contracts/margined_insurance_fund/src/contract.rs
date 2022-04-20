@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 use crate::{
     handle::{
-        add_vamm, remove_vamm, shutdown_all_vamm, switch_vamm_off, switch_vamm_on, update_config,
+        add_vamm, remove_vamm, shutdown_all_vamm, switch_vamm_status, update_config,
         withdraw,
     },
     query::{
@@ -47,9 +47,8 @@ pub fn execute(
         ExecuteMsg::AddVamm { vamm } => add_vamm(deps, info, vamm),
         ExecuteMsg::RemoveVamm { vamm } => remove_vamm(deps, info, vamm),
         ExecuteMsg::Withdraw { token, amount } => withdraw(deps, info, token, amount),
-        ExecuteMsg::SwitchVammOff { vamm } => switch_vamm_off(deps, info, vamm),
-        ExecuteMsg::SwitchVammOn { vamm } => switch_vamm_on(deps, info, vamm),
-        ExecuteMsg::ShutdownAllVamm {} => shutdown_all_vamm(deps, info),
+        ExecuteMsg::SwitchVammStatus { vamm, status } => switch_vamm_status(deps, info, vamm, status),
+        ExecuteMsg::ShutdownAllVamm {limit} => shutdown_all_vamm(deps, info, limit),
     }
 }
 
@@ -58,8 +57,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::IsVamm { vamm } => to_binary(&query_is_vamm(deps, vamm)?),
-        QueryMsg::GetAllVamm {} => to_binary(&query_mult_vamm(deps)?),
+        QueryMsg::GetAllVamm { limit } => to_binary(&query_mult_vamm(deps, limit)?),
         QueryMsg::GetVammStatus { vamm } => to_binary(&query_vamm_status(deps, vamm)?),
-        QueryMsg::GetAllVammStatus {} => to_binary(&query_status_mult_vamm(deps)?),
+        QueryMsg::GetAllVammStatus { limit } => to_binary(&query_status_mult_vamm(deps, limit)?),
     }
 }
