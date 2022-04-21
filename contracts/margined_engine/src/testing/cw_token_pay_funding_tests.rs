@@ -13,7 +13,7 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
         alice,
         bob,
         owner,
-        insurance,
+        insurance_fund,
         engine,
         vamm,
         usdc,
@@ -100,7 +100,7 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
     // insuranceFund: 5000 - 1.5
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(1_501_500_000_000u128));
-    let insurance_balance = usdc.balance(&router, insurance).unwrap();
+    let insurance_balance = usdc.balance(&router, insurance_fund.addr()).unwrap();
     assert_eq!(insurance_balance, Uint128::from(4_998_500_000_000u128));
 }
 
@@ -111,7 +111,7 @@ fn test_will_keep_generating_same_loss_when_funding_rate_is_positive() {
         alice,
         bob,
         owner,
-        insurance,
+        insurance_fund,
         engine,
         vamm,
         usdc,
@@ -180,7 +180,7 @@ fn test_will_keep_generating_same_loss_when_funding_rate_is_positive() {
     // insuranceFund: 5000 - 3
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(1_503_000_000_000u128));
-    let insurance_balance = usdc.balance(&router, insurance).unwrap();
+    let insurance_balance = usdc.balance(&router, insurance_fund.addr()).unwrap();
     assert_eq!(insurance_balance, Uint128::from(4_997_000_000_000u128));
 }
 
@@ -691,7 +691,7 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
         alice,
         bob,
         owner,
-        insurance,
+        insurance_fund,
         engine,
         vamm,
         pricefeed,
@@ -774,6 +774,6 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
     // insuranceFund: 5000
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(1_500_000_000_000u128));
-    let insurance_balance = usdc.balance(&router, insurance).unwrap();
+    let insurance_balance = usdc.balance(&router, insurance_fund.addr()).unwrap();
     assert_eq!(insurance_balance, Uint128::from(5_000_000_000_000u128));
 }

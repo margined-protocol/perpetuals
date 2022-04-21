@@ -11,7 +11,7 @@ fn test_margin_engine_should_have_enough_balance_after_close_position() {
         mut router,
         alice,
         bob,
-        insurance,
+        insurance_fund,
         engine,
         usdc,
         vamm,
@@ -86,7 +86,9 @@ fn test_margin_engine_should_have_enough_balance_after_close_position() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    let insurance_balance = usdc
+        .balance(&router, insurance_fund.addr().clone())
+        .unwrap();
     assert_eq!(insurance_balance, to_decimals(5_000u64));
 
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
@@ -99,7 +101,7 @@ fn test_margin_engine_does_not_have_enough_balance_after_close_position() {
         mut router,
         alice,
         bob,
-        insurance,
+        insurance_fund,
         engine,
         usdc,
         vamm,
@@ -174,7 +176,9 @@ fn test_margin_engine_does_not_have_enough_balance_after_close_position() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let insurance_balance = usdc.balance(&router, insurance.clone()).unwrap();
+    let insurance_balance = usdc
+        .balance(&router, insurance_fund.addr().clone())
+        .unwrap();
     assert_eq!(insurance_balance, Uint128::from(4998_048_780_494u128));
 
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();

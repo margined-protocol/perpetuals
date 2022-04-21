@@ -15,14 +15,15 @@ backtraces = ["cosmwasm-std/backtraces"]
 [dependencies]
 cw20 = { version = "0.9.1" }
 cw20-base = { version = "0.9.1", features = ["library"] }
+cw-multi-test = "0.9.1"
 cosmwasm-bignumber = "2.2.0"
 cosmwasm-std = { version = "0.16.3" }
 cosmwasm-storage = { version = "0.16.3" }
-cw-multi-test = "0.9.1"
 margined_common = { version = "0.1.0", path = "../margined_common"}
 margined_perp = { version = "0.1.0", path = "../margined_perp"}
 margined_vamm = { version = "0.1.0", path = "../../contracts/margined_vamm" }
 margined_engine = { version = "0.1.0", path = "../../contracts/margined_engine" }
+margined_insurance_fund = { version = "0.1.0", path = "../../contracts/margined_insurance_fund" }
 margined_pricefeed = { version = "0.1.0", path = "../../contracts/margined_pricefeed" }
 mock_pricefeed = { version = "0.1.0", path = "../../contracts/mocks/mock_pricefeed" }
 terraswap = { version = "2.4.0" }
