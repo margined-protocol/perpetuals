@@ -1,51 +1,30 @@
-export const testnet: Config = {
-  initialAssets: [],
-  insuranceFundInitMsg: {
-    "config": {
-      "address_provider_address": undefined,
-    }
-  },
-  priceFeedInitMsg: {
-    "address_provider_address": undefined,
-    "decimals": 9,
-    "oracle_hub_contract": "",
-  },
-  engineInitMsg: {
-    "config": {
-      "address_provider_address": undefined,
-      "insurance_fund": "",
-      "fee_pool": "",
-      "eligible_collateral": "",
-      "initial_margin_ratio": 1_000_000,
-      "maintenance_margin_ratio": 1_000_000,
-      "liquidation_fee": 1_000_000,
-      "vamm": ["", ""],
-    }
-  },
-}
-  
 export const local: Config = {
   initialAssets: [],
-  insuranceFundInitMsg: {
-    "config": {
-      "address_provider_address": undefined,
-    }
-  },
+  insuranceFundInitMsg: {},
   priceFeedInitMsg: {
-    "address_provider_address": undefined,
-    "decimals": 9,
-    "oracle_hub_contract": "",
+    decimals: 6,
+    oracle_hub_contract: '',
   },
   engineInitMsg: {
-    "config": {
-      "address_provider_address": undefined,
-      "insurance_fund": "",
-      "fee_pool": "",
-      "eligible_collateral": "",
-      "initial_margin_ratio": 1_000_000,
-      "maintenance_margin_ratio": 1_000_000,
-      "liquidation_fee": 1_000_000,
-      "vamm": ["", ""],
-    }
+    decimals: 6,
+    insurance_fund: '',
+    fee_pool: '',
+    eligible_collateral: 'UST',
+    initial_margin_ratio: '50000',
+    maintenance_margin_ratio: '50000',
+    liquidation_fee: '50000',
+    vamm: ['', ''],
+  },
+  vammInitMsg: {
+    decimals: 6,
+    pricefeed: undefined,
+    quote_asset: 'ETH',
+    base_asset: 'UST',
+    quote_asset_reserve: '1000000000', // 1,000.00
+    base_asset_reserve: '100000000', // 100.00
+    funding_period: 86_400, // 1 day in seconds
+    toll_ratio: '0',
+    spread_ratio: '0',
+    fluctuation_limit_ratio: '0',
   },
 }

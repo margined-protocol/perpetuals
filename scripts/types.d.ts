@@ -1,126 +1,40 @@
-interface InsuranceFundInitMsg {
-  config: {
-    address_provider_address?: string
-  }
-}
+// Init Messages
+interface InsuranceFundInitMsg {}
 
 interface EngineInitMsg {
-  config: {
-    address_provider_address?: string
-    insurance_fund: string
-    fee_pool: string
-    eligible_collateral: string
-    initial_margin_ratio: number
-    maintenance_margin_ratio: number
-    liquidation_fee: number
-    vamm: string[]
-  }
+  decimals: number
+  insurance_fund: string
+  fee_pool: string
+  eligible_collateral: string
+  initial_margin_ratio: string
+  maintenance_margin_ratio: string
+  liquidation_fee: string
+  vamm: string[]
 }
 
 interface PriceFeedInitMsg {
-  address_provider_address?: string
   decimals: number
   oracle_hub_contract: string
 }
 
-interface VestingInitMsg {
-  address_provider_address?: string
-  unlock_schedule: Schedule
-}
-
-interface Schedule {
-  start_time: number
-  cliff: number
-  duration: number
-}
-
-interface StakingInitMsg {
-  config: {
-    owner?: string
-    address_provider_address?: string
-    astroport_factory_address?: string
-    astroport_max_spread: string
-    cooldown_duration: number
-    unstake_window: number
-  }
-}
-
-interface SafetyFundInitMsg {
-  owner?: string
-  astroport_factory_address?: string
-  astroport_max_spread: string
-}
-
-interface TreasuryInitMsg {
-  owner?: string
-  astroport_factory_address?: string
-  astroport_max_spread: string
-}
-
-interface ProtocolRewardsCollectorInitMsg {
-  config: {
-    owner?: string
-    address_provider_address?: string
-    safety_fund_fee_share: string
-    treasury_fee_share: string
-    astroport_factory_address?: string
-    astroport_max_spread: string
-  }
-}
-
-interface RedBankInitMsg {
-  config: {
-    owner?: string
-    address_provider_address?: string
-    ma_token_code_id?: number
-    close_factor: string
-  }
-}
-
-interface DynamicInterestRate {
-  dynamic: {
-    min_borrow_rate: string
-    max_borrow_rate: string
-    kp_1: string
-    optimal_utilization_rate: string
-    kp_augmentation_threshold: string
-    kp_2: string
-    update_threshold_txs: number
-    update_threshold_seconds: number
-  }
-}
-
-interface LinearInterestRate {
-  linear: {
-    optimal_utilization_rate: string
-    base: string
-    slope_1: string
-    slope_2: string
-  }
-}
-
-interface InitOrUpdateAssetParams {
-  initial_borrow_rate: string
-  max_loan_to_value: string
-  reserve_factor: string
-  liquidation_threshold: string
-  liquidation_bonus: string
-  interest_rate_model_params: DynamicInterestRate | LinearInterestRate
-  active: boolean
-  deposit_enabled: boolean
-  borrow_enabled: boolean
-}
-
-interface Asset {
-  denom?: string
-  symbol?: string
-  contract_addr?: string
-  init_params: InitOrUpdateAssetParams
+interface VammInitMsg {
+  decimals: number
+  pricefeed?: string
+  margin_engine?: string
+  quote_asset: string
+  base_asset: string
+  quote_asset_reserve: string
+  base_asset_reserve: string
+  funding_period: number
+  toll_ratio: string
+  spread_ratio: string
+  fluctuation_limit_ratio: string
 }
 
 interface Config {
   insuranceFundInitMsg: InsuranceFundInitMsg
   engineInitMsg: EngineInitMsg
   priceFeedInitMsg: PriceFeedInitMsg
+  vammInitMsg: VammInitMsg
   initialAssets: Asset[]
 }
