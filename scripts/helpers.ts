@@ -140,6 +140,7 @@ import {
     if (admin == undefined) {
       admin = wallet.key.accAddress
     }
+    console.log(msg)
     const instantiateMsg = new MsgInstantiateContract(wallet.key.accAddress, admin, codeId, msg, undefined);
     let result = await performTransaction(terra, wallet, instantiateMsg)
     const attributes = result.logs[0].events[0].attributes
