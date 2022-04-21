@@ -7,7 +7,10 @@ use terraswap::asset::AssetInfo;
 
 use crate::{
     error::ContractError,
-    state::{read_config, remove_vamm as remove_amm, save_vamm, store_config, Config},
+    state::{
+        read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, store_config,
+        vamm_switch, Config, VAMM_LIMIT,
+    },
 };
 
 pub fn update_config(
@@ -72,6 +75,44 @@ pub fn remove_vamm(
 
     // remove vamm here
     remove_amm(deps, vamm_valid)?;
+
+    Ok(Response::default())
+}
+
+pub fn shutdown_all_vamm(mut deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+    let config: Config = read_config(deps.storage)?;
+
+    // check permission
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // shutdown all vamms here
+    let keys = read_vammlist(deps.as_ref(), deps.storage, VAMM_LIMIT)?;
+    for vamm in keys.iter() {
+        vamm_switch(deps.branch(), vamm.clone(), false)?;
+    }
+    Ok(Response::default())
+}
+
+pub fn switch_vamm_status(
+    deps: DepsMut,
+    info: MessageInfo,
+    vamm: String,
+    status: bool,
+) -> Result<Response, ContractError> {
+    let config: Config = read_config(deps.storage)?;
+
+    // check permission
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // validate address
+    let vamm_valid = deps.api.addr_validate(&vamm)?;
+
+    // switch vamm status here
+    vamm_switch(deps, vamm_valid, status)?;
 
     Ok(Response::default())
 }
