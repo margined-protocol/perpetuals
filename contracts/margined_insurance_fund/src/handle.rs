@@ -7,6 +7,7 @@ use terraswap::asset::AssetInfo;
 
 use crate::{
     error::ContractError,
+    messages::execute_vamm_switch,
     state::{
         read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, store_config,
         vamm_switch, Config, VAMM_LIMIT,
@@ -87,12 +88,19 @@ pub fn shutdown_all_vamm(mut deps: DepsMut, info: MessageInfo) -> Result<Respons
         return Err(ContractError::Unauthorized {});
     }
 
-    // shutdown all vamms here
+    // initialise the submsgs vec
+    let mut msgs = vec![];
+
+    // shutdown all vamms here + simultaneously construct the submessages
+    // we do both simultaneously so that we only iterate through the vammlist once
     let keys = read_vammlist(deps.as_ref(), deps.storage, VAMM_LIMIT)?;
+
     for vamm in keys.iter() {
         vamm_switch(deps.branch(), vamm.clone(), false)?;
+        msgs.push(execute_vamm_switch(vamm.clone(), false)?);
     }
-    Ok(Response::default())
+
+    Ok(Response::default().add_submessages(msgs))
 }
 
 pub fn switch_vamm_status(
@@ -111,10 +119,13 @@ pub fn switch_vamm_status(
     // validate address
     let vamm_valid = deps.api.addr_validate(&vamm)?;
 
-    // switch vamm status here
-    vamm_switch(deps, vamm_valid, status)?;
+    // switch vamm status locally here
+    vamm_switch(deps, vamm_valid.clone(), status)?;
 
-    Ok(Response::default())
+    // construct the switch message to the vamm contract
+    let msg = execute_vamm_switch(vamm_valid, status)?;
+
+    Ok(Response::default().add_submessage(msg))
 }
 
 pub fn withdraw(
