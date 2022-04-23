@@ -1,11 +1,24 @@
 use cosmwasm_std::Uint128;
 use cw_multi_test::Executor;
 use margined_perp::margined_vamm::CalcFeeResponse;
-use margined_utils::scenarios::{to_decimals, VammScenario};
+use margined_utils::scenarios::{to_decimals, SimpleScenario};
 
 #[test]
 fn test_calc_fee() {
-    let VammScenario { router, vamm, .. } = VammScenario::new();
+    let SimpleScenario {
+        mut router,
+        vamm,
+        owner,
+        ..
+    } = SimpleScenario::new();
+
+    let msg = vamm.set_toll_ratio(Uint128::from(10_000_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm
+        .set_spread_ratio(Uint128::from(10_000_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
     let result = vamm.calc_fee(&router, to_decimals(10)).unwrap();
 
@@ -20,12 +33,12 @@ fn test_calc_fee() {
 
 #[test]
 fn test_set_diff_fee_ratio() {
-    let VammScenario {
+    let SimpleScenario {
         mut router,
         owner,
         vamm,
         ..
-    } = VammScenario::new();
+    } = SimpleScenario::new();
 
     let msg = vamm
         .update_config(
@@ -54,12 +67,12 @@ fn test_set_diff_fee_ratio() {
 
 #[test]
 fn test_set_fee_ratio_zero() {
-    let VammScenario {
+    let SimpleScenario {
         mut router,
         owner,
         vamm,
         ..
-    } = VammScenario::new();
+    } = SimpleScenario::new();
 
     let msg = vamm
         .update_config(
@@ -88,7 +101,7 @@ fn test_set_fee_ratio_zero() {
 
 #[test]
 fn test_calc_fee_input_zero() {
-    let VammScenario { router, vamm, .. } = VammScenario::new();
+    let SimpleScenario { router, vamm, .. } = SimpleScenario::new();
 
     let result = vamm.calc_fee(&router, to_decimals(0)).unwrap();
     assert_eq!(
@@ -102,12 +115,12 @@ fn test_calc_fee_input_zero() {
 
 #[test]
 fn test_update_not_owner() {
-    let VammScenario {
+    let SimpleScenario {
         mut router,
         alice,
         vamm,
         ..
-    } = VammScenario::new();
+    } = SimpleScenario::new();
 
     let msg = vamm
         .update_config(
