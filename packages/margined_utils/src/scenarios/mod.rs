@@ -26,11 +26,11 @@ pub struct NativeTokenScenario {
     pub bob: Addr,
     pub carol: Addr,
     pub david: Addr,
-    pub insurance: Addr,
     pub fee_pool: Addr,
     pub vamm: VammController,
     pub engine: EngineController,
     pub pricefeed: PricefeedController,
+    pub insurance_fund: InsuranceFundController,
 }
 
 impl NativeTokenScenario {
@@ -42,7 +42,6 @@ impl NativeTokenScenario {
         let bob = Addr::unchecked("bob");
         let carol = Addr::unchecked("carol");
         let david = Addr::unchecked("david");
-        let insurance_fund = Addr::unchecked("insurance_fund");
         let fee_pool = Addr::unchecked("fee_pool");
         let native_denom = "uusd";
 
@@ -54,13 +53,27 @@ impl NativeTokenScenario {
         router
             .init_bank_balance(&david, init_funds.clone())
             .unwrap();
-        router
-            .init_bank_balance(&insurance_fund, init_funds)
-            .unwrap();
 
         let engine_id = router.store_code(contract_engine());
         let vamm_id = router.store_code(contract_vamm());
+        let insurance_fund_id = router.store_code(contract_insurance_fund());
         let pricefeed_id = router.store_code(contract_mock_pricefeed());
+
+        let insurance_fund_addr = router
+            .instantiate_contract(
+                insurance_fund_id,
+                owner.clone(),
+                &InsuranceFundInstantiateMsg {},
+                &[],
+                "insurance_fund",
+                None,
+            )
+            .unwrap();
+        let insurance_fund = InsuranceFundController(insurance_fund_addr.clone());
+
+        router
+            .init_bank_balance(&insurance_fund.addr(), init_funds)
+            .unwrap();
 
         let pricefeed_addr = router
             .instantiate_contract(
@@ -111,7 +124,7 @@ impl NativeTokenScenario {
                 owner.clone(),
                 &InstantiateMsg {
                     decimals: 6u8,
-                    insurance_fund: insurance_fund.to_string(),
+                    insurance_fund: insurance_fund.addr().to_string(),
                     fee_pool: fee_pool.to_string(),
                     eligible_collateral: native_denom.to_string(),
                     initial_margin_ratio: Uint128::from(50_000u128), // 0.05
@@ -146,6 +159,19 @@ impl NativeTokenScenario {
             )
             .unwrap();
 
+        // set margin engine as insurance fund beneficiary
+        router
+            .execute_contract(
+                owner.clone(),
+                insurance_fund_addr,
+                &InsuranceFundExecuteMsg::UpdateConfig {
+                    owner: None,
+                    beneficiary: Some(engine_addr.to_string()),
+                },
+                &[],
+            )
+            .unwrap();
+
         Self {
             router,
             owner,
@@ -153,11 +179,11 @@ impl NativeTokenScenario {
             bob,
             carol,
             david,
-            insurance: insurance_fund,
             fee_pool,
             pricefeed,
             vamm,
             engine,
+            insurance_fund,
         }
     }
 }

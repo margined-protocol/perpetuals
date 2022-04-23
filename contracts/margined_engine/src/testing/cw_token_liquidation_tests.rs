@@ -127,7 +127,6 @@ fn test_partially_liquidate_long_position() {
     assert_eq!(position.margin, Uint128::from(19_274_981_657u128));
     assert_eq!(position.size, Integer::new_positive(15_000_000_000u128));
 
-    // this is todo need to add funding into the get margin ratio
     let margin_ratio = engine
         .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();

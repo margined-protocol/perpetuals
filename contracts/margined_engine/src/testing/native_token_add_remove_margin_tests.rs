@@ -1,4 +1,4 @@
-use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Uint128};
+use cosmwasm_std::{Coin, Uint128};
 use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::NativeTokenScenario;
@@ -151,84 +151,78 @@ fn test_remove_margin() {
     );
 }
 
-// TODO: add in the insurance contract transfer for beneficiary first
-// #[test]
-// fn test_remove_margin_after_paying_funding() {
-//     let NativeTokenScenario {
-//         mut router,
-//         alice,
-//         bob,
-//         owner,
-//         engine,
-//         vamm,
-//         pricefeed,
-//         ..
-//     } = NativeTokenScenario::new();
+#[test]
+fn test_remove_margin_after_paying_funding() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        owner,
+        engine,
+        vamm,
+        pricefeed,
+        ..
+    } = NativeTokenScenario::new();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::BUY,
-//             Uint128::from(60_000_000u64),
-//             Uint128::from(10_000_000u64),
-//             Uint128::from(0_000_000u64),
-//             vec![Coin::new(60_000_000u128, "uusd")],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(60_000_000u64),
+            Uint128::from(10_000_000u64),
+            Uint128::from(0_000_000u64),
+            vec![Coin::new(60_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let engine_balance = router.wrap().query_balance(&engine.addr(), "uusd").unwrap().amount;
-//     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
+    let engine_balance = router
+        .wrap()
+        .query_balance(&engine.addr(), "uusd")
+        .unwrap()
+        .amount;
+    assert_eq!(engine_balance, Uint128::from(60_000_000u64));
 
-//     let price: Uint128 = Uint128::from(25_500_000u128);
-//     let timestamp: u64 = 1_000_000_000;
+    let price: Uint128 = Uint128::from(25_500_000u128);
+    let timestamp: u64 = 1_000_000_000;
 
-//     let msg = pricefeed
-//         .append_price("ETH".to_string(), price, timestamp)
-//         .unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     // move to the next funding time
-//     router.update_block(|block| {
-//         block.time = block.time.plus_seconds(NEXT_FUNDING_PERIOD_DELTA);
-//         block.height += 1;
-//     });
+    // move to the next funding time
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(NEXT_FUNDING_PERIOD_DELTA);
+        block.height += 1;
+    });
 
-//     // funding payment is -3.75
-//     let msg = engine.pay_funding(vamm.addr().to_string()).unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    // funding payment is -3.75
+    let msg = engine.pay_funding(vamm.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     // TODO: this transfer is needed since the native token transfer from
-//     // doesnt function
-//     router
-//         .execute(
-//             bob.clone(),
-//             CosmosMsg::Bank(BankMsg::Send {
-//                 to_address: engine.addr().to_string(),
-//                 amount: vec![Coin::new(500_000_000u128, "uusd")],
-//             }),
-//         )
-//         .unwrap();
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(20_000_000u64))
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .withdraw_margin(vamm.addr().to_string(), Uint128::from(20_000_000u64))
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let engine_balance = router
+        .wrap()
+        .query_balance(&engine.addr(), "uusd")
+        .unwrap()
+        .amount;
+    assert_eq!(engine_balance, Uint128::from(36_250_000u128));
 
-//     let engine_balance = router.wrap().query_balance(&engine.addr(), "uusd").unwrap().amount;
-//     assert_eq!(engine_balance, Uint128::from(36_250_000u128));
-
-//     let alice_position = engine
-//         .get_position_with_funding_payment(&router, vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
-//     assert_eq!(alice_position.margin, Uint128::from(36_250_000u128),);
-//     assert_eq!(
-//         engine
-//             .get_balance_with_funding_payment(&router, alice.to_string())
-//             .unwrap(),
-//         Uint128::from(36_250_000u128),
-//     );
-// }
+    let alice_position = engine
+        .get_position_with_funding_payment(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(alice_position.margin, Uint128::from(36_250_000u128),);
+    assert_eq!(
+        engine
+            .get_balance_with_funding_payment(&router, alice.to_string())
+            .unwrap(),
+        Uint128::from(36_250_000u128),
+    );
+}
 
 #[test]
 fn test_remove_margin_insufficient_margin() {
