@@ -1,4 +1,4 @@
-use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Uint128};
+use cosmwasm_std::{Coin, Uint128};
 use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, PositionResponse, Side};

@@ -1,16 +1,14 @@
-// use crate::testing::setup::{self, to_decimals};
-use cosmwasm_std::Uint128;
-use cw20::Cw20ExecuteMsg;
+use cosmwasm_std::{Coin, Uint128};
 use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
-use margined_utils::scenarios::{to_decimals, SimpleScenario};
+use margined_utils::scenarios::NativeTokenScenario;
 
 #[test]
 fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
-    let mut env = SimpleScenario::new();
+    let mut env = NativeTokenScenario::new();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
+    let price: Uint128 = Uint128::from(10_000_000u128);
     let timestamp: u64 = env.router.block_info().time.seconds();
 
     let msg = env
@@ -27,75 +25,26 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
     // set the margin ratios
     let msg = env
         .engine
-        .set_maintenance_margin_ratio(Uint128::from(100_000_000u128))
+        .set_maintenance_margin_ratio(Uint128::from(100_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000_000u128))
+        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .set_liquidation_fee(Uint128::from(25_000_000u128))
+        .set_liquidation_fee(Uint128::from(25_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
-
-    // reduce the allowance
-    env.router
-        .execute_contract(
-            env.alice.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::DecreaseAllowance {
-                spender: env.engine.addr().to_string(),
-                amount: to_decimals(1000),
-                expires: None,
-            },
-            &[],
-        )
-        .unwrap();
-
-    // reduce the allowance
-    env.router
-        .execute_contract(
-            env.bob.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::DecreaseAllowance {
-                spender: env.engine.addr().to_string(),
-                amount: to_decimals(1000),
-                expires: None,
-            },
-            &[],
-        )
-        .unwrap();
 
     // mint funds for carol
+    let init_funds = vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")];
     env.router
-        .execute_contract(
-            env.owner.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::Mint {
-                recipient: env.carol.to_string(),
-                amount: to_decimals(1000u64),
-            },
-            &[],
-        )
-        .unwrap();
-
-    // set allowance for carol
-    env.router
-        .execute_contract(
-            env.carol.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::IncreaseAllowance {
-                spender: env.engine.addr().to_string(),
-                amount: to_decimals(1000u64),
-                expires: None,
-            },
-            &[],
-        )
+        .init_bank_balance(&env.carol, init_funds.clone())
         .unwrap();
 
     let msg = env
@@ -103,10 +52,10 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
         .open_position(
             env.vamm.addr().to_string(),
             Side::BUY,
-            to_decimals(20u64),
-            to_decimals(5u64),
-            Uint128::from(9_090_000_000u128),
-            vec![],
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(9_090_000u128),
+            vec![Coin::new(20_000_000u128, "uusd")],
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -121,11 +70,10 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
         .open_position(
             env.vamm.addr().to_string(),
             Side::BUY,
-            to_decimals(20u64),
-            to_decimals(5u64),
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![],
-            // Uint128::from(7_570_000_000u128),
+            vec![Coin::new(20_000_000u128, "uusd")],
         )
         .unwrap();
     env.router.execute(env.alice.clone(), msg).unwrap();
@@ -140,11 +88,10 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
         .open_position(
             env.vamm.addr().to_string(),
             Side::SELL,
-            to_decimals(20u64),
-            to_decimals(5u64),
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![],
-            // Uint128::from(7_580_000_000u128),
+            vec![Coin::new(20_000_000u128, "uusd")],
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -159,10 +106,10 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
         .open_position(
             env.vamm.addr().to_string(),
             Side::SELL,
-            to_decimals(20u64),
-            to_decimals(5u64),
-            to_decimals(0u64),
-            vec![],
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::zero(),
+            vec![Coin::new(20_000_000u128, "uusd")],
         )
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
@@ -179,7 +126,7 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
         .liquidate(
             env.vamm.addr().to_string(),
             env.alice.to_string(),
-            to_decimals(0u64),
+            Uint128::zero(),
         )
         .unwrap();
     let response = env.router.execute(env.carol.clone(), msg).unwrap();
@@ -191,10 +138,10 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
 
 #[test]
 fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_same_block() {
-    let mut env = SimpleScenario::new();
+    let mut env = NativeTokenScenario::new();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
+    let price: Uint128 = Uint128::from(10_000_000u128);
     let timestamp: u64 = env.router.block_info().time.seconds();
 
     let msg = env
@@ -211,75 +158,26 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
     // set the margin ratios
     let msg = env
         .engine
-        .set_maintenance_margin_ratio(Uint128::from(100_000_000u128))
+        .set_maintenance_margin_ratio(Uint128::from(100_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000_000u128))
+        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .set_liquidation_fee(Uint128::from(25_000_000u128))
+        .set_liquidation_fee(Uint128::from(25_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
-
-    // reduce the allowance
-    env.router
-        .execute_contract(
-            env.alice.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::DecreaseAllowance {
-                spender: env.engine.addr().to_string(),
-                amount: to_decimals(1000),
-                expires: None,
-            },
-            &[],
-        )
-        .unwrap();
-
-    // reduce the allowance
-    env.router
-        .execute_contract(
-            env.bob.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::DecreaseAllowance {
-                spender: env.engine.addr().to_string(),
-                amount: to_decimals(1000),
-                expires: None,
-            },
-            &[],
-        )
-        .unwrap();
 
     // mint funds for carol
+    let init_funds = vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")];
     env.router
-        .execute_contract(
-            env.owner.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::Mint {
-                recipient: env.carol.to_string(),
-                amount: to_decimals(1000u64),
-            },
-            &[],
-        )
-        .unwrap();
-
-    // set allowance for carol
-    env.router
-        .execute_contract(
-            env.carol.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::IncreaseAllowance {
-                spender: env.engine.addr().to_string(),
-                amount: to_decimals(1000u64),
-                expires: None,
-            },
-            &[],
-        )
+        .init_bank_balance(&env.carol, init_funds.clone())
         .unwrap();
 
     let msg = env
@@ -287,10 +185,10 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
         .open_position(
             env.vamm.addr().to_string(),
             Side::BUY,
-            to_decimals(20u64),
-            to_decimals(5u64),
-            Uint128::from(9_090_000_000u128),
-            vec![],
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(9_090_000u128),
+            vec![Coin::new(20_000_000u128, "uusd")],
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -305,10 +203,10 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
         .open_position(
             env.vamm.addr().to_string(),
             Side::BUY,
-            to_decimals(20u64),
-            to_decimals(5u64),
-            Uint128::from(7_570_000_000u128),
-            vec![],
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(7_570_000u128),
+            vec![Coin::new(20_000_000u128, "uusd")],
         )
         .unwrap();
     env.router.execute(env.alice.clone(), msg).unwrap();
@@ -323,10 +221,10 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
         .open_position(
             env.vamm.addr().to_string(),
             Side::SELL,
-            to_decimals(20u64),
-            to_decimals(5u64),
-            Uint128::from(7_580_000_000u128),
-            vec![],
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(7_580_000u128),
+            vec![Coin::new(20_000_000u128, "uusd")],
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -341,10 +239,10 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
         .open_position(
             env.vamm.addr().to_string(),
             Side::SELL,
-            to_decimals(20u64),
-            to_decimals(5u64),
-            to_decimals(0u64),
-            vec![],
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::zero(),
+            vec![Coin::new(20_000_000u128, "uusd")],
         )
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
@@ -361,14 +259,14 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
         .liquidate(
             env.vamm.addr().to_string(),
             env.alice.to_string(),
-            to_decimals(0u64),
+            Uint128::zero(),
         )
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(env.vamm.addr().to_string(), Uint128::zero())
         .unwrap();
     let response = env.router.execute(env.carol.clone(), msg).unwrap_err();
     assert_eq!(
@@ -379,10 +277,10 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
 
 #[test]
 fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same_block() {
-    let mut env = SimpleScenario::new();
+    let mut env = NativeTokenScenario::new();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
+    let price: Uint128 = Uint128::from(10_000_000u128);
     let timestamp: u64 = env.router.block_info().time.seconds();
 
     let msg = env
@@ -398,75 +296,26 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
 
     let msg = env
         .engine
-        .set_maintenance_margin_ratio(Uint128::from(100_000_000u128))
+        .set_maintenance_margin_ratio(Uint128::from(100_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000_000u128))
+        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .set_liquidation_fee(Uint128::from(25_000_000u128))
+        .set_liquidation_fee(Uint128::from(25_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
-
-    // reduce the allowance
-    env.router
-        .execute_contract(
-            env.alice.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::DecreaseAllowance {
-                spender: env.engine.addr().to_string(),
-                amount: to_decimals(1000),
-                expires: None,
-            },
-            &[],
-        )
-        .unwrap();
-
-    // reduce the allowance
-    env.router
-        .execute_contract(
-            env.bob.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::DecreaseAllowance {
-                spender: env.engine.addr().to_string(),
-                amount: to_decimals(1000),
-                expires: None,
-            },
-            &[],
-        )
-        .unwrap();
 
     // mint funds for carol
+    let init_funds = vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")];
     env.router
-        .execute_contract(
-            env.owner.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::Mint {
-                recipient: env.carol.to_string(),
-                amount: to_decimals(1000u64),
-            },
-            &[],
-        )
-        .unwrap();
-
-    // set allowance for carol
-    env.router
-        .execute_contract(
-            env.carol.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::IncreaseAllowance {
-                spender: env.engine.addr().to_string(),
-                amount: to_decimals(1000u64),
-                expires: None,
-            },
-            &[],
-        )
+        .init_bank_balance(&env.carol, init_funds.clone())
         .unwrap();
 
     let msg = env
@@ -474,10 +323,10 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
         .open_position(
             env.vamm.addr().to_string(),
             Side::SELL,
-            to_decimals(20u64),
-            to_decimals(5u64),
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![],
+            vec![Coin::new(20_000_000u128, "uusd")],
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -492,10 +341,10 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
         .open_position(
             env.vamm.addr().to_string(),
             Side::SELL,
-            to_decimals(20u64),
-            to_decimals(5u64),
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![],
+            vec![Coin::new(20_000_000u128, "uusd")],
         )
         .unwrap();
     env.router.execute(env.alice.clone(), msg).unwrap();
@@ -507,7 +356,7 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
 
     let msg = env
         .engine
-        .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(env.vamm.addr().to_string(), Uint128::zero())
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
@@ -521,10 +370,10 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
         .open_position(
             env.vamm.addr().to_string(),
             Side::BUY,
-            to_decimals(20u64),
-            to_decimals(5u64),
-            to_decimals(0u64),
-            vec![],
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::zero(),
+            vec![Coin::new(20_000_000u128, "uusd")],
         )
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
@@ -541,14 +390,14 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
         .liquidate(
             env.vamm.addr().to_string(),
             env.alice.to_string(),
-            to_decimals(0u64),
+            Uint128::zero(),
         )
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(env.vamm.addr().to_string(), Uint128::zero())
         .unwrap();
     let response = env.router.execute(env.carol.clone(), msg).unwrap_err();
     assert_eq!(
@@ -559,10 +408,10 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
 
 #[test]
 fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_block() {
-    let mut env = SimpleScenario::new();
+    let mut env = NativeTokenScenario::new();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
+    let price: Uint128 = Uint128::from(10_000_000u128);
     let timestamp: u64 = env.router.block_info().time.seconds();
 
     let msg = env
@@ -578,75 +427,26 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
 
     let msg = env
         .engine
-        .set_maintenance_margin_ratio(Uint128::from(100_000_000u128))
+        .set_maintenance_margin_ratio(Uint128::from(100_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000_000u128))
+        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .set_liquidation_fee(Uint128::from(25_000_000u128))
+        .set_liquidation_fee(Uint128::from(25_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
-
-    // reduce the allowance
-    env.router
-        .execute_contract(
-            env.alice.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::DecreaseAllowance {
-                spender: env.engine.addr().to_string(),
-                amount: to_decimals(1000),
-                expires: None,
-            },
-            &[],
-        )
-        .unwrap();
-
-    // reduce the allowance
-    env.router
-        .execute_contract(
-            env.bob.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::DecreaseAllowance {
-                spender: env.engine.addr().to_string(),
-                amount: to_decimals(1000),
-                expires: None,
-            },
-            &[],
-        )
-        .unwrap();
 
     // mint funds for carol
+    let init_funds = vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")];
     env.router
-        .execute_contract(
-            env.owner.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::Mint {
-                recipient: env.carol.to_string(),
-                amount: to_decimals(1000u64),
-            },
-            &[],
-        )
-        .unwrap();
-
-    // set allowance for carol
-    env.router
-        .execute_contract(
-            env.carol.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::IncreaseAllowance {
-                spender: env.engine.addr().to_string(),
-                amount: to_decimals(1000u64),
-                expires: None,
-            },
-            &[],
-        )
+        .init_bank_balance(&env.carol, init_funds.clone())
         .unwrap();
 
     let msg = env
@@ -654,10 +454,10 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
         .open_position(
             env.vamm.addr().to_string(),
             Side::BUY,
-            to_decimals(20u64),
-            to_decimals(5u64),
-            Uint128::from(9_090_000_000u128),
-            vec![],
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(9_090_000u128),
+            vec![Coin::new(20_000_000u128, "uusd")],
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -672,10 +472,10 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
         .open_position(
             env.vamm.addr().to_string(),
             Side::BUY,
-            to_decimals(20u64),
-            to_decimals(5u64),
-            Uint128::from(7_570_000_000u128),
-            vec![],
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(7_570_000u128),
+            vec![Coin::new(20_000_000u128, "uusd")],
         )
         .unwrap();
     env.router.execute(env.alice.clone(), msg).unwrap();
@@ -690,10 +490,10 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
         .open_position(
             env.vamm.addr().to_string(),
             Side::SELL,
-            to_decimals(20u64),
-            to_decimals(5u64),
-            Uint128::from(7_580_000_000u128),
-            vec![],
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(7_580_000u128),
+            vec![Coin::new(20_000_000u128, "uusd")],
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -708,10 +508,10 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
         .open_position(
             env.vamm.addr().to_string(),
             Side::BUY,
-            to_decimals(10u64),
-            to_decimals(1u64),
-            to_decimals(0u64),
-            vec![],
+            Uint128::from(10_000_000u64),
+            Uint128::from(1_000_000u64),
+            Uint128::from(0u64),
+            vec![Coin::new(10_000_000u128, "uusd")],
         )
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
@@ -728,14 +528,14 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
         .liquidate(
             env.vamm.addr().to_string(),
             env.alice.to_string(),
-            to_decimals(0u64),
+            Uint128::zero(),
         )
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(env.vamm.addr().to_string(), Uint128::zero())
         .unwrap();
     let response = env.router.execute(env.carol.clone(), msg).unwrap_err();
     assert_eq!(
@@ -746,10 +546,10 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
 
 #[test]
 fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in_same_block() {
-    let mut env = SimpleScenario::new();
+    let mut env = NativeTokenScenario::new();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
+    let price: Uint128 = Uint128::from(10_000_000u128);
     let timestamp: u64 = env.router.block_info().time.seconds();
 
     let msg = env
@@ -765,75 +565,26 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
 
     let msg = env
         .engine
-        .set_maintenance_margin_ratio(Uint128::from(100_000_000u128))
+        .set_maintenance_margin_ratio(Uint128::from(100_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000_000u128))
+        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .set_liquidation_fee(Uint128::from(25_000_000u128))
+        .set_liquidation_fee(Uint128::from(25_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
-
-    // reduce the allowance
-    env.router
-        .execute_contract(
-            env.alice.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::DecreaseAllowance {
-                spender: env.engine.addr().to_string(),
-                amount: to_decimals(1000),
-                expires: None,
-            },
-            &[],
-        )
-        .unwrap();
-
-    // reduce the allowance
-    env.router
-        .execute_contract(
-            env.bob.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::DecreaseAllowance {
-                spender: env.engine.addr().to_string(),
-                amount: to_decimals(1000),
-                expires: None,
-            },
-            &[],
-        )
-        .unwrap();
 
     // mint funds for carol
+    let init_funds = vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")];
     env.router
-        .execute_contract(
-            env.owner.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::Mint {
-                recipient: env.carol.to_string(),
-                amount: to_decimals(1000u64),
-            },
-            &[],
-        )
-        .unwrap();
-
-    // set allowance for carol
-    env.router
-        .execute_contract(
-            env.carol.clone(),
-            env.usdc.addr().clone(),
-            &Cw20ExecuteMsg::IncreaseAllowance {
-                spender: env.engine.addr().to_string(),
-                amount: to_decimals(1000u64),
-                expires: None,
-            },
-            &[],
-        )
+        .init_bank_balance(&env.carol, init_funds.clone())
         .unwrap();
 
     let msg = env
@@ -841,10 +592,10 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
         .open_position(
             env.vamm.addr().to_string(),
             Side::SELL,
-            to_decimals(20u64),
-            to_decimals(5u64),
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![],
+            vec![Coin::new(20_000_000u128, "uusd")],
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -859,10 +610,10 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
         .open_position(
             env.vamm.addr().to_string(),
             Side::SELL,
-            to_decimals(20u64),
-            to_decimals(5u64),
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![],
+            vec![Coin::new(20_000_000u128, "uusd")],
         )
         .unwrap();
     env.router.execute(env.alice.clone(), msg).unwrap();
@@ -874,7 +625,7 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
 
     let msg = env
         .engine
-        .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(env.vamm.addr().to_string(), Uint128::zero())
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
@@ -888,10 +639,10 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
         .open_position(
             env.vamm.addr().to_string(),
             Side::SELL,
-            to_decimals(10u64),
-            to_decimals(1u64),
-            to_decimals(0u64),
-            vec![],
+            Uint128::from(10_000_000u64),
+            Uint128::from(1u64),
+            Uint128::zero(),
+            vec![Coin::new(10_000_000u128, "uusd")],
         )
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
@@ -908,14 +659,14 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
         .liquidate(
             env.vamm.addr().to_string(),
             env.alice.to_string(),
-            to_decimals(0u64),
+            Uint128::zero(),
         )
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(env.vamm.addr().to_string(), Uint128::zero())
         .unwrap();
     let response = env.router.execute(env.carol.clone(), msg).unwrap_err();
     assert_eq!(
