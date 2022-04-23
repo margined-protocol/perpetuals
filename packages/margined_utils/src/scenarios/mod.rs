@@ -186,6 +186,36 @@ impl NativeTokenScenario {
             insurance_fund,
         }
     }
+
+    pub fn open_small_position(
+        &mut self,
+        account: Addr,
+        side: Side,
+        quote_asset_amount: Uint128,
+        leverage: Uint128,
+        fees: u128,
+        count: u64,
+    ) {
+        for _ in 0..count {
+            let msg = self
+                .engine
+                .open_position(
+                    self.vamm.addr().to_string(),
+                    side.clone(),
+                    quote_asset_amount,
+                    leverage,
+                    Uint128::zero(),
+                    vec![Coin::new(fees, "uusd")],
+                )
+                .unwrap();
+            self.router.execute(account.clone(), msg).unwrap();
+
+            self.router.update_block(|block| {
+                block.time = block.time.plus_seconds(15);
+                block.height += 1;
+            });
+        }
+    }
 }
 
 impl Default for NativeTokenScenario {
