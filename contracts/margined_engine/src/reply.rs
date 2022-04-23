@@ -611,7 +611,6 @@ pub fn pay_funding_reply(
     premium_fraction: Integer,
     sender: String,
 ) -> StdResult<Response> {
-    println!("pay funding reply");
     let config = read_config(deps.storage)?;
     let vamm = deps.api.addr_validate(&sender)?;
 
@@ -627,7 +626,6 @@ pub fn pay_funding_reply(
     let mut response: Response = Response::new();
 
     if funding_payment.is_negative() && !funding_payment.is_zero() {
-        println!("hello?");
         let msg = execute_insurance_fund_withdrawal(deps.as_ref(), funding_payment.value)?;
         response = response.add_submessage(msg);
     } else if funding_payment.is_positive() && !funding_payment.is_zero() {
