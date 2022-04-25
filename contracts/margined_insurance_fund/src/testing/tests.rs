@@ -339,7 +339,7 @@ fn test_vamm_off() {
 
 #[test]
 fn try_vamm_off_and_on() {
-    let ShutdownScenario { owner,vamm1, .. } = ShutdownScenario::new();
+    let ShutdownScenario { owner, vamm1, .. } = ShutdownScenario::new();
 
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
@@ -441,7 +441,7 @@ fn test_vamm_on() {
 
 #[test]
 fn test_off_vamm_off_again() {
-    let ShutdownScenario {owner, vamm1, .. } = ShutdownScenario::new();
+    let ShutdownScenario { owner, vamm1, .. } = ShutdownScenario::new();
 
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
@@ -481,7 +481,7 @@ fn test_off_vamm_off_again() {
 
 #[test]
 fn test_on_vamm_on_again() {
-    let ShutdownScenario { owner,  vamm1, .. } = ShutdownScenario::new();
+    let ShutdownScenario { owner, vamm1, .. } = ShutdownScenario::new();
 
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
