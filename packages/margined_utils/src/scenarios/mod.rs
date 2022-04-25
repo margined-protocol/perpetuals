@@ -561,6 +561,139 @@ impl Default for VammScenario {
     }
 }
 
+pub struct ShutdownScenario {
+    pub router: App,
+    pub owner: Addr,
+    pub vamm1: VammController,
+    pub vamm2: VammController,
+    pub vamm3: VammController,
+    pub pricefeed: PricefeedController,
+}
+
+impl ShutdownScenario {
+    pub fn new() -> Self {
+        let mut router: App = AppBuilder::new().build();
+
+        let owner = Addr::unchecked("owner");
+
+        let vamm1_id = router.store_code(contract_vamm());
+        let vamm2_id = router.store_code(contract_vamm());
+        let vamm3_id = router.store_code(contract_vamm());
+        let pricefeed_id = router.store_code(contract_mock_pricefeed());
+
+        let pricefeed_addr = router
+            .instantiate_contract(
+                pricefeed_id,
+                owner.clone(),
+                &PricefeedInstantiateMsg {
+                    decimals: 9u8,
+                    oracle_hub_contract: "oracle_hub0000".to_string(),
+                },
+                &[],
+                "pricefeed",
+                None,
+            )
+            .unwrap();
+        let pricefeed = PricefeedController(pricefeed_addr.clone());
+
+        let vamm1_addr = router
+            .instantiate_contract(
+                vamm1_id,
+                owner.clone(),
+                &VammInstantiateMsg {
+                    decimals: 9u8,
+                    quote_asset: "ETH".to_string(),
+                    base_asset: "USD".to_string(),
+                    quote_asset_reserve: to_decimals(1_000),
+                    base_asset_reserve: to_decimals(100),
+                    funding_period: 3_600_u64, // funding period is 1 day to make calcs easier
+                    toll_ratio: Uint128::from(10_000_000u128), // 0.01
+                    spread_ratio: Uint128::from(10_000_000u128), // 0.01
+                    fluctuation_limit_ratio: Uint128::from(10_000_000u128), // 0.01
+                    pricefeed: pricefeed_addr.to_string(),
+                    margin_engine: Some(owner.to_string()),
+                },
+                &[],
+                "vamm1",
+                None,
+            )
+            .unwrap();
+        let vamm1 = VammController(vamm1_addr);
+
+        let msg = vamm1.set_open(true).unwrap();
+        router.execute(owner.clone(), msg).unwrap();
+
+        let vamm2_addr = router
+            .instantiate_contract(
+                vamm2_id,
+                owner.clone(),
+                &VammInstantiateMsg {
+                    decimals: 9u8,
+                    quote_asset: "ETH".to_string(),
+                    base_asset: "USD".to_string(),
+                    quote_asset_reserve: to_decimals(1_000),
+                    base_asset_reserve: to_decimals(100),
+                    funding_period: 3_600_u64, // funding period is 1 day to make calcs easier
+                    toll_ratio: Uint128::from(10_000_000u128), // 0.01
+                    spread_ratio: Uint128::from(10_000_000u128), // 0.01
+                    fluctuation_limit_ratio: Uint128::from(10_000_000u128), // 0.01
+                    pricefeed: pricefeed_addr.to_string(),
+                    margin_engine: Some(owner.to_string()),
+                },
+                &[],
+                "vamm2",
+                None,
+            )
+            .unwrap();
+        let vamm2 = VammController(vamm2_addr);
+
+        let msg = vamm2.set_open(true).unwrap();
+        router.execute(owner.clone(), msg).unwrap();
+
+        let vamm3_addr = router
+            .instantiate_contract(
+                vamm3_id,
+                owner.clone(),
+                &VammInstantiateMsg {
+                    decimals: 9u8,
+                    quote_asset: "ETH".to_string(),
+                    base_asset: "USD".to_string(),
+                    quote_asset_reserve: to_decimals(1_000),
+                    base_asset_reserve: to_decimals(100),
+                    funding_period: 3_600_u64, // funding period is 1 day to make calcs easier
+                    toll_ratio: Uint128::from(10_000_000u128), // 0.01
+                    spread_ratio: Uint128::from(10_000_000u128), // 0.01
+                    fluctuation_limit_ratio: Uint128::from(10_000_000u128), // 0.01
+                    pricefeed: pricefeed_addr.to_string(),
+                    margin_engine: Some(owner.to_string()),
+                },
+                &[],
+                "vamm3",
+                None,
+            )
+            .unwrap();
+        let vamm3 = VammController(vamm3_addr);
+
+        let msg = vamm3.set_open(true).unwrap();
+        router.execute(owner.clone(), msg).unwrap();
+
+        Self {
+            router,
+            owner,
+            vamm1,
+            vamm2,
+            vamm3,
+            pricefeed,
+        }
+    }
+}
+
+impl Default for ShutdownScenario {
+    fn default() -> Self {
+        ShutdownScenario::new()
+    }
+}
+
 pub const DECIMAL_MULTIPLIER: Uint128 = Uint128::new(1_000_000_000);
 
 fn contract_cw20() -> Box<dyn Contract<Empty>> {
