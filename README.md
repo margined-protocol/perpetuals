@@ -37,13 +37,6 @@ rustup target add wasm32-unknown-unknown
 
 3. Make sure [Docker](https://www.docker.com/) is installed
 
-### Unit / Integration Tests
-
-To run the tests after installing pre-requisites do the following:
-
-```sh
-cargo test
-```
 ### Build
 
 Clone this repository and build the source code:
@@ -51,4 +44,12 @@ Clone this repository and build the source code:
 git clone git@github.com:margined-protocol/perpetuals.git
 cd perpetuals
 cargo build
+```
+
+### Unit / Integration Tests
+
+To run the tests after installing pre-requisites do the following:
+
+```sh
+cargo test
 ```
