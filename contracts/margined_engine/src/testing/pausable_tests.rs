@@ -33,7 +33,7 @@ fn test_paused_by_admin() {
     );
 
     let msg = engine
-        .deposit_margin(vamm.addr().to_string(), to_decimals(1u64))
+        .deposit_margin(vamm.addr().to_string(), to_decimals(1u64), vec![])
         .unwrap();
     let response = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
@@ -107,7 +107,7 @@ fn test_pause_then_unpause_by_admin() {
     router.execute(alice.clone(), msg).unwrap();
 
     let msg = engine
-        .deposit_margin(vamm.addr().to_string(), to_decimals(1u64))
+        .deposit_margin(vamm.addr().to_string(), to_decimals(1u64), vec![])
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 

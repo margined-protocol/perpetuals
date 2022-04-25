@@ -1594,18 +1594,6 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_positive(137_878_787u64));
 
-    // TODO: this transfer is needed since the native token transfer from
-    // doesnt function
-    router
-        .execute(
-            bob.clone(),
-            CosmosMsg::Bank(BankMsg::Send {
-                to_address: engine.addr().to_string(),
-                amount: vec![Coin::new(500_000_000u128, "uusd")],
-            }),
-        )
-        .unwrap();
-
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
@@ -1876,18 +1864,6 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_positive(233_333_333u64));
-
-    // TODO: this transfer is needed since the native token transfer from
-    // doesnt function
-    router
-        .execute(
-            bob.clone(),
-            CosmosMsg::Bank(BankMsg::Send {
-                to_address: engine.addr().to_string(),
-                amount: vec![Coin::new(500_000_000u128, "uusd")],
-            }),
-        )
-        .unwrap();
 
     let msg = engine
         .open_position(

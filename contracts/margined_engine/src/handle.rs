@@ -2,6 +2,7 @@ use cosmwasm_std::{
     to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError, StdResult,
     SubMsg, Uint128, WasmMsg,
 };
+use terraswap::asset::{Asset, AssetInfo};
 
 use crate::{
     contract::{
@@ -323,15 +324,32 @@ pub fn deposit_margin(
     vamm: String,
     amount: Uint128,
 ) -> StdResult<Response> {
+    let config: Config = read_config(deps.storage)?;
     let state: State = read_state(deps.storage)?;
 
     let vamm = deps.api.addr_validate(&vamm)?;
-    let trader = info.sender;
+    let trader = info.sender.clone();
 
     require_not_paused(state.pause)?;
 
     // first try to execute the transfer
-    let msg = execute_transfer_from(deps.storage, &trader, &env.contract.address, amount)?;
+    let mut response: Response = Response::new();
+    match config.eligible_collateral.clone() {
+        AssetInfo::NativeToken { .. } => {
+            let token = Asset {
+                info: config.eligible_collateral,
+                amount,
+            };
+
+            token.assert_sent_native_token_balance(&info)?;
+        }
+
+        AssetInfo::Token { .. } => {
+            let msg: SubMsg =
+                execute_transfer_from(deps.storage, &trader, &env.contract.address, amount)?;
+            response = response.clone().add_submessage(msg);
+        }
+    };
 
     // read the position for the trader from vamm
     let mut position = read_position(deps.storage, &vamm, &trader).unwrap();
@@ -339,7 +357,7 @@ pub fn deposit_margin(
 
     store_position(deps.storage, &position)?;
 
-    Ok(Response::new().add_submessage(msg).add_attributes(vec![
+    Ok(response.add_attributes([
         ("action", "deposit_margin"),
         ("trader", &trader.to_string()),
         ("amount", &amount.to_string()),

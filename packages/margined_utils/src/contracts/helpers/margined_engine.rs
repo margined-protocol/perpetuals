@@ -176,9 +176,14 @@ impl EngineController {
         self.call(msg, vec![])
     }
 
-    pub fn deposit_margin(&self, vamm: String, amount: Uint128) -> StdResult<CosmosMsg> {
+    pub fn deposit_margin(
+        &self,
+        vamm: String,
+        amount: Uint128,
+        funds: Vec<Coin>,
+    ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::DepositMargin { vamm, amount };
-        self.call(msg, vec![])
+        self.call(msg, funds)
     }
 
     pub fn withdraw_margin(&self, vamm: String, amount: Uint128) -> StdResult<CosmosMsg> {

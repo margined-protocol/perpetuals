@@ -100,23 +100,7 @@ pub fn execute_transfer_to_insurance_fund(
         amount
     };
 
-    let msg = WasmMsg::Execute {
-        contract_addr: config.eligible_collateral.to_string(),
-        funds: vec![],
-        msg: to_binary(&Cw20ExecuteMsg::Transfer {
-            recipient: config.insurance_fund.to_string(),
-            amount: amount_to_send,
-        })?,
-    };
-
-    let transfer_msg = SubMsg {
-        msg: CosmosMsg::Wasm(msg),
-        gas_limit: None, // probably should set a limit in the config
-        id: 0u64,
-        reply_on: ReplyOn::Never,
-    };
-
-    Ok(transfer_msg)
+    execute_transfer(deps.storage, &config.insurance_fund, amount_to_send)
 }
 
 pub fn execute_insurance_fund_withdrawal(deps: Deps, amount: Uint128) -> StdResult<SubMsg> {
