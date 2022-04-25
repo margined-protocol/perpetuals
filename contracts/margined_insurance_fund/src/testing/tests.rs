@@ -295,17 +295,17 @@ fn test_remove_vamm() {
 
 #[test]
 fn test_vamm_off() {
-    let ShutdownScenario { vamm1, .. } = ShutdownScenario::new();
+    let ShutdownScenario { owner, vamm1, .. } = ShutdownScenario::new();
 
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add vamm (remember it is default added as 'on')
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
     let msg = ExecuteMsg::AddVamm {
         vamm: vamm1.addr().to_string(),
     };
@@ -313,7 +313,7 @@ fn test_vamm_off() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //turn vamm off
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
     let msg = ExecuteMsg::SwitchVammStatus {
         vamm: vamm1.addr().to_string(),
         status: false,
@@ -339,17 +339,17 @@ fn test_vamm_off() {
 
 #[test]
 fn try_vamm_off_and_on() {
-    let ShutdownScenario { vamm1, .. } = ShutdownScenario::new();
+    let ShutdownScenario { owner,vamm1, .. } = ShutdownScenario::new();
 
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //try to switch vamm off
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
     let msg = ExecuteMsg::SwitchVammStatus {
         vamm: vamm1.addr().to_string(),
         status: false,
@@ -360,7 +360,7 @@ fn try_vamm_off_and_on() {
     assert_eq!(res.to_string(), "Generic error: No vAMM stored");
 
     //try to switch vamm on
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
     let msg = ExecuteMsg::SwitchVammStatus {
         vamm: vamm1.addr().to_string(),
         status: true,
@@ -373,17 +373,17 @@ fn try_vamm_off_and_on() {
 
 #[test]
 fn test_vamm_on() {
-    let ShutdownScenario { vamm1, .. } = ShutdownScenario::new();
+    let ShutdownScenario { owner, vamm1, .. } = ShutdownScenario::new();
 
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add vamm
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
     let msg = ExecuteMsg::AddVamm {
         vamm: vamm1.addr().to_string(),
     };
@@ -391,7 +391,7 @@ fn test_vamm_on() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //turn vamm off
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
     let msg = ExecuteMsg::SwitchVammStatus {
         vamm: vamm1.addr().to_string(),
         status: false,
@@ -415,7 +415,7 @@ fn test_vamm_on() {
     assert_eq!(status, false);
 
     //turn vamm on
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
     let msg = ExecuteMsg::SwitchVammStatus {
         vamm: vamm1.addr().to_string(),
         status: true,
@@ -441,17 +441,17 @@ fn test_vamm_on() {
 
 #[test]
 fn test_off_vamm_off_again() {
-    let ShutdownScenario { vamm1, .. } = ShutdownScenario::new();
+    let ShutdownScenario {owner, vamm1, .. } = ShutdownScenario::new();
 
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add vamm (remember it is default added as 'on')
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
     let msg = ExecuteMsg::AddVamm {
         vamm: vamm1.addr().to_string(),
     };
@@ -459,7 +459,7 @@ fn test_off_vamm_off_again() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //turn vamm on
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
     let msg = ExecuteMsg::SwitchVammStatus {
         vamm: vamm1.addr().to_string(),
         status: false,
@@ -468,7 +468,7 @@ fn test_off_vamm_off_again() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //turn vamm off again
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
     let msg = ExecuteMsg::SwitchVammStatus {
         vamm: vamm1.addr().to_string(),
         status: false,
@@ -481,17 +481,17 @@ fn test_off_vamm_off_again() {
 
 #[test]
 fn test_on_vamm_on_again() {
-    let ShutdownScenario { vamm1, .. } = ShutdownScenario::new();
+    let ShutdownScenario { owner,  vamm1, .. } = ShutdownScenario::new();
 
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add vamm (remember it is default added as 'on')
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
     let msg = ExecuteMsg::AddVamm {
         vamm: vamm1.addr().to_string(),
     };
@@ -499,7 +499,7 @@ fn test_on_vamm_on_again() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //turn vamm on again
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
     let msg = ExecuteMsg::SwitchVammStatus {
         vamm: vamm1.addr().to_string(),
         status: true,
@@ -513,6 +513,7 @@ fn test_on_vamm_on_again() {
 #[test]
 fn test_vamm_shutdown() {
     let ShutdownScenario {
+        owner,
         vamm1,
         vamm2,
         vamm3,
@@ -522,12 +523,12 @@ fn test_vamm_shutdown() {
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add vamm
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
     let msg = ExecuteMsg::AddVamm {
         vamm: vamm1.addr().to_string(),
     };
@@ -535,7 +536,7 @@ fn test_vamm_shutdown() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add second vamm
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
     let msg = ExecuteMsg::AddVamm {
         vamm: vamm2.addr().to_string(),
     };
@@ -543,7 +544,7 @@ fn test_vamm_shutdown() {
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add third vamm
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
     let msg = ExecuteMsg::AddVamm {
         vamm: vamm3.addr().to_string(),
     };
@@ -571,7 +572,7 @@ fn test_vamm_shutdown() {
     );
 
     //shutdown all vamms
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
     let msg = ExecuteMsg::ShutdownAllVamm {};
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
