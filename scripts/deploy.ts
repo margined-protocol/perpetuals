@@ -2,6 +2,7 @@ import 'dotenv/config.js'
 import {
   deployContract,
   executeContract,
+  queryContract,
   setTimeoutDuration,
 } from './helpers.js'
 import { LCDClient, LocalTerra, Wallet } from '@terra-money/terra.js'
@@ -82,6 +83,13 @@ async function main() {
     },
   })
   console.log('margin engine set in vAMM')
+
+  /************************************************ Query vAMM state **********************************************/
+  console.log('Querying vAMM state...')
+  let state = await queryContract(terra, vammContractAddress, {
+    state: {},
+  })
+  console.log('vAMM state:\n', state)
 }
 
 main().catch(console.log)

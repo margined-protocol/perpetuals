@@ -9,7 +9,7 @@ In order to run the scripts locally you must:
 * Have followed all the instructions contained in the README of this repository
 * Installed and built [LocalTerra](https://github.com/terra-money/LocalTerra)
 * Javascript / Node Environment
-  * Node v14.8.0
+  * Node v16.14.2
   * npm 6.14.7
 
 ## Deploy and Run Locally
@@ -23,3 +23,15 @@ In order to run the scripts locally you must:
 ```
 
 3. Deploy the contracts to LocalTerra
+
+First enter the scripts directory:
+```
+cd scripts
+```
+
+Then install npm packages and run deployment script:
+
+```
+npm install
+node --loader ts-node/esm deploy.ts
+```
