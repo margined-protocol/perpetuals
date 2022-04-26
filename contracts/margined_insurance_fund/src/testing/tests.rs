@@ -57,18 +57,20 @@ fn test_update_config() {
 }
 #[test]
 fn test_query_vamm() {
+    let ShutdownScenario { owner, vamm1, .. } = ShutdownScenario::new();
+
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add an vAMM
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
+    let info = mock_info(&owner.to_string(), &[]);
+    let msg = ExecuteMsg::AddVamm {
+        vamm: vamm1.addr().to_string(),
+    };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -77,7 +79,7 @@ fn test_query_vamm() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::IsVamm {
-            vamm: "addr0001".to_string(),
+            vamm: vamm1.addr().to_string(),
         },
     )
     .unwrap();
@@ -90,10 +92,17 @@ fn test_query_vamm() {
 
 #[test]
 fn test_query_all_vamm() {
+    let ShutdownScenario {
+        owner,
+        vamm1,
+        vamm2,
+        ..
+    } = ShutdownScenario::new();
+
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -103,26 +112,23 @@ fn test_query_all_vamm() {
         mock_env(),
         QueryMsg::GetAllVamm { limit: None },
     )
-    .unwrap();
+    .unwrap_err();
 
-    let res: AllVammResponse = from_binary(&res).unwrap();
-    let empty: Vec<Addr> = vec![];
-
-    assert_eq!(res.vamm_list, empty);
+    assert_eq!(res.to_string(), "Generic error: No vAMMs are stored");
 
     //add an vAMM
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
+    let info = mock_info(&owner.to_string(), &[]);
+    let msg = ExecuteMsg::AddVamm {
+        vamm: vamm1.addr().to_string(),
+    };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add another vAMM
-    let addr2 = "addr0002".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr2 };
+    let info = mock_info(&owner.to_string(), &[]);
+    let msg = ExecuteMsg::AddVamm {
+        vamm: vamm2.addr().to_string(),
+    };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -137,21 +143,17 @@ fn test_query_all_vamm() {
     let res: AllVammResponse = from_binary(&res).unwrap();
     let list = res.vamm_list;
 
-    assert_eq!(
-        list,
-        vec![
-            Addr::unchecked("addr0001".to_string()),
-            Addr::unchecked("addr0002".to_string())
-        ]
-    );
+    assert_eq!(list, vec![vamm1.addr(), vamm2.addr()]);
 }
 
 #[test]
 fn test_add_vamm() {
+    let ShutdownScenario { owner, vamm1, .. } = ShutdownScenario::new();
+
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -160,7 +162,7 @@ fn test_add_vamm() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::IsVamm {
-            vamm: "addr0001".to_string(),
+            vamm: vamm1.addr().to_string(),
         },
     )
     .unwrap();
@@ -171,10 +173,10 @@ fn test_add_vamm() {
     assert_eq!(is_vamm, false);
 
     //add an vAMM
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
+    let info = mock_info(&owner.to_string(), &[]);
+    let msg = ExecuteMsg::AddVamm {
+        vamm: vamm1.addr().to_string(),
+    };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -183,7 +185,7 @@ fn test_add_vamm() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::IsVamm {
-            vamm: "addr0001".to_string(),
+            vamm: vamm1.addr().to_string(),
         },
     )
     .unwrap();
@@ -197,27 +199,33 @@ fn test_add_vamm() {
 #[test]
 fn test_add_second_vamm() {
     // this tests for adding a second vAMM, to ensure the 'push' match arm of save_vamm is used
+    let ShutdownScenario {
+        owner,
+        vamm1,
+        vamm2,
+        ..
+    } = ShutdownScenario::new();
 
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add first vAMM
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
+    let info = mock_info(&owner.to_string(), &[]);
+    let msg = ExecuteMsg::AddVamm {
+        vamm: vamm1.addr().to_string(),
+    };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add second vAMM
-    let addr2 = "addr0002".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr2 };
+    let info = mock_info(&owner.to_string(), &[]);
+    let msg = ExecuteMsg::AddVamm {
+        vamm: vamm2.addr().to_string(),
+    };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -226,7 +234,7 @@ fn test_add_second_vamm() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::IsVamm {
-            vamm: "addr0002".to_string(),
+            vamm: vamm2.addr().to_string(),
         },
     )
     .unwrap();
@@ -239,18 +247,20 @@ fn test_add_second_vamm() {
 
 #[test]
 fn test_remove_vamm() {
+    let ShutdownScenario { owner, vamm1, .. } = ShutdownScenario::new();
+
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add an vAMM
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
+    let info = mock_info(&owner.to_string(), &[]);
+    let msg = ExecuteMsg::AddVamm {
+        vamm: vamm1.addr().to_string(),
+    };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -259,7 +269,7 @@ fn test_remove_vamm() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::IsVamm {
-            vamm: "addr0001".to_string(),
+            vamm: vamm1.addr().to_string(),
         },
     )
     .unwrap();
@@ -270,10 +280,10 @@ fn test_remove_vamm() {
     assert_eq!(is_vamm, true);
 
     //remove an AMM
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::RemoveVamm { vamm: addr1 };
+    let info = mock_info(&owner.to_string(), &[]);
+    let msg = ExecuteMsg::RemoveVamm {
+        vamm: vamm1.addr().to_string(),
+    };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -282,7 +292,7 @@ fn test_remove_vamm() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::IsVamm {
-            vamm: "addr0001".to_string(),
+            vamm: vamm1.addr().to_string(),
         },
     )
     .unwrap();
@@ -600,18 +610,20 @@ fn test_vamm_shutdown() {
 
 #[test]
 fn test_query_vamm_status() {
+    let ShutdownScenario { owner, vamm1, .. } = ShutdownScenario::new();
+
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add vamm
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
+    let info = mock_info(&owner.to_string(), &[]);
+    let msg = ExecuteMsg::AddVamm {
+        vamm: vamm1.addr().to_string(),
+    };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -620,7 +632,7 @@ fn test_query_vamm_status() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::GetVammStatus {
-            vamm: "addr0001".to_string(),
+            vamm: vamm1.addr().to_string(),
         },
     )
     .unwrap();
@@ -631,11 +643,9 @@ fn test_query_vamm_status() {
     assert_eq!(status, true);
 
     //switch vamm off
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
     let msg = ExecuteMsg::SwitchVammStatus {
-        vamm: addr1,
+        vamm: vamm1.addr().to_string(),
         status: false,
     };
 
@@ -646,7 +656,7 @@ fn test_query_vamm_status() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::GetVammStatus {
-            vamm: "addr0001".to_string(),
+            vamm: vamm1.addr().to_string(),
         },
     )
     .unwrap();
@@ -659,10 +669,17 @@ fn test_query_vamm_status() {
 
 #[test]
 fn test_all_vamm_status() {
+    let ShutdownScenario {
+        owner,
+        vamm1,
+        vamm2,
+        ..
+    } = ShutdownScenario::new();
+
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -672,26 +689,23 @@ fn test_all_vamm_status() {
         mock_env(),
         QueryMsg::GetAllVammStatus { limit: None },
     )
-    .unwrap();
+    .unwrap_err();
 
-    let res: AllVammStatusResponse = from_binary(&res).unwrap();
-    let vamms_status = res.vamm_list_status;
-
-    assert_eq!(vamms_status, vec![]);
+    assert_eq!(res.to_string(), "Generic error: No vAMMs are stored");
 
     //add vamm
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
+    let info = mock_info(&owner.to_string(), &[]);
+    let msg = ExecuteMsg::AddVamm {
+        vamm: vamm1.addr().to_string(),
+    };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add another vamm
-    let addr2 = "addr0002".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr2 };
+    let info = mock_info(&owner.to_string(), &[]);
+    let msg = ExecuteMsg::AddVamm {
+        vamm: vamm2.addr().to_string(),
+    };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -708,18 +722,13 @@ fn test_all_vamm_status() {
 
     assert_eq!(
         vamms_status,
-        vec![
-            (Addr::unchecked("addr0001".to_string()), true),
-            (Addr::unchecked("addr0002".to_string()), true)
-        ]
+        vec![(vamm1.addr(), true), (vamm2.addr(), true)]
     );
 
     //switch first vamm off
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
     let msg = ExecuteMsg::SwitchVammStatus {
-        vamm: addr1,
+        vamm: vamm1.addr().to_string(),
         status: false,
     };
 
@@ -738,10 +747,7 @@ fn test_all_vamm_status() {
 
     assert_eq!(
         vamms_status,
-        vec![
-            (Addr::unchecked("addr0001".to_string()), false),
-            (Addr::unchecked("addr0002".to_string()), true)
-        ]
+        vec![(vamm1.addr(), false), (vamm2.addr(), true)]
     );
 }
 
@@ -750,7 +756,7 @@ fn test_not_owner() {
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info("owner", &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -823,26 +829,33 @@ fn test_not_owner() {
 
 #[test]
 fn test_pagination() {
+    let ShutdownScenario {
+        owner,
+        vamm1,
+        vamm2,
+        ..
+    } = ShutdownScenario::new();
+
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add vamm
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
+    let info = mock_info(&owner.to_string(), &[]);
+    let msg = ExecuteMsg::AddVamm {
+        vamm: vamm1.addr().to_string(),
+    };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     //add second vamm
-    let addr2 = "addr0002".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr2 };
+    let info = mock_info(&owner.to_string(), &[]);
+    let msg = ExecuteMsg::AddVamm {
+        vamm: vamm2.addr().to_string(),
+    };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -857,27 +870,39 @@ fn test_pagination() {
     let res: AllVammStatusResponse = from_binary(&res).unwrap();
     let vamms_status = res.vamm_list_status;
 
-    assert_eq!(
-        vamms_status,
-        vec![(Addr::unchecked("addr0001".to_string()), true),]
-    );
+    assert_eq!(vamms_status, vec![(vamm1.addr(), true),]);
 }
 #[test]
 fn test_pagination_limit() {
+    // for the purpose of this test, VAMM_LIMIT is set to 3 (so four exceeds it!)
+
+    let ShutdownScenario {
+        owner,
+        vamm1,
+        vamm2,
+        vamm3,
+        ..
+    } = ShutdownScenario::new();
+
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //add ten vamms
-    for n in 1..11 {
-        let mut addr = "addr000".to_string();
-        addr.push_str(&n.to_string());
+    let vamms: Vec<String> = vec![
+        vamm1.addr().to_string(),
+        vamm2.addr().to_string(),
+        vamm3.addr().to_string(),
+    ];
 
-        let info = mock_info("addr0000", &[]);
-        let msg = ExecuteMsg::AddVamm { vamm: addr };
+    //add three vamms
+    for n in 1..4 {
+        let info = mock_info(&owner.to_string(), &[]);
+        let msg = ExecuteMsg::AddVamm {
+            vamm: vamms[n - 1].clone(),
+        };
 
         execute(deps.as_mut(), mock_env(), info, msg).unwrap();
     }
@@ -896,24 +921,17 @@ fn test_pagination_limit() {
     assert_eq!(
         vamms_status,
         vec![
-            (Addr::unchecked("addr0001".to_string()), true),
-            (Addr::unchecked("addr00010".to_string()), true),
-            (Addr::unchecked("addr0002".to_string()), true),
-            (Addr::unchecked("addr0003".to_string()), true),
-            (Addr::unchecked("addr0004".to_string()), true),
-            (Addr::unchecked("addr0005".to_string()), true),
-            (Addr::unchecked("addr0006".to_string()), true),
-            (Addr::unchecked("addr0007".to_string()), true),
-            (Addr::unchecked("addr0008".to_string()), true),
-            (Addr::unchecked("addr0009".to_string()), true),
+            (vamm1.addr(), true),
+            (vamm2.addr(), true),
+            (vamm3.addr(), true)
         ]
     );
 
-    //query only the first five vamms
+    //query only the first two vamms
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::GetAllVammStatus { limit: Some(5u32) },
+        QueryMsg::GetAllVammStatus { limit: Some(2u32) },
     )
     .unwrap();
 
@@ -922,18 +940,23 @@ fn test_pagination_limit() {
 
     assert_eq!(
         vamms_status,
-        vec![
-            (Addr::unchecked("addr0001".to_string()), true),
-            (Addr::unchecked("addr00010".to_string()), true),
-            (Addr::unchecked("addr0002".to_string()), true),
-            (Addr::unchecked("addr0003".to_string()), true),
-            (Addr::unchecked("addr0004".to_string()), true),
-        ]
+        vec![(vamm1.addr(), true), (vamm2.addr(), true)]
     );
 }
 
 #[test]
 fn test_vamm_capacity() {
+    // for the purpose of this test, VAMM_LIMIT is set to 2 (so three exceeds it!)
+
+    let ShutdownScenario {
+        owner,
+        vamm1,
+        vamm2,
+        vamm3,
+        vamm4,
+        ..
+    } = ShutdownScenario::new();
+
     ///////////////////////////////////////////////////////
     // Test exceeding VAMM_LIMIT by adding a single vAMM //
     ///////////////////////////////////////////////////////
@@ -941,26 +964,32 @@ fn test_vamm_capacity() {
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //add ten vamms
-    for n in 1..11 {
-        let mut addr = "addr000".to_string();
-        addr.push_str(&n.to_string());
+    let vamms: Vec<String> = vec![
+        vamm1.addr().to_string(),
+        vamm2.addr().to_string(),
+        vamm3.addr().to_string(),
+        vamm4.addr().to_string(),
+    ];
 
-        let info = mock_info("addr0000", &[]);
-        let msg = ExecuteMsg::AddVamm { vamm: addr };
+    //add three vamms
+    for n in 1..4 {
+        let info = mock_info(&owner.to_string(), &[]);
+        let msg = ExecuteMsg::AddVamm {
+            vamm: vamms[n - 1].clone(),
+        };
 
         execute(deps.as_mut(), mock_env(), info, msg).unwrap();
     }
 
-    //try to add an eleventh vamm
-    let addr1 = "addr00011".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
+    //try to add a fourth vamm
+    let info = mock_info(&owner.to_string(), &[]);
+    let msg = ExecuteMsg::AddVamm {
+        vamm: vamm4.addr().to_string(),
+    };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
@@ -976,18 +1005,18 @@ fn test_vamm_capacity() {
     //instantiate contract again here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info(&owner.to_string(), &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    //add eleven vamms
-    for n in 1..12 {
-        let mut addr = "addr000".to_string();
-        addr.push_str(&n.to_string());
+    //add three vamms
+    for n in 1..4 {
+        let info = mock_info(&owner.to_string(), &[]);
+        let msg = ExecuteMsg::AddVamm {
+            vamm: vamms[n - 1].clone(),
+        };
 
-        let info = mock_info("addr0000", &[]);
-        let msg = ExecuteMsg::AddVamm { vamm: addr };
-        if n == 11 {
+        if n == 4 {
             let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
             assert_eq!(

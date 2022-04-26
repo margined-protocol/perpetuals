@@ -4,7 +4,7 @@ use crate::{
         add_vamm, remove_vamm, shutdown_all_vamm, switch_vamm_status, update_config, withdraw,
     },
     query::{
-        query_config, query_is_vamm, query_mult_vamm, query_status_mult_vamm, query_vamm_status,
+        query_all_vamm, query_config, query_is_vamm, query_status_all_vamm, query_vamm_status,
     },
     state::{store_config, Config},
 };
@@ -58,8 +58,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::IsVamm { vamm } => to_binary(&query_is_vamm(deps, vamm)?),
-        QueryMsg::GetAllVamm { limit } => to_binary(&query_mult_vamm(deps, limit)?),
+        QueryMsg::GetAllVamm { limit } => to_binary(&query_all_vamm(deps, limit)?),
         QueryMsg::GetVammStatus { vamm } => to_binary(&query_vamm_status(deps, vamm)?),
-        QueryMsg::GetAllVammStatus { limit } => to_binary(&query_status_mult_vamm(deps, limit)?),
+        QueryMsg::GetAllVammStatus { limit } => to_binary(&query_status_all_vamm(deps, limit)?),
     }
 }

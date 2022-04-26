@@ -1,65 +1,99 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Deps, DepsMut, Order, StdError, StdResult, Storage};
+use cosmwasm_std::{Addr, Deps, DepsMut, StdError, StdResult, Storage};
 use cosmwasm_storage::{singleton, singleton_read};
-use cw_storage_plus::Map;
+use cw_storage_plus::Item;
 
 pub static KEY_CONFIG: &[u8] = b"config";
-pub const VAMM_LIST: Map<&Addr, bool> = Map::new("vamm-list");
-pub const VAMM_LIMIT: usize = 10usize;
+pub const VAMM_LIST: Item<Vec<Addr>> = Item::new("vamm-list");
+pub const VAMM_LIMIT: usize = 3usize;
 
 // function checks if an addr is already added and adds it if not
 // We also check that we have not reached the limit of vAMMs here
 pub fn save_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
-    // we match because the data might not exist yet
-    // In the case there is data, we force an error
-    // In the case there is not data, we add the Addr and set its bool to true
-    if VAMM_LIST.may_load(deps.storage, &input.clone())?.is_some() {
+    // check if there is a vector
+    let mut vamm_list = match VAMM_LIST.may_load(deps.storage)? {
+        None => vec![],
+        Some(value) => value,
+    };
+
+    // check if we already added the vector
+    if vamm_list.contains(&input) {
         return Err(StdError::GenericErr {
             msg: "This vAMM is already added".to_string(),
         });
     };
 
-    if VAMM_LIST
-        .keys(deps.storage, None, None, Order::Ascending)
-        .count()
-        >= VAMM_LIMIT
-    {
+    // check if we have reached the capacity
+    if vamm_list.len() >= VAMM_LIMIT {
         return Err(StdError::GenericErr {
             msg: "The vAMM capacity is already reached".to_string(),
         });
     };
 
-    VAMM_LIST.save(deps.storage, &input, &true)
+    // add the vector
+    vamm_list.push(input);
+    VAMM_LIST.save(deps.storage, &vamm_list)
 }
 
-// this function reads Addrs stored in the VAMM_LIST
-pub fn read_vammlist(deps: Deps, storage: &dyn Storage, limit: usize) -> StdResult<Vec<Addr>> {
-    let keys = VAMM_LIST
-        .keys(storage, None, None, Order::Ascending)
-        .take(limit)
-        .map(|x| deps.api.addr_validate(&String::from_utf8(x)?))
-        .collect();
-    keys
+// this function reads Addrs stored in the VAMM_LIST.
+// note that this function ONLY takes the first VAMM_LIMIT terms
+pub fn read_vammlist(deps: Deps, limit: usize) -> StdResult<Vec<Addr>> {
+    match VAMM_LIST.may_load(deps.storage)? {
+        None => Err(StdError::GenericErr {
+            msg: "No vAMMs are stored".to_string(),
+        }),
+        Some(value) => {
+            let take = limit.min(value.len());
+            Ok(value[..take].to_vec())
+        }
+    }
 }
 
+// this function checks whether the vamm is stored already
+pub fn is_vamm(storage: &dyn Storage, input: Addr) -> bool {
+    match VAMM_LIST.may_load(storage).unwrap() {
+        None => false,
+        Some(value) => value.contains(&input),
+    }
+}
+
+// this function deletes the entry under the given key
+pub fn remove_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
+    // check if there are any vamms stored
+    let mut vamm_list = match VAMM_LIST.may_load(deps.storage)? {
+        None => {
+            return Err(StdError::GenericErr {
+                msg: "No vAMMs are stored".to_string(),
+            })
+        }
+        Some(value) => value,
+    };
+
+    // check if the vamm is added
+    if !vamm_list.contains(&input) {
+        return Err(StdError::GenericErr {
+            msg: "This vAMM has not been added".to_string(),
+        });
+    }
+
+    // change vamm_list
+    // Could remove the .unwrap() and replace it with .ok_or() + move the above codeblock into the .ok_or()
+    let index = vamm_list.clone().iter().position(|x| x.eq(&input)).unwrap();
+    vamm_list.swap_remove(index);
+
+    // saves the updated vamm_list
+    VAMM_LIST.save(deps.storage, &vamm_list)
+}
+
+/*
 // function changes the bool stored under an address to the value of status
 // note that that means this can only be given an *existing* vamm
 pub fn vamm_switch(deps: DepsMut, input: Addr, status: bool) -> StdResult<()> {
     // read_vamm_status will throw an error if there is no data
     // this statement will throw an error if the vamm status is already on/off
-    if read_vamm_status(deps.storage, input.clone())? == status {
-        if status {
-            return Err(StdError::GenericErr {
-                msg: "This vAMM is already on".to_string(),
-            });
-        } else {
-            return Err(StdError::GenericErr {
-                msg: "This vAMM is already off".to_string(),
-            });
-        }
-    };
+
     VAMM_LIST.save(deps.storage, &input, &status)
 }
 
@@ -96,25 +130,7 @@ pub fn read_all_vamm_status(storage: &dyn Storage, limit: usize) -> StdResult<Ve
 
     Ok(status_vec)
 }
-
-// this function checks whether the vamm is stored
-pub fn is_vamm(storage: &dyn Storage, input: Addr) -> bool {
-    VAMM_LIST.has(storage, &input)
-}
-
-// this function deletes the entry under the given key
-pub fn remove_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
-    // first check that there is data there
-    if VAMM_LIST.may_load(deps.storage, &input.clone())?.is_none() {
-        return Err(StdError::GenericErr {
-            msg: "This vAMM has not been added".to_string(),
-        });
-    };
-
-    // removes the entry from the Map
-    VAMM_LIST.remove(deps.storage, &input);
-    Ok(())
-}
+*/
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {

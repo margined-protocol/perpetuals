@@ -9,8 +9,8 @@ use crate::{
     error::ContractError,
     messages::execute_vamm_switch,
     state::{
-        read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, store_config,
-        vamm_switch, Config, VAMM_LIMIT,
+        read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, store_config, Config,
+        VAMM_LIMIT,
     },
 };
 
@@ -80,7 +80,7 @@ pub fn remove_vamm(
     Ok(Response::default())
 }
 
-pub fn shutdown_all_vamm(mut deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+pub fn shutdown_all_vamm(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     let config: Config = read_config(deps.storage)?;
 
     // check permission
@@ -91,12 +91,10 @@ pub fn shutdown_all_vamm(mut deps: DepsMut, info: MessageInfo) -> Result<Respons
     // initialise the submsgs vec
     let mut msgs = vec![];
 
-    // shutdown all vamms here + simultaneously construct the submessages
-    // we do both simultaneously so that we only iterate through the vammlist once
-    let keys = read_vammlist(deps.as_ref(), deps.storage, VAMM_LIMIT)?;
+    // construct all the shutdown messages
+    let keys = read_vammlist(deps.as_ref(), VAMM_LIMIT)?;
 
     for vamm in keys.iter() {
-        vamm_switch(deps.branch(), vamm.clone(), false)?;
         msgs.push(execute_vamm_switch(vamm.clone(), false)?);
     }
 
@@ -119,8 +117,8 @@ pub fn switch_vamm_status(
     // validate address
     let vamm_valid = deps.api.addr_validate(&vamm)?;
 
-    // switch vamm status locally here
-    vamm_switch(deps, vamm_valid.clone(), status)?;
+    // check that vamm status is switchable
+    // TODO
 
     // construct the switch message to the vamm contract
     let msg = execute_vamm_switch(vamm_valid, status)?;
