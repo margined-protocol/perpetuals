@@ -1,38 +1,40 @@
+import { LocalTerra, MnemonicKey } from '@terra-money/terra.js'
+import { join } from 'path'
 import 'dotenv/config.js'
 import {
   deployContract,
   executeContract,
-  queryContract,
+  Logger,
   setTimeoutDuration,
-} from './helpers.js'
-import { LCDClient, LocalTerra, Wallet } from '@terra-money/terra.js'
-import { local } from './deploy_configs.js'
-import { join } from 'path'
+  queryNativeBalance,
+} from '../helpers.js'
 
-// consts
+// CONSTS
 
 const MARGINED_ARTIFACTS_PATH = '../artifacts'
 
-// main
+// MAIN
 
-async function main() {
-  let terra: LCDClient | LocalTerra
-  let wallet: Wallet
-  let deployConfig: Config
-  const isTestnet = process.env.NETWORK === 'testnet'
-
-  terra = new LocalTerra()
-  wallet = (terra as LocalTerra).wallets.test1
+;(async () => {
   setTimeoutDuration(0)
-  deployConfig = local
 
-  console.log(`Wallet address from seed: ${wallet.key.accAddress}`)
+  const logger = new Logger()
+
+  const terra = new LocalTerra()
+  const owner = terra.wallets.test1
+  const alice = terra.wallets.test2
+  const bob = terra.wallets.test3
+  const carol = terra.wallets.test4
+  const feePoolContractAddress = terra.wallets.test5
+
+  // mock contract addresses
+  //   const protocolRewardsCollector = new MnemonicKey().accAddress
 
   /****************************************** Deploy Insurance Fund Contract *****************************************/
   console.log('Deploying Insurance Fund...')
   const insuranceFundContractAddress = await deployContract(
     terra,
-    wallet,
+    owner,
     join(MARGINED_ARTIFACTS_PATH, 'margined_insurance_fund.wasm'),
     {},
   )
@@ -44,52 +46,73 @@ async function main() {
   console.log('Deploying Mock PriceFeed...')
   const priceFeedAddress = await deployContract(
     terra,
-    wallet,
+    owner,
     join(MARGINED_ARTIFACTS_PATH, 'mock_pricefeed.wasm'),
-    deployConfig.priceFeedInitMsg,
+    {
+      decimals: 6,
+      oracle_hub_contract: '',
+    },
   )
   console.log('Mock PriceFeed Address: ' + priceFeedAddress)
 
   /******************************************** Deploy ETH:UST vAMM Contract ******************************************/
   console.log('Deploying ETH:UST vAMM...')
-  deployConfig.vammInitMsg.pricefeed = priceFeedAddress
   const vammContractAddress = await deployContract(
     terra,
-    wallet,
+    owner,
     join(MARGINED_ARTIFACTS_PATH, 'margined_vamm.wasm'),
-    deployConfig.vammInitMsg,
+    {
+      decimals: 6,
+      pricefeed: priceFeedAddress,
+      quote_asset: 'ETH',
+      base_asset: 'UST',
+      quote_asset_reserve: '1000000000', // 1,000.00
+      base_asset_reserve: '100000000', // 100.00
+      funding_period: 86_400, // 1 day in seconds
+      toll_ratio: '0',
+      spread_ratio: '0',
+      fluctuation_limit_ratio: '0',
+    },
   )
   console.log('ETH:UST vAMM Address: ' + vammContractAddress)
 
   /*************************************** Deploy Margin Engine Contract *****************************************/
   console.log('Deploy Margin Engine...')
-  deployConfig.engineInitMsg.insurance_fund = insuranceFundContractAddress
-  deployConfig.engineInitMsg.fee_pool = insuranceFundContractAddress // TODO this needs its own contract
-  deployConfig.engineInitMsg.eligible_collateral = insuranceFundContractAddress // TODO this needs its own contract
-  deployConfig.engineInitMsg.vamm = [vammContractAddress]
   const marginEngineContractAddress = await deployContract(
     terra,
-    wallet,
+    owner,
     join(MARGINED_ARTIFACTS_PATH, 'margined_engine.wasm'),
-    deployConfig.engineInitMsg,
+    {
+      decimals: 6,
+      insurance_fund: insuranceFundContractAddress,
+      fee_pool: feePoolContractAddress.key.accAddress,
+      eligible_collateral: 'uusd',
+      initial_margin_ratio: '50000',
+      maintenance_margin_ratio: '50000',
+      liquidation_fee: '50000',
+      vamm: [vammContractAddress],
+    },
   )
   console.log('Margin Engine Address: ' + marginEngineContractAddress)
 
   /************************************* Define Margin engine address in vAMM *************************************/
   console.log('Set Margin Engine in vAMM...')
-  await executeContract(terra, wallet, vammContractAddress, {
+  await executeContract(terra, owner, vammContractAddress, {
     update_config: {
       margin_engine: marginEngineContractAddress,
     },
   })
   console.log('margin engine set in vAMM')
 
-  /************************************************ Query vAMM state **********************************************/
-  console.log('Querying vAMM state...')
-  let state = await queryContract(terra, vammContractAddress, {
-    state: {},
-  })
-  console.log('vAMM state:\n', state)
-}
+  /************************************************ verify UST balances **********************************************/
+  console.log('Query native token balances...')
+  let [ownerBalance] = await queryNativeBalance(terra, owner.key.accAddress)
+  let [aliceBalance] = await queryNativeBalance(terra, alice.key.accAddress)
 
-main().catch(console.log)
+  console.log('Owner:\t', ownerBalance.toData())
+  console.log('Alice:\t', aliceBalance.toData())
+
+  console.log('OK')
+
+  logger.showGasConsumption()
+})()
