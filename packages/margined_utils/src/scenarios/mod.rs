@@ -718,7 +718,7 @@ impl ShutdownScenario {
         let vamm4 = VammController(vamm4_addr);
 
         let msg = vamm4.set_open(true).unwrap();
-        router.execute(insurance_fund_addr.clone(), msg).unwrap();
+        router.execute(insurance_fund_addr, msg).unwrap();
 
         Self {
             router,
