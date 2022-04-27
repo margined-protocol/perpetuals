@@ -135,162 +135,118 @@ const MARGINED_ARTIFACTS_PATH = '../artifacts'
   })
   console.log('latest price appended to mock pricefeed')
 
-  /*************************************** Update Margin Engine Contract *****************************************/
-  console.log(
-    'Update:\n\tmaintenance margin ratio\n\tpartial liquidation ratio\n\tliquidation fee\n...',
-  )
-  await executeContract(terra, owner, marginEngineContractAddress, {
+  /*************************************** Update Toll and Spread Ratio *****************************************/
+  console.log('Update:\n\ttoll ratio\n\tspread ratio\n...')
+  await executeContract(terra, owner, vammContractAddress, {
     update_config: {
-      initial_margin_ratio: '100000',
-      maintenance_margin_ratio: '250000',
-      liquidation_fee: '25000',
+      toll_ratio: '100000',
+      spread_ratio: '0',
     },
   })
-  console.log('Margin Engine Updated')
+  console.log('vAMM Updated')
 
-  /*************************************** Bob opens small positions *****************************************/
-  console.log('Bob open position:\n\t20 margin * 5x Long Position\n...')
+  /******************************************** Alice opens position *****************************************/
+  console.log('Alice open position:\n\t200 margin * 1x Short Position\n...')
 
-  for (let i = 0; i < 5; i++) {
-    await executeContract(
-      terra,
-      bob,
-      marginEngineContractAddress,
-      {
-        open_position: {
-          vamm: vammContractAddress,
-          side: 'b_u_y',
-          quote_asset_amount: '4000000',
-          base_asset_limit: '0',
-          leverage: '5000000',
-        },
-      },
-      { coins: `${4000000}uusd` },
-    )
-  }
-
-  console.log('Margin Engine Updated')
-
-  /*************************************** Alice opens small positions *****************************************/
-  console.log('Alice open position:\n\t20 margin * 5x Long Position\n...')
-
-  for (let i = 0; i < 5; i++) {
-    await executeContract(
-      terra,
-      alice,
-      marginEngineContractAddress,
-      {
-        open_position: {
-          vamm: vammContractAddress,
-          side: 'b_u_y',
-          quote_asset_amount: '4000000',
-          base_asset_limit: '0',
-          leverage: '5000000',
-        },
-      },
-      { coins: `${4000000}uusd` },
-    )
-  }
-
-  console.log('Margin Engine Updated')
-
-  /*************************************** Bob opens small positions *****************************************/
-  console.log(
-    'Bob manually closes position:\n\t20 margin * 5x Long Position\n...',
-  )
-
-  for (let i = 0; i < 5; i++) {
-    await executeContract(
-      terra,
-      bob,
-      marginEngineContractAddress,
-      {
-        open_position: {
-          vamm: vammContractAddress,
-          side: 's_e_l_l',
-          quote_asset_amount: '4000000',
-          base_asset_limit: '0',
-          leverage: '5000000',
-        },
-      },
-      { coins: `${4000000}uusd` },
-    )
-  }
-
-  console.log('Margin Engine Updated')
-
-  /************************************** Query vAMM Spot Balance & Update Pricefeed **********************************************/
-  console.log('Query vAMM spot price...')
-  let price = await queryContract(terra, vammContractAddress, {
-    spot_price: {},
-  })
-  let out = await queryContract(terra, vammContractAddress, {
-    state: {},
-  })
-  console.log('state: ', out)
-  console.log('spot price: ', price)
-  latestBlock = await getLatestBlockInfo(terra)
-  timestamp = new Date(latestBlock.block.header.time).valueOf()
-
-  await executeContract(terra, owner, priceFeedAddress, {
-    append_price: {
-      key: 'ETH',
-      price: price,
-      timestamp: timestamp,
-    },
-  })
-  console.log('latest price appended to mock pricefeed')
-
-  /*********************************************** Carol liquidates Alice **************************************************/
-  console.log("Carol liquidates Alice's underwater position...")
-
-  await executeContract(terra, carol, marginEngineContractAddress, {
-    liquidate: {
-      vamm: vammContractAddress,
-      trader: alice.key.accAddress,
-      quote_asset_limit: '0',
-    },
-  })
-
-  console.log('Alice got rekt')
-
-  /************************************************* Query vAMM state *****************************************************/
-  console.log('Query vAMM spot price...')
-  let state = await queryContract(terra, vammContractAddress, {
-    state: {},
-  })
-
-  console.log('le state', state)
-
-  approximateEqual(state.quote_asset_reserve, 107751027, 0)
-  approximateEqual(state.base_asset_reserve, 92803035, 0)
-
-  // console.log('quote asset reserve: ', state.quote_asset_reserve)
-  // console.log('base asset reserve: ', state.base_asset_reserve)
-
-  /************************************************ verify UST balances **************************************************/
-  console.log('Query native token balances...')
-  let ownerBalance = await queryBalanceNative(
+  await executeContract(
     terra,
-    owner.key.accAddress,
-    'uusd',
+    alice,
+    marginEngineContractAddress,
+    {
+      open_position: {
+        vamm: vammContractAddress,
+        side: 's_e_l_l',
+        quote_asset_amount: '200000000',
+        base_asset_limit: '25000000',
+        leverage: '1000000',
+      },
+    },
+    { coins: `${220000000}uusd` },
   )
-  let aliceBalance = await queryBalanceNative(
+
+  console.log('Alice opened position')
+
+  let aliceBalance1 = await queryBalanceNative(
     terra,
     alice.key.accAddress,
     'uusd',
   )
-  let bobBalance = await queryBalanceNative(terra, bob.key.accAddress, 'uusd')
-  let carolBalance = await queryBalanceNative(
+
+  /********************************************* Bob opens positions *****************************************/
+  console.log('Bob open position:\n\t200 margin * 1x Long Position\n...')
+
+  await executeContract(
     terra,
-    carol.key.accAddress,
-    'uusd',
+    bob,
+    marginEngineContractAddress,
+    {
+      open_position: {
+        vamm: vammContractAddress,
+        side: 'b_u_y',
+        quote_asset_amount: '200000000',
+        base_asset_limit: '25000000',
+        leverage: '1000000',
+      },
+    },
+    { coins: `${220000000}uusd` },
   )
 
-  console.log('Owner:\t', ownerBalance)
-  console.log('Alice:\t', aliceBalance)
-  console.log('Bob:\t', bobBalance)
-  console.log('Carol:\t', carolBalance)
+  console.log('Bob opened position')
+
+  /*************************************** Get Alice's unrealized pnl *****************************************/
+  console.log("Alice's unrealized pnl...")
+
+  let pnl = await queryContract(terra, marginEngineContractAddress, {
+    unrealized_pnl: {
+      vamm: vammContractAddress,
+      trader: alice.key.accAddress,
+      calc_option: 's_p_o_t_p_r_i_c_e',
+    },
+  })
+
+  console.log('Unrealized Pnl:\n\t', pnl.unrealized_pnl)
+  approximateEqual(pnl.unrealized_pnl, -133333334, 0)
+
+  /******************************************** Alice opens position *****************************************/
+  console.log('Alice open position:\n\t50 margin * 4x Short Position\n...')
+
+  await executeContract(
+    terra,
+    alice,
+    marginEngineContractAddress,
+    {
+      open_position: {
+        vamm: vammContractAddress,
+        side: 's_e_l_l',
+        quote_asset_amount: '50000000',
+        base_asset_limit: '25000000',
+        leverage: '4000000',
+      },
+    },
+    { coins: `${70000000}uusd` },
+  )
+
+  console.log('Alice opened position')
+
+  let aliceBalance2 = await queryBalanceNative(
+    terra,
+    alice.key.accAddress,
+    'uusd',
+  )
+  approximateEqual(aliceBalance1 - aliceBalance2, 70_000_000, 0)
+
+  /************************************************* Query Alice Position *****************************************************/
+  console.log('Query Alice Position...')
+  let position = await queryContract(terra, marginEngineContractAddress, {
+    position: {
+      vamm: vammContractAddress,
+      trader: alice.key.accAddress,
+    },
+  })
+
+  approximateEqual(position.size, -50_000_000, 0)
+  approximateEqual(position.margin, 250_000_000, 0)
+  approximateEqual(position.notional, 400_000_000, 0)
 
   console.log('OK')
 
