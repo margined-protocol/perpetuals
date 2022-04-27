@@ -4,10 +4,16 @@ import 'dotenv/config.js'
 import {
   deployContract,
   executeContract,
+  queryContract,
   Logger,
   setTimeoutDuration,
-  queryNativeBalance,
 } from '../helpers.js'
+
+import {
+  approximateEqual,
+  queryBalanceNative,
+  getLatestBlockInfo,
+} from './test_helpers.js'
 
 // CONSTS
 
@@ -104,13 +110,187 @@ const MARGINED_ARTIFACTS_PATH = '../artifacts'
   })
   console.log('margin engine set in vAMM')
 
-  /************************************************ verify UST balances **********************************************/
-  console.log('Query native token balances...')
-  let [ownerBalance] = await queryNativeBalance(terra, owner.key.accAddress)
-  let [aliceBalance] = await queryNativeBalance(terra, alice.key.accAddress)
+  /******************************************** Set vAMM to open **********************************************/
+  console.log('Set vAMM to open...')
 
-  console.log('Owner:\t', ownerBalance.toData())
-  console.log('Alice:\t', aliceBalance.toData())
+  await executeContract(terra, owner, vammContractAddress, {
+    set_open: {
+      open: true,
+    },
+  })
+  console.log('vAMM is open')
+
+  /************************************ Append latest price to mock pricefeed **********************************************/
+  console.log('Append prices to mock pricefeed...')
+
+  let latestBlock = await getLatestBlockInfo(terra)
+  let timestamp = new Date(latestBlock.block.header.time).valueOf()
+
+  await executeContract(terra, owner, priceFeedAddress, {
+    append_price: {
+      key: 'ETH',
+      price: '10000000',
+      timestamp: timestamp,
+    },
+  })
+  console.log('latest price appended to mock pricefeed')
+
+  /*************************************** Update Margin Engine Contract *****************************************/
+  console.log(
+    'Update:\n\tmaintenance margin ratio\n\tpartial liquidation ratio\n\tliquidation fee\n...',
+  )
+  await executeContract(terra, owner, marginEngineContractAddress, {
+    update_config: {
+      initial_margin_ratio: '100000',
+      maintenance_margin_ratio: '250000',
+      liquidation_fee: '25000',
+    },
+  })
+  console.log('Margin Engine Updated')
+
+  /*************************************** Bob opens small positions *****************************************/
+  console.log('Bob open position:\n\t20 margin * 5x Long Position\n...')
+
+  for (let i = 0; i < 5; i++) {
+    await executeContract(
+      terra,
+      bob,
+      marginEngineContractAddress,
+      {
+        open_position: {
+          vamm: vammContractAddress,
+          side: 'b_u_y',
+          quote_asset_amount: '4000000',
+          base_asset_limit: '0',
+          leverage: '5000000',
+        },
+      },
+      { coins: `${4000000}uusd` },
+    )
+  }
+
+  console.log('Margin Engine Updated')
+
+  /*************************************** Alice opens small positions *****************************************/
+  console.log('Alice open position:\n\t20 margin * 5x Long Position\n...')
+
+  for (let i = 0; i < 5; i++) {
+    await executeContract(
+      terra,
+      alice,
+      marginEngineContractAddress,
+      {
+        open_position: {
+          vamm: vammContractAddress,
+          side: 'b_u_y',
+          quote_asset_amount: '4000000',
+          base_asset_limit: '0',
+          leverage: '5000000',
+        },
+      },
+      { coins: `${4000000}uusd` },
+    )
+  }
+
+  console.log('Margin Engine Updated')
+
+  /*************************************** Bob opens small positions *****************************************/
+  console.log(
+    'Bob manually closes position:\n\t20 margin * 5x Long Position\n...',
+  )
+
+  for (let i = 0; i < 5; i++) {
+    await executeContract(
+      terra,
+      bob,
+      marginEngineContractAddress,
+      {
+        open_position: {
+          vamm: vammContractAddress,
+          side: 's_e_l_l',
+          quote_asset_amount: '4000000',
+          base_asset_limit: '0',
+          leverage: '5000000',
+        },
+      },
+      { coins: `${4000000}uusd` },
+    )
+  }
+
+  console.log('Margin Engine Updated')
+
+  /************************************** Query vAMM Spot Balance & Update Pricefeed **********************************************/
+  console.log('Query vAMM spot price...')
+  let price = await queryContract(terra, vammContractAddress, {
+    spot_price: {},
+  })
+  let out = await queryContract(terra, vammContractAddress, {
+    state: {},
+  })
+  console.log('state: ', out)
+  console.log('spot price: ', price)
+  latestBlock = await getLatestBlockInfo(terra)
+  timestamp = new Date(latestBlock.block.header.time).valueOf()
+
+  await executeContract(terra, owner, priceFeedAddress, {
+    append_price: {
+      key: 'ETH',
+      price: price,
+      timestamp: timestamp,
+    },
+  })
+  console.log('latest price appended to mock pricefeed')
+
+  /*********************************************** Carol liquidates Alice **************************************************/
+  console.log("Carol liquidates Alice's underwater position...")
+
+  await executeContract(terra, carol, marginEngineContractAddress, {
+    liquidate: {
+      vamm: vammContractAddress,
+      trader: alice.key.accAddress,
+      quote_asset_limit: '0',
+    },
+  })
+
+  console.log('Alice got rekt')
+
+  /************************************************* Query vAMM state *****************************************************/
+  console.log('Query vAMM spot price...')
+  let state = await queryContract(terra, vammContractAddress, {
+    state: {},
+  })
+
+  console.log('le state', state)
+
+  approximateEqual(state.quote_asset_reserve, 107751027, 0)
+  approximateEqual(state.base_asset_reserve, 92803035, 0)
+
+  // console.log('quote asset reserve: ', state.quote_asset_reserve)
+  // console.log('base asset reserve: ', state.base_asset_reserve)
+
+  /************************************************ verify UST balances **************************************************/
+  console.log('Query native token balances...')
+  let ownerBalance = await queryBalanceNative(
+    terra,
+    owner.key.accAddress,
+    'uusd',
+  )
+  let aliceBalance = await queryBalanceNative(
+    terra,
+    alice.key.accAddress,
+    'uusd',
+  )
+  let bobBalance = await queryBalanceNative(terra, bob.key.accAddress, 'uusd')
+  let carolBalance = await queryBalanceNative(
+    terra,
+    carol.key.accAddress,
+    'uusd',
+  )
+
+  console.log('Owner:\t', ownerBalance)
+  console.log('Alice:\t', aliceBalance)
+  console.log('Bob:\t', bobBalance)
+  console.log('Carol:\t', carolBalance)
 
   console.log('OK')
 

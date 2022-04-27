@@ -209,13 +209,6 @@ export async function queryContract(
   return await terra.wasm.contractQuery(contractAddress, query)
 }
 
-export async function queryNativeBalance(
-  terra: LCDClient,
-  address: string,
-): Promise<any> {
-  return await terra.bank.balance(address)
-}
-
 export async function deployContract(
   terra: LCDClient,
   wallet: Wallet,
