@@ -568,6 +568,7 @@ pub struct ShutdownScenario {
     pub vamm2: VammController,
     pub vamm3: VammController,
     pub vamm4: VammController,
+    pub insurance_fund: InsuranceFundController,
     pub pricefeed: PricefeedController,
 }
 
@@ -577,11 +578,24 @@ impl ShutdownScenario {
 
         let owner = Addr::unchecked("owner");
 
+        let insurance_fund_id = router.store_code(contract_insurance_fund());
         let vamm1_id = router.store_code(contract_vamm());
         let vamm2_id = router.store_code(contract_vamm());
         let vamm3_id = router.store_code(contract_vamm());
         let vamm4_id = router.store_code(contract_vamm());
         let pricefeed_id = router.store_code(contract_mock_pricefeed());
+
+        let insurance_fund_addr = router
+            .instantiate_contract(
+                insurance_fund_id,
+                owner.clone(),
+                &InsuranceFundInstantiateMsg {},
+                &[],
+                "insurance_fund",
+                None,
+            )
+            .unwrap();
+        let insurance_fund = InsuranceFundController(insurance_fund_addr.clone());
 
         let pricefeed_addr = router
             .instantiate_contract(
@@ -601,7 +615,7 @@ impl ShutdownScenario {
         let vamm1_addr = router
             .instantiate_contract(
                 vamm1_id,
-                owner.clone(),
+                insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
                     decimals: 9u8,
                     quote_asset: "ETH".to_string(),
@@ -623,12 +637,12 @@ impl ShutdownScenario {
         let vamm1 = VammController(vamm1_addr);
 
         let msg = vamm1.set_open(true).unwrap();
-        router.execute(owner.clone(), msg).unwrap();
+        router.execute(insurance_fund_addr.clone(), msg).unwrap();
 
         let vamm2_addr = router
             .instantiate_contract(
                 vamm2_id,
-                owner.clone(),
+                insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
                     decimals: 9u8,
                     quote_asset: "ETH".to_string(),
@@ -650,12 +664,12 @@ impl ShutdownScenario {
         let vamm2 = VammController(vamm2_addr);
 
         let msg = vamm2.set_open(true).unwrap();
-        router.execute(owner.clone(), msg).unwrap();
+        router.execute(insurance_fund_addr.clone(), msg).unwrap();
 
         let vamm3_addr = router
             .instantiate_contract(
                 vamm3_id,
-                owner.clone(),
+                insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
                     decimals: 9u8,
                     quote_asset: "ETH".to_string(),
@@ -677,12 +691,12 @@ impl ShutdownScenario {
         let vamm3 = VammController(vamm3_addr);
 
         let msg = vamm3.set_open(true).unwrap();
-        router.execute(owner.clone(), msg).unwrap();
+        router.execute(insurance_fund_addr.clone(), msg).unwrap();
 
         let vamm4_addr = router
             .instantiate_contract(
                 vamm4_id,
-                owner.clone(),
+                insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
                     decimals: 9u8,
                     quote_asset: "ETH".to_string(),
@@ -704,11 +718,12 @@ impl ShutdownScenario {
         let vamm4 = VammController(vamm4_addr);
 
         let msg = vamm4.set_open(true).unwrap();
-        router.execute(owner.clone(), msg).unwrap();
+        router.execute(insurance_fund_addr.clone(), msg).unwrap();
 
         Self {
             router,
             owner,
+            insurance_fund,
             vamm1,
             vamm2,
             vamm3,

@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    to_binary, BankMsg, Coin, CosmosMsg, DepsMut, MessageInfo, ReplyOn, Response, SubMsg, Uint128,
-    WasmMsg,
+    to_binary, BankMsg, Coin, CosmosMsg, DepsMut, MessageInfo, ReplyOn, Response,
+    StdError::GenericErr, SubMsg, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use terraswap::asset::AssetInfo;
@@ -9,8 +9,8 @@ use crate::{
     error::ContractError,
     messages::execute_vamm_switch,
     state::{
-        read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, store_config, Config,
-        VAMM_LIMIT,
+        is_vamm, read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, store_config,
+        Config, VAMM_LIMIT,
     },
 };
 
@@ -117,7 +117,14 @@ pub fn switch_vamm_status(
     // validate address
     let vamm_valid = deps.api.addr_validate(&vamm)?;
 
-    // check that vamm status is switchable
+    // check that the vamm is actually stored in the vammlist
+    if !is_vamm(deps.storage, vamm_valid.clone()) {
+        return Err(ContractError::Std(GenericErr {
+            msg: "No vAMMs are stored".to_string(),
+        }));
+    }
+
+    // check that the status is switchable
     // TODO
 
     // construct the switch message to the vamm contract
