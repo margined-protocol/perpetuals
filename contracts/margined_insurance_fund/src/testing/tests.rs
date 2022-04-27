@@ -293,105 +293,6 @@ fn test_remove_non_existed_vamm() {
 }
 
 #[test]
-fn test_vamm_off() {
-    let ShutdownScenario {
-        mut router,
-        owner,
-        insurance_fund,
-        vamm1,
-        ..
-    } = ShutdownScenario::new();
-
-    // add vamm (remember it is default added as 'on')
-    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
-    router.execute(owner.clone(), msg).unwrap();
-
-    // turn vamm off
-    let msg = insurance_fund
-        .switch_vamm_status(vamm1.addr().to_string(), false)
-        .unwrap();
-    router.execute(owner, msg).unwrap();
-
-    // query vamm status
-    let res = insurance_fund
-        .vamm_status(vamm1.addr().to_string(), &router)
-        .unwrap();
-    let status = res.vamm_status;
-
-    assert_eq!(status, false);
-}
-
-#[test]
-fn try_vamm_off_and_on() {
-    let ShutdownScenario {
-        mut router,
-        owner,
-        insurance_fund,
-        vamm1,
-        ..
-    } = ShutdownScenario::new();
-
-    // try to switch vamm off
-    let msg = insurance_fund
-        .switch_vamm_status(vamm1.addr().to_string(), false)
-        .unwrap();
-    let res = router.execute(owner.clone(), msg).unwrap_err();
-
-    assert_eq!(res.to_string(), "Generic error: No vAMMs are stored");
-
-    // try to switch vamm on
-    let msg = insurance_fund
-        .switch_vamm_status(vamm1.addr().to_string(), true)
-        .unwrap();
-    let res = router.execute(owner.clone(), msg).unwrap_err();
-
-    assert_eq!(res.to_string(), "Generic error: No vAMMs are stored");
-}
-
-#[test]
-fn test_vamm_on() {
-    let ShutdownScenario {
-        mut router,
-        owner,
-        insurance_fund,
-        vamm1,
-        ..
-    } = ShutdownScenario::new();
-
-    // add vamm
-    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
-    router.execute(owner.clone(), msg).unwrap();
-
-    // turn vamm off
-    let msg = insurance_fund
-        .switch_vamm_status(vamm1.addr().to_string(), false)
-        .unwrap();
-    router.execute(owner.clone(), msg).unwrap();
-
-    // query vamm status
-    let res = insurance_fund
-        .vamm_status(vamm1.addr().to_string(), &router)
-        .unwrap();
-    let status = res.vamm_status;
-
-    assert_eq!(status, false);
-
-    // turn vamm on
-    let msg = insurance_fund
-        .switch_vamm_status(vamm1.addr().to_string(), true)
-        .unwrap();
-    router.execute(owner, msg).unwrap();
-
-    // query vamm status
-    let res = insurance_fund
-        .vamm_status(vamm1.addr().to_string(), &router)
-        .unwrap();
-    let status = res.vamm_status;
-
-    assert_eq!(status, true);
-}
-
-#[test]
 fn test_off_vamm_off_again() {
     let ShutdownScenario {
         mut router,
@@ -407,36 +308,13 @@ fn test_off_vamm_off_again() {
 
     //turn vamm off
     let msg = insurance_fund
-        .switch_vamm_status(vamm1.addr().to_string(), false)
+        .shutdown_vamms()
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
     //turn vamm off again (note the unauthorized error comes from state.open == open)
     let msg = insurance_fund
-        .switch_vamm_status(vamm1.addr().to_string(), false)
-        .unwrap();
-    let res = router.execute(owner.clone(), msg).unwrap_err();
-
-    assert_eq!(res.to_string(), "Generic error: unauthorized");
-}
-
-#[test]
-fn test_on_vamm_on_again() {
-    let ShutdownScenario {
-        mut router,
-        owner,
-        insurance_fund,
-        vamm1,
-        ..
-    } = ShutdownScenario::new();
-
-    // add vamm (remember it is default added as 'on')
-    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
-    router.execute(owner.clone(), msg).unwrap();
-
-    //turn vamm off again (note the unauthorized error comes from state.open == open)
-    let msg = insurance_fund
-        .switch_vamm_status(vamm1.addr().to_string(), true)
+        .shutdown_vamms()
         .unwrap();
     let res = router.execute(owner.clone(), msg).unwrap_err();
 
@@ -481,7 +359,7 @@ fn test_vamm_shutdown() {
     );
 
     // shutdown all vamms
-    let msg = insurance_fund.shutdown_all_vamm().unwrap();
+    let msg = insurance_fund.shutdown_vamms().unwrap();
     router.execute(owner, msg).unwrap();
 
     // query all vamms' status
@@ -520,9 +398,9 @@ fn test_query_vamm_status() {
 
     assert_eq!(status, true);
 
-    // switch vamm off
+    // shutdown vamm
     let msg = insurance_fund
-        .switch_vamm_status(vamm1.addr().to_string(), false)
+        .shutdown_vamms()
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -573,7 +451,7 @@ fn test_all_vamm_status() {
 
     // switch first vamm off
     let msg = insurance_fund
-        .switch_vamm_status(vamm1.addr().to_string(), false)
+        .shutdown_vamms()
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -583,7 +461,7 @@ fn test_all_vamm_status() {
 
     assert_eq!(
         vamms_status,
-        vec![(vamm1.addr(), false), (vamm2.addr(), true)]
+        vec![(vamm1.addr(), false), (vamm2.addr(), false)]
     );
 }
 
@@ -783,35 +661,9 @@ fn test_not_owner() {
 
     assert_eq!(res.to_string(), "Unauthorized");
 
-    //try to switch vamm on
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("not_the_owner", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus {
-        vamm: addr1,
-        status: true,
-    };
-
-    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-
-    assert_eq!(res.to_string(), "Unauthorized");
-
-    //try to switch vamm off
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("not_the_owner", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus {
-        vamm: addr1,
-        status: false,
-    };
-
-    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-
-    assert_eq!(res.to_string(), "Unauthorized");
-
     //try to shutdown all vamms
     let info = mock_info("not_the_owner", &[]);
-    let msg = ExecuteMsg::ShutdownAllVamm {};
+    let msg = ExecuteMsg::ShutdownVamms {};
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 

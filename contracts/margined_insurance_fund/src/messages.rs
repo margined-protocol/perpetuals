@@ -2,11 +2,11 @@ use cosmwasm_std::{to_binary, Addr, CosmosMsg, ReplyOn, StdResult, SubMsg, WasmM
 
 use margined_perp::margined_vamm::ExecuteMsg as VammExecuteMessage;
 
-pub fn execute_vamm_switch(vamm: Addr, status: bool) -> StdResult<SubMsg> {
+pub fn execute_vamm_shutdown(vamm: Addr) -> StdResult<SubMsg> {
     let msg = WasmMsg::Execute {
         contract_addr: vamm.to_string(),
         funds: vec![],
-        msg: to_binary(&VammExecuteMessage::SetOpen { open: status })?,
+        msg: to_binary(&VammExecuteMessage::SetOpen { open: false })?,
     };
 
     let status_msg = SubMsg {

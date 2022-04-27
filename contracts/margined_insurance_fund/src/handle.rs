@@ -1,15 +1,14 @@
 use cosmwasm_std::{
-    to_binary, BankMsg, Coin, CosmosMsg, DepsMut, MessageInfo, ReplyOn, Response,
-    StdError::GenericErr, SubMsg, Uint128, WasmMsg,
+    to_binary, BankMsg, Coin, CosmosMsg, DepsMut, MessageInfo, ReplyOn, Response, SubMsg, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use terraswap::asset::AssetInfo;
 
 use crate::{
     error::ContractError,
-    messages::execute_vamm_switch,
+    messages::execute_vamm_shutdown,
     state::{
-        is_vamm, read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, store_config,
+        read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, store_config,
         Config, VAMM_LIMIT,
     },
 };
@@ -95,42 +94,10 @@ pub fn shutdown_all_vamm(deps: DepsMut, info: MessageInfo) -> Result<Response, C
     let keys = read_vammlist(deps.as_ref(), VAMM_LIMIT)?;
 
     for vamm in keys.iter() {
-        msgs.push(execute_vamm_switch(vamm.clone(), false)?);
+        msgs.push(execute_vamm_shutdown(vamm.clone())?);
     }
 
     Ok(Response::default().add_submessages(msgs))
-}
-
-pub fn switch_vamm_status(
-    deps: DepsMut,
-    info: MessageInfo,
-    vamm: String,
-    status: bool,
-) -> Result<Response, ContractError> {
-    let config: Config = read_config(deps.storage)?;
-
-    // check permission
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    // validate address
-    let vamm_valid = deps.api.addr_validate(&vamm)?;
-
-    // check that the vamm is actually stored in the vammlist
-    if !is_vamm(deps.storage, vamm_valid.clone()) {
-        return Err(ContractError::Std(GenericErr {
-            msg: "No vAMMs are stored".to_string(),
-        }));
-    }
-
-    // check that the status is switchable
-    // TODO
-
-    // construct the switch message to the vamm contract
-    let msg = execute_vamm_switch(vamm_valid, status)?;
-
-    Ok(Response::default().add_submessage(msg))
 }
 
 pub fn withdraw(

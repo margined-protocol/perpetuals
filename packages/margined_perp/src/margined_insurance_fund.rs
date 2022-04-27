@@ -23,11 +23,7 @@ pub enum ExecuteMsg {
         token: AssetInfo,
         amount: Uint128,
     },
-    SwitchVammStatus {
-        vamm: String,
-        status: bool,
-    },
-    ShutdownAllVamm {},
+    ShutdownVamms {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

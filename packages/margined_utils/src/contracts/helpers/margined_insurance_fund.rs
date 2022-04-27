@@ -53,13 +53,8 @@ impl InsuranceFundController {
         self.call(msg, vec![])
     }
 
-    pub fn switch_vamm_status(&self, vamm: String, status: bool) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::SwitchVammStatus { vamm, status };
-        self.call(msg, vec![])
-    }
-
-    pub fn shutdown_all_vamm(&self) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::ShutdownAllVamm {};
+    pub fn shutdown_vamms(&self) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::ShutdownVamms {};
         self.call(msg, vec![])
     }
 
