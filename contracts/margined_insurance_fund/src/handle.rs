@@ -1,5 +1,6 @@
 use cosmwasm_std::{
-    to_binary, BankMsg, Coin, CosmosMsg, DepsMut, MessageInfo, ReplyOn, Response, SubMsg, Uint128, WasmMsg,
+    to_binary, BankMsg, Coin, CosmosMsg, DepsMut, MessageInfo, ReplyOn, Response, SubMsg, Uint128,
+    WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use terraswap::asset::AssetInfo;
@@ -8,8 +9,8 @@ use crate::{
     error::ContractError,
     messages::execute_vamm_shutdown,
     state::{
-        read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, store_config,
-        Config, VAMM_LIMIT,
+        read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, store_config, Config,
+        VAMM_LIMIT,
     },
 };
 

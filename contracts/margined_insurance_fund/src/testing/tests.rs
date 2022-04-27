@@ -307,15 +307,11 @@ fn test_off_vamm_off_again() {
     router.execute(owner.clone(), msg).unwrap();
 
     //turn vamm off
-    let msg = insurance_fund
-        .shutdown_vamms()
-        .unwrap();
+    let msg = insurance_fund.shutdown_vamms().unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
     //turn vamm off again (note the unauthorized error comes from state.open == open)
-    let msg = insurance_fund
-        .shutdown_vamms()
-        .unwrap();
+    let msg = insurance_fund.shutdown_vamms().unwrap();
     let res = router.execute(owner.clone(), msg).unwrap_err();
 
     assert_eq!(res.to_string(), "Generic error: unauthorized");
@@ -399,9 +395,7 @@ fn test_query_vamm_status() {
     assert_eq!(status, true);
 
     // shutdown vamm
-    let msg = insurance_fund
-        .shutdown_vamms()
-        .unwrap();
+    let msg = insurance_fund.shutdown_vamms().unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
     // query vamm status
@@ -450,9 +444,7 @@ fn test_all_vamm_status() {
     );
 
     // switch first vamm off
-    let msg = insurance_fund
-        .shutdown_vamms()
-        .unwrap();
+    let msg = insurance_fund.shutdown_vamms().unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
     // query all vamms' status
