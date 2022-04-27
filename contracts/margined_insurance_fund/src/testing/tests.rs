@@ -1,10 +1,11 @@
 use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr};
+use cw_multi_test::Executor;
 use margined_perp::margined_insurance_fund::{
-    AllVammResponse, AllVammStatusResponse, ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg,
-    VammResponse, VammStatusResponse,
+    ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg,
 };
+use margined_utils::scenarios::ShutdownScenario;
 
 const BENEFICIARY: &str = "beneficiary";
 
@@ -56,32 +57,22 @@ fn test_update_config() {
 }
 #[test]
 fn test_query_vamm() {
-    //instantiate contract here
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        ..
+    } = ShutdownScenario::new();
 
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    // add vamm to vammlist in insurance_fund here
+    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
+    router.execute(owner, msg).unwrap();
 
-    //add an vAMM
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //check for the added vAMM
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::IsVamm {
-            vamm: "addr0001".to_string(),
-        },
-    )
-    .unwrap();
-
-    let res: VammResponse = from_binary(&res).unwrap();
+    // query if the vamm has been added
+    let res = insurance_fund
+        .is_vamm(vamm1.addr().to_string(), &router)
+        .unwrap();
     let is_vamm = res.is_vamm;
 
     assert_eq!(is_vamm, true);
@@ -89,148 +80,114 @@ fn test_query_vamm() {
 
 #[test]
 fn test_query_all_vamm() {
-    //instantiate contract here
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        vamm2,
+        ..
+    } = ShutdownScenario::new();
 
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //check to see that there are no vAMMs
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVamm { limit: None },
-    )
-    .unwrap();
-
-    let res: AllVammResponse = from_binary(&res).unwrap();
-    let empty: Vec<Addr> = vec![];
-
-    assert_eq!(res.vamm_list, empty);
-
-    //add an vAMM
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add another vAMM
-    let addr2 = "addr0002".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr2 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //check for the added vAMMs
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVamm { limit: None },
-    )
-    .unwrap();
-
-    let res: AllVammResponse = from_binary(&res).unwrap();
-    let list = res.vamm_list;
+    // check to see that there are no vAMMs
+    let res = insurance_fund.all_vamms(None, &router).unwrap_err();
 
     assert_eq!(
-        list,
-        vec![
-            Addr::unchecked("addr0001".to_string()),
-            Addr::unchecked("addr0002".to_string())
-        ]
+        res.to_string(),
+        "Generic error: Querier contract error: Generic error: No vAMMs are stored"
     );
+
+    // add a vAMM
+    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // add another vAMM
+    let msg = insurance_fund.add_vamm(vamm2.addr().to_string()).unwrap();
+    router.execute(owner, msg).unwrap();
+
+    // check for the added vAMMs
+    let res = insurance_fund.all_vamms(None, &router).unwrap();
+    let list = res.vamm_list;
+
+    assert_eq!(list, vec![vamm1.addr(), vamm2.addr()]);
 }
 
 #[test]
 fn test_add_vamm() {
-    //instantiate contract here
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        ..
+    } = ShutdownScenario::new();
 
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //query the vAMM we want to add
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::IsVamm {
-            vamm: "addr0001".to_string(),
-        },
-    )
-    .unwrap();
-
-    let res: VammResponse = from_binary(&res).unwrap();
+    // query the vAMM we want to add
+    let res = insurance_fund
+        .is_vamm(vamm1.addr().to_string(), &router)
+        .unwrap();
     let is_vamm = res.is_vamm;
 
     assert_eq!(is_vamm, false);
 
-    //add an vAMM
-    let addr1 = "addr0001".to_string();
+    // add vamm to vammlist in insurance_fund here
+    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
+    router.execute(owner, msg).unwrap();
 
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //check for the added vAMM
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::IsVamm {
-            vamm: "addr0001".to_string(),
-        },
-    )
-    .unwrap();
-
-    let res: VammResponse = from_binary(&res).unwrap();
+    // check for the added vAMM
+    let res = insurance_fund
+        .is_vamm(vamm1.addr().to_string(), &router)
+        .unwrap();
     let is_vamm = res.is_vamm;
 
     assert_eq!(is_vamm, true);
 }
 
 #[test]
+fn test_add_vamm_twice() {
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        ..
+    } = ShutdownScenario::new();
+
+    // add vamm to vammlist in insurance_fund here
+    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // try to add the same vamm here
+    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
+    let res = router.execute(owner, msg).unwrap_err();
+
+    assert_eq!(res.to_string(), "Generic error: This vAMM is already added");
+}
+
+#[test]
 fn test_add_second_vamm() {
     // this tests for adding a second vAMM, to ensure the 'push' match arm of save_vamm is used
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        vamm2,
+        ..
+    } = ShutdownScenario::new();
 
-    //instantiate contract here
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    // add first vamm to vammlist in insurance_fund here
+    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    // add second vamm to vammlist in insurance_fund here
+    let msg = insurance_fund.add_vamm(vamm2.addr().to_string()).unwrap();
+    router.execute(owner, msg).unwrap();
 
-    //add first vAMM
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add second vAMM
-    let addr2 = "addr0002".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr2 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //check for the second added vAMM
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::IsVamm {
-            vamm: "addr0002".to_string(),
-        },
-    )
-    .unwrap();
-
-    let res: VammResponse = from_binary(&res).unwrap();
+    // check for the second added vAMM
+    let res = insurance_fund
+        .is_vamm(vamm2.addr().to_string(), &router)
+        .unwrap();
     let is_vamm = res.is_vamm;
 
     assert_eq!(is_vamm, true);
@@ -238,407 +195,213 @@ fn test_add_second_vamm() {
 
 #[test]
 fn test_remove_vamm() {
-    //instantiate contract here
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        ..
+    } = ShutdownScenario::new();
 
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    // add first vamm to vammlist in insurance_fund here
+    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-    //add an vAMM
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //check to see that there is one vAMM
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::IsVamm {
-            vamm: "addr0001".to_string(),
-        },
-    )
-    .unwrap();
-
-    let res: VammResponse = from_binary(&res).unwrap();
+    // check to see that there is one vAMM
+    let res = insurance_fund
+        .is_vamm(vamm1.addr().to_string(), &router)
+        .unwrap();
     let is_vamm = res.is_vamm;
 
     assert_eq!(is_vamm, true);
 
-    //remove an AMM
-    let addr1 = "addr0001".to_string();
+    // remove the first vAMM
+    let msg = insurance_fund
+        .remove_vamm(vamm1.addr().to_string())
+        .unwrap();
+    router.execute(owner, msg).unwrap();
 
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::RemoveVamm { vamm: addr1 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //check that there are zero AMMs
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::IsVamm {
-            vamm: "addr0001".to_string(),
-        },
-    )
-    .unwrap();
-
-    let res: VammResponse = from_binary(&res).unwrap();
+    // check that there are zero AMMs
+    let res = insurance_fund
+        .is_vamm(vamm1.addr().to_string(), &router)
+        .unwrap();
     let is_vamm = res.is_vamm;
 
     assert_eq!(is_vamm, false);
 }
 
 #[test]
-fn test_vamm_off() {
-    //instantiate contract here
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+fn test_remove_no_vamms() {
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        ..
+    } = ShutdownScenario::new();
 
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    // check to see that there is no vAMM
+    let res = insurance_fund
+        .is_vamm(vamm1.addr().to_string(), &router)
+        .unwrap();
+    let is_vamm = res.is_vamm;
 
-    //add vamm (remember it is default added as 'on')
-    let addr1 = "addr0001".to_string();
+    assert_eq!(is_vamm, false);
 
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
+    // remove the first vAMM
+    let msg = insurance_fund
+        .remove_vamm(vamm1.addr().to_string())
+        .unwrap();
+    let res = router.execute(owner, msg).unwrap_err();
 
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //turn vamm off
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus {
-        vamm: addr1,
-        status: false,
-    };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //query vamm status
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetVammStatus {
-            vamm: "addr0001".to_string(),
-        },
-    )
-    .unwrap();
-
-    let res: VammStatusResponse = from_binary(&res).unwrap();
-    let status = res.vamm_status;
-
-    assert_eq!(status, false);
+    assert_eq!(res.to_string(), "Generic error: No vAMMs are stored")
 }
 
 #[test]
-fn try_vamm_off_and_on() {
-    //instantiate contract here
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+fn test_remove_non_existed_vamm() {
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        vamm2,
+        ..
+    } = ShutdownScenario::new();
 
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    // add first vamm to vammlist in insurance_fund here
+    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-    //try to switch vamm off
-    let addr1 = "addr0001".to_string();
+    // check to see that there is one vAMM
+    let res = insurance_fund
+        .is_vamm(vamm1.addr().to_string(), &router)
+        .unwrap();
+    let is_vamm = res.is_vamm;
 
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus {
-        vamm: addr1,
-        status: false,
-    };
+    assert_eq!(is_vamm, true);
 
-    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+    // remove a vAMM which isn't stored
+    let msg = insurance_fund
+        .remove_vamm(vamm2.addr().to_string())
+        .unwrap();
+    let res = router.execute(owner, msg).unwrap_err();
 
-    assert_eq!(res.to_string(), "Generic error: No vAMM stored");
-
-    //try to switch vamm on
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus {
-        vamm: addr1,
-        status: true,
-    };
-
-    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-
-    assert_eq!(res.to_string(), "Generic error: No vAMM stored");
-}
-
-#[test]
-fn test_vamm_on() {
-    //instantiate contract here
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
-
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add vamm
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //turn vamm off
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus {
-        vamm: addr1,
-        status: false,
-    };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //query vamm status
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetVammStatus {
-            vamm: "addr0001".to_string(),
-        },
+    assert_eq!(
+        res.to_string(),
+        "Generic error: This vAMM has not been added"
     )
-    .unwrap();
-
-    let res: VammStatusResponse = from_binary(&res).unwrap();
-    let status = res.vamm_status;
-
-    assert_eq!(status, false);
-
-    //turn vamm on
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus {
-        vamm: addr1,
-        status: true,
-    };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //query vamm status
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetVammStatus {
-            vamm: "addr0001".to_string(),
-        },
-    )
-    .unwrap();
-
-    let res: VammStatusResponse = from_binary(&res).unwrap();
-    let status = res.vamm_status;
-
-    assert_eq!(status, true);
 }
 
 #[test]
 fn test_off_vamm_off_again() {
-    //instantiate contract here
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        ..
+    } = ShutdownScenario::new();
 
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    // add vamm (remember it is default added as 'on')
+    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-    //add vamm (remember it is default added as 'on')
-    let addr1 = "addr0001".to_string();
+    //turn vamm off
+    let msg = insurance_fund.shutdown_vamms().unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
+    //turn vamm off again (note the unauthorized error comes from state.open == open)
+    let msg = insurance_fund.shutdown_vamms().unwrap();
+    let res = router.execute(owner.clone(), msg).unwrap_err();
 
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //turn vamm on
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus {
-        vamm: addr1,
-        status: false,
-    };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //turn vamm off again
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus {
-        vamm: addr1,
-        status: false,
-    };
-
-    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-
-    assert_eq!(res.to_string(), "Generic error: This vAMM is already off");
-}
-
-#[test]
-fn test_on_vamm_on_again() {
-    //instantiate contract here
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
-
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add vamm (remember it is default added as 'on')
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //turn vamm on again
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus {
-        vamm: addr1,
-        status: true,
-    };
-
-    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-
-    assert_eq!(res.to_string(), "Generic error: This vAMM is already on");
+    assert_eq!(res.to_string(), "Generic error: unauthorized");
 }
 
 #[test]
 fn test_vamm_shutdown() {
-    //instantiate contract here
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        vamm2,
+        vamm3,
+        ..
+    } = ShutdownScenario::new();
 
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    // add vamm
+    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-    //add vamm
-    let addr1 = "addr0001".to_string();
+    // add second vamm
+    let msg = insurance_fund.add_vamm(vamm2.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
+    // add third vamm
+    let msg = insurance_fund.add_vamm(vamm3.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add second vamm
-    let addr2 = "addr0002".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr2 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //query all vamms' status
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVammStatus { limit: None },
-    )
-    .unwrap();
-
-    let res: AllVammStatusResponse = from_binary(&res).unwrap();
+    // query all vamms' status
+    let res = insurance_fund.all_vamm_status(None, &router).unwrap();
     let vamms_status = res.vamm_list_status;
 
     assert_eq!(
         vamms_status,
         vec![
-            (Addr::unchecked("addr0001".to_string()), true),
-            (Addr::unchecked("addr0002".to_string()), true)
+            (vamm1.addr(), true),
+            (vamm2.addr(), true),
+            (vamm3.addr(), true)
         ]
     );
 
-    //shutdown all vamms
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::ShutdownAllVamm {};
+    // shutdown all vamms
+    let msg = insurance_fund.shutdown_vamms().unwrap();
+    router.execute(owner, msg).unwrap();
 
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //query all vamms' status
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVammStatus { limit: None },
-    )
-    .unwrap();
-
-    let res: AllVammStatusResponse = from_binary(&res).unwrap();
+    // query all vamms' status
+    let res = insurance_fund.all_vamm_status(None, &router).unwrap();
     let vamms_status = res.vamm_list_status;
 
     assert_eq!(
         vamms_status,
         vec![
-            (Addr::unchecked("addr0001".to_string()), false),
-            (Addr::unchecked("addr0002".to_string()), false)
+            (vamm1.addr(), false),
+            (vamm2.addr(), false),
+            (vamm3.addr(), false)
         ]
     );
 }
 
 #[test]
 fn test_query_vamm_status() {
-    //instantiate contract here
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        ..
+    } = ShutdownScenario::new();
 
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    // add vamm
+    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-    //add vamm
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //query vamm status
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetVammStatus {
-            vamm: "addr0001".to_string(),
-        },
-    )
-    .unwrap();
-
-    let res: VammStatusResponse = from_binary(&res).unwrap();
+    // query vamm status
+    let res = insurance_fund
+        .vamm_status(vamm1.addr().to_string(), &router)
+        .unwrap();
     let status = res.vamm_status;
 
     assert_eq!(status, true);
 
-    //switch vamm off
-    let addr1 = "addr0001".to_string();
+    // shutdown vamm
+    let msg = insurance_fund.shutdown_vamms().unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus {
-        vamm: addr1,
-        status: false,
-    };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //query vamm status
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetVammStatus {
-            vamm: "addr0001".to_string(),
-        },
-    )
-    .unwrap();
-
-    let res: VammStatusResponse = from_binary(&res).unwrap();
+    // query vamm status
+    let res = insurance_fund
+        .vamm_status(vamm1.addr().to_string(), &router)
+        .unwrap();
     let status = res.vamm_status;
 
     assert_eq!(status, false);
@@ -646,98 +409,215 @@ fn test_query_vamm_status() {
 
 #[test]
 fn test_all_vamm_status() {
-    //instantiate contract here
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        vamm2,
+        ..
+    } = ShutdownScenario::new();
 
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //query all vamms' status (there aren't any yet)
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVammStatus { limit: None },
-    )
-    .unwrap();
-
-    let res: AllVammStatusResponse = from_binary(&res).unwrap();
-    let vamms_status = res.vamm_list_status;
-
-    assert_eq!(vamms_status, vec![]);
-
-    //add vamm
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add another vamm
-    let addr2 = "addr0002".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr2 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //query all vamms' status
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVammStatus { limit: None },
-    )
-    .unwrap();
-
-    let res: AllVammStatusResponse = from_binary(&res).unwrap();
-    let vamms_status = res.vamm_list_status;
+    // query all vamms' status (there aren't any yet)
+    let res = insurance_fund.all_vamm_status(None, &router).unwrap_err();
 
     assert_eq!(
-        vamms_status,
-        vec![
-            (Addr::unchecked("addr0001".to_string()), true),
-            (Addr::unchecked("addr0002".to_string()), true)
-        ]
+        res.to_string(),
+        "Generic error: Querier contract error: Generic error: No vAMMs are stored"
     );
 
-    //switch first vamm off
-    let addr1 = "addr0001".to_string();
+    // add vamm
+    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus {
-        vamm: addr1,
-        status: false,
-    };
+    // add another vamm
+    let msg = insurance_fund.add_vamm(vamm2.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //query all vamms' status
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVammStatus { limit: None },
-    )
-    .unwrap();
-
-    let res: AllVammStatusResponse = from_binary(&res).unwrap();
+    // query all vamms' status
+    let res = insurance_fund.all_vamm_status(None, &router).unwrap();
     let vamms_status = res.vamm_list_status;
 
     assert_eq!(
         vamms_status,
-        vec![
-            (Addr::unchecked("addr0001".to_string()), false),
-            (Addr::unchecked("addr0002".to_string()), true)
-        ]
+        vec![(vamm1.addr(), true), (vamm2.addr(), true)]
+    );
+
+    // switch first vamm off
+    let msg = insurance_fund.shutdown_vamms().unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // query all vamms' status
+    let res = insurance_fund.all_vamm_status(None, &router).unwrap();
+    let vamms_status = res.vamm_list_status;
+
+    assert_eq!(
+        vamms_status,
+        vec![(vamm1.addr(), false), (vamm2.addr(), false)]
     );
 }
 
+#[test]
+fn test_pagination() {
+    // note that this test is superfluous because DEFAULT_PAGINATION_LIMIT > MAX_PAGINATION_LIMIT (this tests default pagi limit)
+
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        vamm2,
+        ..
+    } = ShutdownScenario::new();
+
+    // add vamm
+    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    //add second vamm
+    let msg = insurance_fund.add_vamm(vamm2.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    //query only the first vamm (because we gave it limit of 1)
+    let res = insurance_fund.all_vamm_status(Some(1u32), &router).unwrap();
+    let vamms_status = res.vamm_list_status;
+
+    assert_eq!(vamms_status, vec![(vamm1.addr(), true)]);
+}
+#[test]
+fn test_pagination_limit() {
+    // for the purpose of this test, VAMM_LIMIT is set to 3 (so four exceeds it!)
+
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        vamm2,
+        vamm3,
+        ..
+    } = ShutdownScenario::new();
+
+    let vamms: Vec<String> = vec![
+        vamm1.addr().to_string(),
+        vamm2.addr().to_string(),
+        vamm3.addr().to_string(),
+    ];
+
+    // add three vamms
+    for n in 1..4 {
+        let msg = insurance_fund.add_vamm(vamms[n - 1].clone()).unwrap();
+        router.execute(owner.clone(), msg).unwrap();
+    }
+
+    // query all vamms status
+    let res = insurance_fund.all_vamm_status(None, &router).unwrap();
+    let vamms_status = res.vamm_list_status;
+
+    assert_eq!(
+        vamms_status,
+        vec![
+            (vamm1.addr(), true),
+            (vamm2.addr(), true),
+            (vamm3.addr(), true),
+        ]
+    );
+
+    //query only the first two vamms
+    let res = insurance_fund.all_vamm_status(Some(2u32), &router).unwrap();
+    let vamms_status = res.vamm_list_status;
+
+    assert_eq!(
+        vamms_status,
+        vec![(vamm1.addr(), true), (vamm2.addr(), true),]
+    );
+}
+
+#[test]
+fn test_vamm_capacity() {
+    // for the purpose of this test, VAMM_LIMIT is set to 3 (so four exceeds it!)
+
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        vamm2,
+        vamm3,
+        vamm4,
+        ..
+    } = ShutdownScenario::new();
+
+    ///////////////////////////////////////////////////////
+    // Test exceeding VAMM_LIMIT by adding a single vAMM //
+    ///////////////////////////////////////////////////////
+
+    let vamms: Vec<String> = vec![
+        vamm1.addr().to_string(),
+        vamm2.addr().to_string(),
+        vamm3.addr().to_string(),
+        vamm4.addr().to_string(),
+    ];
+
+    //add three vamms
+    for n in 1..4 {
+        let msg = insurance_fund.add_vamm(vamms[n - 1].clone()).unwrap();
+        router.execute(owner.clone(), msg).unwrap();
+    }
+
+    //try to add a fourth vamm
+    let msg = insurance_fund.add_vamm(vamm4.addr().to_string()).unwrap();
+    let res = router.execute(owner.clone(), msg).unwrap_err();
+
+    assert_eq!(
+        res.to_string(),
+        "Generic error: The vAMM capacity is already reached"
+    );
+
+    ////////////////////////////////////////////
+    // Test exceeding VAMM_LIMIT via for loop //
+    ////////////////////////////////////////////
+
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        vamm2,
+        vamm3,
+        vamm4,
+        ..
+    } = ShutdownScenario::new();
+
+    let vamms: Vec<String> = vec![
+        vamm1.addr().to_string(),
+        vamm2.addr().to_string(),
+        vamm3.addr().to_string(),
+        vamm4.addr().to_string(),
+    ];
+
+    // add four vamms
+    for n in 1..5 {
+        let msg = insurance_fund.add_vamm(vamms[n - 1].clone()).unwrap();
+
+        if n == 4 {
+            let res = router.execute(owner.clone(), msg).unwrap_err();
+
+            assert_eq!(
+                res.to_string(),
+                "Generic error: The vAMM capacity is already reached"
+            );
+            break;
+        }
+        router.execute(owner.clone(), msg).unwrap();
+    }
+}
 #[test]
 fn test_not_owner() {
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info("owner", &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -773,216 +653,11 @@ fn test_not_owner() {
 
     assert_eq!(res.to_string(), "Unauthorized");
 
-    //try to switch vamm on
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("not_the_owner", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus {
-        vamm: addr1,
-        status: true,
-    };
-
-    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-
-    assert_eq!(res.to_string(), "Unauthorized");
-
-    //try to switch vamm off
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("not_the_owner", &[]);
-    let msg = ExecuteMsg::SwitchVammStatus {
-        vamm: addr1,
-        status: false,
-    };
-
-    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-
-    assert_eq!(res.to_string(), "Unauthorized");
-
     //try to shutdown all vamms
     let info = mock_info("not_the_owner", &[]);
-    let msg = ExecuteMsg::ShutdownAllVamm {};
+    let msg = ExecuteMsg::ShutdownVamms {};
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
     assert_eq!(res.to_string(), "Unauthorized");
-}
-
-#[test]
-fn test_pagination() {
-    //instantiate contract here
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
-
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add vamm
-    let addr1 = "addr0001".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add second vamm
-    let addr2 = "addr0002".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr2 };
-
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //query only the first vamm (because we gave it limit of 1)
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVammStatus { limit: Some(1u32) },
-    )
-    .unwrap();
-
-    let res: AllVammStatusResponse = from_binary(&res).unwrap();
-    let vamms_status = res.vamm_list_status;
-
-    assert_eq!(
-        vamms_status,
-        vec![(Addr::unchecked("addr0001".to_string()), true),]
-    );
-}
-#[test]
-fn test_pagination_limit() {
-    //instantiate contract here
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
-
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add ten vamms
-    for n in 1..11 {
-        let mut addr = "addr000".to_string();
-        addr.push_str(&n.to_string());
-
-        let info = mock_info("addr0000", &[]);
-        let msg = ExecuteMsg::AddVamm { vamm: addr };
-
-        execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-    }
-
-    //query all vamms status
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVammStatus { limit: None },
-    )
-    .unwrap();
-
-    let res: AllVammStatusResponse = from_binary(&res).unwrap();
-    let vamms_status = res.vamm_list_status;
-
-    assert_eq!(
-        vamms_status,
-        vec![
-            (Addr::unchecked("addr0001".to_string()), true),
-            (Addr::unchecked("addr00010".to_string()), true),
-            (Addr::unchecked("addr0002".to_string()), true),
-            (Addr::unchecked("addr0003".to_string()), true),
-            (Addr::unchecked("addr0004".to_string()), true),
-            (Addr::unchecked("addr0005".to_string()), true),
-            (Addr::unchecked("addr0006".to_string()), true),
-            (Addr::unchecked("addr0007".to_string()), true),
-            (Addr::unchecked("addr0008".to_string()), true),
-            (Addr::unchecked("addr0009".to_string()), true),
-        ]
-    );
-
-    //query only the first five vamms
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetAllVammStatus { limit: Some(5u32) },
-    )
-    .unwrap();
-
-    let res: AllVammStatusResponse = from_binary(&res).unwrap();
-    let vamms_status = res.vamm_list_status;
-
-    assert_eq!(
-        vamms_status,
-        vec![
-            (Addr::unchecked("addr0001".to_string()), true),
-            (Addr::unchecked("addr00010".to_string()), true),
-            (Addr::unchecked("addr0002".to_string()), true),
-            (Addr::unchecked("addr0003".to_string()), true),
-            (Addr::unchecked("addr0004".to_string()), true),
-        ]
-    );
-}
-
-#[test]
-fn test_vamm_capacity() {
-    ///////////////////////////////////////////////////////
-    // Test exceeding VAMM_LIMIT by adding a single vAMM //
-    ///////////////////////////////////////////////////////
-
-    //instantiate contract here
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
-
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add ten vamms
-    for n in 1..11 {
-        let mut addr = "addr000".to_string();
-        addr.push_str(&n.to_string());
-
-        let info = mock_info("addr0000", &[]);
-        let msg = ExecuteMsg::AddVamm { vamm: addr };
-
-        execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-    }
-
-    //try to add an eleventh vamm
-    let addr1 = "addr00011".to_string();
-
-    let info = mock_info("addr0000", &[]);
-    let msg = ExecuteMsg::AddVamm { vamm: addr1 };
-
-    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-
-    assert_eq!(
-        res.to_string(),
-        "Generic error: The vAMM capacity is already reached"
-    );
-
-    ////////////////////////////////////////////
-    // Test exceeding VAMM_LIMIT via for loop //
-    ////////////////////////////////////////////
-
-    //instantiate contract again here
-    let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {};
-    let info = mock_info("addr0000", &[]);
-
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    //add eleven vamms
-    for n in 1..12 {
-        let mut addr = "addr000".to_string();
-        addr.push_str(&n.to_string());
-
-        let info = mock_info("addr0000", &[]);
-        let msg = ExecuteMsg::AddVamm { vamm: addr };
-        if n == 11 {
-            let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-
-            assert_eq!(
-                res.to_string(),
-                "Generic error: The vAMM capacity is already reached"
-            );
-            break;
-        }
-        execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-    }
 }

@@ -1,4 +1,7 @@
-use margined_perp::margined_insurance_fund::{ConfigResponse, ExecuteMsg, QueryMsg};
+use margined_perp::margined_insurance_fund::{
+    AllVammResponse, AllVammStatusResponse, ConfigResponse, ExecuteMsg, QueryMsg, VammResponse,
+    VammStatusResponse,
+};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -26,6 +29,10 @@ impl InsuranceFundController {
         .into())
     }
 
+    /////////////////////////
+    ///  Execute Messages ///
+    /////////////////////////
+
     #[allow(clippy::too_many_arguments)]
     pub fn update_config(
         &self,
@@ -35,6 +42,25 @@ impl InsuranceFundController {
         let msg = ExecuteMsg::UpdateConfig { owner, beneficiary };
         self.call(msg, vec![])
     }
+
+    pub fn add_vamm(&self, vamm: String) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::AddVamm { vamm };
+        self.call(msg, vec![])
+    }
+
+    pub fn remove_vamm(&self, vamm: String) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::RemoveVamm { vamm };
+        self.call(msg, vec![])
+    }
+
+    pub fn shutdown_vamms(&self) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::ShutdownVamms {};
+        self.call(msg, vec![])
+    }
+
+    //////////////////////
+    /// Query Messages ///
+    //////////////////////
 
     /// get margin insurance fund configuration
     pub fn config<Q: Querier>(&self, querier: &Q) -> StdResult<ConfigResponse> {
@@ -46,6 +72,70 @@ impl InsuranceFundController {
         .into();
 
         let res: ConfigResponse = QuerierWrapper::new(querier).query(&query)?;
+        Ok(res)
+    }
+
+    /// get vamm status
+    pub fn vamm_status<Q: Querier>(
+        &self,
+        vamm: String,
+        querier: &Q,
+    ) -> StdResult<VammStatusResponse> {
+        let msg = QueryMsg::GetVammStatus { vamm };
+        let query = WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&msg)?,
+        }
+        .into();
+
+        let res: VammStatusResponse = QuerierWrapper::new(querier).query(&query)?;
+        Ok(res)
+    }
+
+    /// get all the vamms status'
+    pub fn all_vamm_status<Q: Querier>(
+        &self,
+        limit: Option<u32>,
+        querier: &Q,
+    ) -> StdResult<AllVammStatusResponse> {
+        let msg = QueryMsg::GetAllVammStatus { limit };
+        let query = WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&msg)?,
+        }
+        .into();
+
+        let res: AllVammStatusResponse = QuerierWrapper::new(querier).query(&query)?;
+        Ok(res)
+    }
+
+    /// get a list of all the vamms
+    pub fn all_vamms<Q: Querier>(
+        &self,
+        limit: Option<u32>,
+        querier: &Q,
+    ) -> StdResult<AllVammResponse> {
+        let msg = QueryMsg::GetAllVamm { limit };
+        let query = WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&msg)?,
+        }
+        .into();
+
+        let res: AllVammResponse = QuerierWrapper::new(querier).query(&query)?;
+        Ok(res)
+    }
+
+    /// query if the given vamm is actually stored
+    pub fn is_vamm<Q: Querier>(&self, vamm: String, querier: &Q) -> StdResult<VammResponse> {
+        let msg = QueryMsg::IsVamm { vamm };
+        let query = WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&msg)?,
+        }
+        .into();
+
+        let res: VammResponse = QuerierWrapper::new(querier).query(&query)?;
         Ok(res)
     }
 }

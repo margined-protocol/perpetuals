@@ -1,10 +1,11 @@
-use cosmwasm_std::{Deps, StdResult};
+use cosmwasm_std::{Addr, Deps, StdResult};
 use margined_perp::margined_insurance_fund::{
     AllVammResponse, AllVammStatusResponse, ConfigResponse, VammResponse, VammStatusResponse,
 };
 
-use crate::state::{
-    is_vamm, read_all_vamm_status, read_config, read_vamm_status, read_vammlist, Config, VAMM_LIMIT,
+use crate::{
+    querier::query_vamm_open,
+    state::{is_vamm, read_config, read_vammlist, Config, VAMM_LIMIT},
 };
 
 const DEFAULT_PAGINATION_LIMIT: u32 = 10u32;
@@ -31,38 +32,44 @@ pub fn query_is_vamm(deps: Deps, vamm: String) -> StdResult<VammResponse> {
     Ok(VammResponse { is_vamm: vamm_bool })
 }
 
+/// Queries the list of vAMMs currently stored (not necessarily on)
+pub fn query_all_vamm(deps: Deps, limit: Option<u32>) -> StdResult<AllVammResponse> {
+    // set the limit for pagination
+    let limit = limit
+        .unwrap_or(DEFAULT_PAGINATION_LIMIT)
+        .min(MAX_PAGINATION_LIMIT) as usize;
+
+    let list = read_vammlist(deps, limit)?;
+    Ok(AllVammResponse { vamm_list: list })
+}
+
 /// Queries the status of the vAMM with given address
 pub fn query_vamm_status(deps: Deps, vamm: String) -> StdResult<VammStatusResponse> {
     // validate address
     let vamm_valid = deps.api.addr_validate(&vamm)?;
 
     // read the current storage and pull the vamm list
-    let vamm_bool = read_vamm_status(deps.storage, vamm_valid)?;
+    let vamm_bool = query_vamm_open(&deps, vamm_valid.to_string())?;
 
     Ok(VammStatusResponse {
         vamm_status: vamm_bool,
     })
 }
 
-/// Queries the list of vAMMs currently stored (not necessarily on)
-pub fn query_mult_vamm(deps: Deps, limit: Option<u32>) -> StdResult<AllVammResponse> {
-    // set the limit for pagination
-    let limit = limit
-        .unwrap_or(DEFAULT_PAGINATION_LIMIT)
-        .min(MAX_PAGINATION_LIMIT) as usize;
-
-    let list = read_vammlist(deps, deps.storage, limit)?;
-    Ok(AllVammResponse { vamm_list: list })
-}
-
 /// Queries the status of multiple vAMMs, returning the vAMM address and whether it is on/off
-pub fn query_status_mult_vamm(deps: Deps, limit: Option<u32>) -> StdResult<AllVammStatusResponse> {
+pub fn query_status_all_vamm(deps: Deps, limit: Option<u32>) -> StdResult<AllVammStatusResponse> {
     // set the limit for pagination
     let limit = limit
         .unwrap_or(DEFAULT_PAGINATION_LIMIT)
         .min(MAX_PAGINATION_LIMIT) as usize;
 
-    let status_list = read_all_vamm_status(deps.storage, limit)?;
+    let mut status_list: Vec<(Addr, bool)> = vec![];
+
+    for vamm in read_vammlist(deps, limit)?.iter() {
+        let vamm_bool = query_vamm_open(&deps, vamm.to_string())?;
+        status_list.push((vamm.clone(), vamm_bool));
+    }
+
     Ok(AllVammStatusResponse {
         vamm_list_status: status_list,
     })
