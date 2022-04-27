@@ -144,6 +144,27 @@ fn test_add_vamm() {
 }
 
 #[test]
+fn test_add_vamm_twice() {
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        ..
+    } = ShutdownScenario::new();
+
+    // add vamm to vammlist in insurance_fund here
+    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // try to add the same vamm here
+    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
+    let res = router.execute(owner, msg).unwrap_err();
+
+    assert_eq!(res.to_string(), "Generic error: This vAMM is already added");
+}
+
+#[test]
 fn test_add_second_vamm() {
     // this tests for adding a second vAMM, to ensure the 'push' match arm of save_vamm is used
     let ShutdownScenario {
@@ -207,6 +228,65 @@ fn test_remove_vamm() {
     let is_vamm = res.is_vamm;
 
     assert_eq!(is_vamm, false);
+}
+
+#[test]
+fn test_remove_no_vamms() {
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        ..
+    } = ShutdownScenario::new();
+
+    // check to see that there is no vAMM
+    let res = insurance_fund
+        .is_vamm(vamm1.addr().to_string(), &router)
+        .unwrap();
+    let is_vamm = res.is_vamm;
+
+    assert_eq!(is_vamm, false);
+
+    // remove the first vAMM
+    let msg = insurance_fund
+        .remove_vamm(vamm1.addr().to_string())
+        .unwrap();
+    let res = router.execute(owner, msg).unwrap_err();
+
+    assert_eq!(res.to_string(), "Generic error: No vAMMs are stored")
+}
+
+#[test]
+fn test_remove_non_existed_vamm() {
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        vamm2,
+        ..
+    } = ShutdownScenario::new();
+
+    // add first vamm to vammlist in insurance_fund here
+    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // check to see that there is one vAMM
+    let res = insurance_fund
+        .is_vamm(vamm1.addr().to_string(), &router)
+        .unwrap();
+    let is_vamm = res.is_vamm;
+
+    assert_eq!(is_vamm, true);
+
+    // remove a vAMM which isn't stored
+    let msg = insurance_fund
+        .remove_vamm(vamm2.addr().to_string())
+        .unwrap();
+    let res = router.execute(owner, msg).unwrap_err();
+
+    assert_eq!(res.to_string(), "Generic error: This vAMM has not been added")
 }
 
 #[test]

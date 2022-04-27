@@ -86,52 +86,6 @@ pub fn remove_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
     // saves the updated vamm_list
     VAMM_LIST.save(deps.storage, &vamm_list)
 }
-
-/*
-// function changes the bool stored under an address to the value of status
-// note that that means this can only be given an *existing* vamm
-pub fn vamm_switch(deps: DepsMut, input: Addr, status: bool) -> StdResult<()> {
-    // read_vamm_status will throw an error if there is no data
-    // this statement will throw an error if the vamm status is already on/off
-
-    VAMM_LIST.save(deps.storage, &input, &status)
-}
-
-// this function reads the bool stored under an addr, and if there is no addr stored there then throws an error
-// use this function when you want to check the 'on/off' status of a vAMM
-pub fn read_vamm_status(storage: &dyn Storage, input: Addr) -> StdResult<bool> {
-    VAMM_LIST
-        .load(storage, &input)
-        .map_err(|_| StdError::GenericErr {
-            msg: "No vAMM stored".to_string(),
-        })
-}
-
-// this function reads the bools stored in the Map, and if there are no vAMMs stored, returns empty vec
-// use this function when you want to check the 'on/off' status of a vAMM
-pub fn read_all_vamm_status(storage: &dyn Storage, limit: usize) -> StdResult<Vec<(Addr, bool)>> {
-    let status_vec = VAMM_LIST
-        .range(storage, None, None, Order::Ascending)
-        .take(limit)
-        .collect::<StdResult<Vec<(Vec<u8>, bool)>>>()?
-        .iter()
-        .map(|tup| {
-            (
-                Addr::unchecked(&String::from_utf8(tup.0.clone()).unwrap()),
-                tup.1,
-            )
-        })
-        .collect();
-
-    // This takes the Map in storage, loads the key-value pairs but the keys are UTF-8 encoded
-    // We collect into a StdResult<Vec> of key-value pairs but the keys are still Vec<u8>
-    // Unwrap the Result and then transform back to an iterator so we can map (Vec<u8>, bool) -> (Addr, bool)
-    // finally re-collect into a vec
-
-    Ok(status_vec)
-}
-*/
-
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
