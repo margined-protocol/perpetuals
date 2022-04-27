@@ -286,7 +286,10 @@ fn test_remove_non_existed_vamm() {
         .unwrap();
     let res = router.execute(owner, msg).unwrap_err();
 
-    assert_eq!(res.to_string(), "Generic error: This vAMM has not been added")
+    assert_eq!(
+        res.to_string(),
+        "Generic error: This vAMM has not been added"
+    )
 }
 
 #[test]
