@@ -26,6 +26,12 @@ interface CW20 {
 
 export type Asset = Native | CW20
 
+// block info stuff
+
+export async function getLatestBlockInfo(terra: LCDClient) {
+  return await terra.tendermint.blockInfo()
+}
+
 // cw20
 
 export async function queryBalanceCw20(
@@ -113,30 +119,6 @@ export async function computeTax(terra: LCDClient, coin: Coin) {
 
 export async function deductTax(terra: LCDClient, coin: Coin) {
   return coin.amount.sub(await computeTax(terra, coin)).floor()
-}
-
-// governance
-
-export async function castVote(
-  terra: LCDClient,
-  wallet: Wallet,
-  council: string,
-  proposalId: number,
-  vote: string,
-  logger?: Logger,
-) {
-  return await executeContract(
-    terra,
-    wallet,
-    council,
-    {
-      cast_vote: {
-        proposal_id: proposalId,
-        vote,
-      },
-    },
-    { logger: logger },
-  )
 }
 
 // blockchain

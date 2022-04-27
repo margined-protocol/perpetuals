@@ -2,10 +2,12 @@ import 'dotenv/config.js'
 import {
   deployContract,
   executeContract,
+  recover,
+  queryContract,
   setTimeoutDuration,
 } from './helpers.js'
 import { LCDClient, LocalTerra, Wallet } from '@terra-money/terra.js'
-import { local } from './deploy_configs.js'
+import { local, testnet } from './deploy_configs.js'
 import { join } from 'path'
 
 // consts
@@ -20,11 +22,20 @@ async function main() {
   let deployConfig: Config
   const isTestnet = process.env.NETWORK === 'testnet'
 
-  terra = new LocalTerra()
-  wallet = (terra as LocalTerra).wallets.test1
-  setTimeoutDuration(0)
-  deployConfig = local
-
+  if (process.env.NETWORK === 'testnet') {
+    console.log('ghads')
+    terra = new LCDClient({
+      URL: 'https://bombay-lcd.terra.dev',
+      chainID: 'bombay-12',
+    })
+    wallet = recover(terra, process.env.TEST_MAIN!)
+    deployConfig = testnet
+  } else {
+    terra = new LocalTerra()
+    wallet = (terra as LocalTerra).wallets.test1
+    setTimeoutDuration(0)
+    deployConfig = local
+  }
   console.log(`Wallet address from seed: ${wallet.key.accAddress}`)
 
   /****************************************** Deploy Insurance Fund Contract *****************************************/
@@ -60,7 +71,7 @@ async function main() {
   )
   console.log('ETH:UST vAMM Address: ' + vammContractAddress)
 
-  /*************************************** Deploy Vesting Contract *****************************************/
+  /*************************************** Deploy Margin Engine Contract *****************************************/
   console.log('Deploy Margin Engine...')
   deployConfig.engineInitMsg.insurance_fund = insuranceFundContractAddress
   deployConfig.engineInitMsg.fee_pool = insuranceFundContractAddress // TODO this needs its own contract
@@ -82,6 +93,13 @@ async function main() {
     },
   })
   console.log('margin engine set in vAMM')
+
+  /************************************************ Query vAMM state **********************************************/
+  console.log('Querying vAMM state...')
+  let state = await queryContract(terra, vammContractAddress, {
+    state: {},
+  })
+  console.log('vAMM state:\n', state)
 }
 
 main().catch(console.log)
