@@ -1,16 +1,9 @@
-use cosmwasm_std::{
-    to_binary, BankMsg, Coin, CosmosMsg, DepsMut, MessageInfo, ReplyOn, Response, SubMsg, Uint128,
-    WasmMsg,
-};
-use cw20::Cw20ExecuteMsg;
-use terraswap::asset::AssetInfo;
+use cosmwasm_std::{DepsMut, MessageInfo, Response};
 
 use crate::{
     error::ContractError,
-    messages::execute_vamm_shutdown,
     state::{
-        read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, store_config, Config,
-        VAMM_LIMIT,
+        read_config, remove_token as remove_token_from_list, save_token, store_config, Config,
     },
 };
 
@@ -18,7 +11,6 @@ pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,
     owner: Option<String>,
-    beneficiary: Option<String>,
 ) -> Result<Response, ContractError> {
     let mut config: Config = read_config(deps.storage)?;
 
@@ -32,37 +24,15 @@ pub fn update_config(
         config.owner = deps.api.addr_validate(owner.as_str())?;
     }
 
-    // change beneficiary of insurance fund contract
-    if let Some(beneficiary) = beneficiary {
-        config.beneficiary = deps.api.addr_validate(beneficiary.as_str())?;
-    }
-
     store_config(deps.storage, &config)?;
 
     Ok(Response::default())
 }
 
-pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> Result<Response, ContractError> {
-    let config: Config = read_config(deps.storage)?;
-
-    // check permission
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    // validate address
-    let vamm_valid = deps.api.addr_validate(&vamm)?;
-
-    // add the amm
-    save_vamm(deps, vamm_valid)?;
-
-    Ok(Response::default())
-}
-
-pub fn remove_vamm(
+pub fn add_token(
     deps: DepsMut,
     info: MessageInfo,
-    vamm: String,
+    token: String,
 ) -> Result<Response, ContractError> {
     let config: Config = read_config(deps.storage)?;
 
@@ -72,15 +42,19 @@ pub fn remove_vamm(
     }
 
     // validate address
-    let vamm_valid = deps.api.addr_validate(&vamm)?;
+    let token_valid = deps.api.addr_validate(&token)?;
 
-    // remove vamm here
-    remove_amm(deps, vamm_valid)?;
+    // add the token
+    save_token(deps, token_valid)?;
 
     Ok(Response::default())
 }
 
-pub fn shutdown_all_vamm(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+pub fn remove_token(
+    deps: DepsMut,
+    info: MessageInfo,
+    token: String,
+) -> Result<Response, ContractError> {
     let config: Config = read_config(deps.storage)?;
 
     // check permission
@@ -88,19 +62,15 @@ pub fn shutdown_all_vamm(deps: DepsMut, info: MessageInfo) -> Result<Response, C
         return Err(ContractError::Unauthorized {});
     }
 
-    // initialise the submsgs vec
-    let mut msgs = vec![];
+    // validate address
+    let token_valid = deps.api.addr_validate(&token)?;
 
-    // construct all the shutdown messages
-    let keys = read_vammlist(deps.as_ref(), VAMM_LIMIT)?;
+    // remove token here
+    remove_token_from_list(deps, token_valid)?;
 
-    for vamm in keys.iter() {
-        msgs.push(execute_vamm_shutdown(vamm.clone())?);
-    }
-
-    Ok(Response::default().add_submessages(msgs))
+    Ok(Response::default())
 }
-
+/*
 pub fn withdraw(
     deps: DepsMut,
     info: MessageInfo,
@@ -146,3 +116,4 @@ pub fn withdraw(
             ("amount", &amount.to_string()),
         ]))
 }
+*/

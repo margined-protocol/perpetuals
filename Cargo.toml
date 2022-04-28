@@ -2,6 +2,7 @@
 members = [
     "packages/*",
     "contracts/margined_engine",
+    "contracts/margined_fee_pool",
     "contracts/margined_insurance_fund",
     "contracts/margined_pricefeed",
     "contracts/margined_vamm",

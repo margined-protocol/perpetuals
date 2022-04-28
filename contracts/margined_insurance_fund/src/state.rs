@@ -18,7 +18,7 @@ pub fn save_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
         Some(value) => value,
     };
 
-    // check if we already added the vector
+    // check if we already added the vamm
     if vamm_list.contains(&input) {
         return Err(StdError::GenericErr {
             msg: "This vAMM is already added".to_string(),
@@ -32,7 +32,7 @@ pub fn save_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
         });
     };
 
-    // add the vector
+    // add the vamm to the vector
     vamm_list.push(input);
     VAMM_LIST.save(deps.storage, &vamm_list)
 }
@@ -79,7 +79,6 @@ pub fn remove_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
     }
 
     // change vamm_list
-    // Could remove the .unwrap() and replace it with .ok_or() + move the above codeblock into the .ok_or()
     let index = vamm_list.clone().iter().position(|x| x.eq(&input)).unwrap();
     vamm_list.swap_remove(index);
 
