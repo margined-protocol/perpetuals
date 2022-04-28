@@ -151,7 +151,7 @@ pub fn swap_input(
         }
     }
 
-    update_reserve(
+    let response = update_reserve(
         deps.storage,
         env,
         direction.clone(),
@@ -160,7 +160,7 @@ pub fn swap_input(
         can_go_over_fluctuation,
     )?;
 
-    Ok(Response::new().add_attributes(vec![
+    Ok(response.add_attributes(vec![
         ("action", "swap_input"),
         ("direction", &direction.to_string()),
         ("quote_asset_amount", &quote_asset_amount.to_string()),
@@ -214,7 +214,7 @@ pub fn swap_output(
         }
     }
 
-    update_reserve(
+    let response = update_reserve(
         deps.storage,
         env,
         update_direction,
@@ -223,7 +223,7 @@ pub fn swap_output(
         true,
     )?;
 
-    Ok(Response::new().add_attributes(vec![
+    Ok(response.add_attributes(vec![
         ("action", "swap_output"),
         ("direction", &direction.to_string()),
         ("quote_asset_amount", &quote_asset_amount.to_string()),
@@ -418,10 +418,20 @@ pub fn update_reserve(
 
     add_reserve_snapshot(
         storage,
-        env,
+        env.clone(),
         update_state.quote_asset_reserve,
         update_state.base_asset_reserve,
     )?;
 
-    Ok(Response::new())
+    Ok(Response::new().add_attributes(vec![
+        (
+            "quote_asset_reserve",
+            &update_state.quote_asset_reserve.to_string(),
+        ),
+        (
+            "base_asset_reserve",
+            &update_state.base_asset_reserve.to_string(),
+        ),
+        ("timestamp", &env.block.time.seconds().to_string()),
+    ]))
 }
