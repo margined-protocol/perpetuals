@@ -75,7 +75,7 @@ async function main() {
   console.log('Deploy Margin Engine...')
   deployConfig.engineInitMsg.insurance_fund = insuranceFundContractAddress
   deployConfig.engineInitMsg.fee_pool = insuranceFundContractAddress // TODO this needs its own contract
-  deployConfig.engineInitMsg.eligible_collateral = insuranceFundContractAddress // TODO this needs its own contract
+  deployConfig.engineInitMsg.eligible_collateral = 'uusd' // TODO this needs its own contract
   deployConfig.engineInitMsg.vamm = [vammContractAddress]
   const marginEngineContractAddress = await deployContract(
     terra,
@@ -93,6 +93,15 @@ async function main() {
     },
   })
   console.log('margin engine set in vAMM')
+
+  /*********************************************** Set vAMM Open ******************************************************/
+  console.log('Set vAMM Open...')
+  await executeContract(terra, wallet, vammContractAddress, {
+    set_open: {
+      open: true,
+    },
+  })
+  console.log('vAMM set to open')
 
   /************************************************ Query vAMM state **********************************************/
   console.log('Querying vAMM state...')
