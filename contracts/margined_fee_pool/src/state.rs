@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use cosmwasm_std::{Addr, Deps, DepsMut, StdError, StdResult, Storage};
 use cosmwasm_storage::{singleton, singleton_read};
 use cw_storage_plus::Item;
+use terraswap::asset::AssetInfo;
 
 pub static KEY_CONFIG: &[u8] = b"config";
 pub const TOKEN_LIST: Item<Vec<Addr>> = Item::new("token-list");
@@ -92,6 +93,7 @@ pub fn remove_token(deps: DepsMut, token: Addr) -> StdResult<()> {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
+    pub funds: AssetInfo
 }
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {

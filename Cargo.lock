@@ -575,6 +575,7 @@ dependencies = [
  "cw-multi-test",
  "cw-storage-plus 0.8.1",
  "cw20 0.9.1",
+ "margined_common",
  "margined_perp",
  "margined_utils",
  "schemars",

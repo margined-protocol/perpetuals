@@ -1,10 +1,13 @@
-use cosmwasm_std::{DepsMut, MessageInfo, Response};
+use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint128, StdError::GenericErr};
+use margined_perp::querier::query_token_balance;
+use margined_common::validate::validate_eligible_collateral as validate_funds;
+
 
 use crate::{
     error::ContractError,
     state::{
         read_config, remove_token as remove_token_from_list, save_token, store_config, Config,
-    },
+    }, messages::execute_transfer,
 };
 
 pub fn update_config(
@@ -70,50 +73,31 @@ pub fn remove_token(
 
     Ok(Response::default())
 }
-/*
-pub fn withdraw(
-    deps: DepsMut,
-    info: MessageInfo,
-    token: AssetInfo,
-    amount: Uint128,
-) -> Result<Response, ContractError> {
+
+pub fn send_token(deps: DepsMut, env: Env, info: MessageInfo, token: String, amount: Uint128, recipient: String) -> Result<Response, ContractError> {
     let config: Config = read_config(deps.storage)?;
 
-    // check permission
-    if info.sender != config.beneficiary {
+    // check permissions to send the message
+    if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
 
-    // TODO: check that the asset is accepted
+    // validate the token we want to send
+    let valid_token = validate_funds(deps.as_ref(), token)?;
 
-    // send tokens if native or cw20
-    let msg: CosmosMsg = match token {
-        AssetInfo::NativeToken { denom } => CosmosMsg::Bank(BankMsg::Send {
-            to_address: config.beneficiary.to_string(),
-            amount: vec![Coin { denom, amount }],
-        }),
-        AssetInfo::Token { contract_addr } => CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr,
-            funds: vec![],
-            msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                recipient: config.beneficiary.to_string(),
-                amount,
-            })?,
-        }),
-    };
+    // validate the recipient address
+    let valid_recipient = deps.as_ref().api.addr_validate(&recipient)?;
+    
+    // TODO: check that the token is in the token list?
 
-    let transfer_msg = SubMsg {
-        msg,
-        gas_limit: None, // probably should set a limit in the config
-        id: 0u64,
-        reply_on: ReplyOn::Never,
-    };
+    // query the balance of the given token that this contract holds
+    let balance = query_token_balance(deps.as_ref(), valid_token, env.contract.address)?;
 
-    Ok(Response::default()
-        .add_submessage(transfer_msg)
-        .add_attributes(vec![
-            ("action", "insurance_withdraw"),
-            ("amount", &amount.to_string()),
-        ]))
+    // check that the balance is sufficient to pay the amount
+    if balance < amount {
+        return Err(ContractError::Std(GenericErr {
+            msg: "Insufficient funds".to_string(),
+        }));
+    }
+    Ok(Response::default().add_submessage(execute_transfer(deps.storage, &valid_recipient, balance)?))
 }
-*/
