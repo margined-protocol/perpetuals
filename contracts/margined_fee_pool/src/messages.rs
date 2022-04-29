@@ -1,13 +1,11 @@
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, ReplyOn, StdResult, Storage, SubMsg,
-    Uint128, WasmMsg,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, ReplyOn, StdResult, Storage, SubMsg, Uint128,
+    WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use terraswap::asset::AssetInfo;
 
-use crate::{
-    state::read_config,
-};
+use crate::state::read_config;
 
 pub fn execute_transfer(
     storage: &dyn Storage,

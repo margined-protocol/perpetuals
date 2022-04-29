@@ -11,7 +11,9 @@ const FUNDS: &str = "fake_fund_address";
 #[test]
 fn test_instantiation() {
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg {funds: FUNDS.to_string()};
+    let msg = InstantiateMsg {
+        funds: FUNDS.to_string(),
+    };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -24,7 +26,9 @@ fn test_instantiation() {
 #[test]
 fn test_update_config() {
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg { funds: FUNDS.to_string() };
+    let msg = InstantiateMsg {
+        funds: FUNDS.to_string(),
+    };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -39,16 +43,15 @@ fn test_update_config() {
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
     let owner = config.owner;
-    
-    assert_eq!(
-        owner,
-        Addr::unchecked("addr0001".to_string()),
-    );
+
+    assert_eq!(owner, Addr::unchecked("addr0001".to_string()),);
 }
 #[test]
 fn test_query_token() {
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg { funds: FUNDS.to_string() };
+    let msg = InstantiateMsg {
+        funds: FUNDS.to_string(),
+    };
     let info = mock_info("owner", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -80,7 +83,9 @@ fn test_query_token() {
 fn test_query_all_token() {
     // instantiate contract here
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg { funds: FUNDS.to_string() };
+    let msg = InstantiateMsg {
+        funds: FUNDS.to_string(),
+    };
     let info = mock_info("owner", &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -135,7 +140,9 @@ fn test_query_all_token() {
 fn test_add_token() {
     // instantiate contract here
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg { funds: FUNDS.to_string() };
+    let msg = InstantiateMsg {
+        funds: FUNDS.to_string(),
+    };
     let info = mock_info("owner", &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -183,7 +190,9 @@ fn test_add_token() {
 fn test_add_token_twice() {
     // instantiate contract here
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg { funds: FUNDS.to_string() };
+    let msg = InstantiateMsg {
+        funds: FUNDS.to_string(),
+    };
     let info = mock_info("owner", &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -214,7 +223,9 @@ fn test_add_token_twice() {
 fn test_add_second_token() {
     // instantiate contract here
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg { funds: FUNDS.to_string() };
+    let msg = InstantiateMsg {
+        funds: FUNDS.to_string(),
+    };
     let info = mock_info("owner", &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -255,7 +266,9 @@ fn test_add_second_token() {
 fn test_remove_token() {
     // instantiate contract here
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg { funds: FUNDS.to_string() };
+    let msg = InstantiateMsg {
+        funds: FUNDS.to_string(),
+    };
     let info = mock_info("owner", &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -311,7 +324,9 @@ fn test_remove_token() {
 fn test_remove_when_no_tokens() {
     // instantiate contract here
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg { funds: FUNDS.to_string() };
+    let msg = InstantiateMsg {
+        funds: FUNDS.to_string(),
+    };
     let info = mock_info("owner", &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -346,7 +361,9 @@ fn test_remove_when_no_tokens() {
 fn test_remove_non_existed_token() {
     // instantiate contract here
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg { funds: FUNDS.to_string() };
+    let msg = InstantiateMsg {
+        funds: FUNDS.to_string(),
+    };
     let info = mock_info("owner", &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -394,7 +411,9 @@ fn test_token_capacity() {
 
     // instantiate contract here
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg { funds: FUNDS.to_string() };
+    let msg = InstantiateMsg {
+        funds: FUNDS.to_string(),
+    };
     let info = mock_info("owner", &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -439,7 +458,9 @@ fn test_token_capacity() {
 
     // instantiate contract here
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg { funds: FUNDS.to_string() };
+    let msg = InstantiateMsg {
+        funds: FUNDS.to_string(),
+    };
     let info = mock_info("owner", &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -475,7 +496,9 @@ fn test_token_capacity() {
 fn test_token_length() {
     // instantiate contract here
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg { funds: FUNDS.to_string() };
+    let msg = InstantiateMsg {
+        funds: FUNDS.to_string(),
+    };
     let info = mock_info("owner", &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -509,7 +532,9 @@ fn test_token_length() {
 fn test_not_owner() {
     //instantiate contract here
     let mut deps = mock_dependencies(&[]);
-    let msg = InstantiateMsg { funds: FUNDS.to_string() };
+    let msg = InstantiateMsg {
+        funds: FUNDS.to_string(),
+    };
     let info = mock_info("owner", &[]);
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();

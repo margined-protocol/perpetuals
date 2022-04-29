@@ -93,7 +93,7 @@ pub fn remove_token(deps: DepsMut, token: Addr) -> StdResult<()> {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
-    pub funds: AssetInfo
+    pub funds: AssetInfo,
 }
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
