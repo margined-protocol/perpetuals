@@ -5,7 +5,9 @@ use terraswap::asset::{Asset, AssetInfo};
 
 use crate::{
     messages::execute_insurance_fund_withdrawal,
-    querier::{query_vamm_config, query_vamm_output_price, query_vamm_output_twap},
+    querier::{
+        query_insurance_is_vamm, query_vamm_config, query_vamm_output_price, query_vamm_output_twap,
+    },
     query::query_cumulative_premium_fraction,
     state::{read_config, read_position, read_vamm, read_vamm_map, Position, State, VammList},
 };
@@ -208,10 +210,9 @@ pub fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
     Ok(position)
 }
 
-pub fn require_vamm(storage: &dyn Storage, vamm: &Addr) -> StdResult<Response> {
+pub fn require_vamm(deps: Deps, insurance: &Addr, vamm: &Addr) -> StdResult<Response> {
     // check that it is a registered vamm
-    let vamm_list: VammList = read_vamm(storage)?;
-    if !vamm_list.is_vamm(vamm.as_ref()) {
+    if !query_insurance_is_vamm(&deps, insurance.to_string(), vamm.to_string())?.is_vamm {
         return Err(StdError::generic_err("vAMM is not registered"));
     }
 
