@@ -29,7 +29,6 @@ pub struct InstantiateMsg {
     pub initial_margin_ratio: Uint128,
     pub maintenance_margin_ratio: Uint128,
     pub liquidation_fee: Uint128,
-    pub vamm: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -2,7 +2,7 @@
 use cosmwasm_std::{to_binary, Deps, QueryRequest, StdResult, Uint128, WasmQuery};
 
 use margined_perp::{
-    margined_insurance_fund::{QueryMsg as InsuranceFundQueryMsg, VammResponse},
+    margined_insurance_fund::{AllVammResponse, QueryMsg as InsuranceFundQueryMsg, VammResponse},
     margined_vamm::{CalcFeeResponse, ConfigResponse, Direction, QueryMsg, StateResponse},
 };
 
@@ -72,5 +72,17 @@ pub fn query_insurance_is_vamm(
     deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: insurance,
         msg: to_binary(&InsuranceFundQueryMsg::IsVamm { vamm })?,
+    }))
+}
+
+// returns all vamm registered in the insurance contract
+pub fn query_insurance_all_vamm(
+    deps: &Deps,
+    insurance: String,
+    limit: Option<u32>,
+) -> StdResult<AllVammResponse> {
+    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: insurance,
+        msg: to_binary(&InsuranceFundQueryMsg::GetAllVamm { limit })?,
     }))
 }

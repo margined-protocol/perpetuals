@@ -20,7 +20,6 @@ fn test_instantiation() {
         initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
         maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
         liquidation_fee: Uint128::from(100u128),
-        vamm: vec!["test".to_string()],
     };
     let info = mock_info(OWNER, &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -50,7 +49,6 @@ fn test_update_config() {
         initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
         maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
         liquidation_fee: Uint128::from(100u128),
-        vamm: vec!["test".to_string()],
     };
     let info = mock_info(OWNER, &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();

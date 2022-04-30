@@ -9,7 +9,7 @@ use crate::{
         query_insurance_is_vamm, query_vamm_config, query_vamm_output_price, query_vamm_output_twap,
     },
     query::query_cumulative_premium_fraction,
-    state::{read_config, read_position, read_vamm, read_vamm_map, Position, State, VammList},
+    state::{read_config, read_position, read_vamm_map, Position, State},
 };
 
 use margined_common::integer::Integer;

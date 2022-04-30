@@ -26,7 +26,7 @@ use crate::{
         close_position_reply, decrease_position_reply, increase_position_reply, liquidate_reply,
         partial_liquidation_reply, pay_funding_reply, reverse_position_reply,
     },
-    state::{store_config, store_state, store_vamm, Config, State},
+    state::{store_config, store_state, Config, State},
 };
 
 pub const SWAP_INCREASE_REPLY_ID: u64 = 1;
@@ -81,9 +81,6 @@ pub fn instantiate(
             pause: false,
         },
     )?;
-
-    // store default vamms
-    store_vamm(deps, &msg.vamm)?;
 
     Ok(Response::default())
 }

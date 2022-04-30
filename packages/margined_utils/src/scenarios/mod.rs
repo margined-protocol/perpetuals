@@ -134,7 +134,6 @@ impl NativeTokenScenario {
                     initial_margin_ratio: Uint128::from(50_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
                     liquidation_fee: Uint128::from(50_000u128),      // 0.05
-                    vamm: vec![vamm_addr.to_string()],
                 },
                 &[],
                 "engine",
@@ -371,7 +370,6 @@ impl SimpleScenario {
                     initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
                     liquidation_fee: Uint128::from(50_000_000u128),      // 0.05
-                    vamm: vec![vamm_addr.to_string()],
                 },
                 &[],
                 "engine",

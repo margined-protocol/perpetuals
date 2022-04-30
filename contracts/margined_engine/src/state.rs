@@ -2,11 +2,10 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
-use cosmwasm_std::{Addr, Api, DepsMut, StdError, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, StdError, StdResult, Storage, Uint128};
 use cosmwasm_storage::{
     bucket, bucket_read, singleton, singleton_read, Bucket, ReadonlyBucket, Singleton,
 };
-use cw_storage_plus::Item;
 
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
@@ -22,7 +21,6 @@ pub static KEY_SENT_FUNDS: &[u8] = b"sent-funds";
 pub static KEY_TMP_SWAP: &[u8] = b"tmp-swap";
 pub static KEY_TMP_LIQUIDATOR: &[u8] = b"tmp-liquidator";
 pub static KEY_VAMM_MAP: &[u8] = b"vamm-map";
-pub const VAMM_LIST: Item<VammList> = Item::new("vamm-list");
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
@@ -58,33 +56,6 @@ pub fn store_state(storage: &mut dyn Storage, state: &State) -> StdResult<()> {
 
 pub fn read_state(storage: &dyn Storage) -> StdResult<State> {
     singleton_read(storage, KEY_STATE).load()
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct VammList {
-    pub vamm: Vec<Addr>,
-}
-
-impl VammList {
-    /// returns true if the address is a registered vamm
-    pub fn is_vamm(&self, addr: &str) -> bool {
-        self.vamm.iter().any(|a| a.as_ref() == addr)
-    }
-}
-
-pub fn store_vamm(deps: DepsMut, input: &[String]) -> StdResult<()> {
-    let cfg = VammList {
-        vamm: map_validate(deps.api, input)?,
-    };
-    VAMM_LIST.save(deps.storage, &cfg)
-}
-
-pub fn read_vamm(storage: &dyn Storage) -> StdResult<VammList> {
-    VAMM_LIST.load(storage)
-}
-
-pub fn map_validate(api: &dyn Api, input: &[String]) -> StdResult<Vec<Addr>> {
-    input.iter().map(|addr| api.addr_validate(addr)).collect()
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
