@@ -6,7 +6,8 @@ use terraswap::asset::{Asset, AssetInfo};
 use crate::{
     messages::execute_insurance_fund_withdrawal,
     querier::{
-        query_insurance_is_vamm, query_vamm_config, query_vamm_output_price, query_vamm_output_twap,
+        query_insurance_is_vamm, query_vamm_config, query_vamm_output_price,
+        query_vamm_output_twap, query_vamm_state,
     },
     query::query_cumulative_premium_fraction,
     state::{read_config, read_position, read_vamm_map, Position, State},
@@ -214,6 +215,11 @@ pub fn require_vamm(deps: Deps, insurance: &Addr, vamm: &Addr) -> StdResult<Resp
     // check that it is a registered vamm
     if !query_insurance_is_vamm(&deps, insurance.to_string(), vamm.to_string())?.is_vamm {
         return Err(StdError::generic_err("vAMM is not registered"));
+    }
+
+    // check that vamm is open
+    if !query_vamm_state(&deps, vamm.to_string())?.open {
+        return Err(StdError::generic_err("vAMM is not open"));
     }
 
     Ok(Response::new())
