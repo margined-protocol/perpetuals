@@ -10,12 +10,12 @@ use crate::{
         query_vamm_output_twap, query_vamm_state,
     },
     query::query_cumulative_premium_fraction,
-    state::{read_config, read_position, read_vamm_map, Position, State},
+    state::{read_config, read_position, read_vamm_map, State},
 };
 
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
-    PnlCalcOption, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
+    PnlCalcOption, Position, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
 };
 use margined_perp::margined_vamm::Direction;
 

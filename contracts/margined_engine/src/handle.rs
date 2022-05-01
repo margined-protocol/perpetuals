@@ -14,8 +14,7 @@ use crate::{
     query::query_margin_ratio,
     state::{
         read_config, read_position, read_state, store_config, store_position, store_sent_funds,
-        store_state, store_tmp_liquidator, store_tmp_swap, Config, Position, SentFunds, State,
-        Swap,
+        store_state, store_tmp_liquidator, store_tmp_swap, Config, SentFunds, State, Swap,
     },
     utils::{
         calc_remain_margin_with_funding_payment, direction_to_side, get_asset, get_position,
@@ -28,7 +27,9 @@ use margined_common::{
     integer::Integer,
     validate::{validate_eligible_collateral, validate_ratio},
 };
-use margined_perp::margined_engine::{PnlCalcOption, PositionUnrealizedPnlResponse, Side};
+use margined_perp::margined_engine::{
+    PnlCalcOption, Position, PositionUnrealizedPnlResponse, Side,
+};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 
 #[allow(clippy::too_many_arguments)]

@@ -1,7 +1,7 @@
 use cosmwasm_std::{Deps, StdResult, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
-    ConfigResponse, PnlCalcOption, PositionResponse, PositionUnrealizedPnlResponse, StateResponse,
+    ConfigResponse, PnlCalcOption, Position, PositionUnrealizedPnlResponse, StateResponse,
 };
 
 use crate::{
@@ -34,7 +34,7 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
 }
 
 /// Queries user position
-pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<PositionResponse> {
+pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Position> {
     let position = read_position(
         deps.storage,
         &deps.api.addr_validate(&vamm)?,
@@ -42,35 +42,21 @@ pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Pos
     )
     .unwrap();
 
-    Ok(PositionResponse {
-        size: position.size,
-        margin: position.margin,
-        notional: position.notional,
-        last_updated_premium_fraction: position.last_updated_premium_fraction,
-        liquidity_history_index: position.liquidity_history_index,
-        block_number: position.block_number,
-    })
+    Ok(position)
 }
 
 /// Queries and returns users position for all registered vamms
-pub fn query_all_positions(deps: Deps, trader: String) -> StdResult<Vec<PositionResponse>> {
+pub fn query_all_positions(deps: Deps, trader: String) -> StdResult<Vec<Position>> {
     let config = read_config(deps.storage).unwrap();
 
-    let mut response: Vec<PositionResponse> = vec![];
+    let mut response: Vec<Position> = vec![];
 
     let vamms = query_insurance_all_vamm(&deps, config.insurance_fund.to_string(), None)?.vamm_list;
     for vamm in vamms.iter() {
         let position =
             read_position(deps.storage, vamm, &deps.api.addr_validate(&trader)?).unwrap();
 
-        response.push(PositionResponse {
-            size: position.size,
-            margin: position.margin,
-            notional: position.notional,
-            last_updated_premium_fraction: position.last_updated_premium_fraction,
-            liquidity_history_index: position.liquidity_history_index,
-            block_number: position.block_number,
-        })
+        response.push(position)
     }
 
     Ok(response)
@@ -129,7 +115,7 @@ pub fn query_trader_position_with_funding_payment(
     deps: Deps,
     vamm: String,
     trader: String,
-) -> StdResult<PositionResponse> {
+) -> StdResult<Position> {
     let config = read_config(deps.storage).unwrap();
 
     let vamm = deps.api.addr_validate(&vamm)?;
@@ -155,14 +141,7 @@ pub fn query_trader_position_with_funding_payment(
         position.margin = Uint128::zero();
     }
 
-    Ok(PositionResponse {
-        size: position.size,
-        margin: position.margin,
-        notional: position.notional,
-        last_updated_premium_fraction: position.last_updated_premium_fraction,
-        liquidity_history_index: position.liquidity_history_index,
-        block_number: position.block_number,
-    })
+    Ok(position)
 }
 
 /// Queries the margin ratio of a trader
@@ -215,3 +194,23 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
 
     Ok(margin_ratio)
 }
+
+// /// Queries the withdrawable collateral of a trader
+// pub fn query_free_collateral(deps: Deps, vamm: String, trader: String) -> StdResult<Integer> {
+//     let config: Config = read_config(deps.storage)?;
+
+//     // retrieve the latest position
+//     let position = query_trader_position_with_funding_payment(deps, vamm, trader)?;
+
+//     // get trader's unrealized PnL and choose the least beneficial one for the trader
+//     let PositionUnrealizedPnlResponse {
+//         position_notional: spot_notional,
+//         unrealized_pnl: spot_pnl,
+//     } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::SPOTPRICE)?;
+//     let PositionUnrealizedPnlResponse {
+//         position_notional: twap_notional,
+//         unrealized_pnl: twap_pnl,
+//     } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::TWAP)?;
+
+//     Ok(Integer::zero())
+// }
