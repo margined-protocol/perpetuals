@@ -52,6 +52,30 @@ pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Pos
     })
 }
 
+/// Queries and returns users position for all registered vamms
+pub fn query_all_positions(deps: Deps, trader: String) -> StdResult<Vec<PositionResponse>> {
+    let config = read_config(deps.storage).unwrap();
+
+    let mut response: Vec<PositionResponse> = vec![];
+
+    let vamms = query_insurance_all_vamm(&deps, config.insurance_fund.to_string(), None)?.vamm_list;
+    for vamm in vamms.iter() {
+        let position =
+            read_position(deps.storage, vamm, &deps.api.addr_validate(&trader)?).unwrap();
+
+        response.push(PositionResponse {
+            size: position.size,
+            margin: position.margin,
+            notional: position.notional,
+            last_updated_premium_fraction: position.last_updated_premium_fraction,
+            liquidity_history_index: position.liquidity_history_index,
+            block_number: position.block_number,
+        })
+    }
+
+    Ok(response)
+}
+
 /// Queries user position
 pub fn query_unrealized_pnl(
     deps: Deps,
@@ -85,14 +109,13 @@ pub fn query_cumulative_premium_fraction(deps: Deps, vamm: String) -> StdResult<
     Ok(result)
 }
 
-/// Queries traders balanmce across all vamms with funding payment
+/// Queries traders balance across all vamms with funding payment
 pub fn query_trader_balance_with_funding_payment(deps: Deps, trader: String) -> StdResult<Uint128> {
     let config = read_config(deps.storage).unwrap();
 
     let mut margin = Uint128::zero();
-    let vamm_list =
-        query_insurance_all_vamm(&deps, config.insurance_fund.to_string(), None)?.vamm_list;
-    for vamm in vamm_list.iter() {
+    let vamms = query_insurance_all_vamm(&deps, config.insurance_fund.to_string(), None)?.vamm_list;
+    for vamm in vamms.iter() {
         let position =
             query_trader_position_with_funding_payment(deps, vamm.to_string(), trader.clone())?;
         margin = margin.checked_add(position.margin)?;

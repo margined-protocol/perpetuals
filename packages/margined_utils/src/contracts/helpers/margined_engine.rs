@@ -235,6 +235,23 @@ impl EngineController {
         Ok(res)
     }
 
+    /// get traders positions for all registered vamms
+    pub fn get_all_positions<Q: Querier>(
+        &self,
+        querier: &Q,
+        trader: String,
+    ) -> StdResult<Vec<PositionResponse>> {
+        let msg = QueryMsg::AllPositions { trader };
+        let query = WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&msg)?,
+        }
+        .into();
+
+        let res: Vec<PositionResponse> = QuerierWrapper::new(querier).query(&query)?;
+        Ok(res)
+    }
+
     /// get unrealized profit and loss for a position
     pub fn get_unrealized_pnl<Q: Querier>(
         &self,

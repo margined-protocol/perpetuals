@@ -98,6 +98,9 @@ pub enum QueryMsg {
         vamm: String,
         trader: String,
     },
+    AllPositions {
+        trader: String,
+    },
     UnrealizedPnl {
         vamm: String,
         trader: String,

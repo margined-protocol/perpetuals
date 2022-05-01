@@ -30,6 +30,47 @@ fn test_initialization() {
 }
 
 #[test]
+fn test_get_all_positions_open_position_long() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        usdc,
+        engine,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            to_decimals(60u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    // expect to be 60
+    let margin = engine
+        .get_balance_with_funding_payment(&router, alice.to_string())
+        .unwrap();
+    assert_eq!(margin, to_decimals(60));
+
+    // personal position should be 37.5
+    let positions: Vec<PositionResponse> = engine
+        .get_all_positions(&router, alice.to_string())
+        .unwrap();
+    assert_eq!(positions[0].size, Integer::new_positive(37_500_000_000u128));
+    assert_eq!(positions[0].margin, to_decimals(60u64));
+
+    // clearing house token balance should be 60
+    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    assert_eq!(engine_balance, to_decimals(60));
+}
+
+#[test]
 fn test_open_position_long() {
     let SimpleScenario {
         mut router,

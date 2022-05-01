@@ -18,8 +18,8 @@ use crate::{
         update_config, withdraw_margin,
     },
     query::{
-        query_config, query_cumulative_premium_fraction, query_margin_ratio, query_position,
-        query_state, query_trader_balance_with_funding_payment,
+        query_all_positions, query_config, query_cumulative_premium_fraction, query_margin_ratio,
+        query_position, query_state, query_trader_balance_with_funding_payment,
         query_trader_position_with_funding_payment, query_unrealized_pnl,
     },
     reply::{
@@ -157,6 +157,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
+        QueryMsg::AllPositions { trader } => to_binary(&query_all_positions(deps, trader)?),
         QueryMsg::Position { vamm, trader } => to_binary(&query_position(deps, vamm, trader)?),
         QueryMsg::MarginRatio { vamm, trader } => {
             to_binary(&query_margin_ratio(deps, vamm, trader)?)
