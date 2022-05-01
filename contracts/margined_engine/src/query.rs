@@ -77,7 +77,7 @@ pub fn query_all_positions(deps: Deps, trader: String) -> StdResult<Vec<Position
 }
 
 /// Queries user position
-pub fn query_unrealized_pnl(
+pub fn query_position_notional_unrealized_pnl(
     deps: Deps,
     vamm: String,
     trader: String,

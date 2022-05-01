@@ -19,8 +19,8 @@ use crate::{
     },
     query::{
         query_all_positions, query_config, query_cumulative_premium_fraction, query_margin_ratio,
-        query_position, query_state, query_trader_balance_with_funding_payment,
-        query_trader_position_with_funding_payment, query_unrealized_pnl,
+        query_position, query_position_notional_unrealized_pnl, query_state,
+        query_trader_balance_with_funding_payment, query_trader_position_with_funding_payment,
     },
     reply::{
         close_position_reply, decrease_position_reply, increase_position_reply, liquidate_reply,
@@ -169,7 +169,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             vamm,
             trader,
             calc_option,
-        } => to_binary(&query_unrealized_pnl(deps, vamm, trader, calc_option)?),
+        } => to_binary(&query_position_notional_unrealized_pnl(
+            deps,
+            vamm,
+            trader,
+            calc_option,
+        )?),
         QueryMsg::BalanceWithFundingPayment { trader } => {
             to_binary(&query_trader_balance_with_funding_payment(deps, trader)?)
         }
