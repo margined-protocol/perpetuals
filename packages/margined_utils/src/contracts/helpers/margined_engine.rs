@@ -275,6 +275,24 @@ impl EngineController {
         Ok(res)
     }
 
+    /// get free collateral
+    pub fn get_free_collateral<Q: Querier>(
+        &self,
+        querier: &Q,
+        vamm: String,
+        trader: String,
+    ) -> StdResult<Integer> {
+        let msg = QueryMsg::FreeCollateral { vamm, trader };
+        let query = WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&msg)?,
+        }
+        .into();
+
+        let res: Integer = QuerierWrapper::new(querier).query(&query)?;
+        Ok(res)
+    }
+
     /// get margin ratio
     pub fn get_margin_ratio<Q: Querier>(
         &self,

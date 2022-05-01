@@ -1,5 +1,6 @@
 use cosmwasm_std::Uint128;
 use cw_multi_test::Executor;
+use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
 
@@ -230,4 +231,67 @@ fn test_remove_margin_incorrect_ratio_four_percent() {
         result.to_string(),
         "Generic error: Position is undercollateralized"
     );
+}
+
+#[test]
+fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    // reserve 1000 : 100
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            to_decimals(60u64),
+            to_decimals(5u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+    // reserve 1300 : 76.92, price = 16.9
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            to_decimals(60u64),
+            to_decimals(5u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+    // reserve 1600 : 62.5, price = 25.6
+
+    let alice_position = engine
+        .get_position_with_funding_payment(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    println!("{:?}", alice_position);
+
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(45_010_000_000u128))
+        .unwrap();
+    let result = router.execute(alice.clone(), msg).unwrap_err();
+    // assert_eq!(
+    //     result.to_string(),
+    //     "Generic error: Position is undercollateralized"
+    // );
+
+    // let free_collateral = engine
+    //     .get_free_collateral(&router, vamm.addr().to_string(), alice.to_string())
+    //     .unwrap();
+    // assert_eq!(free_collateral, Integer::new_positive(45_000_000_000u128));
+
+    // let msg = engine
+    //     .withdraw_margin(vamm.addr().to_string(), Uint128::from(45_000_000_000u128))
+    //     .unwrap();
+    // router.execute(alice.clone(), msg).unwrap();
 }

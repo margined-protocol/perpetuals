@@ -113,6 +113,10 @@ pub enum QueryMsg {
         vamm: String,
         trader: String,
     },
+    FreeCollateral {
+        vamm: String,
+        trader: String,
+    },
     BalanceWithFundingPayment {
         trader: String,
     },

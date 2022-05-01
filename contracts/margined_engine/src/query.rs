@@ -195,22 +195,60 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
     Ok(margin_ratio)
 }
 
-// /// Queries the withdrawable collateral of a trader
-// pub fn query_free_collateral(deps: Deps, vamm: String, trader: String) -> StdResult<Integer> {
-//     let config: Config = read_config(deps.storage)?;
+/// Queries the withdrawable collateral of a trader
+pub fn query_free_collateral(deps: Deps, vamm: String, trader: String) -> StdResult<Integer> {
+    let config: Config = read_config(deps.storage)?;
 
-//     // retrieve the latest position
-//     let position = query_trader_position_with_funding_payment(deps, vamm, trader)?;
+    // retrieve the latest position
+    let position = query_trader_position_with_funding_payment(deps, vamm, trader)?;
 
-//     // get trader's unrealized PnL and choose the least beneficial one for the trader
-//     let PositionUnrealizedPnlResponse {
-//         position_notional: spot_notional,
-//         unrealized_pnl: spot_pnl,
-//     } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::SPOTPRICE)?;
-//     let PositionUnrealizedPnlResponse {
-//         position_notional: twap_notional,
-//         unrealized_pnl: twap_pnl,
-//     } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::TWAP)?;
+    // get trader's unrealized PnL and choose the least beneficial one for the trader
+    let PositionUnrealizedPnlResponse {
+        position_notional: spot_notional,
+        unrealized_pnl: spot_pnl,
+    } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::SPOTPRICE)?;
+    let PositionUnrealizedPnlResponse {
+        position_notional: twap_notional,
+        unrealized_pnl: twap_pnl,
+    } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::TWAP)?;
 
-//     Ok(Integer::zero())
-// }
+    // calculate and return margin
+    let PositionUnrealizedPnlResponse {
+        position_notional,
+        unrealized_pnl,
+    } = if spot_pnl.abs() > twap_pnl.abs() {
+        PositionUnrealizedPnlResponse {
+            position_notional: twap_notional,
+            unrealized_pnl: twap_pnl,
+        }
+    } else {
+        PositionUnrealizedPnlResponse {
+            position_notional: spot_notional,
+            unrealized_pnl: spot_pnl,
+        }
+    };
+
+    // min(margin + funding, margin + funding + unrealized PnL) - position value * initMarginRatio
+    let account_value = unrealized_pnl.checked_add(Integer::new_positive(position.margin))?;
+    let minimum_collateral = if account_value
+        .checked_sub(Integer::new_positive(position.margin))?
+        .is_positive()
+    {
+        Integer::new_positive(position.margin)
+    } else {
+        account_value
+    };
+
+    let margin_requirement = if position.size.is_positive() {
+        position
+            .notional
+            .checked_mul(config.initial_margin_ratio)?
+            .checked_div(config.decimals)?
+    } else {
+        position_notional
+            .checked_mul(config.initial_margin_ratio)?
+            .checked_div(config.decimals)?
+    };
+
+    Ok(minimum_collateral.checked_sub(Integer::new_positive(margin_requirement))?)
+}
