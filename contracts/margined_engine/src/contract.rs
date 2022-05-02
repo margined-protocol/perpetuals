@@ -232,6 +232,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
 fn parse_swap(response: SubMsgExecutionResponse) -> StdResult<(Uint128, Uint128)> {
     // Find swap inputs and output events
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");
+
     let wasm = wasm.unwrap();
 
     let swap = read_event("action".to_string(), wasm).value;
