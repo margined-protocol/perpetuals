@@ -1,5 +1,6 @@
 use cosmwasm_std::{Coin, Uint128};
 use cw_multi_test::Executor;
+use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::NativeTokenScenario;
 
@@ -99,6 +100,26 @@ fn test_force_error_add_incorrect_margin() {
 }
 
 #[test]
+fn test_add_margin_no_open_position() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    let msg = engine
+        .deposit_margin(
+            vamm.addr().to_string(),
+            Uint128::from(80_000_000u64),
+            vec![Coin::new(80_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+}
+
+#[test]
 fn test_remove_margin() {
     let NativeTokenScenario {
         mut router,
@@ -183,7 +204,7 @@ fn test_remove_margin_after_paying_funding() {
     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
 
     let price: Uint128 = Uint128::from(25_500_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let timestamp: u64 = 1_000_000;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -293,8 +314,502 @@ fn test_remove_margin_incorrect_ratio_four_percent() {
         .withdraw_margin(vamm.addr().to_string(), Uint128::from(36_000_000u64))
         .unwrap();
     let result = router.execute(alice.clone(), msg).unwrap_err();
-    assert_eq!(
-        result.to_string(),
-        "Generic error: Position is undercollateralized"
-    );
+    assert_eq!(result.to_string(), "Generic error: Insufficient collateral");
+}
+
+#[test]
+fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    // reserve 1000 : 100
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(60_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0_000_000u64),
+            vec![Coin::new(60_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+    // reserve 1300 : 76.92, price = 16.9
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(60_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0_000_000u64),
+            vec![Coin::new(60_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+    // reserve 1600 : 62.5, price = 25.6
+
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(45_010_000u128))
+        .unwrap();
+    let result = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(result.to_string(), "Generic error: Insufficient collateral");
+
+    let free_collateral = engine
+        .get_free_collateral(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(free_collateral, Integer::new_positive(45_000_000u128));
+
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(45_000_000u128))
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+}
+
+#[test]
+fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    // reserve 1000 : 100
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(60_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0u64),
+            vec![Coin::new(60_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+    // reserve 1300 : 76.92, price = 16.9
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(10_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0u64),
+            vec![Coin::new(10_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+    // reserve 1250 : 80 price = 15.625
+
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(24_900_000u128))
+        .unwrap();
+    let result = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(result.to_string(), "Generic error: Insufficient collateral");
+
+    let free_collateral = engine
+        .get_free_collateral(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(free_collateral, Integer::new_positive(24_850_745u128));
+
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(24_850_745u128))
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+}
+#[test]
+fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    // reserve 1000 : 100
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0u64),
+            vec![Coin::new(20_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+    // reserve 900 : 111.11, price = 8.1
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0u64),
+            vec![Coin::new(20_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+    // reserve 800 : 125, price = 6.4
+
+    // margin: 20
+    // positionSize: -11.11
+    // positionNotional: 78.04
+    // unrealizedPnl: 100 - 78.04 = 21.96
+    // min(margin + funding, margin + funding + unrealized PnL) - position value * 5%
+    // min(20, 20 + 21.96) - 78.04 * 0.05 = 16.098
+    // can not remove margin > 16.098
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(16_500_000u128))
+        .unwrap();
+    let result = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(result.to_string(), "Generic error: Insufficient collateral");
+
+    let free_collateral = engine
+        .get_free_collateral(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(free_collateral, Integer::new_positive(16_097_561u128));
+
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(16_097_561u128))
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+}
+
+#[test]
+fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_spot_price() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    // reserve 1000 : 100
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0u64),
+            vec![Coin::new(20_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(10_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0u64),
+            vec![Coin::new(10_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+    // reserve 800 : 125, price = 6.4
+
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(2_500_000u128))
+        .unwrap();
+    let result = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(result.to_string(), "Generic error: Insufficient collateral");
+
+    let free_collateral = engine
+        .get_free_collateral(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(free_collateral, Integer::new_positive(2_282_600u128));
+
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(2_282_600u128))
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+}
+
+#[test]
+fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_twap_price() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    // reserve 1000 : 100
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(60_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0u64),
+            vec![Coin::new(60_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+    // reserve 1300 : 76.92, price = 16.9
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(450);
+        block.height += 1;
+    });
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(60_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0u64),
+            vec![Coin::new(60_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+    // reserve 1600 : 62.5, price = 25.6
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(450);
+        block.height += 1;
+    });
+
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(45_010_000u128))
+        .unwrap();
+    let result = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(result.to_string(), "Generic error: Insufficient collateral");
+
+    let free_collateral = engine
+        .get_free_collateral(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(free_collateral, Integer::new_positive(45_000_000u128));
+
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(45_000_000u128))
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+}
+
+#[test]
+fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    // reserve 1000 : 100
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(60_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0u64),
+            vec![Coin::new(60_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+    // reserve 1300 : 76.92, price = 16.9
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(450);
+        block.height += 1;
+    });
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(10_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0u64),
+            vec![Coin::new(10_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+    // reserve 1250 : 80 price = 15.625
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(450);
+        block.height += 1;
+    });
+
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(34_930_000u128))
+        .unwrap();
+    let result = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(result.to_string(), "Generic error: Insufficient collateral");
+
+    let free_collateral = engine
+        .get_free_collateral(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(free_collateral, Integer::new_positive(34_925_372u128));
+
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(34_925_372u128))
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+}
+#[test]
+fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    // reserve 1000 : 100
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0u64),
+            vec![Coin::new(20_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+    // reserve 900 : 111.11, price = 8.1
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(450);
+        block.height += 1;
+    });
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0u64),
+            vec![Coin::new(20_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+    // reserve 800 : 125, price = 6.4
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(450);
+        block.height += 1;
+    });
+
+    // margin: 20
+    // positionSize: -11.11
+    // positionNotional: 78.04
+    // unrealizedPnl: 100 - 78.04 = 21.96
+    // min(margin + funding, margin + funding + unrealized PnL) - position value * 5%
+    // min(20, 20 + 21.96) - 78.04 * 0.05 = 16.098
+    // can not remove margin > 16.098
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(15_600_000u128))
+        .unwrap();
+    let result = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(result.to_string(), "Generic error: Insufficient collateral");
+
+    let free_collateral = engine
+        .get_free_collateral(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(free_collateral, Integer::new_positive(15_548_781u128));
+
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(15_500_000u128))
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+}
+
+#[test]
+fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_twap_price() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = NativeTokenScenario::new();
+
+    // reserve 1000 : 100
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::SELL,
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0u64),
+            vec![Coin::new(20_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(450);
+        block.height += 1;
+    });
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::BUY,
+            Uint128::from(10_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0u64),
+            vec![Coin::new(10_000_000u128, "uusd")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+    // reserve 800 : 125, price = 6.4
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(450);
+        block.height += 1;
+    });
+
+    // margin: 20
+    // positionSize: -11.11
+    // positionNotional: (112.1 + 100) / 2 = 106.05
+    // unrealizedPnl: 100 - 106.05 = -6.05
+    // min(margin + funding, margin + funding + unrealized PnL) - position value * 5%
+    // min(20, 20 + (-6.05)) - 106.05 * 0.05 = 8.6475
+    // can not remove margin > 8.6475
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(8_700_000u128))
+        .unwrap();
+    let result = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(result.to_string(), "Generic error: Insufficient collateral");
+
+    let free_collateral = engine
+        .get_free_collateral(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(free_collateral, Integer::new_positive(8_641_296u128));
+
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(8_600_000u128))
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 }

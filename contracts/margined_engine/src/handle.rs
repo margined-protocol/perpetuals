@@ -11,7 +11,7 @@ use crate::{
     },
     messages::{execute_transfer_from, withdraw},
     querier::query_vamm_output_price,
-    query::query_margin_ratio,
+    query::{query_free_collateral, query_margin_ratio},
     state::{
         read_config, read_position, read_state, store_config, store_position, store_sent_funds,
         store_state, store_tmp_liquidator, store_tmp_swap, Config, SentFunds, State, Swap,
@@ -397,12 +397,19 @@ pub fn withdraw_margin(
     position.margin = remain_margin.margin;
     position.last_updated_premium_fraction = remain_margin.latest_premium_fraction;
 
-    store_position(deps.storage, &position)?;
-
     // check if margin ratio has been
-    let margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
+    let free_collateral =
+        query_free_collateral(deps.as_ref(), vamm.to_string(), trader.to_string())?;
 
-    require_margin(margin_ratio.value, config.initial_margin_ratio)?;
+    // let margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
+    if free_collateral
+        .checked_sub(Integer::new_positive(amount))?
+        .is_negative()
+    {
+        return Err(StdError::generic_err("Insufficient collateral"));
+    }
+
+    store_position(deps.storage, &position)?;
 
     // try to execute the transfer
     let msgs = withdraw(
