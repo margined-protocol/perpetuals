@@ -3,6 +3,7 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
+use cw2::set_contract_version;
 use margined_common::{integer::Integer, validate::validate_ratio};
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
@@ -17,6 +18,11 @@ use crate::{
     state::{store_config, store_reserve_snapshot, store_state, Config, ReserveSnapshot, State},
 };
 
+/// Contract name that is used for migration.
+const CONTRACT_NAME: &str = "virtual-amm";
+/// Contract version that is used for migration.
+const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 pub const MAX_ORACLE_SPREAD_RATIO: u64 = 100_000_000; // 0.1 i.e. 10%
 pub const ONE_HOUR_IN_SECONDS: u64 = 60 * 60;
 pub const ONE_DAY_IN_SECONDS: u64 = 24 * 60 * 60;
@@ -28,6 +34,8 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
     // validate the ratios, note this assumes the decimals is correct
     let decimals = Uint128::from(10u128.pow(msg.decimals as u32));
     validate_ratio(msg.toll_ratio, decimals)?;

@@ -40,7 +40,8 @@ optimize = """docker run --rm -v "$(pwd)":/code \
 """
 
 [dependencies]
-cw20 = { version = "0.9.1" } 
+cw20 = { version = "0.9.1" }
+cw2 = "0.8.0"
 cosmwasm-std = { version = "0.16.3" }
 cosmwasm-storage = { version = "0.16.3" }
 cosmwasm-bignumber = "2.2.0"

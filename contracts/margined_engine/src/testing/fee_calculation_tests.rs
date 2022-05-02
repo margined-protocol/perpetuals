@@ -1,8 +1,8 @@
 use cosmwasm_std::Uint128;
 use cw20::Cw20ExecuteMsg;
-use terra_multi_test::Executor;
 use margined_perp::margined_engine::{PnlCalcOption, Side};
 use margined_utils::scenarios::SimpleScenario;
+use terra_multi_test::Executor;
 
 #[test]
 fn test_open_position_total_fee_ten_percent() {
