@@ -59,4 +59,4 @@ cw20-base = { version = "0.9.1", features = ["library"] }
 margined_utils = { version = "0.1.0", path = "../../packages/margined_utils" }
 margined_engine = { version = "0.1.0", path = "../../contracts/margined_engine" }
 margined_pricefeed = { version = "0.1.0", path = "../../contracts/margined_pricefeed" }
-cw-multi-test = "0.9.1"
+terra-multi-test = {git = "https://github.com/astroport-fi/terra-plus.git", tag = "v0.9.1-terra"}

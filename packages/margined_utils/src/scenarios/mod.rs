@@ -4,7 +4,6 @@ use crate::contracts::helpers::{
 };
 use cosmwasm_std::{Addr, Coin, Empty, Response, Uint128};
 use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg, MinterResponse};
-use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use margined_perp::margined_engine::{InstantiateMsg, Side};
 use margined_perp::margined_insurance_fund::{
     ExecuteMsg as InsuranceFundExecuteMsg, InstantiateMsg as InsuranceFundInstantiateMsg,
@@ -13,6 +12,7 @@ use margined_perp::margined_pricefeed::InstantiateMsg as PricefeedInstantiateMsg
 use margined_perp::margined_vamm::{
     ExecuteMsg as VammExecuteMsg, InstantiateMsg as VammInstantiateMsg,
 };
+use terra_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 
 pub struct ContractInfo {
     pub addr: Addr,

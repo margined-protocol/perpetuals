@@ -25,7 +25,7 @@ use crate::{
 };
 use margined_common::{
     integer::Integer,
-    validate::{validate_eligible_collateral, validate_ratio},
+    validate::{validate_address, validate_eligible_collateral, validate_ratio},
 };
 use margined_perp::margined_engine::{
     PnlCalcOption, Position, PositionUnrealizedPnlResponse, Side,
@@ -55,17 +55,17 @@ pub fn update_config(
 
     // change owner of amm
     if let Some(owner) = owner {
-        config.owner = deps.api.addr_validate(owner.as_str())?;
+        config.owner = validate_address(deps.api, owner.as_str())?;
     }
 
     // update insurance fund
     if let Some(insurance_fund) = insurance_fund {
-        config.insurance_fund = deps.api.addr_validate(insurance_fund.as_str())?;
+        config.insurance_fund = validate_address(deps.api, insurance_fund.as_str())?;
     }
 
     // update fee pool
     if let Some(fee_pool) = fee_pool {
-        config.fee_pool = deps.api.addr_validate(fee_pool.as_str())?;
+        config.fee_pool = validate_address(deps.api, fee_pool.as_str())?;
     }
 
     // update eligible collateral
@@ -142,8 +142,8 @@ pub fn open_position(
     let state: State = read_state(deps.storage)?;
 
     // validate address inputs
-    let vamm = deps.api.addr_validate(&vamm)?;
-    let trader = deps.api.addr_validate(&trader)?;
+    let vamm = validate_address(deps.api, &vamm)?;
+    let trader = validate_address(deps.api, &trader)?;
 
     // calculate the margin ratio of new position wrt to leverage
     let margin_ratio = config
@@ -233,8 +233,8 @@ pub fn close_position(
     let state: State = read_state(deps.storage)?;
 
     // validate address inputs
-    let vamm = deps.api.addr_validate(&vamm)?;
-    let trader = deps.api.addr_validate(&trader)?;
+    let vamm = validate_address(deps.api, &vamm)?;
+    let trader = validate_address(deps.api, &trader)?;
 
     // read the position for the trader from vamm
     let position = read_position(deps.storage, &vamm, &trader).unwrap();
@@ -260,8 +260,8 @@ pub fn liquidate(
     let config: Config = read_config(deps.storage)?;
 
     // validate address inputs
-    let vamm = deps.api.addr_validate(&vamm)?;
-    let trader = deps.api.addr_validate(&trader)?;
+    let vamm = validate_address(deps.api, &vamm)?;
+    let trader = validate_address(deps.api, &trader)?;
 
     // store the liquidator
     store_tmp_liquidator(deps.storage, &info.sender)?;
@@ -300,7 +300,7 @@ pub fn pay_funding(
     let config: Config = read_config(deps.storage)?;
 
     // validate address inputs
-    let vamm = deps.api.addr_validate(&vamm)?;
+    let vamm = validate_address(deps.api, &vamm)?;
 
     // check its a valid vamm
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
@@ -330,7 +330,7 @@ pub fn deposit_margin(
     let config: Config = read_config(deps.storage)?;
     let state: State = read_state(deps.storage)?;
 
-    let vamm = deps.api.addr_validate(&vamm)?;
+    let vamm = validate_address(deps.api, &vamm)?;
     let trader = info.sender.clone();
 
     require_not_paused(state.pause)?;
@@ -379,7 +379,7 @@ pub fn withdraw_margin(
     let mut state: State = read_state(deps.storage)?;
 
     // get and validate address inputs
-    let vamm = deps.api.addr_validate(&vamm)?;
+    let vamm = validate_address(deps.api, &vamm)?;
     let trader = info.sender;
 
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;

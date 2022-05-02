@@ -1,6 +1,6 @@
 use cosmwasm_std::Uint128;
 use cw20::Cw20ExecuteMsg;
-use cw_multi_test::Executor;
+use terra_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};

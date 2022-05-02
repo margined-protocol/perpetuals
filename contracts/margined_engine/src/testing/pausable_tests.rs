@@ -1,4 +1,4 @@
-use cw_multi_test::Executor;
+use terra_multi_test::Executor;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
 

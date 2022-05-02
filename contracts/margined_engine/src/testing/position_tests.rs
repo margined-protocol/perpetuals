@@ -1,7 +1,7 @@
 // use crate::testing::setup::{self, to_decimals};
 use cosmwasm_std::Uint128;
 use cw20::Cw20ExecuteMsg;
-use cw_multi_test::Executor;
+use terra_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Position, Side};
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
