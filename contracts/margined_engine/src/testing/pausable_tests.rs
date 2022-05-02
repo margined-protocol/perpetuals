@@ -19,7 +19,7 @@ fn test_paused_by_admin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(1u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -97,7 +97,7 @@ fn test_pause_then_unpause_by_admin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(1u64),
             to_decimals(1u64),
             to_decimals(0u64),

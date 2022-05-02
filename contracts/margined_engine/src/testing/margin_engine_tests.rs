@@ -50,7 +50,7 @@ fn test_margin_engine_should_have_enough_balance_after_close_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -63,7 +63,7 @@ fn test_margin_engine_should_have_enough_balance_after_close_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(25u64),
             to_decimals(4u64),
             to_decimals(0u64),
@@ -140,7 +140,7 @@ fn test_margin_engine_does_not_have_enough_balance_after_close_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -153,7 +153,7 @@ fn test_margin_engine_does_not_have_enough_balance_after_close_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),

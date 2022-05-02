@@ -38,7 +38,7 @@ fn test_get_personal_position_with_funding_payments() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),

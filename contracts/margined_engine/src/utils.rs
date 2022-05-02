@@ -294,15 +294,15 @@ pub fn require_not_paused(paused: bool) -> StdResult<Response> {
 // takes the side (buy|sell) and returns the direction (long|short)
 pub fn side_to_direction(side: Side) -> Direction {
     match side {
-        Side::BUY => Direction::AddToAmm,
-        Side::SELL => Direction::RemoveFromAmm,
+        Side::Buy => Direction::AddToAmm,
+        Side::Sell => Direction::RemoveFromAmm,
     }
 }
 
 // takes the direction (long|short) and returns the side (buy|sell)
 pub fn direction_to_side(direction: Direction) -> Side {
     match direction {
-        Direction::AddToAmm => Side::BUY,
-        Direction::RemoveFromAmm => Side::SELL,
+        Direction::AddToAmm => Side::Buy,
+        Direction::RemoveFromAmm => Side::Sell,
     }
 }

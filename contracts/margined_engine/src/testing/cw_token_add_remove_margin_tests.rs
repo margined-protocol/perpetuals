@@ -20,7 +20,7 @@ fn test_add_margin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -82,7 +82,7 @@ fn test_remove_margin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -135,7 +135,7 @@ fn test_remove_margin_after_paying_funding() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -199,7 +199,7 @@ fn test_remove_margin_insufficient_margin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -232,7 +232,7 @@ fn test_remove_margin_incorrect_ratio_four_percent() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -266,7 +266,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price(
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -279,7 +279,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price(
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -321,7 +321,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() 
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -334,7 +334,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() 
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(10u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -375,7 +375,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -388,7 +388,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -437,7 +437,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_spot_price()
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -449,7 +449,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_spot_price()
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(10u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -491,7 +491,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_twap_price(
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -509,7 +509,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_twap_price(
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -556,7 +556,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() 
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -574,7 +574,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() 
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(10u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -620,7 +620,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -638,7 +638,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -692,7 +692,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_twap_price()
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -709,7 +709,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_twap_price()
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(10u64),
             to_decimals(5u64),
             to_decimals(0u64),

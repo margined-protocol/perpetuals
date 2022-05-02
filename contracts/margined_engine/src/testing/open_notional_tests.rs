@@ -38,7 +38,7 @@ fn test_increase_with_increase_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(600u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -85,7 +85,7 @@ fn test_reduce_when_position_is_reduced() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(600u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -97,7 +97,7 @@ fn test_reduce_when_position_is_reduced() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(300u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -144,7 +144,7 @@ fn test_reduce_when_close_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(400u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -211,7 +211,7 @@ fn test_increase_when_traders_open_positions_in_diff_directions() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(300u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -223,7 +223,7 @@ fn test_increase_when_traders_open_positions_in_diff_directions() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(300u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -270,7 +270,7 @@ fn test_increase_when_traders_open_larger_positions_in_reverse_directions() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(250u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -282,7 +282,7 @@ fn test_increase_when_traders_open_larger_positions_in_reverse_directions() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(450u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -344,7 +344,7 @@ fn test_zero_when_everyone_closes_positions() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(250u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -356,7 +356,7 @@ fn test_zero_when_everyone_closes_positions() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(250u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -428,7 +428,7 @@ fn test_zero_when_everyone_closes_positions_one_position_is_bankrupt() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(250u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -440,7 +440,7 @@ fn test_zero_when_everyone_closes_positions_one_position_is_bankrupt() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(250u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -521,7 +521,7 @@ fn test_stop_trading_if_over_open_interest_notional_cap() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(600u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -533,7 +533,7 @@ fn test_stop_trading_if_over_open_interest_notional_cap() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(1u64),
             to_decimals(1u64),
             to_decimals(0u64),

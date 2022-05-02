@@ -19,7 +19,7 @@ fn test_add_margin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
@@ -132,7 +132,7 @@ fn test_remove_margin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
@@ -187,7 +187,7 @@ fn test_remove_margin_after_paying_funding() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(0_000_000u64),
@@ -258,7 +258,7 @@ fn test_remove_margin_insufficient_margin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(0_000_000u64),
@@ -294,7 +294,7 @@ fn test_remove_margin_incorrect_ratio_four_percent() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(0_000_000u64),
@@ -332,7 +332,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price(
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0_000_000u64),
@@ -345,7 +345,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price(
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0_000_000u64),
@@ -387,7 +387,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() 
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
@@ -400,7 +400,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() 
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(10_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
@@ -441,7 +441,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
@@ -454,7 +454,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
@@ -503,7 +503,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_spot_price()
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
@@ -515,7 +515,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_spot_price()
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(10_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
@@ -557,7 +557,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_twap_price(
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
@@ -575,7 +575,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_twap_price(
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
@@ -622,7 +622,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() 
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
@@ -640,7 +640,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() 
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(10_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
@@ -686,7 +686,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
@@ -704,7 +704,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
@@ -758,7 +758,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_twap_price()
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
@@ -775,7 +775,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_twap_price()
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(10_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),

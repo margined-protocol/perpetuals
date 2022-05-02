@@ -160,8 +160,8 @@ pub fn open_position(
     let position: Position = get_position(env.clone(), deps.storage, &vamm, &trader, side.clone());
 
     // note: if direction and side are same way then increasing else we are reversing
-    let is_increase: bool = position.direction == Direction::AddToAmm && side == Side::BUY
-        || position.direction == Direction::RemoveFromAmm && side == Side::SELL;
+    let is_increase: bool = position.direction == Direction::AddToAmm && side == Side::Buy
+        || position.direction == Direction::RemoveFromAmm && side == Side::Sell;
 
     // calculate the position size
     let open_notional = quote_asset_amount
@@ -578,9 +578,9 @@ fn partial_liquidation(
         .unwrap();
 
     let side = if position.size > Integer::zero() {
-        Side::SELL
+        Side::Sell
     } else {
-        Side::BUY
+        Side::Buy
     };
 
     store_tmp_swap(

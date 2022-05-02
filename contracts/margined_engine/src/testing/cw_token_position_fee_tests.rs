@@ -30,7 +30,7 @@ fn test_ten_percent_fee_open_long_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(60_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::from(37_500_000_000u64),
@@ -82,7 +82,7 @@ fn test_ten_percent_fee_open_short_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(60_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::from(150_000_000_000u64),
@@ -134,7 +134,7 @@ fn test_ten_percent_fee_increase_long_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(25_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::from(20_000_000_000u64),
@@ -151,7 +151,7 @@ fn test_ten_percent_fee_increase_long_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(175_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::from(17_500_000_000u64),
@@ -207,7 +207,7 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(25_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::from(20_000_000_000u64),
@@ -224,7 +224,7 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(35_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::from(17_500_000_000u64),
@@ -251,7 +251,7 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(200_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::from(12_500_000_000u64),
@@ -306,7 +306,7 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(125_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::from(20_000_000_000u64),
@@ -322,7 +322,7 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(125_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::from(20_000_000_000u64),
@@ -349,7 +349,7 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(50_000_000_000u64),
             Uint128::from(5_000_000_000u64),
             Uint128::from(20_000_000_000u64),
@@ -398,7 +398,7 @@ fn test_ten_percent_fee_increase_short_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(100_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::from(25_000_000_000u64),
@@ -414,7 +414,7 @@ fn test_ten_percent_fee_increase_short_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(50_000_000_000u64),
             Uint128::from(8_000_000_000u64),
             Uint128::from(125_000_000_000u64),
@@ -474,7 +474,7 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(100_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::from(25_000_000_000u64),
@@ -490,7 +490,7 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(150_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::from(75_000_000_000u64),
@@ -520,7 +520,7 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(100_000_000_000u64),
             Uint128::from(3_000_000_000u64),
             Uint128::from(300_000_000_000u64),
@@ -570,7 +570,7 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(200_000_000_000u64),
             Uint128::from(1_000_000_000u64),
             Uint128::from(25_000_000_000u64),
@@ -586,7 +586,7 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(200_000_000_000u64),
             Uint128::from(1_000_000_000u64),
             Uint128::from(25_000_000_000u64),
@@ -616,7 +616,7 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(50_000_000_000u64),
             Uint128::from(4_000_000_000u64),
             Uint128::from(25_000_000_000u64),
@@ -662,7 +662,7 @@ fn test_ten_percent_fee_reduce_long_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(60_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::from(37_500_000_000u64),
@@ -674,7 +674,7 @@ fn test_ten_percent_fee_reduce_long_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(350_000_000_000u64),
             Uint128::from(1_000_000_000u64),
             Uint128::from(17_500_000_000u64),
@@ -721,7 +721,7 @@ fn test_ten_percent_fee_reduce_long_position_zero_fee() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(60_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::from(37_500_000_000u64),
@@ -733,7 +733,7 @@ fn test_ten_percent_fee_reduce_long_position_zero_fee() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(350_000_000_000u64),
             Uint128::from(1_000_000_000u64),
             Uint128::from(17_500_000_000u64),
@@ -781,7 +781,7 @@ fn test_ten_percent_fee_reduce_short_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(60_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::from(150_000_000_000u64),
@@ -793,7 +793,7 @@ fn test_ten_percent_fee_reduce_short_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(400_000_000_000u64),
             Uint128::from(1_000_000_000u64),
             Uint128::from(125_000_000_000u64),
@@ -842,7 +842,7 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(60_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::from(37_500_000_000u64),
@@ -854,7 +854,7 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(400_000_000_000u64),
             Uint128::from(1_000_000_000u64),
             Uint128::from(12_500_000_000u64),
@@ -879,7 +879,7 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(400_000_000_000u64),
             Uint128::from(1_000_000_000u64),
             Uint128::from(12_500_000_000u64),
@@ -931,7 +931,7 @@ fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(500_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::from(50_000_000_000u64),
@@ -943,7 +943,7 @@ fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(400_000_000_000u64),
             Uint128::from(1_000_000_000u64),
             Uint128::from(12_500_000_000u64),
@@ -968,7 +968,7 @@ fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(350_000_000_000u64),
             Uint128::from(1_000_000_000u64),
             Uint128::from(17_500_000_000u64),
@@ -1020,7 +1020,7 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(100_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::from(25_000_000_000u64),
@@ -1032,7 +1032,7 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(50_000_000_000u64),
             Uint128::from(1_000_000_000u64),
             Uint128::from(7_350_000_000u64),
@@ -1054,7 +1054,7 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(150_000_000_000u64),
             Uint128::from(1_000_000_000u64),
             Uint128::from(17_640_000_000u64),
@@ -1103,7 +1103,7 @@ fn test_ten_percent_fee_reduce_short_position_price_down_short_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(250_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::from(100_000_000_000u64),
@@ -1115,7 +1115,7 @@ fn test_ten_percent_fee_reduce_short_position_price_down_short_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(100_000_000_000u64),
             Uint128::from(1_000_000_000u64),
             Uint128::from(50_000_000_000u64),
@@ -1140,7 +1140,7 @@ fn test_ten_percent_fee_reduce_short_position_price_down_short_again() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(100_000_000_000u64),
             Uint128::from(1_000_000_000u64),
             Uint128::from(50_000_000_000u64),
@@ -1192,7 +1192,7 @@ fn test_ten_percent_fee_open_long_price_remains_close_manually() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(50_000_000_000u64),
             Uint128::from(5_000_000_000u64),
             Uint128::from(20_000_000_000u64),
@@ -1206,7 +1206,7 @@ fn test_ten_percent_fee_open_long_price_remains_close_manually() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(250_000_000_000u64),
             Uint128::from(1_000_000_000u64),
             Uint128::from(20_000_000_000u64),
@@ -1251,7 +1251,7 @@ fn test_ten_percent_fee_open_short_price_remains_close_manually() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(100_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::from(25_000_000_000u64),
@@ -1265,7 +1265,7 @@ fn test_ten_percent_fee_open_short_price_remains_close_manually() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(200_000_000_000u64),
             Uint128::from(1_000_000_000u64),
             Uint128::from(25_000_000_000u64),
@@ -1310,7 +1310,7 @@ fn test_ten_percent_fee_open_long_price_remains_close_opening_larger_short() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(125_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::from(20_000_000_000u64),
@@ -1324,7 +1324,7 @@ fn test_ten_percent_fee_open_long_price_remains_close_opening_larger_short() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(45_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::from(45_000_000_000u64),
@@ -1369,7 +1369,7 @@ fn test_ten_percent_fee_open_short_price_remains_close_opening_larger_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(20_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::from(25_000_000_000u64),
@@ -1383,7 +1383,7 @@ fn test_ten_percent_fee_open_short_price_remains_close_opening_larger_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(90_000_000_000u64),
             Uint128::from(5_000_000_000u64),
             Uint128::from(45_000_000_000u64),
@@ -1440,7 +1440,7 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(25_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::from(20_000_000_000u64),
@@ -1454,7 +1454,7 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(35_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::from(17_500_000_000u64),
@@ -1479,7 +1479,7 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(100_000_000_000u64),
             Uint128::from(8_000_000_000u64),
             Uint128::from(62_510_000_000u64),
@@ -1538,7 +1538,7 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(125_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::from(20_000_000_000u64),
@@ -1552,7 +1552,7 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(125_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::from(20_000_000_000u64),
@@ -1574,7 +1574,7 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(60_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::from(1_450_000_000_000u64),
@@ -1629,7 +1629,7 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(200_000_000_000u64),
             Uint128::from(1_000_000_000u64),
             Uint128::from(25_000_000_000u64),
@@ -1641,7 +1641,7 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(50_000_000_000u64),
             Uint128::from(4_000_000_000u64),
             Uint128::from(7_349_000_000u64),
@@ -1666,7 +1666,7 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(60_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::from(37_490_000_000u64),
@@ -1716,7 +1716,7 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(500_000_000_000u64),
             Uint128::from(1_000_000_000u64),
             Uint128::from(100_000_000_000u64),
@@ -1730,7 +1730,7 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(100_000_000_000u64),
             Uint128::from(1_000_000_000u64),
             Uint128::from(50_000_000_000u64),
@@ -1755,7 +1755,7 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(60_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::from(149_990_000_000u64),

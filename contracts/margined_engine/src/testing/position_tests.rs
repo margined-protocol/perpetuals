@@ -43,7 +43,7 @@ fn test_get_all_positions_open_position_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -84,7 +84,7 @@ fn test_open_position_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -124,7 +124,7 @@ fn test_open_position_two_longs() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -136,7 +136,7 @@ fn test_open_position_two_longs() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -171,7 +171,7 @@ fn test_open_position_two_shorts() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(40u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -183,7 +183,7 @@ fn test_open_position_two_shorts() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(40u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -219,7 +219,7 @@ fn test_open_position_equal_size_opposite_side() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -231,7 +231,7 @@ fn test_open_position_equal_size_opposite_side() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
@@ -267,7 +267,7 @@ fn test_open_position_one_long_two_shorts() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -279,7 +279,7 @@ fn test_open_position_one_long_two_shorts() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -298,7 +298,7 @@ fn test_open_position_one_long_two_shorts() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(50u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -334,7 +334,7 @@ fn test_open_position_short_and_two_longs() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(40u64),
             to_decimals(5u64),
             to_decimals(25u64),
@@ -353,7 +353,7 @@ fn test_open_position_short_and_two_longs() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::from(13_800_000_000u128),
@@ -383,7 +383,7 @@ fn test_open_position_short_and_two_longs() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(10u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -413,7 +413,7 @@ fn test_open_position_short_long_short() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -425,7 +425,7 @@ fn test_open_position_short_long_short() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(150u64),
             to_decimals(3u64),
             to_decimals(0u64),
@@ -443,7 +443,7 @@ fn test_open_position_short_long_short() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -473,7 +473,7 @@ fn test_open_position_long_short_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -485,7 +485,7 @@ fn test_open_position_long_short_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(150u64),
             to_decimals(3u64),
             to_decimals(0u64),
@@ -502,7 +502,7 @@ fn test_open_position_long_short_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(20u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -532,7 +532,7 @@ fn test_pnl_zero_no_others_trading() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(250u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -544,7 +544,7 @@ fn test_pnl_zero_no_others_trading() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(750u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -579,7 +579,7 @@ fn test_close_safe_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(50u64),
             to_decimals(2u64),
             to_decimals(0u64),
@@ -597,7 +597,7 @@ fn test_close_safe_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(10u64),
             to_decimals(6u64),
             to_decimals(0u64),
@@ -648,7 +648,7 @@ fn test_close_position_over_maintenance_margin_ration() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -665,7 +665,7 @@ fn test_close_position_over_maintenance_margin_ration() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(35_080_000_000u128),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -708,7 +708,7 @@ fn test_close_under_collateral_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -725,7 +725,7 @@ fn test_close_under_collateral_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(250u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -816,7 +816,7 @@ fn test_openclose_position_to_check_fee_is_charged() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -863,7 +863,7 @@ fn test_pnl_unrealized() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -885,7 +885,7 @@ fn test_pnl_unrealized() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(100u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -948,7 +948,7 @@ fn test_error_open_position_insufficient_balance() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -960,7 +960,7 @@ fn test_error_open_position_insufficient_balance() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -987,7 +987,7 @@ fn test_error_open_position_exceed_margin_ratio() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(21u64),
             to_decimals(0u64),
@@ -1045,7 +1045,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -1057,7 +1057,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
             to_decimals(0u64),
