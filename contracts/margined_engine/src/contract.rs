@@ -18,9 +18,10 @@ use crate::{
         update_config, withdraw_margin,
     },
     query::{
-        query_config, query_cumulative_premium_fraction, query_margin_ratio, query_position,
-        query_state, query_trader_balance_with_funding_payment,
-        query_trader_position_with_funding_payment, query_unrealized_pnl,
+        query_all_positions, query_config, query_cumulative_premium_fraction,
+        query_free_collateral, query_margin_ratio, query_position,
+        query_position_notional_unrealized_pnl, query_state,
+        query_trader_balance_with_funding_payment, query_trader_position_with_funding_payment,
     },
     reply::{
         close_position_reply, decrease_position_reply, increase_position_reply, liquidate_reply,
@@ -157,6 +158,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
+        QueryMsg::AllPositions { trader } => to_binary(&query_all_positions(deps, trader)?),
         QueryMsg::Position { vamm, trader } => to_binary(&query_position(deps, vamm, trader)?),
         QueryMsg::MarginRatio { vamm, trader } => {
             to_binary(&query_margin_ratio(deps, vamm, trader)?)
@@ -168,7 +170,15 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             vamm,
             trader,
             calc_option,
-        } => to_binary(&query_unrealized_pnl(deps, vamm, trader, calc_option)?),
+        } => to_binary(&query_position_notional_unrealized_pnl(
+            deps,
+            vamm,
+            trader,
+            calc_option,
+        )?),
+        QueryMsg::FreeCollateral { vamm, trader } => {
+            to_binary(&query_free_collateral(deps, vamm, trader)?)
+        }
         QueryMsg::BalanceWithFundingPayment { trader } => {
             to_binary(&query_trader_balance_with_funding_payment(deps, trader)?)
         }

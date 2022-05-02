@@ -1,7 +1,7 @@
 use cosmwasm_std::{Coin, Uint128};
 use cw_multi_test::Executor;
 use margined_common::integer::Integer;
-use margined_perp::margined_engine::{PnlCalcOption, PositionResponse, Side};
+use margined_perp::margined_engine::{PnlCalcOption, Position, Side};
 use margined_utils::scenarios::NativeTokenScenario;
 
 // Note: these tests also verify the 10% fees for the amm are functioning
@@ -104,7 +104,7 @@ fn test_ten_percent_fee_open_long_position() {
     let alice_balance = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
     assert_eq!(alice_balance, Uint128::new(4_880_000_000));
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
 
@@ -198,7 +198,7 @@ fn test_ten_percent_fee_open_short_position() {
     let alice_balance = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
     assert_eq!(alice_balance, Uint128::new(4_880_000_000));
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
 
@@ -314,7 +314,7 @@ fn test_ten_percent_fee_increase_long_position() {
         Uint128::from(210_000_000u128)
     );
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
 
@@ -415,7 +415,7 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
     let alice_balance_2 = router.wrap().query_balance(&alice, "uusd").unwrap().amount;
     assert_eq!(alice_balance_1 - alice_balance_2, Uint128::new(240_000_000));
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
 
@@ -520,7 +520,7 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
         Uint128::from(75_000_000u128)
     );
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
 
@@ -584,7 +584,7 @@ fn test_ten_percent_fee_increase_short_position() {
         Uint128::from(90_000_000u128)
     );
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
 
@@ -687,7 +687,7 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
         Uint128::from(130_000_000u128)
     );
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
 
@@ -779,7 +779,7 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
         Uint128::from(70_000_000u128)
     );
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
 
@@ -830,7 +830,7 @@ fn test_ten_percent_fee_reduce_long_position() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(20_000_000u128));
@@ -889,7 +889,7 @@ fn test_ten_percent_fee_reduce_long_position_zero_fee() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(20_000_000u128));
@@ -949,7 +949,7 @@ fn test_ten_percent_fee_reduce_short_position() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(25_000_000u128));
@@ -1032,7 +1032,7 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(25_000_000u128));
@@ -1115,7 +1115,7 @@ fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(32_500_000u128));
@@ -1198,7 +1198,7 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(7_352_941u128));
@@ -1281,7 +1281,7 @@ fn test_ten_percent_fee_reduce_short_position_price_down_short_again() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(50_000_000u128));
@@ -1348,7 +1348,7 @@ fn test_ten_percent_fee_open_long_price_remains_close_manually() {
         Uint128::from(25_000_000u64)
     );
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::zero());
@@ -1406,7 +1406,7 @@ fn test_ten_percent_fee_open_short_price_remains_close_manually() {
         Uint128::from(80_000_000u64)
     );
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::zero());
@@ -1463,7 +1463,7 @@ fn test_ten_percent_fee_open_long_price_remains_close_opening_larger_short() {
         Uint128::from(60_000_000u64)
     );
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(25_000_000u64));
@@ -1520,7 +1520,7 @@ fn test_ten_percent_fee_open_short_price_remains_close_opening_larger_long() {
         Uint128::from(75_000_000u64)
     );
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(20_000_000u64));
@@ -1612,7 +1612,7 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
         Uint128::from(31_363_636u64)
     );
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(42_500_000u64));
@@ -1710,7 +1710,7 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
         Uint128::from(61_666_667u64)
     );
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(130_000_000u64));
@@ -1793,7 +1793,7 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(12_499_999u64));
@@ -1883,7 +1883,7 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
         Uint128::from(640_000_000u64)
     );
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(50_000_000u64));
