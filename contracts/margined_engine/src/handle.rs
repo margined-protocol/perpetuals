@@ -151,7 +151,7 @@ pub fn open_position(
         .checked_div(leverage)?;
 
     require_not_paused(state.pause)?;
-    require_vamm(deps.storage, &vamm)?;
+    require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
     require_not_restriction_mode(deps.storage, &vamm, &trader, env.block.height)?;
     require_margin(margin_ratio, config.initial_margin_ratio)?;
 
@@ -268,7 +268,7 @@ pub fn liquidate(
     // retrieve the margin ratio of the position
     let margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
 
-    require_vamm(deps.storage, &vamm)?;
+    require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
     require_insufficient_margin(margin_ratio, config.maintenance_margin_ratio)?;
 
     // read the position for the trader from vamm
@@ -296,11 +296,13 @@ pub fn pay_funding(
     _info: MessageInfo,
     vamm: String,
 ) -> StdResult<Response> {
+    let config: Config = read_config(deps.storage)?;
+
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
 
     // check its a valid vamm
-    require_vamm(deps.storage, &vamm)?;
+    require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
 
     let funding_msg = SubMsg {
         msg: CosmosMsg::Wasm(WasmMsg::Execute {
@@ -379,7 +381,7 @@ pub fn withdraw_margin(
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = info.sender;
 
-    require_vamm(deps.storage, &vamm)?;
+    require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
     require_not_paused(state.pause)?;
 
     // read the position for the trader from vamm

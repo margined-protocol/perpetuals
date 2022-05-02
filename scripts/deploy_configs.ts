@@ -13,7 +13,6 @@ export const testnet: Config = {
     initial_margin_ratio: '50000',
     maintenance_margin_ratio: '50000',
     liquidation_fee: '50000',
-    vamm: ['', ''],
   },
   vammInitMsg: {
     decimals: 6,
@@ -43,7 +42,6 @@ export const local: Config = {
     initial_margin_ratio: '50000',
     maintenance_margin_ratio: '50000',
     liquidation_fee: '50000',
-    vamm: ['', ''],
   },
   vammInitMsg: {
     decimals: 6,

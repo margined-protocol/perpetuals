@@ -96,7 +96,6 @@ const MARGINED_ARTIFACTS_PATH = '../artifacts'
       initial_margin_ratio: '50000',
       maintenance_margin_ratio: '50000',
       liquidation_fee: '50000',
-      vamm: [vammContractAddress],
     },
   )
   console.log('Margin Engine Address: ' + marginEngineContractAddress)
@@ -109,6 +108,15 @@ const MARGINED_ARTIFACTS_PATH = '../artifacts'
     },
   })
   console.log('margin engine set in vAMM')
+
+  /************************************** Register vAMM in Insurance Fund ******************************************************/
+  console.log('Register vAMM in Insurance Fund...')
+  await executeContract(terra, owner, insuranceFundContractAddress, {
+    add_vamm: {
+      vamm: vammContractAddress,
+    },
+  })
+  console.log('vAMM registered')
 
   /******************************************** Set vAMM to open **********************************************/
   console.log('Set vAMM to open...')

@@ -5,7 +5,8 @@ use margined_perp::margined_engine::{
 };
 
 use crate::{
-    state::{read_config, read_position, read_state, read_vamm, read_vamm_map, Config, State},
+    querier::query_insurance_all_vamm,
+    state::{read_config, read_position, read_state, read_vamm_map, Config, State},
     utils::{
         calc_funding_payment, calc_remain_margin_with_funding_payment,
         get_position_notional_unrealized_pnl,
@@ -86,9 +87,12 @@ pub fn query_cumulative_premium_fraction(deps: Deps, vamm: String) -> StdResult<
 
 /// Queries traders balanmce across all vamms with funding payment
 pub fn query_trader_balance_with_funding_payment(deps: Deps, trader: String) -> StdResult<Uint128> {
+    let config = read_config(deps.storage).unwrap();
+
     let mut margin = Uint128::zero();
-    let vamm_list = read_vamm(deps.storage)?;
-    for vamm in vamm_list.vamm.iter() {
+    let vamm_list =
+        query_insurance_all_vamm(&deps, config.insurance_fund.to_string(), None)?.vamm_list;
+    for vamm in vamm_list.iter() {
         let position =
             query_trader_position_with_funding_payment(deps, vamm.to_string(), trader.clone())?;
         margin = margin.checked_add(position.margin)?;

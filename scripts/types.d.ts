@@ -9,7 +9,6 @@ interface EngineInitMsg {
   initial_margin_ratio: string
   maintenance_margin_ratio: string
   liquidation_fee: string
-  vamm: string[]
 }
 
 interface PriceFeedInitMsg {
