@@ -118,7 +118,7 @@ pub fn get_position_notional_unrealized_pnl(
     let position_size = position.size;
     if !position_size.is_zero() {
         match calc_option {
-            PnlCalcOption::TWAP => {
+            PnlCalcOption::Twap => {
                 output_notional = query_vamm_output_twap(
                     &deps,
                     position.vamm.to_string(),
@@ -126,7 +126,7 @@ pub fn get_position_notional_unrealized_pnl(
                     position_size.value,
                 )?;
             }
-            PnlCalcOption::SPOTPRICE => {
+            PnlCalcOption::SpotPrice => {
                 output_notional = query_vamm_output_price(
                     &deps,
                     position.vamm.to_string(),
@@ -134,7 +134,7 @@ pub fn get_position_notional_unrealized_pnl(
                     position_size.value,
                 )?;
             }
-            PnlCalcOption::ORACLE => {}
+            PnlCalcOption::Oracle => {}
         }
 
         // we are short if the size of the position is less than 0

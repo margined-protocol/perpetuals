@@ -189,7 +189,7 @@ pub fn open_position(
     let PositionUnrealizedPnlResponse {
         position_notional,
         unrealized_pnl,
-    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)
+    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)
         .unwrap();
 
     store_tmp_swap(
@@ -502,7 +502,7 @@ fn open_reverse_position(
     let PositionUnrealizedPnlResponse {
         position_notional,
         unrealized_pnl: _,
-    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)
+    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)
         .unwrap();
 
     // reduce position if old position is larger
@@ -574,7 +574,7 @@ fn partial_liquidation(
     let PositionUnrealizedPnlResponse {
         position_notional: _,
         unrealized_pnl,
-    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)
+    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)
         .unwrap();
 
     let side = if position.size > Integer::zero() {

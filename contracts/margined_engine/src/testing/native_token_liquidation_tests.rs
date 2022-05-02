@@ -821,7 +821,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(15_384_623u128));
@@ -831,7 +831,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::TWAP,
+            PnlCalcOption::Twap,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(9_386_068u128));
@@ -928,7 +928,7 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(1u128));
@@ -938,7 +938,7 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::TWAP,
+            PnlCalcOption::Twap,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(16_388_891u128));

@@ -15,9 +15,9 @@ pub enum Side {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum PnlCalcOption {
-    SPOTPRICE,
-    TWAP,
-    ORACLE,
+    SpotPrice,
+    Twap,
+    Oracle,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

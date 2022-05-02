@@ -224,7 +224,7 @@ fn test_open_position_close_manually_open_reverse_position_total_fee_ten_percent
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
 
@@ -293,7 +293,7 @@ fn test_open_position_close_manually_open_reverse_position_short_then_long_total
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
 
@@ -438,7 +438,6 @@ fn test_force_error_insufficient_balance_open_position_total_fee_ten_percent() {
         )
         .unwrap();
     let response = router.execute(alice.clone(), msg).unwrap_err();
-    // TODO this is correct but maybe we can improve this error message
     assert_eq!(
         response.to_string(),
         "Overflow: Cannot Sub with 29000000000 and 30000000000".to_string()

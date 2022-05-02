@@ -163,11 +163,11 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
     let PositionUnrealizedPnlResponse {
         position_notional: spot_notional,
         unrealized_pnl: spot_pnl,
-    } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::SPOTPRICE)?;
+    } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::SpotPrice)?;
     let PositionUnrealizedPnlResponse {
         position_notional: twap_notional,
         unrealized_pnl: twap_pnl,
-    } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::TWAP)?;
+    } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::Twap)?;
 
     // calculate and return margin
     let PositionUnrealizedPnlResponse {
@@ -206,11 +206,11 @@ pub fn query_free_collateral(deps: Deps, vamm: String, trader: String) -> StdRes
     let PositionUnrealizedPnlResponse {
         position_notional: spot_notional,
         unrealized_pnl: spot_pnl,
-    } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::SPOTPRICE)?;
+    } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::SpotPrice)?;
     let PositionUnrealizedPnlResponse {
         position_notional: twap_notional,
         unrealized_pnl: twap_pnl,
-    } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::TWAP)?;
+    } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::Twap)?;
 
     // calculate and return margin
     let PositionUnrealizedPnlResponse {

@@ -367,7 +367,7 @@ fn test_open_position_short_and_two_longs() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(8u64));
@@ -558,7 +558,7 @@ fn test_pnl_zero_no_others_trading() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::zero());
@@ -911,7 +911,7 @@ fn test_pnl_unrealized() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(

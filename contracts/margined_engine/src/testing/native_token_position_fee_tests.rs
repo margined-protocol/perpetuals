@@ -393,7 +393,7 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_positive(137_878_787u64));
@@ -495,7 +495,7 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(83_333_334u64));
@@ -598,7 +598,7 @@ fn test_ten_percent_fee_increase_short_position() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::zero());
@@ -661,7 +661,7 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_positive(128_571_428u64));
@@ -753,7 +753,7 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(133_333_334u64));
@@ -842,7 +842,7 @@ fn test_ten_percent_fee_reduce_long_position() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::zero());
@@ -901,7 +901,7 @@ fn test_ten_percent_fee_reduce_long_position_zero_fee() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::zero());
@@ -961,7 +961,7 @@ fn test_ten_percent_fee_reduce_short_position() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::zero());
@@ -1015,7 +1015,7 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_positive(257_142_857u64));
@@ -1044,7 +1044,7 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_positive(171_428_572u64));
@@ -1098,7 +1098,7 @@ fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(288_888_889u64));
@@ -1127,7 +1127,7 @@ fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(187_777_778u64));
@@ -1181,7 +1181,7 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(29_365_079u64));
@@ -1210,7 +1210,7 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(8_636_787u64));
@@ -1264,7 +1264,7 @@ fn test_ten_percent_fee_reduce_short_position_price_down_short_again() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_positive(233_333_333u64));
@@ -1293,7 +1293,7 @@ fn test_ten_percent_fee_reduce_short_position_price_down_short_again() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_positive(116_666_667u64));
@@ -1532,7 +1532,7 @@ fn test_ten_percent_fee_open_short_price_remains_close_opening_larger_long() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::zero());
@@ -1589,7 +1589,7 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_positive(137_878_787u64));
@@ -1624,7 +1624,7 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::zero());
@@ -1687,7 +1687,7 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(83_333_334u64));
@@ -1722,7 +1722,7 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::zero());
@@ -1776,7 +1776,7 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(133_333_334u64));
@@ -1805,7 +1805,7 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(21u64));
@@ -1860,7 +1860,7 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_positive(233_333_333u64));
