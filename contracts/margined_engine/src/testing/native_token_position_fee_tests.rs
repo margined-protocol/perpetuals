@@ -1201,9 +1201,9 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
     let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Integer::new_negative(7_352_941u128));
-    assert_eq!(position.notional, Uint128::from(70_728_291u64));
-    assert_eq!(position.margin, Uint128::from(79_271_709u64));
+    assert_eq!(position.size, Integer::new_negative(7_352_942u128));
+    assert_eq!(position.notional, Uint128::from(70_728_290u64));
+    assert_eq!(position.margin, Uint128::from(79_271_710u64));
 
     let pnl = engine
         .get_unrealized_pnl(
@@ -1213,7 +1213,7 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(8_636_787u64));
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(8_636_799u64));
 }
 
 #[test]
@@ -1615,7 +1615,7 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
     let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Integer::new_negative(42_500_000u64));
+    assert_eq!(position.size, Integer::new_negative(42_500_001u64));
     assert_eq!(position.notional, Uint128::from(412_121_213u64));
     assert_eq!(position.margin, Uint128::from(51_515_151u64));
 
@@ -1627,7 +1627,7 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.unrealized_pnl, Integer::zero());
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(9u64));
 
     let fee_pool_balance = router
         .wrap()
@@ -1713,7 +1713,7 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
     let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Integer::new_negative(130_000_000u64));
+    assert_eq!(position.size, Integer::new_negative(130_000_001u64));
     assert_eq!(position.notional, Uint128::from(433_333_334u64));
     assert_eq!(position.margin, Uint128::from(43_333_333u64));
 
@@ -1725,7 +1725,7 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.unrealized_pnl, Integer::zero());
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(3u64));
 }
 
 #[test]
@@ -1886,7 +1886,7 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
     let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Integer::new_positive(50_000_000u64));
+    assert_eq!(position.size, Integer::new_positive(49_999_999u64));
     assert_eq!(position.notional, Uint128::from(333_333_333u64));
     assert_eq!(position.margin, Uint128::from(33_333_333u64));
 }

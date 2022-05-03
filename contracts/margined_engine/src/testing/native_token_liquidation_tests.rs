@@ -1086,8 +1086,8 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
     env.router.execute(env.carol.clone(), msg).unwrap();
 
     let state = env.vamm.state(&env.router).unwrap();
-    assert_eq!(state.quote_asset_reserve, Uint128::from(1_077_551_027u128));
-    assert_eq!(state.base_asset_reserve, Uint128::from(92_803_035u128));
+    assert_eq!(state.quote_asset_reserve, Uint128::from(1_077_551_039u128));
+    assert_eq!(state.base_asset_reserve, Uint128::from(92_803_036u128));
 }
 
 #[test]
@@ -1511,7 +1511,7 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let state = env.vamm.state(&env.router).unwrap();
-    assert_eq!(state.quote_asset_reserve, Uint128::from(1_084_789_408u128));
+    assert_eq!(state.quote_asset_reserve, Uint128::from(1_084_789_420u128));
     assert_eq!(state.base_asset_reserve, Uint128::from(92_183_802u128));
 }
 

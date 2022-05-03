@@ -419,10 +419,10 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() 
     let free_collateral = engine
         .get_free_collateral(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(free_collateral, Integer::new_positive(24_850_745u128));
+    assert_eq!(free_collateral, Integer::new_positive(24_850_742u128));
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(24_850_745u128))
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(24_850_742u128))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 }
@@ -664,10 +664,10 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() 
     let free_collateral = engine
         .get_free_collateral(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
-    assert_eq!(free_collateral, Integer::new_positive(34_925_372u128));
+    assert_eq!(free_collateral, Integer::new_positive(34_925_370u128));
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(34_925_372u128))
+        .withdraw_margin(vamm.addr().to_string(), Uint128::from(34_925_370u128))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 }
