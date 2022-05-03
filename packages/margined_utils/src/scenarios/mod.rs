@@ -1,11 +1,13 @@
 use crate::contracts::helpers::{
-    margined_engine::EngineController, margined_insurance_fund::InsuranceFundController,
-    margined_pricefeed::PricefeedController, margined_vamm::VammController,
+    margined_engine::EngineController, margined_fee_pool::FeePoolController,
+    margined_insurance_fund::InsuranceFundController, margined_pricefeed::PricefeedController,
+    margined_vamm::VammController,
 };
 use cosmwasm_std::{Addr, Coin, Empty, Response, Uint128};
 use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg, MinterResponse};
 use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use margined_perp::margined_engine::{InstantiateMsg, Side};
+use margined_perp::margined_fee_pool::InstantiateMsg as FeePoolInstantiateMsg;
 use margined_perp::margined_insurance_fund::{
     ExecuteMsg as InsuranceFundExecuteMsg, InstantiateMsg as InsuranceFundInstantiateMsg,
 };
@@ -26,7 +28,7 @@ pub struct NativeTokenScenario {
     pub bob: Addr,
     pub carol: Addr,
     pub david: Addr,
-    pub fee_pool: Addr,
+    pub fee_pool: FeePoolController,
     pub vamm: VammController,
     pub engine: EngineController,
     pub pricefeed: PricefeedController,
@@ -42,7 +44,6 @@ impl NativeTokenScenario {
         let bob = Addr::unchecked("bob");
         let carol = Addr::unchecked("carol");
         let david = Addr::unchecked("david");
-        let fee_pool = Addr::unchecked("fee_pool");
         let native_denom = "uusd";
 
         let init_funds = vec![Coin::new(5_000u128 * 10u128.pow(6), native_denom)];
@@ -54,10 +55,23 @@ impl NativeTokenScenario {
             .init_bank_balance(&david, init_funds.clone())
             .unwrap();
 
+        let fee_pool_id = router.store_code(contract_fee_pool());
         let engine_id = router.store_code(contract_engine());
         let vamm_id = router.store_code(contract_vamm());
         let insurance_fund_id = router.store_code(contract_insurance_fund());
         let pricefeed_id = router.store_code(contract_mock_pricefeed());
+
+        let fee_pool_addr = router
+            .instantiate_contract(
+                fee_pool_id,
+                owner.clone(),
+                &FeePoolInstantiateMsg {},
+                &[],
+                "fee_pool",
+                None,
+            )
+            .unwrap();
+        let fee_pool = FeePoolController(fee_pool_addr);
 
         let insurance_fund_addr = router
             .instantiate_contract(
@@ -125,7 +139,7 @@ impl NativeTokenScenario {
                 &InstantiateMsg {
                     decimals: 6u8,
                     insurance_fund: insurance_fund.addr().to_string(),
-                    fee_pool: fee_pool.to_string(),
+                    fee_pool: fee_pool.addr().to_string(),
                     eligible_collateral: native_denom.to_string(),
                     initial_margin_ratio: Uint128::from(50_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
@@ -231,7 +245,7 @@ pub struct SimpleScenario {
     pub bob: Addr,
     pub carol: Addr,
     pub david: Addr,
-    pub fee_pool: Addr,
+    pub fee_pool: FeePoolController,
     pub usdc: Cw20Contract,
     pub vamm: VammController,
     pub engine: EngineController,
@@ -248,8 +262,8 @@ impl SimpleScenario {
         let bob = Addr::unchecked("bob");
         let carol = Addr::unchecked("carol");
         let david = Addr::unchecked("david");
-        let fee_pool = Addr::unchecked("fee_pool");
 
+        let fee_pool_id = router.store_code(contract_fee_pool());
         let usdc_id = router.store_code(contract_cw20());
         let engine_id = router.store_code(contract_engine());
         let vamm_id = router.store_code(contract_vamm());
@@ -267,6 +281,18 @@ impl SimpleScenario {
             )
             .unwrap();
         let insurance_fund = InsuranceFundController(insurance_fund_addr.clone());
+
+        let fee_pool_addr = router
+            .instantiate_contract(
+                fee_pool_id,
+                owner.clone(),
+                &FeePoolInstantiateMsg {},
+                &[],
+                "fee_pool",
+                None,
+            )
+            .unwrap();
+        let fee_pool = FeePoolController(fee_pool_addr);
 
         let usdc_addr = router
             .instantiate_contract(
@@ -358,7 +384,7 @@ impl SimpleScenario {
                 &InstantiateMsg {
                     decimals: 9u8,
                     insurance_fund: insurance_fund.addr().to_string(),
-                    fee_pool: fee_pool.to_string(),
+                    fee_pool: fee_pool.addr().to_string(),
                     eligible_collateral: usdc_addr.to_string(),
                     initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
@@ -820,6 +846,15 @@ fn contract_insurance_fund() -> Box<dyn Contract<Empty>> {
         margined_insurance_fund::contract::execute,
         margined_insurance_fund::contract::instantiate,
         margined_insurance_fund::contract::query,
+    );
+    Box::new(contract)
+}
+
+fn contract_fee_pool() -> Box<dyn Contract<Empty>> {
+    let contract = ContractWrapper::new_with_empty(
+        margined_fee_pool::contract::execute,
+        margined_fee_pool::contract::instantiate,
+        margined_fee_pool::contract::query,
     );
     Box::new(contract)
 }

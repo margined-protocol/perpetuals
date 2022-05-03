@@ -9,7 +9,6 @@ use crate::{
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
-use margined_common::validate::validate_eligible_collateral as validate_funds;
 use margined_perp::margined_fee_pool::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -17,14 +16,9 @@ pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    msg: InstantiateMsg,
+    _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    let valid_funds = validate_funds(deps.as_ref(), msg.funds)?;
-
-    let config = Config {
-        owner: info.sender,
-        funds: valid_funds,
-    };
+    let config = Config { owner: info.sender };
 
     store_config(deps.storage, &config)?;
 
@@ -46,7 +40,7 @@ pub fn execute(
             token,
             amount,
             recipient,
-        } => send_token(deps, env, info, token, amount, recipient),
+        } => send_token(deps.as_ref(), env, info, token, amount, recipient),
     }
 }
 

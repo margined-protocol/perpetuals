@@ -1,20 +1,11 @@
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, ReplyOn, StdResult, Storage, SubMsg, Uint128,
-    WasmMsg,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, ReplyOn, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use terraswap::asset::AssetInfo;
 
-use crate::state::read_config;
-
-pub fn execute_transfer(
-    storage: &dyn Storage,
-    receiver: &Addr,
-    amount: Uint128,
-) -> StdResult<SubMsg> {
-    let config = read_config(storage)?;
-
-    let msg: CosmosMsg = match config.funds {
+pub fn execute_transfer(token: AssetInfo, receiver: &Addr, amount: Uint128) -> StdResult<SubMsg> {
+    let msg: CosmosMsg = match token {
         AssetInfo::NativeToken { denom } => CosmosMsg::Bank(BankMsg::Send {
             to_address: receiver.to_string(),
             amount: vec![Coin { denom, amount }],

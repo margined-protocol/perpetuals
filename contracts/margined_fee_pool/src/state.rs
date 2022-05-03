@@ -7,12 +7,12 @@ use cw_storage_plus::Item;
 use terraswap::asset::AssetInfo;
 
 pub static KEY_CONFIG: &[u8] = b"config";
-pub const TOKEN_LIST: Item<Vec<Addr>> = Item::new("token-list");
+pub const TOKEN_LIST: Item<Vec<AssetInfo>> = Item::new("token-list");
 pub const TOKEN_LIMIT: usize = 3usize;
 
 // function checks if an addr is already added and adds it if not
 // We also check that we have not reached the limit of tokens here
-pub fn save_token(deps: DepsMut, input: Addr) -> StdResult<()> {
+pub fn save_token(deps: DepsMut, input: AssetInfo) -> StdResult<()> {
     // check if there is a vector
     let mut token_list = match TOKEN_LIST.may_load(deps.storage)? {
         None => vec![],
@@ -40,7 +40,7 @@ pub fn save_token(deps: DepsMut, input: Addr) -> StdResult<()> {
 
 // this function reads Addrs stored in the TOKEN_LIST.
 // note that this function ONLY takes the first TOKEN_LIMIT terms
-pub fn read_token_list(deps: Deps, limit: usize) -> StdResult<Vec<Addr>> {
+pub fn read_token_list(deps: Deps, limit: usize) -> StdResult<Vec<AssetInfo>> {
     match TOKEN_LIST.may_load(deps.storage)? {
         None => Err(StdError::GenericErr {
             msg: "No tokens are stored".to_string(),
@@ -53,7 +53,7 @@ pub fn read_token_list(deps: Deps, limit: usize) -> StdResult<Vec<Addr>> {
 }
 
 // this function checks whether the token is stored already
-pub fn is_token(storage: &dyn Storage, token: Addr) -> bool {
+pub fn is_token(storage: &dyn Storage, token: AssetInfo) -> bool {
     match TOKEN_LIST.may_load(storage).unwrap() {
         None => false,
         Some(list) => list.contains(&token),
@@ -61,7 +61,7 @@ pub fn is_token(storage: &dyn Storage, token: Addr) -> bool {
 }
 
 // this function deletes the entry under the given key
-pub fn remove_token(deps: DepsMut, token: Addr) -> StdResult<()> {
+pub fn remove_token(deps: DepsMut, token: AssetInfo) -> StdResult<()> {
     // check if there are any tokens stored
     let mut token_list = match TOKEN_LIST.may_load(deps.storage)? {
         None => {
@@ -93,7 +93,6 @@ pub fn remove_token(deps: DepsMut, token: Addr) -> StdResult<()> {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
-    pub funds: AssetInfo,
 }
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {

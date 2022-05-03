@@ -646,6 +646,7 @@ dependencies = [
  "cw20-base",
  "margined_common",
  "margined_engine",
+ "margined_fee_pool",
  "margined_insurance_fund",
  "margined_perp",
  "margined_pricefeed",

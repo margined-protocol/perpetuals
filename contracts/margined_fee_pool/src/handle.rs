@@ -1,4 +1,4 @@
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdError::GenericErr, Uint128};
+use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdError::GenericErr, Uint128};
 use margined_common::validate::validate_eligible_collateral as validate_funds;
 use margined_perp::querier::query_token_balance;
 
@@ -6,7 +6,8 @@ use crate::{
     error::ContractError,
     messages::execute_transfer,
     state::{
-        read_config, remove_token as remove_token_from_list, save_token, store_config, Config,
+        is_token, read_config, remove_token as remove_token_from_list, save_token, store_config,
+        Config,
     },
 };
 
@@ -45,10 +46,10 @@ pub fn add_token(
     }
 
     // validate address
-    let token_valid = deps.api.addr_validate(&token)?;
+    let valid_token = validate_funds(deps.as_ref(), token)?;
 
     // add the token
-    save_token(deps, token_valid)?;
+    save_token(deps, valid_token)?;
 
     Ok(Response::default())
 }
@@ -66,16 +67,16 @@ pub fn remove_token(
     }
 
     // validate address
-    let token_valid = deps.api.addr_validate(&token)?;
+    let valid_token = validate_funds(deps.as_ref(), token)?;
 
     // remove token here
-    remove_token_from_list(deps, token_valid)?;
+    remove_token_from_list(deps, valid_token)?;
 
     Ok(Response::default())
 }
 
 pub fn send_token(
-    deps: DepsMut,
+    deps: Deps,
     env: Env,
     info: MessageInfo,
     token: String,
@@ -89,16 +90,21 @@ pub fn send_token(
         return Err(ContractError::Unauthorized {});
     }
 
-    // validate the token we want to send
-    let valid_token = validate_funds(deps.as_ref(), token)?;
+    // validate the token we want to send (this also tells us if it is native token or not)
+    let valid_token = validate_funds(deps, token)?;
 
     // validate the recipient address
-    let valid_recipient = deps.as_ref().api.addr_validate(&recipient)?;
+    let valid_recipient = deps.api.addr_validate(&recipient)?;
 
-    // TODO: check that the token is in the token list?
+    // check that the token is in the token list
+    if !is_token(deps.storage, valid_token.clone()) {
+        return Err(ContractError::Std(GenericErr {
+            msg: "This token is not supported".to_string(),
+        }));
+    };
 
     // query the balance of the given token that this contract holds
-    let balance = query_token_balance(deps.as_ref(), valid_token, env.contract.address)?;
+    let balance = query_token_balance(deps, valid_token.clone(), env.contract.address)?;
 
     // check that the balance is sufficient to pay the amount
     if balance < amount {
@@ -106,9 +112,11 @@ pub fn send_token(
             msg: "Insufficient funds".to_string(),
         }));
     }
-    Ok(Response::default().add_submessage(execute_transfer(
-        deps.storage,
-        &valid_recipient,
-        balance,
-    )?))
+    Ok(
+        Response::default().add_submessage(execute_transfer(
+            valid_token,
+            &valid_recipient,
+            amount,
+        )?),
+    )
 }

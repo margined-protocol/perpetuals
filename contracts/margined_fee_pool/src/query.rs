@@ -1,4 +1,5 @@
 use cosmwasm_std::{Deps, StdResult};
+use margined_common::validate::validate_eligible_collateral as validate_funds;
 use margined_perp::margined_fee_pool::{
     AllTokenResponse, ConfigResponse, TokenLengthResponse, TokenResponse,
 };
@@ -20,10 +21,10 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 /// Queries if the token with given address is already stored
 pub fn query_is_token(deps: Deps, token: String) -> StdResult<TokenResponse> {
     // validate address
-    let token_valid = deps.api.addr_validate(&token)?;
+    let valid_token = validate_funds(deps, token)?;
 
     // read the current storage and pull the vamm status corresponding to the given addr
-    let token_bool = is_token(deps.storage, token_valid);
+    let token_bool = is_token(deps.storage, valid_token);
 
     Ok(TokenResponse {
         is_token: token_bool,
