@@ -4,12 +4,19 @@ use crate::{
     query::{query_config, query_get_previous_price, query_get_price, query_get_twap_price},
     state::{store_config, Config},
 };
+use cw2::set_contract_version;
+
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
 use margined_perp::margined_pricefeed::{ExecuteMsg, InstantiateMsg, QueryMsg};
+
+/// Contract name that is used for migration.
+const CONTRACT_NAME: &str = "pricefeed";
+/// Contract version that is used for migration.
+const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -18,6 +25,8 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
     let config = Config {
         owner: info.sender,
         decimals: Uint128::from(10u128.pow(msg.decimals as u32)),

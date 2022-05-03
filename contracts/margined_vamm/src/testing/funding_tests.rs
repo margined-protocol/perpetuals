@@ -1,6 +1,6 @@
 use cosmwasm_std::Uint128;
-use cw_multi_test::Executor;
 use margined_utils::scenarios::VammScenario;
+use terra_multi_test::Executor;
 
 #[test]
 fn test_settle_funding_delay_before_buffer_period_ends() {
