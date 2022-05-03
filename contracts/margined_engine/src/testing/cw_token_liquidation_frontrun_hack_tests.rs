@@ -102,7 +102,7 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
         .engine
         .open_position(
             env.vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::from(9_090_000_000u128),
@@ -120,7 +120,7 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
         .engine
         .open_position(
             env.vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::zero(),
@@ -139,7 +139,7 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
         .engine
         .open_position(
             env.vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::zero(),
@@ -158,7 +158,7 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
         .engine
         .open_position(
             env.vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -286,7 +286,7 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
         .engine
         .open_position(
             env.vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::from(9_090_000_000u128),
@@ -304,7 +304,7 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
         .engine
         .open_position(
             env.vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::from(7_570_000_000u128),
@@ -322,7 +322,7 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
         .engine
         .open_position(
             env.vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::from(7_580_000_000u128),
@@ -340,7 +340,7 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
         .engine
         .open_position(
             env.vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -473,7 +473,7 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
         .engine
         .open_position(
             env.vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::zero(),
@@ -491,7 +491,7 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
         .engine
         .open_position(
             env.vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::zero(),
@@ -520,7 +520,7 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
         .engine
         .open_position(
             env.vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -653,7 +653,7 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
         .engine
         .open_position(
             env.vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::from(9_090_000_000u128),
@@ -671,7 +671,7 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
         .engine
         .open_position(
             env.vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::from(7_570_000_000u128),
@@ -689,7 +689,7 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
         .engine
         .open_position(
             env.vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::from(7_580_000_000u128),
@@ -707,7 +707,7 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
         .engine
         .open_position(
             env.vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(10u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -840,7 +840,7 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
         .engine
         .open_position(
             env.vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::zero(),
@@ -858,7 +858,7 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
         .engine
         .open_position(
             env.vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::zero(),
@@ -887,7 +887,7 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
         .engine
         .open_position(
             env.vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(10u64),
             to_decimals(1u64),
             to_decimals(0u64),

@@ -8,16 +8,16 @@ use terraswap::asset::AssetInfo;
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Side {
-    BUY,
-    SELL,
+    Buy,
+    Sell,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum PnlCalcOption {
-    SPOTPRICE,
-    TWAP,
-    ORACLE,
+    SpotPrice,
+    Twap,
+    Oracle,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

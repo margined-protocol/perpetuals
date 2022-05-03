@@ -54,7 +54,7 @@ fn test_partially_liquidate_long_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
@@ -73,7 +73,7 @@ fn test_partially_liquidate_long_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(45_180_723u128),
             Uint128::from(1_000_000u64),
             Uint128::zero(),
@@ -157,7 +157,7 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
@@ -176,7 +176,7 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(45_180_723u128),
             Uint128::from(1_000_000u64),
             Uint128::zero(),
@@ -258,7 +258,7 @@ fn test_partially_liquidate_short_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
@@ -277,7 +277,7 @@ fn test_partially_liquidate_short_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(19_672_131u128),
             Uint128::from(1_000_000u64),
             Uint128::zero(),
@@ -361,7 +361,7 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
@@ -380,7 +380,7 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(19_672_131u128),
             Uint128::from(1_000_000u64),
             Uint128::zero(),
@@ -462,7 +462,7 @@ fn test_long_position_complete_liquidation() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
@@ -481,7 +481,7 @@ fn test_long_position_complete_liquidation() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(73_529_411u128),
             Uint128::from(1_000_000u64),
             Uint128::zero(),
@@ -560,7 +560,7 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
@@ -579,7 +579,7 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(73_529_411u128),
             Uint128::from(1_000_000u64),
             Uint128::zero(),
@@ -657,7 +657,7 @@ fn test_short_position_complete_liquidation() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
@@ -676,7 +676,7 @@ fn test_short_position_complete_liquidation() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(40_336_134u128),
             Uint128::from(1_000_000u64),
             Uint128::zero(),
@@ -755,7 +755,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::zero(),
@@ -774,7 +774,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::zero(),
@@ -793,7 +793,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::zero(),
@@ -821,7 +821,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(15_384_623u128));
@@ -831,7 +831,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::TWAP,
+            PnlCalcOption::Twap,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(9_386_068u128));
@@ -899,7 +899,7 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::zero(),
@@ -928,7 +928,7 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(1u128));
@@ -938,7 +938,7 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::TWAP,
+            PnlCalcOption::Twap,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(16_388_891u128));
@@ -1034,7 +1034,7 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
     // AMM after: 1100 : 90.9090909091
     env.open_small_position(
         env.bob.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
         4_000_000u128,
@@ -1046,7 +1046,7 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
     // alice get: 90.9090909091 - 83.3333333333 = 7.5757575758
     env.open_small_position(
         env.alice.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
         4_000_000u128,
@@ -1056,7 +1056,7 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
     // AMM after: 1100 : 90.9090909091, price: 12.1
     env.open_small_position(
         env.bob.clone(),
-        Side::SELL,
+        Side::Sell,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
         4_000_000u128,
@@ -1086,8 +1086,8 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
     env.router.execute(env.carol.clone(), msg).unwrap();
 
     let state = env.vamm.state(&env.router).unwrap();
-    assert_eq!(state.quote_asset_reserve, Uint128::from(1_077_551_027u128));
-    assert_eq!(state.base_asset_reserve, Uint128::from(92_803_035u128));
+    assert_eq!(state.quote_asset_reserve, Uint128::from(1_077_551_039u128));
+    assert_eq!(state.base_asset_reserve, Uint128::from(92_803_036u128));
 }
 
 #[test]
@@ -1143,7 +1143,7 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
     // actual margin ratio is 19.99...9%
     env.open_small_position(
         env.bob.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
         4_000_000u128,
@@ -1154,7 +1154,7 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
     // AMM after: quote = 1150
     env.open_small_position(
         env.carol.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(2_000_000u64),
         Uint128::from(5_000_000u64),
         2_000_000u128,
@@ -1165,7 +1165,7 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
     // AMM after: quote = 1200
     env.open_small_position(
         env.alice.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(2_000_000u64),
         Uint128::from(5_000_000u64),
         2_000_000u128,
@@ -1176,7 +1176,7 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
     // AMM after: 1100 : 90.9090909091, price: 12.1
     env.open_small_position(
         env.bob.clone(),
-        Side::SELL,
+        Side::Sell,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
         4_000_000u128,
@@ -1271,7 +1271,7 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
     // actual margin ratio is 19.99...9%
     env.open_small_position(
         env.bob.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
         4_000_000u128,
@@ -1282,7 +1282,7 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
     // AMM after: quote = 1150
     env.open_small_position(
         env.carol.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(2_000_000u64),
         Uint128::from(5_000_000u64),
         2_000_000u128,
@@ -1293,7 +1293,7 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
     // AMM after: quote = 1200
     env.open_small_position(
         env.alice.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(2_000_000u64),
         Uint128::from(5_000_000u64),
         2_000_000u128,
@@ -1305,7 +1305,7 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
     // alice + carol + david get: 90.9090909091 - 82.6446281 = 8.2644628091
     env.open_small_position(
         env.david.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(400_000u128), // 0.4
         Uint128::from(5_000_000u64),
         400_000u128,
@@ -1315,7 +1315,7 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
     // AMM after: 1110 : 90.09009009, price: 12.321
     env.open_small_position(
         env.bob.clone(),
-        Side::SELL,
+        Side::Sell,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
         4_000_000u128,
@@ -1419,7 +1419,7 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
     // AMM after: 1100 : 90.9090909091
     env.open_small_position(
         env.bob.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
         4_000_000u128,
@@ -1430,7 +1430,7 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
     // AMM after: quote = 1150 : 86.9565217391
     env.open_small_position(
         env.carol.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(2_000_000u64),
         Uint128::from(5_000_000u64),
         2_000_000u128,
@@ -1441,7 +1441,7 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
     // AMM after: quote = 1200
     env.open_small_position(
         env.alice.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(2_000_000u64),
         Uint128::from(5_000_000u64),
         2_000_000u128,
@@ -1453,7 +1453,7 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
     // alice + carol + david get: 90.9090909091 - 80 = 10.9090909091
     env.open_small_position(
         env.david.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(2_000_000u64),
         Uint128::from(5_000_000u64),
         2_000_000u128,
@@ -1463,7 +1463,7 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
     // AMM after: 1150 : 86.9565217391, price: 13.225
     env.open_small_position(
         env.bob.clone(),
-        Side::SELL,
+        Side::Sell,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
         4_000_000u128,
@@ -1511,7 +1511,7 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let state = env.vamm.state(&env.router).unwrap();
-    assert_eq!(state.quote_asset_reserve, Uint128::from(1_084_789_408u128));
+    assert_eq!(state.quote_asset_reserve, Uint128::from(1_084_789_420u128));
     assert_eq!(state.base_asset_reserve, Uint128::from(92_183_802u128));
 }
 
@@ -1562,7 +1562,7 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
     // AMM after: 1100 : 90.9090909091
     env.open_small_position(
         env.bob.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
         4_000_000u128,
@@ -1574,7 +1574,7 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
     // alice get: 90.9090909091 - 83.3333333333 = 7.5757575758
     env.open_small_position(
         env.alice.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
         4_000_000u128,
@@ -1584,7 +1584,7 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
     // AMM after: 1100 : 90.9090909091, price: 12.1
     env.open_small_position(
         env.bob.clone(),
-        Side::SELL,
+        Side::Sell,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
         4_000_000u128,
@@ -1665,7 +1665,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
     // AMM after: 1100 : 90.9090909091
     env.open_small_position(
         env.bob.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
         4_000_000u128,
@@ -1677,7 +1677,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
     // alice get: 90.9090909091 - 83.3333333333 = 7.5757575758
     env.open_small_position(
         env.alice.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
         4_000_000u128,
@@ -1687,7 +1687,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
     // AMM after: 1100 : 90.9090909091, price: 12.1
     env.open_small_position(
         env.bob.clone(),
-        Side::SELL,
+        Side::Sell,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
         4_000_000u128,
@@ -1710,7 +1710,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
         .engine
         .open_position(
             env.vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(44_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::zero(),
@@ -1810,7 +1810,7 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
     // AMM after: 1100 : 90.9090909091, price: 12.1
     env.open_small_position(
         env.bob.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(10_000_000u64),
         Uint128::from(5_000_000u64),
         10_000_000u128,
@@ -1821,7 +1821,7 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
     // AMM after: 1150 : 86.9565217391
     env.open_small_position(
         env.carol.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(5_000_000u64),
         Uint128::from(5_000_000u64),
         5_000_000u128,
@@ -1833,7 +1833,7 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
     // AMM after: 1200 : 83.3333333, price: 14.4
     env.open_small_position(
         env.alice.clone(),
-        Side::BUY,
+        Side::Buy,
         Uint128::from(5_000_000u64),
         Uint128::from(5_000_000u64),
         5_000_000u128,
@@ -1843,7 +1843,7 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
     // AMM after: 1100 : 90.9090909091, price: 12.1
     env.open_small_position(
         env.bob.clone(),
-        Side::SELL,
+        Side::Sell,
         Uint128::from(10_000_000u64),
         Uint128::from(5_000_000u64),
         10_000_000u128,
