@@ -1,11 +1,11 @@
 use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr};
-use cw_multi_test::Executor;
 use margined_perp::margined_insurance_fund::{
     ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg,
 };
 use margined_utils::scenarios::ShutdownScenario;
+use terra_multi_test::Executor;
 
 const BENEFICIARY: &str = "beneficiary";
 

@@ -1,9 +1,9 @@
 // use crate::testing::setup::{self, to_decimals};
 use cosmwasm_std::{Coin, Uint128};
-use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Side};
 use margined_utils::scenarios::NativeTokenScenario;
+use terra_multi_test::Executor;
 
 #[test]
 fn test_partially_liquidate_long_position() {

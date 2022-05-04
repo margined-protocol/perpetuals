@@ -1,7 +1,7 @@
 use cosmwasm_std::{Coin, Uint128};
-use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::NativeTokenScenario;
+use terra_multi_test::Executor;
 
 #[test]
 fn test_liquidator_can_open_position_and_liquidate_in_next_block() {

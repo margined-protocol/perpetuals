@@ -60,6 +60,15 @@ fn test_instantiation() {
             next_funding_time: 0u64,
         }
     );
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::ReserveSnapshotHeight {},
+    )
+    .unwrap();
+    let height: u64 = from_binary(&res).unwrap();
+    assert_eq!(height, 1u64);
 }
 
 #[test]

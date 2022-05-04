@@ -23,7 +23,6 @@ async function main() {
   const isTestnet = process.env.NETWORK === 'testnet'
 
   if (process.env.NETWORK === 'testnet') {
-    console.log('ghads')
     terra = new LCDClient({
       URL: 'https://bombay-lcd.terra.dev',
       chainID: 'bombay-12',

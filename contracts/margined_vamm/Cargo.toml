@@ -40,7 +40,8 @@ optimize = """docker run --rm -v "$(pwd)":/code \
 """
 
 [dependencies]
-cw20 = { version = "0.9.1" } 
+cw20 = { version = "0.9.1" }
+cw2 = "0.8.0"
 cosmwasm-std = { version = "0.16.3" }
 cosmwasm-storage = { version = "0.16.3" }
 cosmwasm-bignumber = "2.2.0"
@@ -59,4 +60,4 @@ cw20-base = { version = "0.9.1", features = ["library"] }
 margined_utils = { version = "0.1.0", path = "../../packages/margined_utils" }
 margined_engine = { version = "0.1.0", path = "../../contracts/margined_engine" }
 margined_pricefeed = { version = "0.1.0", path = "../../contracts/margined_pricefeed" }
-cw-multi-test = "0.9.1"
+terra-multi-test = {git = "https://github.com/astroport-fi/terra-plus.git", tag = "v0.9.1-terra"}

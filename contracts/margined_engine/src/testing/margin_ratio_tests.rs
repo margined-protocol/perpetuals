@@ -1,7 +1,7 @@
-use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
+use terra_multi_test::Executor;
 
 #[test]
 fn test_get_margin_ratio() {
