@@ -32,7 +32,7 @@ pub fn update_config(
         config.owner = deps.api.addr_validate(owner.as_str())?;
     }
 
-    // change owner of insurance fund contract
+    // change beneficiary of insurance fund contract
     if let Some(beneficiary) = beneficiary {
         config.beneficiary = deps.api.addr_validate(beneficiary.as_str())?;
     }

@@ -587,6 +587,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "margined_fee_pool"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-bignumber",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-storage-plus 0.8.1",
+ "cw2 0.8.1",
+ "cw20 0.9.1",
+ "margined_common",
+ "margined_perp",
+ "margined_utils",
+ "schemars",
+ "serde",
+ "terra-multi-test",
+ "terraswap",
+ "thiserror",
+]
+
+[[package]]
 name = "margined_insurance_fund"
 version = "0.1.0"
 dependencies = [
@@ -649,6 +670,7 @@ dependencies = [
  "cw20-base",
  "margined_common",
  "margined_engine",
+ "margined_fee_pool",
  "margined_insurance_fund",
  "margined_perp",
  "margined_pricefeed",

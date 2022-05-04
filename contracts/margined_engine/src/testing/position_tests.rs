@@ -841,7 +841,7 @@ fn test_openclose_position_to_check_fee_is_charged() {
         .unwrap();
     assert_eq!(insurance_balance, to_decimals(5024u64));
 
-    let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
+    let fee_pool_balance = usdc.balance(&router, fee_pool.addr().clone()).unwrap();
     assert_eq!(fee_pool_balance, to_decimals(12u64));
 }
 

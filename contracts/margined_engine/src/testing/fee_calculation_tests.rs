@@ -50,7 +50,7 @@ fn test_open_position_total_fee_ten_percent() {
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(300_000_000_000u128));
 
-    let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
+    let fee_pool_balance = usdc.balance(&router, fee_pool.addr().clone()).unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(30_000_000_000u128));
 
     let insurance_balance = usdc
@@ -120,7 +120,7 @@ fn test_open_short_position_twice_total_fee_ten_percent() {
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(100_000_000_000u128));
 
-    let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
+    let fee_pool_balance = usdc.balance(&router, fee_pool.addr().clone()).unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(10_000_000_000u128));
 
     let insurance_balance = usdc
@@ -175,7 +175,7 @@ fn test_open_and_close_position_fee_ten_percent() {
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::zero());
 
-    let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
+    let fee_pool_balance = usdc.balance(&router, fee_pool.addr().clone()).unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(60_000_000_000u128));
 
     let insurance_balance = usdc
@@ -244,7 +244,7 @@ fn test_open_position_close_manually_open_reverse_position_total_fee_ten_percent
     // 1st tx spread = 300 * 2 * 5% = 30
     // 2nd tx fee = 300 * 2 * 5% = 30
     // 2nd tx fee = 300 * 2 * 5% = 30
-    let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
+    let fee_pool_balance = usdc.balance(&router, fee_pool.addr().clone()).unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(60_000_000_000u128));
 
     let insurance_balance = usdc
@@ -313,7 +313,7 @@ fn test_open_position_close_manually_open_reverse_position_short_then_long_total
     // 1st tx spread = 300 * 2 * 5% = 30
     // 2nd tx fee = 300 * 2 * 5% = 30
     // 2nd tx fee = 300 * 2 * 5% = 30
-    let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
+    let fee_pool_balance = usdc.balance(&router, fee_pool.addr().clone()).unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(60_000_000_000u128));
 
     let insurance_balance = usdc
@@ -388,7 +388,7 @@ fn test_close_under_collateral_position_total_fee_ten_percent() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
+    let fee_pool_balance = usdc.balance(&router, fee_pool.addr().clone()).unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(15_000_000_000u128));
 }
 
@@ -479,7 +479,7 @@ fn test_has_spread_no_toll() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
+    let fee_pool_balance = usdc.balance(&router, fee_pool.addr().clone()).unwrap();
     assert_eq!(fee_pool_balance, Uint128::zero());
 
     let insurance_balance = usdc

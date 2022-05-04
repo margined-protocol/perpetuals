@@ -51,7 +51,7 @@ fn test_ten_percent_fee_open_long_position() {
     assert_eq!(position.margin, Uint128::from(60_000_000_000u64));
     assert_eq!(position.notional, Uint128::from(600_000_000_000u64));
 
-    let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
+    let fee_pool_balance = usdc.balance(&router, fee_pool.addr().clone()).unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(60_000_000_000u64));
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(60_000_000_000u64));
@@ -103,7 +103,7 @@ fn test_ten_percent_fee_open_short_position() {
     assert_eq!(position.margin, Uint128::from(60_000_000_000u64));
     assert_eq!(position.notional, Uint128::from(600_000_000_000u64));
 
-    let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
+    let fee_pool_balance = usdc.balance(&router, fee_pool.addr().clone()).unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(60_000_000_000u64));
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(60_000_000_000u64));
@@ -175,7 +175,7 @@ fn test_ten_percent_fee_increase_long_position() {
     assert_eq!(position.margin, Uint128::from(200_000_000_000u64));
     assert_eq!(position.notional, Uint128::from(600_000_000_000u64));
 
-    let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
+    let fee_pool_balance = usdc.balance(&router, fee_pool.addr().clone()).unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(60_000_000_000u64));
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(200_000_000_000u64));
@@ -275,7 +275,7 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
     assert_eq!(position.margin, Uint128::from(225_000_000_000u64));
     assert_eq!(position.notional, Uint128::from(650_000_000_000u64));
 
-    let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
+    let fee_pool_balance = usdc.balance(&router, fee_pool.addr().clone()).unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(100_000_000_000u64));
     let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(260_000_000_000u64));
@@ -1511,7 +1511,7 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(9u64));
 
-    let fee_pool_balance = usdc.balance(&router, fee_pool.clone()).unwrap();
+    let fee_pool_balance = usdc.balance(&router, fee_pool.addr().clone()).unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(140_000_000_000u64));
 }
 

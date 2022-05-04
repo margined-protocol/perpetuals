@@ -115,7 +115,7 @@ fn test_ten_percent_fee_open_long_position() {
 
     let fee_pool_balance = router
         .wrap()
-        .query_balance(&fee_pool, "uusd")
+        .query_balance(&fee_pool.addr(), "uusd")
         .unwrap()
         .amount;
     assert_eq!(fee_pool_balance, Uint128::from(60_000_000u64));
@@ -209,7 +209,7 @@ fn test_ten_percent_fee_open_short_position() {
 
     let fee_pool_balance = router
         .wrap()
-        .query_balance(&fee_pool, "uusd")
+        .query_balance(&fee_pool.addr(), "uusd")
         .unwrap()
         .amount;
     assert_eq!(fee_pool_balance, Uint128::from(60_000_000u64));
@@ -325,7 +325,7 @@ fn test_ten_percent_fee_increase_long_position() {
 
     let fee_pool_balance = router
         .wrap()
-        .query_balance(&fee_pool, "uusd")
+        .query_balance(&fee_pool.addr(), "uusd")
         .unwrap()
         .amount;
     assert_eq!(fee_pool_balance, Uint128::from(60_000_000u64));
@@ -426,7 +426,7 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
 
     let fee_pool_balance = router
         .wrap()
-        .query_balance(&fee_pool, "uusd")
+        .query_balance(&fee_pool.addr(), "uusd")
         .unwrap()
         .amount;
     assert_eq!(fee_pool_balance, Uint128::new(100_000_000));
@@ -1631,7 +1631,7 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
 
     let fee_pool_balance = router
         .wrap()
-        .query_balance(&fee_pool, "uusd")
+        .query_balance(&fee_pool.addr(), "uusd")
         .unwrap()
         .amount;
     assert_eq!(fee_pool_balance, Uint128::from(140_000_000u64));
