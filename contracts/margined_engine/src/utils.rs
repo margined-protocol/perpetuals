@@ -5,14 +5,17 @@ use terraswap::asset::{Asset, AssetInfo};
 
 use crate::{
     messages::execute_insurance_fund_withdrawal,
-    querier::{query_vamm_config, query_vamm_output_price, query_vamm_output_twap},
+    querier::{
+        query_insurance_is_vamm, query_vamm_config, query_vamm_output_price,
+        query_vamm_output_twap, query_vamm_state,
+    },
     query::query_cumulative_premium_fraction,
-    state::{read_config, read_position, read_vamm, read_vamm_map, Position, State, VammList},
+    state::{read_config, read_position, read_vamm_map, State},
 };
 
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
-    PnlCalcOption, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
+    PnlCalcOption, Position, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
 };
 use margined_perp::margined_vamm::Direction;
 
@@ -115,7 +118,7 @@ pub fn get_position_notional_unrealized_pnl(
     let position_size = position.size;
     if !position_size.is_zero() {
         match calc_option {
-            PnlCalcOption::TWAP => {
+            PnlCalcOption::Twap => {
                 output_notional = query_vamm_output_twap(
                     &deps,
                     position.vamm.to_string(),
@@ -123,7 +126,7 @@ pub fn get_position_notional_unrealized_pnl(
                     position_size.value,
                 )?;
             }
-            PnlCalcOption::SPOTPRICE => {
+            PnlCalcOption::SpotPrice => {
                 output_notional = query_vamm_output_price(
                     &deps,
                     position.vamm.to_string(),
@@ -131,7 +134,7 @@ pub fn get_position_notional_unrealized_pnl(
                     position_size.value,
                 )?;
             }
-            PnlCalcOption::ORACLE => {}
+            PnlCalcOption::Oracle => {}
         }
 
         // we are short if the size of the position is less than 0
@@ -208,11 +211,15 @@ pub fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
     Ok(position)
 }
 
-pub fn require_vamm(storage: &dyn Storage, vamm: &Addr) -> StdResult<Response> {
+pub fn require_vamm(deps: Deps, insurance: &Addr, vamm: &Addr) -> StdResult<Response> {
     // check that it is a registered vamm
-    let vamm_list: VammList = read_vamm(storage)?;
-    if !vamm_list.is_vamm(vamm.as_ref()) {
+    if !query_insurance_is_vamm(&deps, insurance.to_string(), vamm.to_string())?.is_vamm {
         return Err(StdError::generic_err("vAMM is not registered"));
+    }
+
+    // check that vamm is open
+    if !query_vamm_state(&deps, vamm.to_string())?.open {
+        return Err(StdError::generic_err("vAMM is not open"));
     }
 
     Ok(Response::new())
@@ -287,15 +294,15 @@ pub fn require_not_paused(paused: bool) -> StdResult<Response> {
 // takes the side (buy|sell) and returns the direction (long|short)
 pub fn side_to_direction(side: Side) -> Direction {
     match side {
-        Side::BUY => Direction::AddToAmm,
-        Side::SELL => Direction::RemoveFromAmm,
+        Side::Buy => Direction::AddToAmm,
+        Side::Sell => Direction::RemoveFromAmm,
     }
 }
 
 // takes the direction (long|short) and returns the side (buy|sell)
 pub fn direction_to_side(direction: Direction) -> Side {
     match direction {
-        Direction::AddToAmm => Side::BUY,
-        Direction::RemoveFromAmm => Side::SELL,
+        Direction::AddToAmm => Side::Buy,
+        Direction::RemoveFromAmm => Side::Sell,
     }
 }

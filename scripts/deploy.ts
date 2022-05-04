@@ -23,7 +23,6 @@ async function main() {
   const isTestnet = process.env.NETWORK === 'testnet'
 
   if (process.env.NETWORK === 'testnet') {
-    console.log('ghads')
     terra = new LCDClient({
       URL: 'https://bombay-lcd.terra.dev',
       chainID: 'bombay-12',
@@ -75,8 +74,7 @@ async function main() {
   console.log('Deploy Margin Engine...')
   deployConfig.engineInitMsg.insurance_fund = insuranceFundContractAddress
   deployConfig.engineInitMsg.fee_pool = insuranceFundContractAddress // TODO this needs its own contract
-  deployConfig.engineInitMsg.eligible_collateral = insuranceFundContractAddress // TODO this needs its own contract
-  deployConfig.engineInitMsg.vamm = [vammContractAddress]
+  deployConfig.engineInitMsg.eligible_collateral = 'uusd' // TODO this needs its own contract
   const marginEngineContractAddress = await deployContract(
     terra,
     wallet,
@@ -93,6 +91,24 @@ async function main() {
     },
   })
   console.log('margin engine set in vAMM')
+
+  /************************************** Register vAMM in Insurance Fund ******************************************************/
+  console.log('Register vAMM in Insurance Fund...')
+  await executeContract(terra, wallet, insuranceFundContractAddress, {
+    add_vamm: {
+      vamm: vammContractAddress,
+    },
+  })
+  console.log('vAMM registered')
+
+  /*********************************************** Set vAMM Open ******************************************************/
+  console.log('Set vAMM Open...')
+  await executeContract(terra, wallet, vammContractAddress, {
+    set_open: {
+      open: true,
+    },
+  })
+  console.log('vAMM set to open')
 
   /************************************************ Query vAMM state **********************************************/
   console.log('Querying vAMM state...')

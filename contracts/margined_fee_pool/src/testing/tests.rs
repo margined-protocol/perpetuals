@@ -2,12 +2,12 @@ use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, to_binary, Addr, Coin, CosmosMsg, Uint128, WasmMsg};
 use cw20::Cw20ExecuteMsg;
-use cw_multi_test::Executor;
 use margined_perp::margined_fee_pool::{
     AllTokenResponse, ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, TokenLengthResponse,
     TokenResponse,
 };
 use margined_utils::scenarios::{NativeTokenScenario, SimpleScenario};
+use terra_multi_test::Executor;
 use terraswap::asset::AssetInfo;
 
 #[test]

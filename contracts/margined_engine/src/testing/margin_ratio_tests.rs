@@ -1,7 +1,7 @@
-use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
+use terra_multi_test::Executor;
 
 #[test]
 fn test_get_margin_ratio() {
@@ -16,7 +16,7 @@ fn test_get_margin_ratio() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -46,7 +46,7 @@ fn test_get_margin_ratio_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -63,7 +63,7 @@ fn test_get_margin_ratio_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(15u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -98,7 +98,7 @@ fn test_get_margin_ratio_short() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -110,7 +110,7 @@ fn test_get_margin_ratio_short() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(15u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -146,7 +146,7 @@ fn test_get_margin_higher_twap() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -163,7 +163,7 @@ fn test_get_margin_higher_twap() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(15u64),
             to_decimals(10u64),
             to_decimals(0u64),

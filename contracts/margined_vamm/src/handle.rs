@@ -151,7 +151,7 @@ pub fn swap_input(
         }
     }
 
-    update_reserve(
+    let response = update_reserve(
         deps.storage,
         env,
         direction.clone(),
@@ -160,7 +160,7 @@ pub fn swap_input(
         can_go_over_fluctuation,
     )?;
 
-    Ok(Response::new().add_attributes(vec![
+    Ok(response.add_attributes(vec![
         ("action", "swap_input"),
         ("direction", &direction.to_string()),
         ("quote_asset_amount", &quote_asset_amount.to_string()),
@@ -214,7 +214,7 @@ pub fn swap_output(
         }
     }
 
-    update_reserve(
+    let response = update_reserve(
         deps.storage,
         env,
         update_direction,
@@ -223,7 +223,7 @@ pub fn swap_output(
         true,
     )?;
 
-    Ok(Response::new().add_attributes(vec![
+    Ok(response.add_attributes(vec![
         ("action", "swap_output"),
         ("direction", &direction.to_string()),
         ("quote_asset_amount", &quote_asset_amount.to_string()),
@@ -315,7 +315,7 @@ pub fn get_input_price_with_reserves(
         base_asset_reserve - base_asset_after
     };
 
-    let remainder = modulo(invariant_k, quote_asset_after);
+    let remainder = modulo(invariant_k, quote_asset_after, config.decimals);
     if remainder != Uint128::zero() {
         if *direction == Direction::AddToAmm {
             base_asset_bought = base_asset_bought.checked_sub(Uint128::new(1u128))?;
@@ -358,7 +358,7 @@ pub fn get_output_price_with_reserves(
         quote_asset_reserve - quote_asset_after
     };
 
-    let remainder = modulo(invariant_k, base_asset_after);
+    let remainder = modulo(invariant_k, base_asset_after, config.decimals);
     if remainder != Uint128::zero() {
         if *direction == Direction::AddToAmm {
             quote_asset_sold = quote_asset_sold.checked_sub(Uint128::from(1u128))?;
@@ -418,10 +418,20 @@ pub fn update_reserve(
 
     add_reserve_snapshot(
         storage,
-        env,
+        env.clone(),
         update_state.quote_asset_reserve,
         update_state.base_asset_reserve,
     )?;
 
-    Ok(Response::new())
+    Ok(Response::new().add_attributes(vec![
+        (
+            "quote_asset_reserve",
+            &update_state.quote_asset_reserve.to_string(),
+        ),
+        (
+            "base_asset_reserve",
+            &update_state.base_asset_reserve.to_string(),
+        ),
+        ("timestamp", &env.block.time.seconds().to_string()),
+    ]))
 }

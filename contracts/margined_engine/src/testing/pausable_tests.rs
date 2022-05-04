@@ -1,6 +1,6 @@
-use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
+use terra_multi_test::Executor;
 
 #[test]
 fn test_paused_by_admin() {
@@ -19,7 +19,7 @@ fn test_paused_by_admin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(1u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -97,7 +97,7 @@ fn test_pause_then_unpause_by_admin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(1u64),
             to_decimals(1u64),
             to_decimals(0u64),

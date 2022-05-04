@@ -1,8 +1,8 @@
 use cosmwasm_std::Uint128;
-use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
+use terra_multi_test::Executor;
 
 pub const NEXT_FUNDING_PERIOD_DELTA: u64 = 86_400u64;
 
@@ -24,7 +24,7 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
@@ -36,7 +36,7 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(1200u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -122,7 +122,7 @@ fn test_will_keep_generating_same_loss_when_funding_rate_is_positive() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
@@ -134,7 +134,7 @@ fn test_will_keep_generating_same_loss_when_funding_rate_is_positive() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(1200u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -200,7 +200,7 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
@@ -212,7 +212,7 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(1200u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -318,7 +318,7 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
@@ -330,7 +330,7 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(1200u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -397,7 +397,7 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
@@ -409,7 +409,7 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(1200u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -473,7 +473,7 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
@@ -485,7 +485,7 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(1200u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -548,7 +548,7 @@ fn test_have_huge_funding_payment_margin_zero_cannot_remove_margin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
@@ -560,7 +560,7 @@ fn test_have_huge_funding_payment_margin_zero_cannot_remove_margin() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(1200u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -619,7 +619,7 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
@@ -631,7 +631,7 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(1200u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -702,7 +702,7 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
@@ -714,7 +714,7 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(1200u64),
             to_decimals(1u64),
             to_decimals(0u64),

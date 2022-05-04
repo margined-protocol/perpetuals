@@ -5,7 +5,6 @@ use crate::contracts::helpers::{
 };
 use cosmwasm_std::{Addr, Coin, Empty, Response, Uint128};
 use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg, MinterResponse};
-use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use margined_perp::margined_engine::{InstantiateMsg, Side};
 use margined_perp::margined_fee_pool::InstantiateMsg as FeePoolInstantiateMsg;
 use margined_perp::margined_insurance_fund::{
@@ -15,6 +14,7 @@ use margined_perp::margined_pricefeed::InstantiateMsg as PricefeedInstantiateMsg
 use margined_perp::margined_vamm::{
     ExecuteMsg as VammExecuteMsg, InstantiateMsg as VammInstantiateMsg,
 };
+use terra_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 
 pub struct ContractInfo {
     pub addr: Addr,
@@ -128,7 +128,11 @@ impl NativeTokenScenario {
             .unwrap();
         let vamm = VammController(vamm_addr.clone());
 
+        // set open and register
         let msg = vamm.set_open(true).unwrap();
+        router.execute(owner.clone(), msg).unwrap();
+
+        let msg = insurance_fund.add_vamm(vamm.addr().to_string()).unwrap();
         router.execute(owner.clone(), msg).unwrap();
 
         // set up margined engine contract
@@ -144,7 +148,6 @@ impl NativeTokenScenario {
                     initial_margin_ratio: Uint128::from(50_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
                     liquidation_fee: Uint128::from(50_000u128),      // 0.05
-                    vamm: vec![vamm_addr.to_string()],
                 },
                 &[],
                 "engine",
@@ -373,7 +376,11 @@ impl SimpleScenario {
             .unwrap();
         let vamm = VammController(vamm_addr.clone());
 
+        // set open and register
         let msg = vamm.set_open(true).unwrap();
+        router.execute(owner.clone(), msg).unwrap();
+
+        let msg = insurance_fund.add_vamm(vamm.addr().to_string()).unwrap();
         router.execute(owner.clone(), msg).unwrap();
 
         // set up margined engine contract
@@ -389,7 +396,6 @@ impl SimpleScenario {
                     initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
                     liquidation_fee: Uint128::from(50_000_000u128),      // 0.05
-                    vamm: vec![vamm_addr.to_string()],
                 },
                 &[],
                 "engine",
@@ -661,10 +667,7 @@ impl ShutdownScenario {
         let owner = Addr::unchecked("owner");
 
         let insurance_fund_id = router.store_code(contract_insurance_fund());
-        let vamm1_id = router.store_code(contract_vamm());
-        let vamm2_id = router.store_code(contract_vamm());
-        let vamm3_id = router.store_code(contract_vamm());
-        let vamm4_id = router.store_code(contract_vamm());
+        let vamm_id = router.store_code(contract_vamm());
         let pricefeed_id = router.store_code(contract_mock_pricefeed());
 
         let insurance_fund_addr = router
@@ -696,7 +699,7 @@ impl ShutdownScenario {
 
         let vamm1_addr = router
             .instantiate_contract(
-                vamm1_id,
+                vamm_id,
                 insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
                     decimals: 9u8,
@@ -723,7 +726,7 @@ impl ShutdownScenario {
 
         let vamm2_addr = router
             .instantiate_contract(
-                vamm2_id,
+                vamm_id,
                 insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
                     decimals: 9u8,
@@ -750,7 +753,7 @@ impl ShutdownScenario {
 
         let vamm3_addr = router
             .instantiate_contract(
-                vamm3_id,
+                vamm_id,
                 insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
                     decimals: 9u8,
@@ -777,7 +780,7 @@ impl ShutdownScenario {
 
         let vamm4_addr = router
             .instantiate_contract(
-                vamm4_id,
+                vamm_id,
                 insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
                     decimals: 9u8,

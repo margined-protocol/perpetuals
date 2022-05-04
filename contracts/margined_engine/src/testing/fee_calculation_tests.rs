@@ -1,8 +1,8 @@
 use cosmwasm_std::Uint128;
 use cw20::Cw20ExecuteMsg;
-use cw_multi_test::Executor;
 use margined_perp::margined_engine::{PnlCalcOption, Side};
 use margined_utils::scenarios::SimpleScenario;
+use terra_multi_test::Executor;
 
 #[test]
 fn test_open_position_total_fee_ten_percent() {
@@ -33,7 +33,7 @@ fn test_open_position_total_fee_ten_percent() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(300_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::from(37_500_000_000u64),
@@ -88,7 +88,7 @@ fn test_open_short_position_twice_total_fee_ten_percent() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(50_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::from(11_200_000_000u64),
@@ -102,7 +102,7 @@ fn test_open_short_position_twice_total_fee_ten_percent() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(50_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::from(139_000_000_000u64),
@@ -158,7 +158,7 @@ fn test_open_and_close_position_fee_ten_percent() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(300_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::from(37_500_000_000u64),
@@ -210,7 +210,7 @@ fn test_open_position_close_manually_open_reverse_position_total_fee_ten_percent
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(300_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::zero(),
@@ -224,14 +224,14 @@ fn test_open_position_close_manually_open_reverse_position_total_fee_ten_percent
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
 
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             pnl.position_notional,
             Uint128::from(1_000_000_000u64),
             Uint128::zero(),
@@ -279,7 +279,7 @@ fn test_open_position_close_manually_open_reverse_position_short_then_long_total
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(300_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::zero(),
@@ -293,14 +293,14 @@ fn test_open_position_close_manually_open_reverse_position_short_then_long_total
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
 
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             pnl.position_notional,
             Uint128::from(1_000_000_000u64),
             Uint128::zero(),
@@ -362,7 +362,7 @@ fn test_close_under_collateral_position_total_fee_ten_percent() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(20_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::zero(),
@@ -374,7 +374,7 @@ fn test_close_under_collateral_position_total_fee_ten_percent() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(10_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::zero(),
@@ -430,7 +430,7 @@ fn test_force_error_insufficient_balance_open_position_total_fee_ten_percent() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(300_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::from(37_500_000_000u64),
@@ -438,7 +438,6 @@ fn test_force_error_insufficient_balance_open_position_total_fee_ten_percent() {
         )
         .unwrap();
     let response = router.execute(alice.clone(), msg).unwrap_err();
-    // TODO this is correct but maybe we can improve this error message
     assert_eq!(
         response.to_string(),
         "Overflow: Cannot Sub with 29000000000 and 30000000000".to_string()
@@ -471,7 +470,7 @@ fn test_has_spread_no_toll() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             Uint128::from(300_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::zero(),

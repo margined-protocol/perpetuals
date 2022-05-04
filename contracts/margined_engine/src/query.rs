@@ -1,11 +1,12 @@
 use cosmwasm_std::{Deps, StdResult, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
-    ConfigResponse, PnlCalcOption, PositionResponse, PositionUnrealizedPnlResponse, StateResponse,
+    ConfigResponse, PnlCalcOption, Position, PositionUnrealizedPnlResponse, StateResponse,
 };
 
 use crate::{
-    state::{read_config, read_position, read_state, read_vamm, read_vamm_map, Config, State},
+    querier::query_insurance_all_vamm,
+    state::{read_config, read_position, read_state, read_vamm_map, Config, State},
     utils::{
         calc_funding_payment, calc_remain_margin_with_funding_payment,
         get_position_notional_unrealized_pnl,
@@ -33,7 +34,7 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
 }
 
 /// Queries user position
-pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<PositionResponse> {
+pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Position> {
     let position = read_position(
         deps.storage,
         &deps.api.addr_validate(&vamm)?,
@@ -41,18 +42,28 @@ pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Pos
     )
     .unwrap();
 
-    Ok(PositionResponse {
-        size: position.size,
-        margin: position.margin,
-        notional: position.notional,
-        last_updated_premium_fraction: position.last_updated_premium_fraction,
-        liquidity_history_index: position.liquidity_history_index,
-        block_number: position.block_number,
-    })
+    Ok(position)
+}
+
+/// Queries and returns users position for all registered vamms
+pub fn query_all_positions(deps: Deps, trader: String) -> StdResult<Vec<Position>> {
+    let config = read_config(deps.storage).unwrap();
+
+    let mut response: Vec<Position> = vec![];
+
+    let vamms = query_insurance_all_vamm(&deps, config.insurance_fund.to_string(), None)?.vamm_list;
+    for vamm in vamms.iter() {
+        let position =
+            read_position(deps.storage, vamm, &deps.api.addr_validate(&trader)?).unwrap();
+
+        response.push(position)
+    }
+
+    Ok(response)
 }
 
 /// Queries user position
-pub fn query_unrealized_pnl(
+pub fn query_position_notional_unrealized_pnl(
     deps: Deps,
     vamm: String,
     trader: String,
@@ -84,11 +95,13 @@ pub fn query_cumulative_premium_fraction(deps: Deps, vamm: String) -> StdResult<
     Ok(result)
 }
 
-/// Queries traders balanmce across all vamms with funding payment
+/// Queries traders balance across all vamms with funding payment
 pub fn query_trader_balance_with_funding_payment(deps: Deps, trader: String) -> StdResult<Uint128> {
+    let config = read_config(deps.storage).unwrap();
+
     let mut margin = Uint128::zero();
-    let vamm_list = read_vamm(deps.storage)?;
-    for vamm in vamm_list.vamm.iter() {
+    let vamms = query_insurance_all_vamm(&deps, config.insurance_fund.to_string(), None)?.vamm_list;
+    for vamm in vamms.iter() {
         let position =
             query_trader_position_with_funding_payment(deps, vamm.to_string(), trader.clone())?;
         margin = margin.checked_add(position.margin)?;
@@ -102,7 +115,7 @@ pub fn query_trader_position_with_funding_payment(
     deps: Deps,
     vamm: String,
     trader: String,
-) -> StdResult<PositionResponse> {
+) -> StdResult<Position> {
     let config = read_config(deps.storage).unwrap();
 
     let vamm = deps.api.addr_validate(&vamm)?;
@@ -128,14 +141,7 @@ pub fn query_trader_position_with_funding_payment(
         position.margin = Uint128::zero();
     }
 
-    Ok(PositionResponse {
-        size: position.size,
-        margin: position.margin,
-        notional: position.notional,
-        last_updated_premium_fraction: position.last_updated_premium_fraction,
-        liquidity_history_index: position.liquidity_history_index,
-        block_number: position.block_number,
-    })
+    Ok(position)
 }
 
 /// Queries the margin ratio of a trader
@@ -157,11 +163,11 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
     let PositionUnrealizedPnlResponse {
         position_notional: spot_notional,
         unrealized_pnl: spot_pnl,
-    } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::SPOTPRICE)?;
+    } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::SpotPrice)?;
     let PositionUnrealizedPnlResponse {
         position_notional: twap_notional,
         unrealized_pnl: twap_pnl,
-    } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::TWAP)?;
+    } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::Twap)?;
 
     // calculate and return margin
     let PositionUnrealizedPnlResponse {
@@ -187,4 +193,62 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
         / Integer::new_positive(position_notional);
 
     Ok(margin_ratio)
+}
+
+/// Queries the withdrawable collateral of a trader
+pub fn query_free_collateral(deps: Deps, vamm: String, trader: String) -> StdResult<Integer> {
+    let config: Config = read_config(deps.storage)?;
+
+    // retrieve the latest position
+    let position = query_trader_position_with_funding_payment(deps, vamm, trader)?;
+
+    // get trader's unrealized PnL and choose the least beneficial one for the trader
+    let PositionUnrealizedPnlResponse {
+        position_notional: spot_notional,
+        unrealized_pnl: spot_pnl,
+    } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::SpotPrice)?;
+    let PositionUnrealizedPnlResponse {
+        position_notional: twap_notional,
+        unrealized_pnl: twap_pnl,
+    } = get_position_notional_unrealized_pnl(deps, &position, PnlCalcOption::Twap)?;
+
+    // calculate and return margin
+    let PositionUnrealizedPnlResponse {
+        position_notional,
+        unrealized_pnl,
+    } = if spot_pnl.abs() > twap_pnl.abs() {
+        PositionUnrealizedPnlResponse {
+            position_notional: twap_notional,
+            unrealized_pnl: twap_pnl,
+        }
+    } else {
+        PositionUnrealizedPnlResponse {
+            position_notional: spot_notional,
+            unrealized_pnl: spot_pnl,
+        }
+    };
+
+    // min(margin + funding, margin + funding + unrealized PnL) - position value * initMarginRatio
+    let account_value = unrealized_pnl.checked_add(Integer::new_positive(position.margin))?;
+    let minimum_collateral = if account_value
+        .checked_sub(Integer::new_positive(position.margin))?
+        .is_positive()
+    {
+        Integer::new_positive(position.margin)
+    } else {
+        account_value
+    };
+
+    let margin_requirement = if position.size.is_positive() {
+        position
+            .notional
+            .checked_mul(config.initial_margin_ratio)?
+            .checked_div(config.decimals)?
+    } else {
+        position_notional
+            .checked_mul(config.initial_margin_ratio)?
+            .checked_div(config.decimals)?
+    };
+
+    Ok(minimum_collateral.checked_sub(Integer::new_positive(margin_requirement))?)
 }

@@ -45,6 +45,7 @@ cosmwasm-storage = { version = "0.16.3" }
 cosmwasm-bignumber = "2.2.0"
 cw-storage-plus = "0.8.0"
 cw20 = { version = "0.9.1" } 
+cw2 = "0.8.0"
 margined_perp = { version = "0.1.0", path = "../../packages/margined_perp" }
 schemars = "0.8"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
@@ -54,4 +55,4 @@ thiserror = { version = "1.0" }
 [dev-dependencies]
 cosmwasm-schema = { version = "1.0.0-beta" }
 margined_utils = { version = "0.1.0", path = "../../packages/margined_utils" }
-cw-multi-test = "0.9.1"
+terra-multi-test = {git = "https://github.com/astroport-fi/terra-plus.git", tag = "v0.9.1-terra"}

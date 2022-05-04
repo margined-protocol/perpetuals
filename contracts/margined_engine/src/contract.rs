@@ -3,9 +3,10 @@ use cosmwasm_std::{
     to_binary, Attribute, Binary, ContractResult, Deps, DepsMut, Env, Event, MessageInfo, Reply,
     Response, StdError, StdResult, SubMsgExecutionResponse, Uint128,
 };
+use cw2::set_contract_version;
 use margined_common::{
     integer::Integer,
-    validate::{validate_eligible_collateral, validate_ratio},
+    validate::{validate_address, validate_eligible_collateral, validate_ratio},
 };
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg};
 #[cfg(not(feature = "library"))]
@@ -18,16 +19,22 @@ use crate::{
         update_config, withdraw_margin,
     },
     query::{
-        query_config, query_cumulative_premium_fraction, query_margin_ratio, query_position,
-        query_state, query_trader_balance_with_funding_payment,
-        query_trader_position_with_funding_payment, query_unrealized_pnl,
+        query_all_positions, query_config, query_cumulative_premium_fraction,
+        query_free_collateral, query_margin_ratio, query_position,
+        query_position_notional_unrealized_pnl, query_state,
+        query_trader_balance_with_funding_payment, query_trader_position_with_funding_payment,
     },
     reply::{
         close_position_reply, decrease_position_reply, increase_position_reply, liquidate_reply,
         partial_liquidation_reply, pay_funding_reply, reverse_position_reply,
     },
-    state::{store_config, store_state, store_vamm, Config, State},
+    state::{store_config, store_state, Config, State},
 };
+
+/// Contract name that is used for migration.
+const CONTRACT_NAME: &str = "margin-engine";
+/// Contract version that is used for migration.
+const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub const SWAP_INCREASE_REPLY_ID: u64 = 1;
 pub const SWAP_DECREASE_REPLY_ID: u64 = 2;
@@ -44,6 +51,8 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
     // validate the ratios, note this assumes the decimals is correct
     let decimals = Uint128::from(10u128.pow(msg.decimals as u32));
     validate_ratio(msg.initial_margin_ratio, decimals)?;
@@ -51,8 +60,8 @@ pub fn instantiate(
     validate_ratio(msg.liquidation_fee, decimals)?;
 
     // validate message addresses
-    let insurance_fund = deps.api.addr_validate(&msg.insurance_fund)?;
-    let fee_pool = deps.api.addr_validate(&msg.fee_pool)?;
+    let insurance_fund = validate_address(deps.api, &msg.insurance_fund)?;
+    let fee_pool = validate_address(deps.api, &msg.fee_pool)?;
 
     // validate eligible collateral
     let eligible_collateral = validate_eligible_collateral(deps.as_ref(), msg.eligible_collateral)?;
@@ -81,9 +90,6 @@ pub fn instantiate(
             pause: false,
         },
     )?;
-
-    // store default vamms
-    store_vamm(deps, &msg.vamm)?;
 
     Ok(Response::default())
 }
@@ -160,6 +166,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
+        QueryMsg::AllPositions { trader } => to_binary(&query_all_positions(deps, trader)?),
         QueryMsg::Position { vamm, trader } => to_binary(&query_position(deps, vamm, trader)?),
         QueryMsg::MarginRatio { vamm, trader } => {
             to_binary(&query_margin_ratio(deps, vamm, trader)?)
@@ -171,7 +178,15 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             vamm,
             trader,
             calc_option,
-        } => to_binary(&query_unrealized_pnl(deps, vamm, trader, calc_option)?),
+        } => to_binary(&query_position_notional_unrealized_pnl(
+            deps,
+            vamm,
+            trader,
+            calc_option,
+        )?),
+        QueryMsg::FreeCollateral { vamm, trader } => {
+            to_binary(&query_free_collateral(deps, vamm, trader)?)
+        }
         QueryMsg::BalanceWithFundingPayment { trader } => {
             to_binary(&query_trader_balance_with_funding_payment(deps, trader)?)
         }
@@ -235,6 +250,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
 fn parse_swap(response: SubMsgExecutionResponse) -> StdResult<(Uint128, Uint128)> {
     // Find swap inputs and output events
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");
+
     let wasm = wasm.unwrap();
 
     let swap = read_event("action".to_string(), wasm).value;

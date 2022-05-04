@@ -1,10 +1,10 @@
 // use crate::testing::setup::{self, to_decimals};
 use cosmwasm_std::Uint128;
 use cw20::Cw20ExecuteMsg;
-use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
+use terra_multi_test::Executor;
 
 #[test]
 fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_liquidated() {
@@ -50,7 +50,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -62,7 +62,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -151,7 +151,7 @@ fn test_alice_has_enough_margin_cant_get_liquidated() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
@@ -163,7 +163,7 @@ fn test_alice_has_enough_margin_cant_get_liquidated() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(500u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -235,7 +235,7 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(150u64),
             to_decimals(4u64),
             to_decimals(0u64),
@@ -247,7 +247,7 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(500u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -317,7 +317,7 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
 //     let msg = engine
 //         .open_position(
 //             vamm.addr().to_string(),
-//             Side::BUY,
+//             Side::Buy,
 //             to_decimals(150u64),
 //             to_decimals(4u64),
 // to_decimals(0u64),
@@ -331,7 +331,7 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
 //     // let msg = engine
 //     //     .open_position(
 //     //         vamm.addr().to_string(),
-//     //         Side::SELL,
+//     //         Side::Sell,
 //     //         to_decimals(500u64),
 //     //         to_decimals(1u64),
 // to_decimals(0u64),

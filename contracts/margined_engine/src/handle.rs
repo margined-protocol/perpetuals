@@ -11,11 +11,10 @@ use crate::{
     },
     messages::{execute_transfer_from, withdraw},
     querier::query_vamm_output_price,
-    query::query_margin_ratio,
+    query::{query_free_collateral, query_margin_ratio},
     state::{
         read_config, read_position, read_state, store_config, store_position, store_sent_funds,
-        store_state, store_tmp_liquidator, store_tmp_swap, Config, Position, SentFunds, State,
-        Swap,
+        store_state, store_tmp_liquidator, store_tmp_swap, Config, SentFunds, State, Swap,
     },
     utils::{
         calc_remain_margin_with_funding_payment, direction_to_side, get_asset, get_position,
@@ -26,9 +25,11 @@ use crate::{
 };
 use margined_common::{
     integer::Integer,
-    validate::{validate_eligible_collateral, validate_ratio},
+    validate::{validate_address, validate_eligible_collateral, validate_ratio},
 };
-use margined_perp::margined_engine::{PnlCalcOption, PositionUnrealizedPnlResponse, Side};
+use margined_perp::margined_engine::{
+    PnlCalcOption, Position, PositionUnrealizedPnlResponse, Side,
+};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg};
 
 #[allow(clippy::too_many_arguments)]
@@ -54,17 +55,17 @@ pub fn update_config(
 
     // change owner of amm
     if let Some(owner) = owner {
-        config.owner = deps.api.addr_validate(owner.as_str())?;
+        config.owner = validate_address(deps.api, owner.as_str())?;
     }
 
     // update insurance fund
     if let Some(insurance_fund) = insurance_fund {
-        config.insurance_fund = deps.api.addr_validate(insurance_fund.as_str())?;
+        config.insurance_fund = validate_address(deps.api, insurance_fund.as_str())?;
     }
 
     // update fee pool
     if let Some(fee_pool) = fee_pool {
-        config.fee_pool = deps.api.addr_validate(fee_pool.as_str())?;
+        config.fee_pool = validate_address(deps.api, fee_pool.as_str())?;
     }
 
     // update eligible collateral
@@ -141,8 +142,8 @@ pub fn open_position(
     let state: State = read_state(deps.storage)?;
 
     // validate address inputs
-    let vamm = deps.api.addr_validate(&vamm)?;
-    let trader = deps.api.addr_validate(&trader)?;
+    let vamm = validate_address(deps.api, &vamm)?;
+    let trader = validate_address(deps.api, &trader)?;
 
     // calculate the margin ratio of new position wrt to leverage
     let margin_ratio = config
@@ -151,7 +152,7 @@ pub fn open_position(
         .checked_div(leverage)?;
 
     require_not_paused(state.pause)?;
-    require_vamm(deps.storage, &vamm)?;
+    require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
     require_not_restriction_mode(deps.storage, &vamm, &trader, env.block.height)?;
     require_margin(margin_ratio, config.initial_margin_ratio)?;
 
@@ -159,8 +160,8 @@ pub fn open_position(
     let position: Position = get_position(env.clone(), deps.storage, &vamm, &trader, side.clone());
 
     // note: if direction and side are same way then increasing else we are reversing
-    let is_increase: bool = position.direction == Direction::AddToAmm && side == Side::BUY
-        || position.direction == Direction::RemoveFromAmm && side == Side::SELL;
+    let is_increase: bool = position.direction == Direction::AddToAmm && side == Side::Buy
+        || position.direction == Direction::RemoveFromAmm && side == Side::Sell;
 
     // calculate the position size
     let open_notional = quote_asset_amount
@@ -188,7 +189,7 @@ pub fn open_position(
     let PositionUnrealizedPnlResponse {
         position_notional,
         unrealized_pnl,
-    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)
+    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)
         .unwrap();
 
     store_tmp_swap(
@@ -232,8 +233,8 @@ pub fn close_position(
     let state: State = read_state(deps.storage)?;
 
     // validate address inputs
-    let vamm = deps.api.addr_validate(&vamm)?;
-    let trader = deps.api.addr_validate(&trader)?;
+    let vamm = validate_address(deps.api, &vamm)?;
+    let trader = validate_address(deps.api, &trader)?;
 
     // read the position for the trader from vamm
     let position = read_position(deps.storage, &vamm, &trader).unwrap();
@@ -259,8 +260,8 @@ pub fn liquidate(
     let config: Config = read_config(deps.storage)?;
 
     // validate address inputs
-    let vamm = deps.api.addr_validate(&vamm)?;
-    let trader = deps.api.addr_validate(&trader)?;
+    let vamm = validate_address(deps.api, &vamm)?;
+    let trader = validate_address(deps.api, &trader)?;
 
     // store the liquidator
     store_tmp_liquidator(deps.storage, &info.sender)?;
@@ -268,7 +269,7 @@ pub fn liquidate(
     // retrieve the margin ratio of the position
     let margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
 
-    require_vamm(deps.storage, &vamm)?;
+    require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
     require_insufficient_margin(margin_ratio, config.maintenance_margin_ratio)?;
 
     // read the position for the trader from vamm
@@ -296,11 +297,13 @@ pub fn pay_funding(
     _info: MessageInfo,
     vamm: String,
 ) -> StdResult<Response> {
+    let config: Config = read_config(deps.storage)?;
+
     // validate address inputs
-    let vamm = deps.api.addr_validate(&vamm)?;
+    let vamm = validate_address(deps.api, &vamm)?;
 
     // check its a valid vamm
-    require_vamm(deps.storage, &vamm)?;
+    require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
 
     let funding_msg = SubMsg {
         msg: CosmosMsg::Wasm(WasmMsg::Execute {
@@ -327,7 +330,7 @@ pub fn deposit_margin(
     let config: Config = read_config(deps.storage)?;
     let state: State = read_state(deps.storage)?;
 
-    let vamm = deps.api.addr_validate(&vamm)?;
+    let vamm = validate_address(deps.api, &vamm)?;
     let trader = info.sender.clone();
 
     require_not_paused(state.pause)?;
@@ -376,10 +379,10 @@ pub fn withdraw_margin(
     let mut state: State = read_state(deps.storage)?;
 
     // get and validate address inputs
-    let vamm = deps.api.addr_validate(&vamm)?;
+    let vamm = validate_address(deps.api, &vamm)?;
     let trader = info.sender;
 
-    require_vamm(deps.storage, &vamm)?;
+    require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
     require_not_paused(state.pause)?;
 
     // read the position for the trader from vamm
@@ -394,12 +397,19 @@ pub fn withdraw_margin(
     position.margin = remain_margin.margin;
     position.last_updated_premium_fraction = remain_margin.latest_premium_fraction;
 
-    store_position(deps.storage, &position)?;
-
     // check if margin ratio has been
-    let margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
+    let free_collateral =
+        query_free_collateral(deps.as_ref(), vamm.to_string(), trader.to_string())?;
 
-    require_margin(margin_ratio.value, config.initial_margin_ratio)?;
+    // let margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
+    if free_collateral
+        .checked_sub(Integer::new_positive(amount))?
+        .is_negative()
+    {
+        return Err(StdError::generic_err("Insufficient collateral"));
+    }
+
+    store_position(deps.storage, &position)?;
 
     // try to execute the transfer
     let msgs = withdraw(
@@ -492,7 +502,7 @@ fn open_reverse_position(
     let PositionUnrealizedPnlResponse {
         position_notional,
         unrealized_pnl: _,
-    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)
+    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)
         .unwrap();
 
     // reduce position if old position is larger
@@ -564,13 +574,13 @@ fn partial_liquidation(
     let PositionUnrealizedPnlResponse {
         position_notional: _,
         unrealized_pnl,
-    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SPOTPRICE)
+    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)
         .unwrap();
 
     let side = if position.size > Integer::zero() {
-        Side::SELL
+        Side::Sell
     } else {
-        Side::BUY
+        Side::Buy
     };
 
     store_tmp_swap(

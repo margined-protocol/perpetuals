@@ -1,10 +1,10 @@
 // use crate::testing::setup::{self, to_decimals};
 use cosmwasm_std::Uint128;
 use cw20::Cw20ExecuteMsg;
-use cw_multi_test::Executor;
 use margined_common::integer::Integer;
-use margined_perp::margined_engine::{PnlCalcOption, PositionResponse, Side};
+use margined_perp::margined_engine::{PnlCalcOption, Position, Side};
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
+use terra_multi_test::Executor;
 
 #[test]
 fn test_initialization() {
@@ -30,7 +30,7 @@ fn test_initialization() {
 }
 
 #[test]
-fn test_open_position_long() {
+fn test_get_all_positions_open_position_long() {
     let SimpleScenario {
         mut router,
         alice,
@@ -43,7 +43,7 @@ fn test_open_position_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -59,7 +59,48 @@ fn test_open_position_long() {
     assert_eq!(margin, to_decimals(60));
 
     // personal position should be 37.5
-    let position: PositionResponse = engine
+    let positions: Vec<Position> = engine
+        .get_all_positions(&router, alice.to_string())
+        .unwrap();
+    assert_eq!(positions[0].size, Integer::new_positive(37_500_000_000u128));
+    assert_eq!(positions[0].margin, to_decimals(60u64));
+
+    // clearing house token balance should be 60
+    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    assert_eq!(engine_balance, to_decimals(60));
+}
+
+#[test]
+fn test_open_position_long() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        usdc,
+        engine,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(60u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    // expect to be 60
+    let margin = engine
+        .get_balance_with_funding_payment(&router, alice.to_string())
+        .unwrap();
+    assert_eq!(margin, to_decimals(60));
+
+    // personal position should be 37.5
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(37_500_000_000u128));
@@ -83,7 +124,7 @@ fn test_open_position_two_longs() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -95,7 +136,7 @@ fn test_open_position_two_longs() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -110,7 +151,7 @@ fn test_open_position_two_longs() {
         .unwrap();
     assert_eq!(margin, to_decimals(120));
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(54_545_454_545u128));
@@ -130,7 +171,7 @@ fn test_open_position_two_shorts() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(40u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -142,7 +183,7 @@ fn test_open_position_two_shorts() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(40u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -158,7 +199,7 @@ fn test_open_position_two_shorts() {
     assert_eq!(margin, to_decimals(80));
 
     // retrieve the vamm state
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(66_666_666_667u128));
@@ -178,7 +219,7 @@ fn test_open_position_equal_size_opposite_side() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -190,7 +231,7 @@ fn test_open_position_equal_size_opposite_side() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(300u64),
             to_decimals(2u64),
             to_decimals(0u64),
@@ -206,7 +247,7 @@ fn test_open_position_equal_size_opposite_side() {
     assert_eq!(margin, Uint128::zero());
 
     // retrieve the vamm state
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::zero());
@@ -226,7 +267,7 @@ fn test_open_position_one_long_two_shorts() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -238,7 +279,7 @@ fn test_open_position_one_long_two_shorts() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(0u64),
@@ -248,7 +289,7 @@ fn test_open_position_one_long_two_shorts() {
     router.execute(alice.clone(), msg).unwrap();
 
     // retrieve the vamm state
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(33_333_333_333u128));
@@ -257,7 +298,7 @@ fn test_open_position_one_long_two_shorts() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(50u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -273,7 +314,7 @@ fn test_open_position_one_long_two_shorts() {
     assert_eq!(margin, Uint128::zero());
 
     // retrieve the vamm state
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::zero());
@@ -293,7 +334,7 @@ fn test_open_position_short_and_two_longs() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(40u64),
             to_decimals(5u64),
             to_decimals(25u64),
@@ -302,7 +343,7 @@ fn test_open_position_short_and_two_longs() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(25_000_000_000u128));
@@ -312,7 +353,7 @@ fn test_open_position_short_and_two_longs() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
             Uint128::from(13_800_000_000u128),
@@ -326,12 +367,12 @@ fn test_open_position_short_and_two_longs() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(8u64));
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
 
@@ -342,7 +383,7 @@ fn test_open_position_short_and_two_longs() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(10u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -352,7 +393,7 @@ fn test_open_position_short_and_two_longs() {
     router.execute(alice.clone(), msg).unwrap();
 
     // retrieve the vamm state
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(1_u128));
@@ -372,7 +413,7 @@ fn test_open_position_short_long_short() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -384,7 +425,7 @@ fn test_open_position_short_long_short() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(150u64),
             to_decimals(3u64),
             to_decimals(0u64),
@@ -393,7 +434,7 @@ fn test_open_position_short_long_short() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(to_decimals(20u64)));
@@ -402,7 +443,7 @@ fn test_open_position_short_long_short() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -412,7 +453,7 @@ fn test_open_position_short_long_short() {
     router.execute(alice.clone(), msg).unwrap();
 
     // retrieve the vamm state
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::zero());
@@ -432,7 +473,7 @@ fn test_open_position_long_short_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -444,7 +485,7 @@ fn test_open_position_long_short_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(150u64),
             to_decimals(3u64),
             to_decimals(0u64),
@@ -452,7 +493,7 @@ fn test_open_position_long_short_long() {
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(to_decimals(25u64)));
@@ -461,7 +502,7 @@ fn test_open_position_long_short_long() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(20u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -471,7 +512,7 @@ fn test_open_position_long_short_long() {
     router.execute(alice.clone(), msg).unwrap();
 
     // retrieve the vamm state
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::zero());
@@ -491,7 +532,7 @@ fn test_pnl_zero_no_others_trading() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(250u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -503,7 +544,7 @@ fn test_pnl_zero_no_others_trading() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(750u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -517,7 +558,7 @@ fn test_pnl_zero_no_others_trading() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::zero());
@@ -538,7 +579,7 @@ fn test_close_safe_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(50u64),
             to_decimals(2u64),
             to_decimals(0u64),
@@ -548,7 +589,7 @@ fn test_close_safe_position() {
     router.execute(alice.clone(), msg).unwrap();
 
     // retrieve the vamm state
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(11_111_111_112u128));
@@ -556,7 +597,7 @@ fn test_close_safe_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(10u64),
             to_decimals(6u64),
             to_decimals(0u64),
@@ -574,7 +615,7 @@ fn test_close_safe_position() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::zero());
@@ -607,7 +648,7 @@ fn test_close_position_over_maintenance_margin_ration() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -616,7 +657,7 @@ fn test_close_position_over_maintenance_margin_ration() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(to_decimals(20)));
@@ -624,7 +665,7 @@ fn test_close_position_over_maintenance_margin_ration() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             Uint128::from(35_080_000_000u128),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -638,7 +679,7 @@ fn test_close_position_over_maintenance_margin_ration() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::zero());
@@ -667,7 +708,7 @@ fn test_close_under_collateral_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -676,7 +717,7 @@ fn test_close_under_collateral_position() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(to_decimals(20)));
@@ -684,7 +725,7 @@ fn test_close_under_collateral_position() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(250u64),
             to_decimals(1u64),
             to_decimals(0u64),
@@ -705,7 +746,7 @@ fn test_close_under_collateral_position() {
     // alice.balance = all(5000) - margin(25) = 4975
     // insuranceFund.balance = 5000 + realizedPnl(-58.33) = 4941.66...
     // clearingHouse.balance = 250 + +25 + 58.33(pnl from insuranceFund) = 333.33
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::zero());
@@ -775,7 +816,7 @@ fn test_openclose_position_to_check_fee_is_charged() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -822,7 +863,7 @@ fn test_pnl_unrealized() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -844,7 +885,7 @@ fn test_pnl_unrealized() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(100u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -853,7 +894,7 @@ fn test_pnl_unrealized() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let position: PositionResponse = engine
+    let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(to_decimals(20u64)));
@@ -870,7 +911,7 @@ fn test_pnl_unrealized() {
             &router,
             vamm.addr().to_string(),
             alice.to_string(),
-            PnlCalcOption::SPOTPRICE,
+            PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(
@@ -907,7 +948,7 @@ fn test_error_open_position_insufficient_balance() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -919,7 +960,7 @@ fn test_error_open_position_insufficient_balance() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -946,7 +987,7 @@ fn test_error_open_position_exceed_margin_ratio() {
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::BUY,
+            Side::Buy,
             to_decimals(60u64),
             to_decimals(21u64),
             to_decimals(0u64),
@@ -1004,7 +1045,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
             to_decimals(0u64),
@@ -1016,7 +1057,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::SELL,
+            Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
             to_decimals(0u64),

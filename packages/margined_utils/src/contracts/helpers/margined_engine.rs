@@ -1,6 +1,6 @@
 use margined_perp::margined_engine::{
-    ConfigResponse, ExecuteMsg, PnlCalcOption, PositionResponse, PositionUnrealizedPnlResponse,
-    QueryMsg, Side, StateResponse,
+    ConfigResponse, ExecuteMsg, PnlCalcOption, Position, PositionUnrealizedPnlResponse, QueryMsg,
+    Side, StateResponse,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -223,7 +223,7 @@ impl EngineController {
         querier: &Q,
         vamm: String,
         trader: String,
-    ) -> StdResult<PositionResponse> {
+    ) -> StdResult<Position> {
         let msg = QueryMsg::Position { vamm, trader };
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -231,7 +231,24 @@ impl EngineController {
         }
         .into();
 
-        let res: PositionResponse = QuerierWrapper::new(querier).query(&query)?;
+        let res: Position = QuerierWrapper::new(querier).query(&query)?;
+        Ok(res)
+    }
+
+    /// get traders positions for all registered vamms
+    pub fn get_all_positions<Q: Querier>(
+        &self,
+        querier: &Q,
+        trader: String,
+    ) -> StdResult<Vec<Position>> {
+        let msg = QueryMsg::AllPositions { trader };
+        let query = WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&msg)?,
+        }
+        .into();
+
+        let res: Vec<Position> = QuerierWrapper::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -255,6 +272,24 @@ impl EngineController {
         .into();
 
         let res: PositionUnrealizedPnlResponse = QuerierWrapper::new(querier).query(&query)?;
+        Ok(res)
+    }
+
+    /// get free collateral
+    pub fn get_free_collateral<Q: Querier>(
+        &self,
+        querier: &Q,
+        vamm: String,
+        trader: String,
+    ) -> StdResult<Integer> {
+        let msg = QueryMsg::FreeCollateral { vamm, trader };
+        let query = WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&msg)?,
+        }
+        .into();
+
+        let res: Integer = QuerierWrapper::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -299,7 +334,7 @@ impl EngineController {
         querier: &Q,
         vamm: String,
         trader: String,
-    ) -> StdResult<PositionResponse> {
+    ) -> StdResult<Position> {
         let msg = QueryMsg::PositionWithFundingPayment { vamm, trader };
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -307,7 +342,7 @@ impl EngineController {
         }
         .into();
 
-        let res: PositionResponse = QuerierWrapper::new(querier).query(&query)?;
+        let res: Position = QuerierWrapper::new(querier).query(&query)?;
         Ok(res)
     }
 

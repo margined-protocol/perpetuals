@@ -170,6 +170,7 @@ fn calc_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Uint128> {
         .quote_asset_reserve
         .checked_mul(config.decimals)?
         .checked_div(current_snapshot.base_asset_reserve)?;
+
     if interval == 0 {
         return Ok(current_price);
     }
@@ -188,6 +189,7 @@ fn calc_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Uint128> {
             .checked_sub(previous_timestamp)
             .unwrap(),
     );
+
     let mut weighted_price = current_price.checked_mul(period)?;
 
     loop {
@@ -229,9 +231,11 @@ fn calc_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Uint128> {
     Ok(weighted_price.checked_div(Uint128::from(interval))?)
 }
 
-/// TODO TODO TODO
-/// Please clean this function up and amalgamate with that above **IF**
-/// possible.
+// fn get_price_with_specific_snapshot() {}
+
+// TODO TODO TODO
+// Please clean this function up and amalgamate with that above **IF**
+// possible.
 /// Calculates the TWAP of the AMM reserves with an input
 fn calc_twap_input_asset(
     deps: Deps,
