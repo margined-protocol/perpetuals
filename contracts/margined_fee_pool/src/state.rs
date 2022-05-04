@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Deps, DepsMut, StdError, StdResult, Storage};
+use cosmwasm_std::{Addr, Deps, DepsMut, StdError::GenericErr, StdResult, Storage};
 use cosmwasm_storage::{singleton, singleton_read};
 use cw_storage_plus::Item;
 use terraswap::asset::AssetInfo;
@@ -9,6 +9,19 @@ use terraswap::asset::AssetInfo;
 pub static KEY_CONFIG: &[u8] = b"config";
 pub const TOKEN_LIST: Item<Vec<AssetInfo>> = Item::new("token-list");
 pub const TOKEN_LIMIT: usize = 3usize;
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct Config {
+    pub owner: Addr,
+}
+
+pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
+    singleton(storage, KEY_CONFIG).save(config)
+}
+
+pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
+    singleton_read(storage, KEY_CONFIG).load()
+}
 
 // function checks if an addr is already added and adds it if not
 // We also check that we have not reached the limit of tokens here
@@ -21,14 +34,14 @@ pub fn save_token(deps: DepsMut, input: AssetInfo) -> StdResult<()> {
 
     // check if we already added the token
     if token_list.contains(&input) {
-        return Err(StdError::GenericErr {
+        return Err(GenericErr {
             msg: "This token is already added".to_string(),
         });
     };
 
     // check if we have reached the capacity
     if token_list.len() >= TOKEN_LIMIT {
-        return Err(StdError::GenericErr {
+        return Err(GenericErr {
             msg: "The token capacity is already reached".to_string(),
         });
     };
@@ -42,7 +55,7 @@ pub fn save_token(deps: DepsMut, input: AssetInfo) -> StdResult<()> {
 // note that this function ONLY takes the first TOKEN_LIMIT terms
 pub fn read_token_list(deps: Deps, limit: usize) -> StdResult<Vec<AssetInfo>> {
     match TOKEN_LIST.may_load(deps.storage)? {
-        None => Err(StdError::GenericErr {
+        None => Err(GenericErr {
             msg: "No tokens are stored".to_string(),
         }),
         Some(list) => {
@@ -65,7 +78,7 @@ pub fn remove_token(deps: DepsMut, token: AssetInfo) -> StdResult<()> {
     // check if there are any tokens stored
     let mut token_list = match TOKEN_LIST.may_load(deps.storage)? {
         None => {
-            return Err(StdError::GenericErr {
+            return Err(GenericErr {
                 msg: "No tokens are stored".to_string(),
             })
         }
@@ -74,7 +87,7 @@ pub fn remove_token(deps: DepsMut, token: AssetInfo) -> StdResult<()> {
 
     // check if the token is added
     if !token_list.contains(&token) {
-        return Err(StdError::GenericErr {
+        return Err(GenericErr {
             msg: "This token has not been added".to_string(),
         });
     }
@@ -89,16 +102,4 @@ pub fn remove_token(deps: DepsMut, token: AssetInfo) -> StdResult<()> {
 
     // saves the updated token_list
     TOKEN_LIST.save(deps.storage, &token_list)
-}
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct Config {
-    pub owner: Addr,
-}
-
-pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
-    singleton(storage, KEY_CONFIG).save(config)
-}
-
-pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
-    singleton_read(storage, KEY_CONFIG).load()
 }
