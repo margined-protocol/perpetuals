@@ -574,7 +574,7 @@ fn test_send_native_token() {
 
     /////////////////////////
     // Not supported token //
-    ///////////////////////// 
+    /////////////////////////
 
     let NativeTokenScenario {
         mut router,
@@ -601,11 +601,14 @@ fn test_send_native_token() {
         )
         .unwrap();
     let res = router.execute(owner.clone(), msg).unwrap_err();
-    assert_eq!(res.to_string(), "Generic error: This token is not supported");
+    assert_eq!(
+        res.to_string(),
+        "Generic error: This token is not supported"
+    );
 
     ////////////////////////
     // Not enough balance //
-    //////////////////////// 
+    ////////////////////////
 
     let NativeTokenScenario {
         mut router,
@@ -720,8 +723,8 @@ fn test_send_cw20_token() {
 
     /////////////////////////
     // Not supported token //
-    ///////////////////////// 
-        
+    /////////////////////////
+
     let SimpleScenario {
         mut router,
         owner,
@@ -752,12 +755,15 @@ fn test_send_cw20_token() {
         )
         .unwrap();
     let res = router.execute(owner.clone(), msg).unwrap_err();
-    assert_eq!(res.to_string(), "Generic error: This token is not supported");
+    assert_eq!(
+        res.to_string(),
+        "Generic error: This token is not supported"
+    );
 
     ////////////////////////
     // Not enough balance //
-    //////////////////////// 
-    
+    ////////////////////////
+
     let SimpleScenario {
         mut router,
         owner,
@@ -808,7 +814,7 @@ fn test_send_cw20_token() {
 
     // Query new contract balance
     let balance = usdc.balance(&router, fee_pool.addr()).unwrap();
-    assert_eq!(balance, Uint128::from(1000u128 * 10u128.pow(9)));    
+    assert_eq!(balance, Uint128::from(1000u128 * 10u128.pow(9)));
 }
 
 ///////////////////////
