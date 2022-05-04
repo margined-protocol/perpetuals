@@ -91,6 +91,11 @@ pub enum QueryMsg {
     },
     // IsOverFluctuationLimit{},
     IsOverSpreadLimit {},
+    ReserveSnapshotHeight {},
+    ReserveSnapshots {
+        start: Option<u64>,
+        limit: Option<u32>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
