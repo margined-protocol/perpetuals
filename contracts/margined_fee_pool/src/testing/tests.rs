@@ -108,7 +108,7 @@ fn test_query_all_token() {
     // add another token
     let info = mock_info("owner", &[]);
     let msg = ExecuteMsg::AddToken {
-        token: "token2".to_string(),
+        token: "uusd".to_string(),
     };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -124,15 +124,14 @@ fn test_query_all_token() {
     let res: AllTokenResponse = from_binary(&res).unwrap();
     let list = res.token_list;
 
-    // TODO: change token2 to a Native Token and test it is stored properly
     assert_eq!(
         list,
         vec![
             AssetInfo::Token {
                 contract_addr: "token1".to_string()
             },
-            AssetInfo::Token {
-                contract_addr: "token2".to_string()
+            AssetInfo::NativeToken {
+                denom: "uusd".to_string()
             },
         ]
     );
@@ -140,7 +139,6 @@ fn test_query_all_token() {
 
 #[test]
 fn test_add_token() {
-    // TODO test that we can add a native token too
     // instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
@@ -189,7 +187,6 @@ fn test_add_token() {
 
 #[test]
 fn test_add_token_twice() {
-    // TODO repeat test for native token
     // instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
@@ -221,7 +218,6 @@ fn test_add_token_twice() {
 
 #[test]
 fn test_add_second_token() {
-    // TODO repeat test for native token
     // instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
@@ -263,7 +259,6 @@ fn test_add_second_token() {
 
 #[test]
 fn test_remove_token() {
-    // TODO repeat test for native token
     // instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
@@ -320,7 +315,6 @@ fn test_remove_token() {
 
 #[test]
 fn test_remove_when_no_tokens() {
-    // TODO repeat test for native token
     // instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
@@ -356,7 +350,6 @@ fn test_remove_when_no_tokens() {
 
 #[test]
 fn test_remove_non_existed_token() {
-    // TODO repeat test for native token
     // instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
@@ -403,7 +396,6 @@ fn test_remove_non_existed_token() {
 
 #[test]
 fn test_token_capacity() {
-    // TODO repeat test for native token
     // for the purpose of this test, TOKEN_LIMIT is set to 3 (so four exceeds it!)
 
     // instantiate contract here
@@ -487,7 +479,6 @@ fn test_token_capacity() {
 
 #[test]
 fn test_token_length() {
-    // TODO repeat test for native token
     // instantiate contract here
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {};
@@ -581,7 +572,95 @@ fn test_send_native_token() {
         .amount;
     assert_eq!(balance, Uint128::from(4000u128 * 10u128.pow(6)));
 
-    // also need to check invalid addr (ie check against vec), and invalid balance
+    /////////////////////////
+    // Not supported token //
+    ///////////////////////// 
+
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        bob,
+        fee_pool,
+        ..
+    } = NativeTokenScenario::new();
+
+    // give funds to the fee pool contract
+    router
+        .init_bank_balance(
+            &fee_pool.addr(),
+            vec![Coin::new(5_000u128 * 10u128.pow(6), "uusd")],
+        )
+        .unwrap();
+
+    // try to send token - note this fails because we have not added the token to the token list, so it is not accepted/supported yet
+    let msg = fee_pool
+        .send_token(
+            "uusd".to_string(),
+            Uint128::from(1000u128 * 10u128.pow(6)),
+            bob.clone().to_string(),
+        )
+        .unwrap();
+    let res = router.execute(owner.clone(), msg).unwrap_err();
+    assert_eq!(res.to_string(), "Generic error: This token is not supported");
+
+    ////////////////////////
+    // Not enough balance //
+    //////////////////////// 
+
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        bob,
+        fee_pool,
+        ..
+    } = NativeTokenScenario::new();
+
+    // give funds to the fee pool contract
+    router
+        .init_bank_balance(
+            &fee_pool.addr(),
+            vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+        )
+        .unwrap();
+
+    // add the token so we can send funds with it
+    let msg = fee_pool.add_token("uusd".to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // query balance of bob
+    let balance = router.wrap().query_balance(&bob, "uusd").unwrap().amount;
+    assert_eq!(balance, Uint128::from(5000u128 * 10u128.pow(6)));
+
+    // query balance of contract
+    let balance = router
+        .wrap()
+        .query_balance(&fee_pool.addr(), "uusd")
+        .unwrap()
+        .amount;
+    assert_eq!(balance, Uint128::from(1000u128 * 10u128.pow(6)));
+
+    // send token
+    let msg = fee_pool
+        .send_token(
+            "uusd".to_string(),
+            Uint128::from(2000u128 * 10u128.pow(6)),
+            bob.clone().to_string(),
+        )
+        .unwrap();
+    let res = router.execute(owner.clone(), msg).unwrap_err();
+    assert_eq!(res.to_string(), "Generic error: Insufficient funds");
+
+    // query new balance of intended recipient
+    let balance = router.wrap().query_balance(&bob, "uusd").unwrap().amount;
+    assert_eq!(balance, Uint128::from(5000u128 * 10u128.pow(6)));
+
+    // Query new contract balance
+    let balance = router
+        .wrap()
+        .query_balance(&fee_pool.addr(), "uusd")
+        .unwrap()
+        .amount;
+    assert_eq!(balance, Uint128::from(1000u128 * 10u128.pow(6)));
 }
 
 #[test]
@@ -597,6 +676,7 @@ fn test_send_cw20_token() {
         ..
     } = SimpleScenario::new();
 
+    // give funds to the fee pool contract for the test
     let msg: CosmosMsg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: usdc.addr().to_string(),
         funds: vec![],
@@ -638,7 +718,97 @@ fn test_send_cw20_token() {
     let balance = usdc.balance(&router, fee_pool.addr()).unwrap();
     assert_eq!(balance, Uint128::from(4000u128 * 10u128.pow(9)));
 
-    // also need to check invalid addr (ie check against vec), and invalid balance
+    /////////////////////////
+    // Not supported token //
+    ///////////////////////// 
+        
+    let SimpleScenario {
+        mut router,
+        owner,
+        bob,
+        fee_pool,
+        usdc,
+        ..
+    } = SimpleScenario::new();
+
+    // give funds to the fee pool contract
+    let msg: CosmosMsg = CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: usdc.addr().to_string(),
+        funds: vec![],
+        msg: to_binary(&Cw20ExecuteMsg::Mint {
+            recipient: fee_pool.addr().clone().to_string(),
+            amount: Uint128::from(5000u128 * 10u128.pow(9)),
+        })
+        .unwrap(),
+    });
+    router.execute(owner.clone(), msg).unwrap();
+
+    // try to send token - note this fails because we have not added the token to the token list, so it is not accepted/supported yet
+    let msg = fee_pool
+        .send_token(
+            usdc.addr().to_string(),
+            Uint128::from(1000u128 * 10u128.pow(9)),
+            bob.clone().to_string(),
+        )
+        .unwrap();
+    let res = router.execute(owner.clone(), msg).unwrap_err();
+    assert_eq!(res.to_string(), "Generic error: This token is not supported");
+
+    ////////////////////////
+    // Not enough balance //
+    //////////////////////// 
+    
+    let SimpleScenario {
+        mut router,
+        owner,
+        bob,
+        fee_pool,
+        usdc,
+        ..
+    } = SimpleScenario::new();
+
+    // give funds to the fee pool contract for the test
+    let msg: CosmosMsg = CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: usdc.addr().to_string(),
+        funds: vec![],
+        msg: to_binary(&Cw20ExecuteMsg::Mint {
+            recipient: fee_pool.addr().clone().to_string(),
+            amount: Uint128::from(1000u128 * 10u128.pow(9)),
+        })
+        .unwrap(),
+    });
+    router.execute(owner.clone(), msg).unwrap();
+
+    // add the token so we can send funds with it
+    let msg = fee_pool.add_token(usdc.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // query balance of intended recipient (say, bob)
+    let balance = usdc.balance(&router, bob.clone()).unwrap();
+    assert_eq!(balance, Uint128::from(5000u128 * 10u128.pow(9)));
+
+    // query balance of contract
+    let balance = usdc.balance(&router, fee_pool.addr()).unwrap();
+    assert_eq!(balance, Uint128::from(1000u128 * 10u128.pow(9)));
+
+    // send token to bob
+    let msg = fee_pool
+        .send_token(
+            usdc.addr().to_string(),
+            Uint128::from(2000u128 * 10u128.pow(9)),
+            bob.clone().to_string(),
+        )
+        .unwrap();
+    let res = router.execute(owner.clone(), msg).unwrap_err();
+    assert_eq!(res.to_string(), "Generic error: Insufficient funds");
+
+    // query new balance of bob
+    let balance = usdc.balance(&router, bob).unwrap();
+    assert_eq!(balance, Uint128::from(5000u128 * 10u128.pow(9)));
+
+    // Query new contract balance
+    let balance = usdc.balance(&router, fee_pool.addr()).unwrap();
+    assert_eq!(balance, Uint128::from(1000u128 * 10u128.pow(9)));    
 }
 
 ///////////////////////
