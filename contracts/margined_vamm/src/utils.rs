@@ -9,6 +9,25 @@ use crate::{
     },
 };
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum TwapCalcOption {
+    Reserve,
+    Input,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TwapInputAsset {
+    pub dir: Direction,
+    pub amount: Uint128,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TwapPriceCalcParams {
+    pub opt: TwapCalcOption,
+    pub snapshot_index: u64,
+    pub asset: Option<TwapInputAsset>,
+}
+
 pub fn require_margin_engine(sender: Addr, margin_engine: Addr) -> StdResult<Response> {
     // check that it is a registered vamm
     if sender != margin_engine {
@@ -128,25 +147,46 @@ pub fn add_reserve_snapshot(
     Ok(Response::default())
 }
 
-/// Calculates the TWAP of the AMM reserves
-pub fn calc_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Uint128> {
+pub fn get_price_with_specific_snapshot(
+    deps: Deps,
+    params: TwapPriceCalcParams,
+) -> StdResult<Uint128> {
     let config: Config = read_config(deps.storage)?;
-    let mut counter = read_reserve_snapshot_counter(deps.storage).unwrap();
-    let current_snapshot = read_reserve_snapshot(deps.storage, counter);
-    let mut current_snapshot = current_snapshot.unwrap();
 
-    let mut current_price = current_snapshot
-        .quote_asset_reserve
-        .checked_mul(config.decimals)?
-        .checked_div(current_snapshot.base_asset_reserve)?;
+    let snapshot: ReserveSnapshot = read_reserve_snapshot(deps.storage, params.snapshot_index)?;
+
+    // RESERVE_ASSET means price comes from quoteAssetReserve/baseAssetReserve
+    // INPUT_ASSET means getInput/Output price with snapshot's reserve
+    if params.opt == TwapCalcOption::Reserve {
+        let current_price = snapshot
+            .quote_asset_reserve
+            .checked_mul(config.decimals)?
+            .checked_div(snapshot.base_asset_reserve)?;
+
+        return Ok(current_price);
+    } else if params.opt == TwapCalcOption::Input {
+    }
+    Ok(Uint128::zero())
+}
+
+/// Calculates the TWAP of the AMM reserves
+pub fn calc_twap(
+    deps: Deps,
+    env: Env,
+    mut params: TwapPriceCalcParams,
+    interval: u64,
+) -> StdResult<Uint128> {
+    let current_price = get_price_with_specific_snapshot(deps, params.clone())?;
 
     if interval == 0 {
         return Ok(current_price);
     }
 
     let base_timestamp = env.block.time.seconds().checked_sub(interval).unwrap();
+    let reserve_snapshot_length = read_reserve_snapshot_counter(deps.storage).unwrap();
+    let mut current_snapshot = read_reserve_snapshot(deps.storage, params.snapshot_index)?;
 
-    if counter == 1 || current_snapshot.timestamp.seconds() <= base_timestamp {
+    if reserve_snapshot_length == 1 || current_snapshot.timestamp.seconds() <= base_timestamp {
         return Ok(current_price);
     }
 
@@ -162,16 +202,15 @@ pub fn calc_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Uint128> {
     let mut weighted_price = current_price.checked_mul(period)?;
 
     loop {
-        counter -= 1;
+        params.snapshot_index = params.snapshot_index - 1;
+
         // if snapshot history is too short
-        if counter == 0 {
+        if params.snapshot_index == 0 {
             return Ok(weighted_price.checked_div(period)?);
         }
-        current_snapshot = read_reserve_snapshot(deps.storage, counter).unwrap();
-        current_price = current_snapshot
-            .quote_asset_reserve
-            .checked_mul(config.decimals)?
-            .checked_div(current_snapshot.base_asset_reserve)?;
+
+        current_snapshot = read_reserve_snapshot(deps.storage, params.snapshot_index).unwrap();
+        let current_price = get_price_with_specific_snapshot(deps, params.clone())?;
 
         if current_snapshot.timestamp.seconds() <= base_timestamp {
             let delta_timestamp =
@@ -199,6 +238,83 @@ pub fn calc_twap(deps: Deps, env: Env, interval: u64) -> StdResult<Uint128> {
 
     Ok(weighted_price.checked_div(Uint128::from(interval))?)
 }
+
+// /// Calculates the TWAP of the AMM reserves
+// pub fn calc_twap(
+//     deps: Deps,
+//     env: Env,
+//     params: TwapPriceCalcParams,
+//     interval: u64,
+// ) -> StdResult<Uint128> {
+//     let config: Config = read_config(deps.storage)?;
+//     let mut counter = read_reserve_snapshot_counter(deps.storage).unwrap();
+//     let current_snapshot = read_reserve_snapshot(deps.storage, counter);
+//     let mut current_snapshot = current_snapshot.unwrap();
+
+//     let mut current_price = current_snapshot
+//         .quote_asset_reserve
+//         .checked_mul(config.decimals)?
+//         .checked_div(current_snapshot.base_asset_reserve)?;
+
+//     if interval == 0 {
+//         return Ok(current_price);
+//     }
+
+//     let base_timestamp = env.block.time.seconds().checked_sub(interval).unwrap();
+
+//     if counter == 1 || current_snapshot.timestamp.seconds() <= base_timestamp {
+//         return Ok(current_price);
+//     }
+
+//     let mut previous_timestamp = current_snapshot.timestamp.seconds();
+//     let mut period = Uint128::from(
+//         env.block
+//             .time
+//             .seconds()
+//             .checked_sub(previous_timestamp)
+//             .unwrap(),
+//     );
+
+//     let mut weighted_price = current_price.checked_mul(period)?;
+
+//     loop {
+//         counter -= 1;
+//         // if snapshot history is too short
+//         if counter == 0 {
+//             return Ok(weighted_price.checked_div(period)?);
+//         }
+//         current_snapshot = read_reserve_snapshot(deps.storage, counter).unwrap();
+//         current_price = current_snapshot
+//             .quote_asset_reserve
+//             .checked_mul(config.decimals)?
+//             .checked_div(current_snapshot.base_asset_reserve)?;
+
+//         if current_snapshot.timestamp.seconds() <= base_timestamp {
+//             let delta_timestamp =
+//                 Uint128::from(previous_timestamp.checked_sub(base_timestamp).unwrap());
+
+//             weighted_price = weighted_price
+//                 .checked_add(current_price.checked_mul(delta_timestamp).unwrap())
+//                 .unwrap();
+
+//             break;
+//         }
+
+//         let delta_timestamp = Uint128::from(
+//             previous_timestamp
+//                 .checked_sub(current_snapshot.timestamp.seconds())
+//                 .unwrap(),
+//         );
+//         weighted_price = weighted_price
+//             .checked_add(current_price.checked_mul(delta_timestamp).unwrap())
+//             .unwrap();
+
+//         period = period.checked_add(delta_timestamp).unwrap();
+//         previous_timestamp = current_snapshot.timestamp.seconds();
+//     }
+
+//     Ok(weighted_price.checked_div(Uint128::from(interval))?)
+// }
 
 // fn get_price_with_specific_snapshot() {}
 

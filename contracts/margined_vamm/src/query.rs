@@ -10,7 +10,9 @@ use crate::{
         read_config, read_reserve_snapshot_counter, read_reserve_snapshots, read_state, Config,
         ReserveSnapshot, State,
     },
-    utils::{calc_twap, calc_twap_input_asset},
+    utils::{
+        calc_twap, calc_twap_input_asset, TwapCalcOption, TwapInputAsset, TwapPriceCalcParams,
+    },
 };
 
 const FIFTEEN_MINUTES: u64 = 15 * 60;
@@ -94,7 +96,13 @@ pub fn query_spot_price(deps: Deps) -> StdResult<Uint128> {
 
 /// Queries twap price of the vAMM, using the reserve snapshots
 pub fn query_twap_price(deps: Deps, env: Env, interval: u64) -> StdResult<Uint128> {
-    calc_twap(deps, env, interval)
+    let snapshot_index = read_reserve_snapshot_counter(deps.storage).unwrap();
+    let params = TwapPriceCalcParams {
+        opt: TwapCalcOption::Reserve,
+        snapshot_index,
+        asset: None,
+    };
+    calc_twap(deps, env, params, interval)
 }
 
 /// Queries twap price of the vAMM, using the reserve snapshots
