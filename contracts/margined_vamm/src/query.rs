@@ -10,9 +10,7 @@ use crate::{
         read_config, read_reserve_snapshot_counter, read_reserve_snapshots, read_state, Config,
         ReserveSnapshot, State,
     },
-    utils::{
-        calc_twap, calc_twap_input_asset, TwapCalcOption, TwapInputAsset, TwapPriceCalcParams,
-    },
+    utils::{calc_twap, TwapCalcOption, TwapInputAsset, TwapPriceCalcParams},
 };
 
 const FIFTEEN_MINUTES: u64 = 15 * 60;
@@ -112,7 +110,21 @@ pub fn query_input_twap(
     direction: Direction,
     amount: Uint128,
 ) -> StdResult<Uint128> {
-    calc_twap_input_asset(deps, env, amount, true, &direction, FIFTEEN_MINUTES)
+    let snapshot_index = read_reserve_snapshot_counter(deps.storage).unwrap();
+
+    let asset = TwapInputAsset {
+        direction,
+        amount,
+        quote: true,
+    };
+
+    let params = TwapPriceCalcParams {
+        opt: TwapCalcOption::Input,
+        snapshot_index,
+        asset: Some(asset),
+    };
+
+    calc_twap(deps, env, params, FIFTEEN_MINUTES)
 }
 
 /// Queries twap price of the vAMM, using the reserve snapshots
@@ -122,7 +134,21 @@ pub fn query_output_twap(
     direction: Direction,
     amount: Uint128,
 ) -> StdResult<Uint128> {
-    calc_twap_input_asset(deps, env, amount, false, &direction, FIFTEEN_MINUTES)
+    let snapshot_index = read_reserve_snapshot_counter(deps.storage).unwrap();
+
+    let asset = TwapInputAsset {
+        direction,
+        amount,
+        quote: false,
+    };
+
+    let params = TwapPriceCalcParams {
+        opt: TwapCalcOption::Input,
+        snapshot_index,
+        asset: Some(asset),
+    };
+
+    calc_twap(deps, env, params, FIFTEEN_MINUTES)
 }
 
 /// Returns the total (i.e. toll + spread) fees for an amount

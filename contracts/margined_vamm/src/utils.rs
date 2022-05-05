@@ -5,7 +5,7 @@ use crate::{
     handle::{get_input_price_with_reserves, get_output_price_with_reserves},
     state::{
         read_config, read_reserve_snapshot, read_reserve_snapshot_counter, read_state,
-        store_reserve_snapshot, update_reserve_snapshot, Config, ReserveSnapshot, State,
+        store_reserve_snapshot, update_reserve_snapshot, Config, ReserveSnapshot,
     },
 };
 
@@ -17,8 +17,9 @@ pub enum TwapCalcOption {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct TwapInputAsset {
-    pub dir: Direction,
+    pub direction: Direction,
     pub amount: Uint128,
+    pub quote: bool, // [true|false] -> [quote_in|quote_out]
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -165,6 +166,31 @@ pub fn get_price_with_specific_snapshot(
 
         return Ok(current_price);
     } else if params.opt == TwapCalcOption::Input {
+        // safe to unwrap as entry requires it to be so,
+        // maybe its nicer just to set defaults instead of option
+        // ¯\_(ツ)_/¯
+        let asset = params.asset.unwrap();
+        if asset.amount.is_zero() {
+            return Ok(Uint128::zero());
+        }
+
+        if asset.quote {
+            return get_input_price_with_reserves(
+                deps,
+                &asset.direction,
+                asset.amount,
+                snapshot.quote_asset_reserve,
+                snapshot.base_asset_reserve,
+            );
+        } else {
+            return get_output_price_with_reserves(
+                deps,
+                &asset.direction,
+                asset.amount,
+                snapshot.quote_asset_reserve,
+                snapshot.base_asset_reserve,
+            );
+        }
     }
     Ok(Uint128::zero())
 }
@@ -202,7 +228,7 @@ pub fn calc_twap(
     let mut weighted_price = current_price.checked_mul(period)?;
 
     loop {
-        params.snapshot_index = params.snapshot_index - 1;
+        params.snapshot_index -= 1;
 
         // if snapshot history is too short
         if params.snapshot_index == 0 {
@@ -212,192 +238,6 @@ pub fn calc_twap(
         current_snapshot = read_reserve_snapshot(deps.storage, params.snapshot_index).unwrap();
         let current_price = get_price_with_specific_snapshot(deps, params.clone())?;
 
-        if current_snapshot.timestamp.seconds() <= base_timestamp {
-            let delta_timestamp =
-                Uint128::from(previous_timestamp.checked_sub(base_timestamp).unwrap());
-
-            weighted_price = weighted_price
-                .checked_add(current_price.checked_mul(delta_timestamp).unwrap())
-                .unwrap();
-
-            break;
-        }
-
-        let delta_timestamp = Uint128::from(
-            previous_timestamp
-                .checked_sub(current_snapshot.timestamp.seconds())
-                .unwrap(),
-        );
-        weighted_price = weighted_price
-            .checked_add(current_price.checked_mul(delta_timestamp).unwrap())
-            .unwrap();
-
-        period = period.checked_add(delta_timestamp).unwrap();
-        previous_timestamp = current_snapshot.timestamp.seconds();
-    }
-
-    Ok(weighted_price.checked_div(Uint128::from(interval))?)
-}
-
-// /// Calculates the TWAP of the AMM reserves
-// pub fn calc_twap(
-//     deps: Deps,
-//     env: Env,
-//     params: TwapPriceCalcParams,
-//     interval: u64,
-// ) -> StdResult<Uint128> {
-//     let config: Config = read_config(deps.storage)?;
-//     let mut counter = read_reserve_snapshot_counter(deps.storage).unwrap();
-//     let current_snapshot = read_reserve_snapshot(deps.storage, counter);
-//     let mut current_snapshot = current_snapshot.unwrap();
-
-//     let mut current_price = current_snapshot
-//         .quote_asset_reserve
-//         .checked_mul(config.decimals)?
-//         .checked_div(current_snapshot.base_asset_reserve)?;
-
-//     if interval == 0 {
-//         return Ok(current_price);
-//     }
-
-//     let base_timestamp = env.block.time.seconds().checked_sub(interval).unwrap();
-
-//     if counter == 1 || current_snapshot.timestamp.seconds() <= base_timestamp {
-//         return Ok(current_price);
-//     }
-
-//     let mut previous_timestamp = current_snapshot.timestamp.seconds();
-//     let mut period = Uint128::from(
-//         env.block
-//             .time
-//             .seconds()
-//             .checked_sub(previous_timestamp)
-//             .unwrap(),
-//     );
-
-//     let mut weighted_price = current_price.checked_mul(period)?;
-
-//     loop {
-//         counter -= 1;
-//         // if snapshot history is too short
-//         if counter == 0 {
-//             return Ok(weighted_price.checked_div(period)?);
-//         }
-//         current_snapshot = read_reserve_snapshot(deps.storage, counter).unwrap();
-//         current_price = current_snapshot
-//             .quote_asset_reserve
-//             .checked_mul(config.decimals)?
-//             .checked_div(current_snapshot.base_asset_reserve)?;
-
-//         if current_snapshot.timestamp.seconds() <= base_timestamp {
-//             let delta_timestamp =
-//                 Uint128::from(previous_timestamp.checked_sub(base_timestamp).unwrap());
-
-//             weighted_price = weighted_price
-//                 .checked_add(current_price.checked_mul(delta_timestamp).unwrap())
-//                 .unwrap();
-
-//             break;
-//         }
-
-//         let delta_timestamp = Uint128::from(
-//             previous_timestamp
-//                 .checked_sub(current_snapshot.timestamp.seconds())
-//                 .unwrap(),
-//         );
-//         weighted_price = weighted_price
-//             .checked_add(current_price.checked_mul(delta_timestamp).unwrap())
-//             .unwrap();
-
-//         period = period.checked_add(delta_timestamp).unwrap();
-//         previous_timestamp = current_snapshot.timestamp.seconds();
-//     }
-
-//     Ok(weighted_price.checked_div(Uint128::from(interval))?)
-// }
-
-// fn get_price_with_specific_snapshot() {}
-
-// TODO TODO TODO
-// Please clean this function up and amalgamate with that above **IF**
-// possible.
-/// Calculates the TWAP of the AMM reserves with an input
-pub fn calc_twap_input_asset(
-    deps: Deps,
-    env: Env,
-    amount: Uint128,
-    quote: bool,
-    direction: &Direction,
-    interval: u64,
-) -> StdResult<Uint128> {
-    let state: State = read_state(deps.storage)?;
-    let mut counter = read_reserve_snapshot_counter(deps.storage).unwrap();
-    let current_snapshot = read_reserve_snapshot(deps.storage, counter);
-    let mut current_snapshot = current_snapshot.unwrap();
-
-    let mut current_price: Uint128 = if quote {
-        get_input_price_with_reserves(
-            deps,
-            direction,
-            amount,
-            state.quote_asset_reserve,
-            state.base_asset_reserve,
-        )?
-    } else {
-        get_output_price_with_reserves(
-            deps,
-            direction,
-            amount,
-            state.quote_asset_reserve,
-            state.base_asset_reserve,
-        )?
-    };
-
-    if interval == 0 {
-        return Ok(current_price);
-    }
-
-    let base_timestamp = env.block.time.seconds().checked_sub(interval).unwrap();
-
-    if counter == 1 || current_snapshot.timestamp.seconds() <= base_timestamp {
-        return Ok(current_price);
-    }
-
-    let mut previous_timestamp = current_snapshot.timestamp.seconds();
-    let mut period = Uint128::from(
-        env.block
-            .time
-            .seconds()
-            .checked_sub(previous_timestamp)
-            .unwrap(),
-    );
-
-    let mut weighted_price = current_price.checked_mul(period)?;
-
-    loop {
-        counter -= 1;
-        // if snapshot history is too short
-        if counter == 0 {
-            return Ok(weighted_price.checked_div(period)?);
-        }
-        current_snapshot = read_reserve_snapshot(deps.storage, counter).unwrap();
-        if quote {
-            current_price = get_input_price_with_reserves(
-                deps,
-                direction,
-                amount,
-                current_snapshot.quote_asset_reserve,
-                current_snapshot.base_asset_reserve,
-            )?;
-        } else {
-            current_price = get_output_price_with_reserves(
-                deps,
-                direction,
-                amount,
-                current_snapshot.quote_asset_reserve,
-                current_snapshot.base_asset_reserve,
-            )?;
-        }
         if current_snapshot.timestamp.seconds() <= base_timestamp {
             let delta_timestamp =
                 Uint128::from(previous_timestamp.checked_sub(base_timestamp).unwrap());
