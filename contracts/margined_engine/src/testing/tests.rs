@@ -36,6 +36,23 @@ fn test_instantiation() {
             },
         }
     );
+
+    // fails if decimals are 0
+    let msg = InstantiateMsg {
+        decimals: 0u8,
+        insurance_fund: INSURANCE_FUND.to_string(),
+        fee_pool: FEE_POOL.to_string(),
+        eligible_collateral: TOKEN.to_string(),
+        initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
+        maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
+        liquidation_fee: Uint128::from(100u128),
+    };
+    let info = mock_info(OWNER, &[]);
+    let result = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+    assert_eq!(
+        result.to_string(),
+        "Generic error: Decimal places cannot be zero".to_string()
+    );
 }
 
 #[test]

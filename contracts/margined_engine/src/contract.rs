@@ -3,7 +3,9 @@ use cosmwasm_std::{
     Response, StdError, StdResult, Uint128,
 };
 use cw2::set_contract_version;
-use margined_common::validate::{validate_address, validate_eligible_collateral, validate_ratio};
+use margined_common::validate::{
+    validate_address, validate_decimal_places, validate_eligible_collateral, validate_ratio,
+};
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
@@ -48,8 +50,10 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    // validate the ratios, note this assumes the decimals is correct
-    let decimals = Uint128::from(10u128.pow(msg.decimals as u32));
+    // validate decimal places are correct, and return ratio max.
+    let decimals = validate_decimal_places(msg.decimals)?;
+
+    // validate the ratios conform to the decimals
     validate_ratio(msg.initial_margin_ratio, decimals)?;
     validate_ratio(msg.maintenance_margin_ratio, decimals)?;
     validate_ratio(msg.liquidation_fee, decimals)?;
