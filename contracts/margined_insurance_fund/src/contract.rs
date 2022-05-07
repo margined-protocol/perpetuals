@@ -1,3 +1,4 @@
+#[cfg(not(feature = "library"))]
 use crate::error::ContractError;
 use crate::{
     handle::{add_vamm, remove_vamm, shutdown_all_vamm, update_config, withdraw},
@@ -6,12 +7,10 @@ use crate::{
     },
     state::{store_config, Config},
 };
-use cw2::set_contract_version;
-
-#[cfg(not(feature = "library"))]
 use cosmwasm_std::{
     entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
+use cw2::set_contract_version;
 use margined_perp::margined_insurance_fund::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 /// Contract name that is used for migration.

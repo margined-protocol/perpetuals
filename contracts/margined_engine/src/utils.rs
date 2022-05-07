@@ -1,7 +1,16 @@
 use cosmwasm_std::{
-    Addr, Deps, Env, MessageInfo, Response, StdError, StdResult, Storage, SubMsg, Uint128,
+    Addr, Attribute, Deps, Env, Event, MessageInfo, Response, StdError, StdResult, Storage, SubMsg,
+    SubMsgExecutionResponse, Uint128,
 };
 use terraswap::asset::{Asset, AssetInfo};
+
+use std::str::FromStr;
+
+use margined_common::integer::Integer;
+use margined_perp::margined_engine::{
+    PnlCalcOption, Position, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
+};
+use margined_perp::margined_vamm::Direction;
 
 use crate::{
     messages::execute_insurance_fund_withdrawal,
@@ -12,12 +21,6 @@ use crate::{
     query::query_cumulative_premium_fraction,
     state::{read_config, read_position, read_vamm_map, State},
 };
-
-use margined_common::integer::Integer;
-use margined_perp::margined_engine::{
-    PnlCalcOption, Position, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
-};
-use margined_perp::margined_vamm::Direction;
 
 // reads position from storage but also handles the case where there is no
 // previously stored position, i.e. a new position
@@ -289,6 +292,61 @@ pub fn require_not_paused(paused: bool) -> StdResult<Response> {
     }
 
     Ok(Response::new())
+}
+
+pub fn parse_swap(response: SubMsgExecutionResponse) -> StdResult<(Uint128, Uint128)> {
+    // Find swap inputs and output events
+    let wasm = response.events.iter().find(|&e| e.ty == "wasm");
+
+    let wasm = wasm.unwrap();
+
+    let swap = read_event("action".to_string(), wasm).value;
+
+    let input: Uint128;
+    let output: Uint128;
+    match swap.as_str() {
+        "swap_input" => {
+            let input_str = read_event("quote_asset_amount".to_string(), wasm).value;
+            let output_str = read_event("base_asset_amount".to_string(), wasm).value;
+
+            input = Uint128::from_str(&input_str).unwrap();
+            output = Uint128::from_str(&output_str).unwrap();
+        }
+        "swap_output" => {
+            let input_str = read_event("base_asset_amount".to_string(), wasm).value;
+            let output_str = read_event("quote_asset_amount".to_string(), wasm).value;
+
+            input = Uint128::from_str(&input_str).unwrap();
+            output = Uint128::from_str(&output_str).unwrap();
+        }
+        _ => {
+            return Err(StdError::generic_err("can't parse swap"));
+        }
+    }
+
+    Ok((input, output))
+}
+
+pub fn parse_pay_funding(response: SubMsgExecutionResponse) -> (Integer, String) {
+    // Find swap inputs and output events
+    let wasm = response.events.iter().find(|&e| e.ty == "wasm");
+    let wasm = wasm.unwrap();
+
+    let premium_str = read_event("premium_fraction".to_string(), wasm).value;
+    let premium: Integer = Integer::from_str(&premium_str).unwrap();
+
+    let sender = read_event("_contract_addr".to_string(), wasm).value;
+
+    (premium, sender)
+}
+
+fn read_event(key: String, event: &Event) -> Attribute {
+    let result = event
+        .attributes
+        .iter()
+        .find(|&attr| attr.key == key)
+        .unwrap();
+    result.clone()
 }
 
 // takes the side (buy|sell) and returns the direction (long|short)

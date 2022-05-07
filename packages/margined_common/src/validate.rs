@@ -4,7 +4,7 @@ use terraswap::asset::AssetInfo;
 // TODO, probably we should use decimal for ratios but not committed to that yet
 pub fn validate_ratio(value: Uint128, decimals: Uint128) -> StdResult<Response> {
     // check that the value is smaller than number of decimals
-    if value > decimals {
+    if value > decimals || value.is_zero() {
         return Err(StdError::generic_err("invalid ratio"));
     }
 

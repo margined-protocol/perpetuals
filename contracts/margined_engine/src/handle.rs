@@ -6,8 +6,8 @@ use terraswap::asset::{Asset, AssetInfo};
 
 use crate::{
     contract::{
-        PAY_FUNDING_REPLY_ID, SWAP_CLOSE_REPLY_ID, SWAP_DECREASE_REPLY_ID, SWAP_INCREASE_REPLY_ID,
-        SWAP_LIQUIDATE_REPLY_ID, SWAP_PARTIAL_LIQUIDATION_REPLY_ID, SWAP_REVERSE_REPLY_ID,
+        LIQUIDATION_REPLY_ID, PARTIAL_LIQUIDATION_REPLY_ID, PAY_FUNDING_REPLY_ID,
+        SWAP_CLOSE_REPLY_ID, SWAP_DECREASE_REPLY_ID, SWAP_INCREASE_REPLY_ID, SWAP_REVERSE_REPLY_ID,
     },
     messages::{execute_transfer_from, withdraw},
     querier::query_vamm_output_price,
@@ -284,7 +284,7 @@ pub fn liquidate(
     {
         partial_liquidation(deps, env, vamm, trader, quote_asset_limit)
     } else {
-        internal_close_position(deps, &position, quote_asset_limit, SWAP_LIQUIDATE_REPLY_ID)?
+        internal_close_position(deps, &position, quote_asset_limit, LIQUIDATION_REPLY_ID)?
     };
 
     Ok(Response::default().add_submessage(msg))
@@ -609,7 +609,7 @@ fn partial_liquidation(
             position.notional,
             Uint128::zero(),
             true,
-            SWAP_PARTIAL_LIQUIDATION_REPLY_ID,
+            PARTIAL_LIQUIDATION_REPLY_ID,
         )
         .unwrap()
     } else {
@@ -619,7 +619,7 @@ fn partial_liquidation(
             direction_to_side(position.direction),
             partial_position_size,
             partial_asset_limit,
-            SWAP_PARTIAL_LIQUIDATION_REPLY_ID,
+            PARTIAL_LIQUIDATION_REPLY_ID,
         )
         .unwrap()
     };
