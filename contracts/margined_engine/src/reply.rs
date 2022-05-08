@@ -75,17 +75,20 @@ pub fn increase_position_reply(
         funding_payment: _,
         margin,
         bad_debt: _,
-        latest_premium_fraction: _,
+        latest_premium_fraction,
     } = calc_remain_margin_with_funding_payment(
         deps.as_ref(),
         position.clone(),
         Integer::new_positive(swap_margin),
     )?;
 
-    position.margin = margin;
-    position.size += signed_output;
-    position.notional = position.notional.checked_add(swap.open_notional)?;
+    // set the new position
     position.direction = side_to_direction(swap.side);
+    position.size += signed_output;
+    position.margin = margin;
+    position.notional = position.notional.checked_add(swap.open_notional)?;
+    position.last_updated_premium_fraction = latest_premium_fraction;
+    position.block_number = env.block.height;
 
     store_position(deps.storage, &position)?;
     store_state(deps.storage, &state)?;
@@ -174,7 +177,7 @@ pub fn decrease_position_reply(
     };
 
     let mut position: Position = get_position(
-        env,
+        env.clone(),
         deps.storage,
         &swap.vamm,
         &swap.trader,
@@ -206,11 +209,12 @@ pub fn decrease_position_reply(
             - Integer::new_positive(swap.open_notional)
     };
 
-    // now update the position
+    // set the new position
     position.size += signed_output;
-    position.notional = remaining_notional.value;
     position.margin = margin;
+    position.notional = remaining_notional.value;
     position.last_updated_premium_fraction = latest_premium_fraction;
+    position.block_number = env.block.height;
 
     store_position(deps.storage, &position)?;
     store_state(deps.storage, &state)?;
@@ -293,7 +297,7 @@ pub fn reverse_position_reply(
         swap.unrealized_pnl = Integer::zero();
         swap.fees_paid = true;
 
-        // TODO not certain this is entirely correct
+        // update the funds required
         funds.required = if swap.margin_to_vault.is_positive() {
             funds.required.checked_add(swap.margin_to_vault.value)?
         } else if swap.margin_to_vault.is_negative() && funds.required > swap.margin_to_vault.value
@@ -500,7 +504,7 @@ pub fn liquidate_reply(
     enter_restriction_mode(deps.storage, swap.vamm, env.block.height)?;
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
-        ("action", "liquidate_reply"),
+        ("action", "liquidation_reply"),
         ("liquidation_fee", &liquidation_fee.to_string()),
         ("pnl", &margin_delta.to_string()),
     ]))
