@@ -138,14 +138,14 @@ pub fn read_sent_funds(storage: &dyn Storage) -> StdResult<SentFunds> {
 pub struct TmpSwapInfo {
     pub vamm: Addr,
     pub trader: Addr,
-    pub side: Side,
-    pub quote_asset_amount: Uint128,
-    pub leverage: Uint128,
-    pub open_notional: Uint128,
-    pub position_notional: Uint128,
-    pub unrealized_pnl: Integer,
-    pub margin_to_vault: Integer,
-    pub fees_paid: bool,
+    pub side: Side,                  // buy or sell
+    pub quote_asset_amount: Uint128, // amount of quote asset being supplied
+    pub leverage: Uint128,           // leverage of new position
+    pub open_notional: Uint128,      // notional of position being opened
+    pub position_notional: Uint128,  // notional of existing position, inclusing funding
+    pub unrealized_pnl: Integer,     // any pnl due
+    pub margin_to_vault: Integer,    // margin to be sent to vault
+    pub fees_paid: bool, // true if fees have been paid, used in case of reversing position
 }
 
 pub fn store_tmp_swap(storage: &mut dyn Storage, swap: &TmpSwapInfo) -> StdResult<()> {

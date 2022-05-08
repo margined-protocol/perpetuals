@@ -12,7 +12,8 @@ use crate::{
     state::{
         append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_sent_funds,
         read_state, read_tmp_liquidator, read_tmp_swap, remove_sent_funds, remove_tmp_liquidator,
-        remove_tmp_swap, store_position, store_sent_funds, store_state, store_tmp_swap,
+        remove_tmp_swap, store_position, store_sent_funds, store_state, store_tmp_swap, State,
+        TmpSwapInfo,
     },
     utils::{
         calc_remain_margin_with_funding_payment, clear_position, get_position, realize_bad_debt,
@@ -21,7 +22,10 @@ use crate::{
 };
 
 use margined_common::integer::Integer;
-use margined_perp::{margined_engine::RemainMarginResponse, margined_vamm::Direction};
+use margined_perp::{
+    margined_engine::{Position, RemainMarginResponse, Side},
+    margined_vamm::Direction,
+};
 
 // Increases position after successful execution of the swap
 pub fn increase_position_reply(
@@ -44,11 +48,10 @@ pub fn increase_position_reply(
         swap.side.clone(),
     );
 
-    let direction = side_to_direction(swap.side);
-    let signed_output = if direction == Direction::AddToAmm {
-        Integer::new_positive(output)
-    } else {
-        Integer::new_negative(output)
+    // depending on the direction the output is positive or negative
+    let signed_output: Integer = match &swap.side {
+        Side::Buy => Integer::new_positive(output),
+        Side::Sell => Integer::new_negative(output),
     };
 
     update_open_interest_notional(
@@ -58,7 +61,7 @@ pub fn increase_position_reply(
         Integer::new_positive(input),
     )?;
 
-    // TODO make my own decimal math lib
+    // calculate margin needed given swap
     let swap_margin = swap
         .open_notional
         .checked_mul(config.decimals)?
@@ -82,7 +85,7 @@ pub fn increase_position_reply(
     position.margin = margin;
     position.size += signed_output;
     position.notional = position.notional.checked_add(swap.open_notional)?;
-    position.direction = direction;
+    position.direction = side_to_direction(swap.side);
 
     store_position(deps.storage, &position)?;
     store_state(deps.storage, &state)?;
@@ -141,6 +144,7 @@ pub fn increase_position_reply(
 
     remove_tmp_swap(deps.storage);
     remove_sent_funds(deps.storage);
+
     Ok(Response::new()
         .add_submessages(msgs)
         .add_attributes(vec![("action", "increase_position")]))
@@ -153,8 +157,8 @@ pub fn decrease_position_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    let mut state = read_state(deps.storage)?;
-    let swap = read_tmp_swap(deps.storage)?;
+    let mut state: State = read_state(deps.storage)?;
+    let swap: TmpSwapInfo = read_tmp_swap(deps.storage)?;
 
     update_open_interest_notional(
         &deps.as_ref(),
@@ -169,7 +173,7 @@ pub fn decrease_position_reply(
         Integer::new_negative(output)
     };
 
-    let mut position = get_position(
+    let mut position: Position = get_position(
         env,
         deps.storage,
         &swap.vamm,
