@@ -46,7 +46,7 @@ pub fn get_position(
     position
 }
 
-// Create's an asset from the eligible collateral and msg sent
+// Creates an asset from the eligible collateral and msg sent
 pub fn get_asset(info: MessageInfo, eligible_collateral: AssetInfo) -> Asset {
     match eligible_collateral.clone() {
         AssetInfo::Token { .. } => Asset {

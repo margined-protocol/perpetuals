@@ -135,7 +135,7 @@ pub fn read_sent_funds(storage: &dyn Storage) -> StdResult<SentFunds> {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct Swap {
+pub struct TmpSwapInfo {
     pub vamm: Addr,
     pub trader: Addr,
     pub side: Side,
@@ -148,16 +148,16 @@ pub struct Swap {
     pub fees_paid: bool,
 }
 
-pub fn store_tmp_swap(storage: &mut dyn Storage, swap: &Swap) -> StdResult<()> {
+pub fn store_tmp_swap(storage: &mut dyn Storage, swap: &TmpSwapInfo) -> StdResult<()> {
     singleton(storage, KEY_TMP_SWAP).save(swap)
 }
 
 pub fn remove_tmp_swap(storage: &mut dyn Storage) {
-    let mut store: Singleton<Swap> = singleton(storage, KEY_TMP_SWAP);
+    let mut store: Singleton<TmpSwapInfo> = singleton(storage, KEY_TMP_SWAP);
     store.remove()
 }
 
-pub fn read_tmp_swap(storage: &dyn Storage) -> StdResult<Swap> {
+pub fn read_tmp_swap(storage: &dyn Storage) -> StdResult<TmpSwapInfo> {
     let res = singleton_read(storage, KEY_TMP_SWAP).may_load();
     match res {
         Ok(_) => {
