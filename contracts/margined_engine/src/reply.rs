@@ -163,19 +163,6 @@ pub fn decrease_position_reply(
     let mut state: State = read_state(deps.storage)?;
     let swap: TmpSwapInfo = read_tmp_swap(deps.storage)?;
 
-    update_open_interest_notional(
-        &deps.as_ref(),
-        &mut state,
-        swap.vamm.clone(),
-        Integer::new_negative(input),
-    )?;
-
-    let signed_output = if side_to_direction(swap.side.clone()) == Direction::AddToAmm {
-        Integer::new_positive(output)
-    } else {
-        Integer::new_negative(output)
-    };
-
     let mut position: Position = get_position(
         env.clone(),
         deps.storage,
@@ -183,6 +170,19 @@ pub fn decrease_position_reply(
         &swap.trader,
         swap.side.clone(),
     );
+
+    update_open_interest_notional(
+        &deps.as_ref(),
+        &mut state,
+        swap.vamm.clone(),
+        Integer::new_negative(input),
+    )?;
+
+    // depending on the direction the output is positive or negative
+    let signed_output: Integer = match &swap.side {
+        Side::Buy => Integer::new_positive(output),
+        Side::Sell => Integer::new_negative(output),
+    };
 
     // realized_pnl = unrealized_pnl * close_ratio
     let realized_pnl = if !position.size.is_zero() {
