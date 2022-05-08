@@ -377,8 +377,7 @@ pub fn update_reserve(
     base_asset_amount: Uint128,
     can_go_over_fluctuation: bool,
 ) -> StdResult<Response> {
-    let state: State = read_state(storage)?;
-    let mut update_state = state.clone();
+    let mut state: State = read_state(storage)?;
 
     check_is_over_block_fluctuation_limit(
         storage,
@@ -391,47 +390,38 @@ pub fn update_reserve(
 
     match direction {
         Direction::AddToAmm => {
-            update_state.quote_asset_reserve = update_state
-                .quote_asset_reserve
-                .checked_add(quote_asset_amount)?;
-            update_state.base_asset_reserve =
-                state.base_asset_reserve.checked_sub(base_asset_amount)?;
+            state.quote_asset_reserve =
+                state.quote_asset_reserve.checked_add(quote_asset_amount)?;
+            state.base_asset_reserve = state.base_asset_reserve.checked_sub(base_asset_amount)?;
 
-            // TODO think whether this needs overflow protection
-            update_state.total_position_size =
+            state.total_position_size =
                 state.total_position_size + Integer::from(base_asset_amount);
         }
         Direction::RemoveFromAmm => {
-            update_state.base_asset_reserve = update_state
-                .base_asset_reserve
-                .checked_add(base_asset_amount)?;
-            update_state.quote_asset_reserve =
+            state.base_asset_reserve = state.base_asset_reserve.checked_add(base_asset_amount)?;
+            state.quote_asset_reserve =
                 state.quote_asset_reserve.checked_sub(quote_asset_amount)?;
 
-            // TODO think whether this needs underflow protection
-            update_state.total_position_size =
+            state.total_position_size =
                 state.total_position_size - Integer::from(base_asset_amount);
         }
     }
 
-    store_state(storage, &update_state)?;
+    store_state(storage, &state)?;
 
     add_reserve_snapshot(
         storage,
         env.clone(),
-        update_state.quote_asset_reserve,
-        update_state.base_asset_reserve,
+        state.quote_asset_reserve,
+        state.base_asset_reserve,
     )?;
 
     Ok(Response::new().add_attributes(vec![
         (
             "quote_asset_reserve",
-            &update_state.quote_asset_reserve.to_string(),
+            &state.quote_asset_reserve.to_string(),
         ),
-        (
-            "base_asset_reserve",
-            &update_state.base_asset_reserve.to_string(),
-        ),
+        ("base_asset_reserve", &state.base_asset_reserve.to_string()),
         ("timestamp", &env.block.time.seconds().to_string()),
     ]))
 }
