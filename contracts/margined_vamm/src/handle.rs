@@ -394,16 +394,14 @@ pub fn update_reserve(
                 state.quote_asset_reserve.checked_add(quote_asset_amount)?;
             state.base_asset_reserve = state.base_asset_reserve.checked_sub(base_asset_amount)?;
 
-            state.total_position_size =
-                state.total_position_size + Integer::from(base_asset_amount);
+            state.total_position_size += Integer::from(base_asset_amount);
         }
         Direction::RemoveFromAmm => {
             state.base_asset_reserve = state.base_asset_reserve.checked_add(base_asset_amount)?;
             state.quote_asset_reserve =
                 state.quote_asset_reserve.checked_sub(quote_asset_amount)?;
 
-            state.total_position_size =
-                state.total_position_size - Integer::from(base_asset_amount);
+            state.total_position_size -= Integer::from(base_asset_amount);
         }
     }
 

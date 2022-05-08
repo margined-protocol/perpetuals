@@ -1,4 +1,4 @@
-use cosmwasm_std::{DepsMut, Env, Response, StdError, StdResult, SubMsg, Uint128};
+use cosmwasm_std::{DepsMut, Env, Response, StdResult, SubMsg, Uint128};
 use std::cmp::Ordering;
 use terraswap::asset::AssetInfo;
 
@@ -300,8 +300,7 @@ pub fn reverse_position_reply(
         // update the funds required
         funds.required = if swap.margin_to_vault.is_positive() {
             funds.required.checked_add(swap.margin_to_vault.value)?
-        } else if swap.margin_to_vault.is_negative() && funds.required > swap.margin_to_vault.value
-        {
+        } else if funds.required > swap.margin_to_vault.value {
             funds.required.checked_sub(swap.margin_to_vault.value)?
         } else {
             fees.amount
@@ -335,8 +334,8 @@ pub fn close_position_reply(
 ) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
-
     let swap = read_tmp_swap(deps.storage)?;
+
     let mut position = get_position(
         env.clone(),
         deps.storage,
@@ -421,11 +420,7 @@ pub fn liquidate_reply(
     let mut state = read_state(deps.storage)?;
 
     let swap = read_tmp_swap(deps.storage)?;
-
     let liquidator = read_tmp_liquidator(deps.storage)?;
-    if liquidator.is_none() {
-        return Err(StdError::generic_err("no liquidator"));
-    }
 
     let mut position = get_position(
         env.clone(),
@@ -436,10 +431,13 @@ pub fn liquidate_reply(
     );
 
     // calculate delta from trade and whether it was profitable or a loss
-    let margin_delta = if position.direction != Direction::AddToAmm {
-        Integer::new_positive(swap.open_notional) - Integer::new_positive(output)
-    } else {
-        Integer::new_positive(output) - Integer::new_positive(swap.open_notional)
+    let margin_delta: Integer = match &position.direction {
+        Direction::RemoveFromAmm => {
+            Integer::new_positive(swap.open_notional) - Integer::new_positive(output)
+        }
+        Direction::AddToAmm => {
+            Integer::new_positive(output) - Integer::new_positive(swap.open_notional)
+        }
     };
 
     let mut remain_margin =
@@ -476,9 +474,6 @@ pub fn liquidate_reply(
             execute_transfer(deps.storage, &config.insurance_fund, fee_to_insurance).unwrap(),
         );
     }
-
-    // pay liquidation fees
-    let liquidator = liquidator.unwrap();
 
     // calculate token balance that should be remaining once
     // insurance fees have been paid
@@ -523,9 +518,6 @@ pub fn partial_liquidation_reply(
     let swap = read_tmp_swap(deps.storage)?;
 
     let liquidator = read_tmp_liquidator(deps.storage)?;
-    if liquidator.is_none() {
-        return Err(StdError::generic_err("no liquidator"));
-    }
 
     let mut position = get_position(
         env.clone(),
@@ -588,7 +580,7 @@ pub fn partial_liquidation_reply(
             deps.as_ref(),
             env.clone(),
             &mut state,
-            &liquidator.unwrap(),
+            &liquidator,
             config.eligible_collateral,
             liquidation_fee,
         )

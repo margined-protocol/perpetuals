@@ -177,8 +177,15 @@ pub fn remove_tmp_liquidator(storage: &mut dyn Storage) {
     store.remove()
 }
 
-pub fn read_tmp_liquidator(storage: &dyn Storage) -> StdResult<Option<Addr>> {
-    singleton_read(storage, KEY_TMP_LIQUIDATOR).may_load()
+pub fn read_tmp_liquidator(storage: &dyn Storage) -> StdResult<Addr> {
+    let res = singleton_read(storage, KEY_TMP_LIQUIDATOR).may_load();
+    match res {
+        Ok(_) => {
+            let swap = res.unwrap();
+            Ok(swap.unwrap())
+        }
+        Err(_) => Err(StdError::generic_err("no liquidator")),
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, JsonSchema)]
