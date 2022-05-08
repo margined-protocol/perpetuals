@@ -294,6 +294,15 @@ pub fn require_not_paused(paused: bool) -> StdResult<Response> {
     Ok(Response::new())
 }
 
+// check an input is non-zero
+pub fn require_non_zero_input(input: Uint128) -> StdResult<Response> {
+    if input.is_zero() {
+        return Err(StdError::generic_err("Input must be non-zero"));
+    }
+
+    Ok(Response::new())
+}
+
 pub fn parse_swap(response: SubMsgExecutionResponse) -> StdResult<(Uint128, Uint128)> {
     // Find swap inputs and output events
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");

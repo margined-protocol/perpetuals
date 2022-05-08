@@ -125,20 +125,16 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             quote_asset_amount,
             leverage,
             base_asset_limit,
-        } => {
-            let trader = info.sender.clone();
-            open_position(
-                deps,
-                env,
-                info,
-                vamm,
-                trader.to_string(),
-                side,
-                quote_asset_amount,
-                leverage,
-                base_asset_limit,
-            )
-        }
+        } => open_position(
+            deps,
+            env,
+            info,
+            vamm,
+            side,
+            quote_asset_amount,
+            leverage,
+            base_asset_limit,
+        ),
         ExecuteMsg::ClosePosition {
             vamm,
             quote_asset_limit,
@@ -247,7 +243,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> StdResult<Response> {
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
     // No state migrations performed, just returned a Response
     Ok(Response::default())
 }

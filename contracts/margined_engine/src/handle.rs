@@ -19,7 +19,7 @@ use crate::{
     utils::{
         calc_remain_margin_with_funding_payment, direction_to_side, get_asset, get_position,
         get_position_notional_unrealized_pnl, require_bad_debt, require_insufficient_margin,
-        require_margin, require_not_paused, require_not_restriction_mode,
+        require_margin, require_non_zero_input, require_not_paused, require_not_restriction_mode,
         require_position_not_zero, require_vamm, side_to_direction,
     },
 };
@@ -58,7 +58,7 @@ pub fn update_config(
         config.owner = validate_address(deps.api, owner.as_str())?;
     }
 
-    // update insurance fund
+    // update insurance fund - note altering insurance fund could lead to vAMMs being unusable maybe make this a migration
     if let Some(insurance_fund) = insurance_fund {
         config.insurance_fund = validate_address(deps.api, insurance_fund.as_str())?;
     }
@@ -68,14 +68,14 @@ pub fn update_config(
         config.fee_pool = validate_address(deps.api, fee_pool.as_str())?;
     }
 
-    // update eligible collateral
+    // update eligible collaterals
     if let Some(eligible_collateral) = eligible_collateral {
         // validate eligible collateral
         config.eligible_collateral =
             validate_eligible_collateral(deps.as_ref(), eligible_collateral)?;
     }
 
-    // update decimals TODO: remove all this
+    // TODO: use the decimals defined in each eligible collateral, this should not be updateable
     if let Some(decimals) = decimals {
         config.decimals = decimals;
     }
@@ -132,7 +132,6 @@ pub fn open_position(
     env: Env,
     info: MessageInfo,
     vamm: String,
-    trader: String,
     side: Side,
     quote_asset_amount: Uint128,
     leverage: Uint128,
@@ -143,23 +142,24 @@ pub fn open_position(
 
     // validate address inputs
     let vamm = validate_address(deps.api, &vamm)?;
-    let trader = validate_address(deps.api, &trader)?;
+    let trader = validate_address(deps.api, &info.sender.to_string())?;
+
+    require_not_paused(state.pause)?;
+    require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
+    require_not_restriction_mode(deps.storage, &vamm, &trader, env.block.height)?;
+    require_non_zero_input(leverage)?;
 
     // calculate the margin ratio of new position wrt to leverage
     let margin_ratio = config
         .decimals
         .checked_mul(config.decimals)?
         .checked_div(leverage)?;
-
-    require_not_paused(state.pause)?;
-    require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
-    require_not_restriction_mode(deps.storage, &vamm, &trader, env.block.height)?;
     require_margin(margin_ratio, config.initial_margin_ratio)?;
 
     // retrieves existing position or creates a new one
     let position: Position = get_position(env.clone(), deps.storage, &vamm, &trader, side.clone());
 
-    // note: if direction and side are same way then increasing else we are reversing
+    // If direction and side are same way then increasing else we are reversing
     let is_increase: bool = position.direction == Direction::AddToAmm && side == Side::Buy
         || position.direction == Direction::RemoveFromAmm && side == Side::Sell;
 

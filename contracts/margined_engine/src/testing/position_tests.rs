@@ -30,6 +30,33 @@ fn test_initialization() {
 }
 
 #[test]
+fn test_force_error_open_position_zero_leverage() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(60u64),
+            to_decimals(0u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    let result = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        result.to_string(),
+        "Generic error: Input must be non-zero".to_string()
+    );
+}
+
+#[test]
 fn test_get_all_positions_open_position_long() {
     let SimpleScenario {
         mut router,
