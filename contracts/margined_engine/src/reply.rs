@@ -478,8 +478,6 @@ pub fn liquidate_reply(
         );
     }
 
-    // calculate token balance that should be remaining once
-    // insurance fees have been paid
     msgs.append(
         &mut withdraw(
             deps.as_ref(),

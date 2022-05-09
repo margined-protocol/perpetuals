@@ -337,6 +337,7 @@ pub fn deposit_margin(
     let trader = info.sender.clone();
 
     require_not_paused(state.pause)?;
+    require_non_zero_input(amount)?;
 
     // first try to execute the transfer
     let mut response: Response = Response::new();
@@ -387,24 +388,24 @@ pub fn withdraw_margin(
 
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
     require_not_paused(state.pause)?;
+    require_non_zero_input(amount)?;
 
     // read the position for the trader from vamm
     let mut position = read_position(deps.storage, &vamm, &trader).unwrap();
 
-    let margin_delta = Integer::new_negative(amount);
-
-    let remain_margin =
-        calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), margin_delta)?;
+    let remain_margin = calc_remain_margin_with_funding_payment(
+        deps.as_ref(),
+        position.clone(),
+        Integer::new_negative(amount),
+    )?;
     require_bad_debt(remain_margin.bad_debt)?;
 
     position.margin = remain_margin.margin;
     position.last_updated_premium_fraction = remain_margin.latest_premium_fraction;
 
-    // check if margin ratio has been
+    // check if margin is sufficient
     let free_collateral =
         query_free_collateral(deps.as_ref(), vamm.to_string(), trader.to_string())?;
-
-    // let margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
     if free_collateral
         .checked_sub(Integer::new_positive(amount))?
         .is_negative()
@@ -414,7 +415,7 @@ pub fn withdraw_margin(
 
     store_position(deps.storage, &position)?;
 
-    // try to execute the transfer
+    // withdraw margin
     let msgs = withdraw(
         deps.as_ref(),
         env,
