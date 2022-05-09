@@ -135,29 +135,29 @@ pub fn read_sent_funds(storage: &dyn Storage) -> StdResult<SentFunds> {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct Swap {
+pub struct TmpSwapInfo {
     pub vamm: Addr,
     pub trader: Addr,
-    pub side: Side,
-    pub quote_asset_amount: Uint128,
-    pub leverage: Uint128,
-    pub open_notional: Uint128,
-    pub position_notional: Uint128,
-    pub unrealized_pnl: Integer,
-    pub margin_to_vault: Integer,
-    pub fees_paid: bool,
+    pub side: Side,                  // buy or sell
+    pub quote_asset_amount: Uint128, // amount of quote asset being supplied
+    pub leverage: Uint128,           // leverage of new position
+    pub open_notional: Uint128,      // notional of position being opened
+    pub position_notional: Uint128,  // notional of existing position, inclusing funding
+    pub unrealized_pnl: Integer,     // any pnl due
+    pub margin_to_vault: Integer,    // margin to be sent to vault
+    pub fees_paid: bool, // true if fees have been paid, used in case of reversing position
 }
 
-pub fn store_tmp_swap(storage: &mut dyn Storage, swap: &Swap) -> StdResult<()> {
+pub fn store_tmp_swap(storage: &mut dyn Storage, swap: &TmpSwapInfo) -> StdResult<()> {
     singleton(storage, KEY_TMP_SWAP).save(swap)
 }
 
 pub fn remove_tmp_swap(storage: &mut dyn Storage) {
-    let mut store: Singleton<Swap> = singleton(storage, KEY_TMP_SWAP);
+    let mut store: Singleton<TmpSwapInfo> = singleton(storage, KEY_TMP_SWAP);
     store.remove()
 }
 
-pub fn read_tmp_swap(storage: &dyn Storage) -> StdResult<Swap> {
+pub fn read_tmp_swap(storage: &dyn Storage) -> StdResult<TmpSwapInfo> {
     let res = singleton_read(storage, KEY_TMP_SWAP).may_load();
     match res {
         Ok(_) => {
@@ -177,8 +177,15 @@ pub fn remove_tmp_liquidator(storage: &mut dyn Storage) {
     store.remove()
 }
 
-pub fn read_tmp_liquidator(storage: &dyn Storage) -> StdResult<Option<Addr>> {
-    singleton_read(storage, KEY_TMP_LIQUIDATOR).may_load()
+pub fn read_tmp_liquidator(storage: &dyn Storage) -> StdResult<Addr> {
+    let res = singleton_read(storage, KEY_TMP_LIQUIDATOR).may_load();
+    match res {
+        Ok(_) => {
+            let swap = res.unwrap();
+            Ok(swap.unwrap())
+        }
+        Err(_) => Err(StdError::generic_err("no liquidator")),
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, JsonSchema)]

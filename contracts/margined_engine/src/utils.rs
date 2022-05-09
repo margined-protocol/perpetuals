@@ -46,7 +46,7 @@ pub fn get_position(
     position
 }
 
-// Create's an asset from the eligible collateral and msg sent
+// Creates an asset from the eligible collateral and msg sent
 pub fn get_asset(info: MessageInfo, eligible_collateral: AssetInfo) -> Asset {
     match eligible_collateral.clone() {
         AssetInfo::Token { .. } => Asset {
@@ -247,7 +247,10 @@ pub fn require_position_not_zero(size: Uint128) -> StdResult<Response> {
 }
 
 // Checks that margin ratio is greater than base margin
-pub fn require_margin(margin_ratio: Uint128, base_margin: Uint128) -> StdResult<Response> {
+pub fn require_additional_margin(
+    margin_ratio: Uint128,
+    base_margin: Uint128,
+) -> StdResult<Response> {
     let remaining_margin_ratio =
         Integer::new_positive(margin_ratio) - Integer::new_positive(base_margin);
     if remaining_margin_ratio < Integer::zero() {

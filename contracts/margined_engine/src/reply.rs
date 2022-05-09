@@ -1,4 +1,4 @@
-use cosmwasm_std::{DepsMut, Env, Response, StdError, StdResult, SubMsg, Uint128};
+use cosmwasm_std::{DepsMut, Env, Response, StdResult, SubMsg, Uint128};
 use std::cmp::Ordering;
 use terraswap::asset::AssetInfo;
 
@@ -12,7 +12,8 @@ use crate::{
     state::{
         append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_sent_funds,
         read_state, read_tmp_liquidator, read_tmp_swap, remove_sent_funds, remove_tmp_liquidator,
-        remove_tmp_swap, store_position, store_sent_funds, store_state, store_tmp_swap,
+        remove_tmp_swap, store_position, store_sent_funds, store_state, store_tmp_swap, State,
+        TmpSwapInfo,
     },
     utils::{
         calc_remain_margin_with_funding_payment, clear_position, get_position, realize_bad_debt,
@@ -21,7 +22,10 @@ use crate::{
 };
 
 use margined_common::integer::Integer;
-use margined_perp::{margined_engine::RemainMarginResponse, margined_vamm::Direction};
+use margined_perp::{
+    margined_engine::{Position, RemainMarginResponse, Side},
+    margined_vamm::Direction,
+};
 
 // Increases position after successful execution of the swap
 pub fn increase_position_reply(
@@ -44,11 +48,10 @@ pub fn increase_position_reply(
         swap.side.clone(),
     );
 
-    let direction = side_to_direction(swap.side);
-    let signed_output = if direction == Direction::AddToAmm {
-        Integer::new_positive(output)
-    } else {
-        Integer::new_negative(output)
+    // depending on the direction the output is positive or negative
+    let signed_output: Integer = match &swap.side {
+        Side::Buy => Integer::new_positive(output),
+        Side::Sell => Integer::new_negative(output),
     };
 
     update_open_interest_notional(
@@ -58,7 +61,7 @@ pub fn increase_position_reply(
         Integer::new_positive(input),
     )?;
 
-    // TODO make my own decimal math lib
+    // calculate margin needed given swap
     let swap_margin = swap
         .open_notional
         .checked_mul(config.decimals)?
@@ -72,17 +75,20 @@ pub fn increase_position_reply(
         funding_payment: _,
         margin,
         bad_debt: _,
-        latest_premium_fraction: _,
+        latest_premium_fraction,
     } = calc_remain_margin_with_funding_payment(
         deps.as_ref(),
         position.clone(),
         Integer::new_positive(swap_margin),
     )?;
 
-    position.margin = margin;
+    // set the new position
+    position.direction = side_to_direction(swap.side);
     position.size += signed_output;
+    position.margin = margin;
     position.notional = position.notional.checked_add(swap.open_notional)?;
-    position.direction = direction;
+    position.last_updated_premium_fraction = latest_premium_fraction;
+    position.block_number = env.block.height;
 
     store_position(deps.storage, &position)?;
     store_state(deps.storage, &state)?;
@@ -141,6 +147,7 @@ pub fn increase_position_reply(
 
     remove_tmp_swap(deps.storage);
     remove_sent_funds(deps.storage);
+
     Ok(Response::new()
         .add_submessages(msgs)
         .add_attributes(vec![("action", "increase_position")]))
@@ -153,8 +160,16 @@ pub fn decrease_position_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    let mut state = read_state(deps.storage)?;
-    let swap = read_tmp_swap(deps.storage)?;
+    let mut state: State = read_state(deps.storage)?;
+    let swap: TmpSwapInfo = read_tmp_swap(deps.storage)?;
+
+    let mut position: Position = get_position(
+        env.clone(),
+        deps.storage,
+        &swap.vamm,
+        &swap.trader,
+        swap.side.clone(),
+    );
 
     update_open_interest_notional(
         &deps.as_ref(),
@@ -163,19 +178,11 @@ pub fn decrease_position_reply(
         Integer::new_negative(input),
     )?;
 
-    let signed_output = if side_to_direction(swap.side.clone()) == Direction::AddToAmm {
-        Integer::new_positive(output)
-    } else {
-        Integer::new_negative(output)
+    // depending on the direction the output is positive or negative
+    let signed_output: Integer = match &swap.side {
+        Side::Buy => Integer::new_positive(output),
+        Side::Sell => Integer::new_negative(output),
     };
-
-    let mut position = get_position(
-        env,
-        deps.storage,
-        &swap.vamm,
-        &swap.trader,
-        swap.side.clone(),
-    );
 
     // realized_pnl = unrealized_pnl * close_ratio
     let realized_pnl = if !position.size.is_zero() {
@@ -202,11 +209,12 @@ pub fn decrease_position_reply(
             - Integer::new_positive(swap.open_notional)
     };
 
-    // now update the position
+    // set the new position
     position.size += signed_output;
-    position.notional = remaining_notional.value;
     position.margin = margin;
+    position.notional = remaining_notional.value;
     position.last_updated_premium_fraction = latest_premium_fraction;
+    position.block_number = env.block.height;
 
     store_position(deps.storage, &position)?;
     store_state(deps.storage, &state)?;
@@ -289,11 +297,10 @@ pub fn reverse_position_reply(
         swap.unrealized_pnl = Integer::zero();
         swap.fees_paid = true;
 
-        // TODO not certain this is entirely correct
+        // update the funds required
         funds.required = if swap.margin_to_vault.is_positive() {
             funds.required.checked_add(swap.margin_to_vault.value)?
-        } else if swap.margin_to_vault.is_negative() && funds.required > swap.margin_to_vault.value
-        {
+        } else if funds.required > swap.margin_to_vault.value {
             funds.required.checked_sub(swap.margin_to_vault.value)?
         } else {
             fees.amount
@@ -327,8 +334,8 @@ pub fn close_position_reply(
 ) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
-
     let swap = read_tmp_swap(deps.storage)?;
+
     let mut position = get_position(
         env.clone(),
         deps.storage,
@@ -413,11 +420,7 @@ pub fn liquidate_reply(
     let mut state = read_state(deps.storage)?;
 
     let swap = read_tmp_swap(deps.storage)?;
-
     let liquidator = read_tmp_liquidator(deps.storage)?;
-    if liquidator.is_none() {
-        return Err(StdError::generic_err("no liquidator"));
-    }
 
     let mut position = get_position(
         env.clone(),
@@ -428,10 +431,13 @@ pub fn liquidate_reply(
     );
 
     // calculate delta from trade and whether it was profitable or a loss
-    let margin_delta = if position.direction != Direction::AddToAmm {
-        Integer::new_positive(swap.open_notional) - Integer::new_positive(output)
-    } else {
-        Integer::new_positive(output) - Integer::new_positive(swap.open_notional)
+    let margin_delta: Integer = match &position.direction {
+        Direction::RemoveFromAmm => {
+            Integer::new_positive(swap.open_notional) - Integer::new_positive(output)
+        }
+        Direction::AddToAmm => {
+            Integer::new_positive(output) - Integer::new_positive(swap.open_notional)
+        }
     };
 
     let mut remain_margin =
@@ -469,9 +475,6 @@ pub fn liquidate_reply(
         );
     }
 
-    // pay liquidation fees
-    let liquidator = liquidator.unwrap();
-
     // calculate token balance that should be remaining once
     // insurance fees have been paid
     msgs.append(
@@ -496,7 +499,7 @@ pub fn liquidate_reply(
     enter_restriction_mode(deps.storage, swap.vamm, env.block.height)?;
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
-        ("action", "liquidate_reply"),
+        ("action", "liquidation_reply"),
         ("liquidation_fee", &liquidation_fee.to_string()),
         ("pnl", &margin_delta.to_string()),
     ]))
@@ -515,9 +518,6 @@ pub fn partial_liquidation_reply(
     let swap = read_tmp_swap(deps.storage)?;
 
     let liquidator = read_tmp_liquidator(deps.storage)?;
-    if liquidator.is_none() {
-        return Err(StdError::generic_err("no liquidator"));
-    }
 
     let mut position = get_position(
         env.clone(),
@@ -580,7 +580,7 @@ pub fn partial_liquidation_reply(
             deps.as_ref(),
             env.clone(),
             &mut state,
-            &liquidator.unwrap(),
+            &liquidator,
             config.eligible_collateral,
             liquidation_fee,
         )

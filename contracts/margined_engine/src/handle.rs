@@ -14,13 +14,13 @@ use crate::{
     query::{query_free_collateral, query_margin_ratio},
     state::{
         read_config, read_position, read_state, store_config, store_position, store_sent_funds,
-        store_state, store_tmp_liquidator, store_tmp_swap, Config, SentFunds, State, Swap,
+        store_state, store_tmp_liquidator, store_tmp_swap, Config, SentFunds, State, TmpSwapInfo,
     },
     utils::{
         calc_remain_margin_with_funding_payment, direction_to_side, get_asset, get_position,
-        get_position_notional_unrealized_pnl, require_bad_debt, require_insufficient_margin,
-        require_margin, require_non_zero_input, require_not_paused, require_not_restriction_mode,
-        require_position_not_zero, require_vamm, side_to_direction,
+        get_position_notional_unrealized_pnl, require_additional_margin, require_bad_debt,
+        require_insufficient_margin, require_non_zero_input, require_not_paused,
+        require_not_restriction_mode, require_position_not_zero, require_vamm, side_to_direction,
     },
 };
 use margined_common::{
@@ -154,16 +154,16 @@ pub fn open_position(
         .decimals
         .checked_mul(config.decimals)?
         .checked_div(leverage)?;
-    require_margin(margin_ratio, config.initial_margin_ratio)?;
+    require_additional_margin(margin_ratio, config.initial_margin_ratio)?;
 
     // retrieves existing position or creates a new one
     let position: Position = get_position(env.clone(), deps.storage, &vamm, &trader, side.clone());
 
-    // If direction and side are same way then increasing else we are reversing
+    // if direction and side are same way then increasing else we are reversing
     let is_increase: bool = position.direction == Direction::AddToAmm && side == Side::Buy
         || position.direction == Direction::RemoveFromAmm && side == Side::Sell;
 
-    // calculate the position size
+    // calculate the position notional
     let open_notional = quote_asset_amount
         .checked_mul(leverage)?
         .checked_div(config.decimals)?;
@@ -194,7 +194,7 @@ pub fn open_position(
 
     store_tmp_swap(
         deps.storage,
-        &Swap {
+        &TmpSwapInfo {
             vamm,
             trader,
             side,
@@ -311,7 +311,7 @@ pub fn pay_funding(
             funds: vec![],
             msg: to_binary(&ExecuteMsg::SettleFunding {})?,
         }),
-        gas_limit: None, // probably should set a limit in the config
+        gas_limit: None,
         id: PAY_FUNDING_REPLY_ID,
         reply_on: ReplyOn::Always,
     };
@@ -429,7 +429,7 @@ pub fn withdraw_margin(
     ]))
 }
 
-// Increase the position, just basically wraps swap input though it may do more in the future
+// Increase the position through a swap
 pub fn internal_increase_position(
     vamm: Addr,
     side: Side,
@@ -454,7 +454,7 @@ pub fn internal_close_position(
 ) -> StdResult<SubMsg> {
     store_tmp_swap(
         deps.storage,
-        &Swap {
+        &TmpSwapInfo {
             vamm: position.vamm.clone(),
             trader: position.trader.clone(),
             side: direction_to_side(position.direction.clone()),
@@ -585,7 +585,7 @@ fn partial_liquidation(
 
     store_tmp_swap(
         deps.storage,
-        &Swap {
+        &TmpSwapInfo {
             vamm: position.vamm.clone(),
             trader: position.trader.clone(),
             side,
@@ -650,7 +650,7 @@ fn swap_input(
 
     let execute_submsg = SubMsg {
         msg: CosmosMsg::Wasm(msg),
-        gas_limit: None, // probably should set a limit in the config
+        gas_limit: None,
         id,
         reply_on: ReplyOn::Always,
     };
@@ -679,7 +679,7 @@ fn swap_output(
 
     let execute_submsg = SubMsg {
         msg: CosmosMsg::Wasm(swap_msg),
-        gas_limit: None, // probably should set a limit in the config
+        gas_limit: None,
         id,
         reply_on: ReplyOn::Always,
     };
