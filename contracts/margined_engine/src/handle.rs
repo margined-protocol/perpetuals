@@ -246,7 +246,9 @@ pub fn close_position(
     let msg =
         internal_close_position(deps, &position, quote_amount_limit, CLOSE_POSITION_REPLY_ID)?;
 
-    Ok(Response::new().add_submessage(msg))
+    Ok(Response::new()
+        .add_submessage(msg)
+        .add_attributes(vec![("action", "close_position")]))
 }
 
 pub fn liquidate(

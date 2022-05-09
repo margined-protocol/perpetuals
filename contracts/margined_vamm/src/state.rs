@@ -91,6 +91,7 @@ pub fn read_reserve_snapshots(
         .collect()
 }
 
+/// Stores a new reserve snapshot
 pub fn store_reserve_snapshot(
     storage: &mut dyn Storage,
     reserve_snapshot: &ReserveSnapshot,
@@ -104,7 +105,8 @@ pub fn store_reserve_snapshot(
     Ok(())
 }
 
-pub fn update_reserve_snapshot(
+/// Updates the current reserve snapshot
+pub fn update_current_reserve_snapshot(
     storage: &mut dyn Storage,
     reserve_snapshot: &ReserveSnapshot,
 ) -> StdResult<()> {
