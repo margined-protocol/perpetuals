@@ -1,3 +1,4 @@
+#[cfg(not(feature = "library"))]
 use crate::error::ContractError;
 use crate::{
     handle::{add_token, remove_token, send_token, update_config},
@@ -5,7 +6,6 @@ use crate::{
     state::{store_config, Config},
 };
 
-#[cfg(not(feature = "library"))]
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };

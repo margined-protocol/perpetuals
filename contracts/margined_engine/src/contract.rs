@@ -1,16 +1,12 @@
-use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Attribute, Binary, ContractResult, Deps, DepsMut, Env, Event, MessageInfo, Reply,
-    Response, StdError, StdResult, SubMsgExecutionResponse, Uint128,
+    entry_point, to_binary, Binary, ContractResult, Deps, DepsMut, Env, MessageInfo, Reply,
+    Response, StdError, StdResult, Uint128,
 };
 use cw2::set_contract_version;
-use margined_common::{
-    integer::Integer,
-    validate::{validate_address, validate_eligible_collateral, validate_ratio},
+use margined_common::validate::{
+    validate_address, validate_decimal_places, validate_eligible_collateral, validate_ratio,
 };
-use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg};
-#[cfg(not(feature = "library"))]
-use std::str::FromStr;
+use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 use crate::error::ContractError;
 use crate::{
@@ -29,6 +25,7 @@ use crate::{
         partial_liquidation_reply, pay_funding_reply, reverse_position_reply,
     },
     state::{store_config, store_state, Config, State},
+    utils::{parse_pay_funding, parse_swap},
 };
 
 /// Contract name that is used for migration.
@@ -40,8 +37,8 @@ pub const SWAP_INCREASE_REPLY_ID: u64 = 1;
 pub const SWAP_DECREASE_REPLY_ID: u64 = 2;
 pub const SWAP_REVERSE_REPLY_ID: u64 = 3;
 pub const SWAP_CLOSE_REPLY_ID: u64 = 4;
-pub const SWAP_LIQUIDATE_REPLY_ID: u64 = 5;
-pub const SWAP_PARTIAL_LIQUIDATION_REPLY_ID: u64 = 6;
+pub const LIQUIDATION_REPLY_ID: u64 = 5;
+pub const PARTIAL_LIQUIDATION_REPLY_ID: u64 = 6;
 pub const PAY_FUNDING_REPLY_ID: u64 = 7;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -53,8 +50,10 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    // validate the ratios, note this assumes the decimals is correct
-    let decimals = Uint128::from(10u128.pow(msg.decimals as u32));
+    // validate decimal places are correct, and return ratio max.
+    let decimals = validate_decimal_places(msg.decimals)?;
+
+    // validate the ratios conform to the decimals
     validate_ratio(msg.initial_margin_ratio, decimals)?;
     validate_ratio(msg.maintenance_margin_ratio, decimals)?;
     validate_ratio(msg.liquidation_fee, decimals)?;
@@ -126,20 +125,16 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             quote_asset_amount,
             leverage,
             base_asset_limit,
-        } => {
-            let trader = info.sender.clone();
-            open_position(
-                deps,
-                env,
-                info,
-                vamm,
-                trader.to_string(),
-                side,
-                quote_asset_amount,
-                leverage,
-                base_asset_limit,
-            )
-        }
+        } => open_position(
+            deps,
+            env,
+            info,
+            vamm,
+            side,
+            quote_asset_amount,
+            leverage,
+            base_asset_limit,
+        ),
         ExecuteMsg::ClosePosition {
             vamm,
             quote_asset_limit,
@@ -220,12 +215,12 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
                 let response = close_position_reply(deps, env, input, output)?;
                 Ok(response)
             }
-            SWAP_LIQUIDATE_REPLY_ID => {
+            LIQUIDATION_REPLY_ID => {
                 let (input, output) = parse_swap(response).unwrap();
                 let response = liquidate_reply(deps, env, input, output)?;
                 Ok(response)
             }
-            SWAP_PARTIAL_LIQUIDATION_REPLY_ID => {
+            PARTIAL_LIQUIDATION_REPLY_ID => {
                 let (input, output) = parse_swap(response).unwrap();
                 let response = partial_liquidation_reply(deps, env, input, output)?;
                 Ok(response)
@@ -247,57 +242,8 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
     }
 }
 
-fn parse_swap(response: SubMsgExecutionResponse) -> StdResult<(Uint128, Uint128)> {
-    // Find swap inputs and output events
-    let wasm = response.events.iter().find(|&e| e.ty == "wasm");
-
-    let wasm = wasm.unwrap();
-
-    let swap = read_event("action".to_string(), wasm).value;
-
-    let input: Uint128;
-    let output: Uint128;
-    match swap.as_str() {
-        "swap_input" => {
-            let input_str = read_event("quote_asset_amount".to_string(), wasm).value;
-            let output_str = read_event("base_asset_amount".to_string(), wasm).value;
-
-            input = Uint128::from_str(&input_str).unwrap();
-            output = Uint128::from_str(&output_str).unwrap();
-        }
-        "swap_output" => {
-            let input_str = read_event("base_asset_amount".to_string(), wasm).value;
-            let output_str = read_event("quote_asset_amount".to_string(), wasm).value;
-
-            input = Uint128::from_str(&input_str).unwrap();
-            output = Uint128::from_str(&output_str).unwrap();
-        }
-        _ => {
-            return Err(StdError::generic_err("can't parse swap"));
-        }
-    }
-
-    Ok((input, output))
-}
-
-fn parse_pay_funding(response: SubMsgExecutionResponse) -> (Integer, String) {
-    // Find swap inputs and output events
-    let wasm = response.events.iter().find(|&e| e.ty == "wasm");
-    let wasm = wasm.unwrap();
-
-    let premium_str = read_event("premium_fraction".to_string(), wasm).value;
-    let premium: Integer = Integer::from_str(&premium_str).unwrap();
-
-    let sender = read_event("_contract_addr".to_string(), wasm).value;
-
-    (premium, sender)
-}
-
-fn read_event(key: String, event: &Event) -> Attribute {
-    let result = event
-        .attributes
-        .iter()
-        .find(|&attr| attr.key == key)
-        .unwrap();
-    result.clone()
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
+    // No state migrations performed, just returned a Response
+    Ok(Response::default())
 }

@@ -1,17 +1,27 @@
 use cosmwasm_std::{Addr, Api, Deps, Response, StdError, StdResult, Uint128};
 use terraswap::asset::AssetInfo;
 
-// TODO, probably we should use decimal for ratios but not committed to that yet
+/// Validates that the decimals aren't zero and returns the decimal placeholder accordinglys
+pub fn validate_decimal_places(decimal_places: u8) -> StdResult<Uint128> {
+    // check that the value is not zero
+    if decimal_places == 0u8 {
+        return Err(StdError::generic_err("Decimal places cannot be zero"));
+    }
+
+    Ok(Uint128::from(10u128.pow(decimal_places as u32)))
+}
+
+/// Validates that the ratio is between zero and one
 pub fn validate_ratio(value: Uint128, decimals: Uint128) -> StdResult<Response> {
     // check that the value is smaller than number of decimals
     if value > decimals {
-        return Err(StdError::generic_err("invalid ratio"));
+        return Err(StdError::generic_err("Invalid ratio"));
     }
 
     Ok(Response::new())
 }
 
-// Turns into TerraSwap asset info depending on whether a CW20 or native token is defined
+/// Verfiy that the address used for collateral is native token or cw token and returns as type AssetInfo
 pub fn validate_eligible_collateral(deps: Deps, input: String) -> StdResult<AssetInfo> {
     // verify if the string is any of the native stables for terra
     let response = match input.as_str() {
@@ -37,7 +47,7 @@ pub fn validate_eligible_collateral(deps: Deps, input: String) -> StdResult<Asse
     Ok(response)
 }
 
-// Validates an address is correctly formatted and normalized which seems to be a problem
+/// Validates an address is correctly formatted and normalized
 pub fn validate_address(api: &dyn Api, addr: &str) -> StdResult<Addr> {
     if addr.to_lowercase() != addr {
         return Err(StdError::generic_err(format!(
