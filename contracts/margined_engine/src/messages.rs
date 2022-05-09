@@ -41,7 +41,7 @@ pub fn execute_transfer_from(
 
     let transfer_msg = SubMsg {
         msg,
-        gas_limit: None, // probably should set a limit in the config
+        gas_limit: None,
         id: 0u64,
         reply_on: ReplyOn::Never,
     };
@@ -73,7 +73,7 @@ pub fn execute_transfer(
 
     let transfer_msg = SubMsg {
         msg,
-        gas_limit: None, // probably should set a limit in the config
+        gas_limit: None,
         id: 0u64,
         reply_on: ReplyOn::Never,
     };
@@ -117,7 +117,7 @@ pub fn execute_insurance_fund_withdrawal(deps: Deps, amount: Uint128) -> StdResu
 
     let transfer_msg = SubMsg {
         msg: CosmosMsg::Wasm(msg),
-        gas_limit: None, // probably should set a limit in the config
+        gas_limit: None,
         id: 0u64,
         reply_on: ReplyOn::Never,
     };

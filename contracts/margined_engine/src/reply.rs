@@ -552,6 +552,7 @@ pub fn partial_liquidation_reply(
         position.size += Integer::new_negative(input);
     }
 
+    // reduce the traders margin
     position.margin = position
         .margin
         .checked_sub(realized_pnl.value)?
@@ -561,19 +562,21 @@ pub fn partial_liquidation_reply(
     // long: unrealizedPnl = positionNotional - openNotional => openNotional = positionNotional - unrealizedPnl
     // short: unrealizedPnl = openNotional - positionNotional => openNotional = positionNotional + unrealizedPnl
     // positionNotional = oldPositionNotional - exchangedQuoteAssetAmount
-    position.notional = if position.size.is_positive() {
-        position
+    position.notional = match position.size {
+        Integer {
+            negative: false, ..
+        } => position
             .notional
             .checked_sub(swap.open_notional)?
-            .checked_sub(realized_pnl.value)?
-    } else {
-        realized_pnl
+            .checked_sub(realized_pnl.value)?,
+        Integer { negative: true, .. } => realized_pnl
             .value
             .checked_add(position.notional)?
-            .checked_sub(swap.open_notional)?
+            .checked_sub(swap.open_notional)?,
     };
 
     let mut messages: Vec<SubMsg> = vec![];
+
     if !liquidation_fee.is_zero() {
         messages
             .push(execute_transfer(deps.storage, &config.insurance_fund, liquidation_fee).unwrap());
