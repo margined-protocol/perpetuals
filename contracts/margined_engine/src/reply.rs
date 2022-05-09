@@ -471,15 +471,10 @@ pub fn liquidate_reply(
         realize_bad_debt(deps.as_ref(), remain_margin.bad_debt, &mut msgs, &mut state)?;
     }
 
-    let fee_to_insurance = if !remain_margin.margin.is_zero() {
-        remain_margin.margin
-    } else {
-        Uint128::zero()
-    };
-
-    if !fee_to_insurance.is_zero() {
+    // any remaining margin goes to the insurance contract
+    if !remain_margin.margin.is_zero() {
         msgs.push(
-            execute_transfer(deps.storage, &config.insurance_fund, fee_to_insurance).unwrap(),
+            execute_transfer(deps.storage, &config.insurance_fund, remain_margin.margin).unwrap(),
         );
     }
 
