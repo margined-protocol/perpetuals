@@ -349,10 +349,13 @@ pub fn close_position_reply(
         swap.side.clone(),
     );
 
-    let margin_delta = if position.direction != Direction::AddToAmm {
-        Integer::new_positive(swap.open_notional) - Integer::new_positive(output)
-    } else {
-        Integer::new_positive(output) - Integer::new_positive(swap.open_notional)
+    let margin_delta: Integer = match &position.direction {
+        Direction::AddToAmm => {
+            Integer::new_positive(output) - Integer::new_positive(swap.open_notional)
+        }
+        Direction::RemoveFromAmm => {
+            Integer::new_positive(swap.open_notional) - Integer::new_positive(output)
+        }
     };
 
     let RemainMarginResponse {
