@@ -33,10 +33,10 @@ const CONTRACT_NAME: &str = "margin-engine";
 /// Contract version that is used for migration.
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub const SWAP_INCREASE_REPLY_ID: u64 = 1;
-pub const SWAP_DECREASE_REPLY_ID: u64 = 2;
-pub const SWAP_REVERSE_REPLY_ID: u64 = 3;
-pub const SWAP_CLOSE_REPLY_ID: u64 = 4;
+pub const INCREASE_POSITION_REPLY_ID: u64 = 1;
+pub const DECREASE_POSITION_REPLY_ID: u64 = 2;
+pub const REVERSE_POSITION_REPLY_ID: u64 = 3;
+pub const CLOSE_POSITION_REPLY_ID: u64 = 4;
 pub const LIQUIDATION_REPLY_ID: u64 = 5;
 pub const PARTIAL_LIQUIDATION_REPLY_ID: u64 = 6;
 pub const PAY_FUNDING_REPLY_ID: u64 = 7;
@@ -138,10 +138,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         ExecuteMsg::ClosePosition {
             vamm,
             quote_asset_limit,
-        } => {
-            let trader = info.sender.clone();
-            close_position(deps, env, info, vamm, trader.to_string(), quote_asset_limit)
-        }
+        } => close_position(deps, env, info, vamm, quote_asset_limit),
         ExecuteMsg::Liquidate {
             vamm,
             trader,
@@ -195,22 +192,22 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
     match msg.result {
         ContractResult::Ok(response) => match msg.id {
-            SWAP_INCREASE_REPLY_ID => {
+            INCREASE_POSITION_REPLY_ID => {
                 let (input, output) = parse_swap(response).unwrap();
                 let response = increase_position_reply(deps, env, input, output)?;
                 Ok(response)
             }
-            SWAP_DECREASE_REPLY_ID => {
+            DECREASE_POSITION_REPLY_ID => {
                 let (input, output) = parse_swap(response).unwrap();
                 let response = decrease_position_reply(deps, env, input, output)?;
                 Ok(response)
             }
-            SWAP_REVERSE_REPLY_ID => {
+            REVERSE_POSITION_REPLY_ID => {
                 let (input, output) = parse_swap(response).unwrap();
                 let response = reverse_position_reply(deps, env, input, output)?;
                 Ok(response)
             }
-            SWAP_CLOSE_REPLY_ID => {
+            CLOSE_POSITION_REPLY_ID => {
                 let (input, output) = parse_swap(response).unwrap();
                 let response = close_position_reply(deps, env, input, output)?;
                 Ok(response)

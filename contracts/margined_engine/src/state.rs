@@ -96,6 +96,8 @@ pub fn read_position(storage: &dyn Storage, vamm: &Addr, trader: &Addr) -> StdRe
     Ok(result)
 }
 
+/// Used to monitor that transferred native tokens are sufficient when opening a
+/// new position or relevant operations
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct SentFunds {
     pub asset: Asset,
@@ -107,8 +109,8 @@ impl SentFunds {
     pub fn are_sufficient(&self) -> StdResult<()> {
         // this should only pass if asset.amount == required
         match self.asset.amount.cmp(&self.required) {
-            Ordering::Less => Err(StdError::generic_err("sent funds are insufficient")),
             Ordering::Greater => Err(StdError::generic_err("sent funds are excessive")),
+            Ordering::Less => Err(StdError::generic_err("sent funds are insufficient")),
             _ => Ok(()),
         }
     }

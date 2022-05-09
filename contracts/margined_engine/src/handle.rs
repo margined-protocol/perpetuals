@@ -6,8 +6,9 @@ use terraswap::asset::{Asset, AssetInfo};
 
 use crate::{
     contract::{
+        CLOSE_POSITION_REPLY_ID, DECREASE_POSITION_REPLY_ID, INCREASE_POSITION_REPLY_ID,
         LIQUIDATION_REPLY_ID, PARTIAL_LIQUIDATION_REPLY_ID, PAY_FUNDING_REPLY_ID,
-        SWAP_CLOSE_REPLY_ID, SWAP_DECREASE_REPLY_ID, SWAP_INCREASE_REPLY_ID, SWAP_REVERSE_REPLY_ID,
+        REVERSE_POSITION_REPLY_ID,
     },
     messages::{execute_transfer_from, withdraw},
     querier::query_vamm_output_price,
@@ -75,7 +76,7 @@ pub fn update_config(
             validate_eligible_collateral(deps.as_ref(), eligible_collateral)?;
     }
 
-    // TODO: use the decimals defined in each eligible collateral, this should not be updateable
+    // TODO: use the decimals defined in each eligible collateral, this should not be updatable
     if let Some(decimals) = decimals {
         config.decimals = decimals;
     }
@@ -208,11 +209,10 @@ pub fn open_position(
         },
     )?;
 
-    let asset = get_asset(info, config.eligible_collateral);
     store_sent_funds(
         deps.storage,
         &SentFunds {
-            asset,
+            asset: get_asset(info, config.eligible_collateral),
             required: Uint128::zero(),
         },
     )?;
@@ -225,16 +225,15 @@ pub fn open_position(
 pub fn close_position(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     vamm: String,
-    trader: String,
     quote_amount_limit: Uint128,
 ) -> StdResult<Response> {
     let state: State = read_state(deps.storage)?;
 
     // validate address inputs
     let vamm = validate_address(deps.api, &vamm)?;
-    let trader = validate_address(deps.api, &trader)?;
+    let trader = validate_address(deps.api, &info.sender.to_string())?;
 
     // read the position for the trader from vamm
     let position = read_position(deps.storage, &vamm, &trader).unwrap();
@@ -244,7 +243,8 @@ pub fn close_position(
     require_position_not_zero(position.size.value)?;
     require_not_restriction_mode(deps.storage, &vamm, &trader, env.block.height)?;
 
-    let msg = internal_close_position(deps, &position, quote_amount_limit, SWAP_CLOSE_REPLY_ID)?;
+    let msg =
+        internal_close_position(deps, &position, quote_amount_limit, CLOSE_POSITION_REPLY_ID)?;
 
     Ok(Response::new().add_submessage(msg))
 }
@@ -442,7 +442,7 @@ pub fn internal_increase_position(
         open_notional,
         base_asset_limit,
         false,
-        SWAP_INCREASE_REPLY_ID,
+        INCREASE_POSITION_REPLY_ID,
     )
 }
 
@@ -514,7 +514,7 @@ fn open_reverse_position(
             open_notional,
             base_asset_limit,
             can_go_over_fluctuation,
-            SWAP_DECREASE_REPLY_ID,
+            DECREASE_POSITION_REPLY_ID,
         )
         .unwrap()
     } else {
@@ -524,7 +524,7 @@ fn open_reverse_position(
             direction_to_side(position.direction.clone()),
             position.size.value,
             Uint128::zero(),
-            SWAP_REVERSE_REPLY_ID,
+            REVERSE_POSITION_REPLY_ID,
         )
         .unwrap()
     };
