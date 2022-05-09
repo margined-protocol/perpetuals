@@ -2079,7 +2079,7 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
     let response = env.router.execute(env.carol.clone(), msg).unwrap();
     assert_eq!(
         response.events[4].attributes[1].value,
-        "partial_liquidate_reply".to_string()
+        "partial_liquidation_reply".to_string()
     );
 }
 
@@ -2243,7 +2243,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
     let response = env.router.execute(env.carol.clone(), msg).unwrap();
     assert_eq!(
         response.events[4].attributes[1].value,
-        "partial_liquidate_reply".to_string()
+        "partial_liquidation_reply".to_string()
     );
 }
 

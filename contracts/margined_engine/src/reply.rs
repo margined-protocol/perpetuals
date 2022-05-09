@@ -471,20 +471,13 @@ pub fn liquidate_reply(
         realize_bad_debt(deps.as_ref(), remain_margin.bad_debt, &mut msgs, &mut state)?;
     }
 
-    let fee_to_insurance = if !remain_margin.margin.is_zero() {
-        remain_margin.margin
-    } else {
-        Uint128::zero()
-    };
-
-    if !fee_to_insurance.is_zero() {
+    // any remaining margin goes to the insurance contract
+    if !remain_margin.margin.is_zero() {
         msgs.push(
-            execute_transfer(deps.storage, &config.insurance_fund, fee_to_insurance).unwrap(),
+            execute_transfer(deps.storage, &config.insurance_fund, remain_margin.margin).unwrap(),
         );
     }
 
-    // calculate token balance that should be remaining once
-    // insurance fees have been paid
     msgs.append(
         &mut withdraw(
             deps.as_ref(),
@@ -546,14 +539,13 @@ pub fn partial_liquidation_reply(
 
     let liquidation_fee: Uint128 = liquidation_penalty.checked_div(Uint128::from(2u64))?;
 
-    let signed_input = if position.size < Integer::zero() {
-        Integer::new_positive(input)
+    if position.size < Integer::zero() {
+        position.size += Integer::new_positive(input);
     } else {
-        Integer::new_negative(input)
-    };
+        position.size += Integer::new_negative(input);
+    }
 
-    position.size += signed_input;
-
+    // reduce the traders margin
     position.margin = position
         .margin
         .checked_sub(realized_pnl.value)?
@@ -563,19 +555,21 @@ pub fn partial_liquidation_reply(
     // long: unrealizedPnl = positionNotional - openNotional => openNotional = positionNotional - unrealizedPnl
     // short: unrealizedPnl = openNotional - positionNotional => openNotional = positionNotional + unrealizedPnl
     // positionNotional = oldPositionNotional - exchangedQuoteAssetAmount
-    position.notional = if position.size.is_positive() {
-        position
+    position.notional = match position.size {
+        Integer {
+            negative: false, ..
+        } => position
             .notional
             .checked_sub(swap.open_notional)?
-            .checked_sub(realized_pnl.value)?
-    } else {
-        realized_pnl
+            .checked_sub(realized_pnl.value)?,
+        Integer { negative: true, .. } => realized_pnl
             .value
             .checked_add(position.notional)?
-            .checked_sub(swap.open_notional)?
+            .checked_sub(swap.open_notional)?,
     };
 
     let mut messages: Vec<SubMsg> = vec![];
+
     if !liquidation_fee.is_zero() {
         messages
             .push(execute_transfer(deps.storage, &config.insurance_fund, liquidation_fee).unwrap());
@@ -605,7 +599,7 @@ pub fn partial_liquidation_reply(
     Ok(Response::new()
         .add_submessages(messages)
         .add_attributes(vec![
-            ("action", "partial_liquidate_reply"),
+            ("action", "partial_liquidation_reply"),
             ("liquidation_fee", &liquidation_fee.to_string()),
             ("pnl", &realized_pnl.to_string()),
         ]))

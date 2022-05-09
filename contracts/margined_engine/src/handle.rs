@@ -185,6 +185,7 @@ pub fn open_position(
             base_asset_limit,
             false,
         )
+        .unwrap()
     };
 
     let PositionUnrealizedPnlResponse {
@@ -268,7 +269,7 @@ pub fn liquidate(
     // store the liquidator
     store_tmp_liquidator(deps.storage, &info.sender)?;
 
-    // retrieve the margin ratio of the position
+    // retrieve the existing margin ratio of the position
     let margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
 
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
@@ -284,7 +285,7 @@ pub fn liquidate(
     let msg = if margin_ratio.value > config.liquidation_fee
         && !config.partial_liquidation_margin_ratio.is_zero()
     {
-        partial_liquidation(deps, env, vamm, trader, quote_asset_limit)
+        partial_liquidation(deps, env, vamm, trader, quote_asset_limit)?
     } else {
         internal_close_position(deps, &position, quote_asset_limit, LIQUIDATION_REPLY_ID)?
     };
@@ -336,6 +337,7 @@ pub fn deposit_margin(
     let trader = info.sender.clone();
 
     require_not_paused(state.pause)?;
+    require_non_zero_input(amount)?;
 
     // first try to execute the transfer
     let mut response: Response = Response::new();
@@ -386,24 +388,24 @@ pub fn withdraw_margin(
 
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
     require_not_paused(state.pause)?;
+    require_non_zero_input(amount)?;
 
     // read the position for the trader from vamm
     let mut position = read_position(deps.storage, &vamm, &trader).unwrap();
 
-    let margin_delta = Integer::new_negative(amount);
-
-    let remain_margin =
-        calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), margin_delta)?;
+    let remain_margin = calc_remain_margin_with_funding_payment(
+        deps.as_ref(),
+        position.clone(),
+        Integer::new_negative(amount),
+    )?;
     require_bad_debt(remain_margin.bad_debt)?;
 
     position.margin = remain_margin.margin;
     position.last_updated_premium_fraction = remain_margin.latest_premium_fraction;
 
-    // check if margin ratio has been
+    // check if margin is sufficient
     let free_collateral =
         query_free_collateral(deps.as_ref(), vamm.to_string(), trader.to_string())?;
-
-    // let margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
     if free_collateral
         .checked_sub(Integer::new_positive(amount))?
         .is_negative()
@@ -413,7 +415,7 @@ pub fn withdraw_margin(
 
     store_position(deps.storage, &position)?;
 
-    // try to execute the transfer
+    // withdraw margin
     let msgs = withdraw(
         deps.as_ref(),
         env,
@@ -490,7 +492,7 @@ fn open_reverse_position(
     leverage: Uint128,
     base_asset_limit: Uint128,
     can_go_over_fluctuation: bool,
-) -> SubMsg {
+) -> StdResult<SubMsg> {
     let config: Config = read_config(deps.storage).unwrap();
     let position: Position = get_position(env, deps.storage, &vamm, &trader, side.clone());
 
@@ -531,17 +533,16 @@ fn open_reverse_position(
         .unwrap()
     };
 
-    msg
+    Ok(msg)
 }
 
-#[allow(clippy::too_many_arguments)]
 fn partial_liquidation(
     deps: DepsMut,
     _env: Env,
     vamm: Addr,
     trader: Addr,
     quote_asset_limit: Uint128,
-) -> SubMsg {
+) -> StdResult<SubMsg> {
     let config: Config = read_config(deps.storage).unwrap();
 
     let position: Position = read_position(deps.storage, &vamm, &trader).unwrap();
@@ -554,16 +555,11 @@ fn partial_liquidation(
         .checked_div(config.decimals)
         .unwrap();
 
-    // TODO neaten this up or maybe we can just throw later
-    let partial_asset_limit = if !quote_asset_limit.is_zero() {
-        quote_asset_limit
-            .checked_mul(config.partial_liquidation_margin_ratio)
-            .unwrap()
-            .checked_div(config.decimals)
-            .unwrap()
-    } else {
-        Uint128::zero()
-    };
+    let partial_asset_limit = quote_asset_limit
+        .checked_mul(config.partial_liquidation_margin_ratio)
+        .unwrap()
+        .checked_div(config.decimals)
+        .unwrap();
 
     let current_notional = query_vamm_output_price(
         &deps.as_ref(),
@@ -602,9 +598,7 @@ fn partial_liquidation(
     )
     .unwrap();
 
-    // if position.notional > open_notional {
     let msg: SubMsg = if current_notional > position.notional {
-        // then we are opening a new position or adding to an existing
         swap_input(
             &vamm,
             direction_to_side(position.direction.clone()),
@@ -615,7 +609,6 @@ fn partial_liquidation(
         )
         .unwrap()
     } else {
-        // first close position swap out the entire position
         swap_output(
             &vamm,
             direction_to_side(position.direction),
@@ -626,7 +619,7 @@ fn partial_liquidation(
         .unwrap()
     };
 
-    msg
+    Ok(msg)
 }
 
 fn swap_input(
