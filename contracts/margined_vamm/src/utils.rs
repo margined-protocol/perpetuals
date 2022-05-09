@@ -5,7 +5,7 @@ use crate::{
     handle::{get_input_price_with_reserves, get_output_price_with_reserves},
     state::{
         read_config, read_reserve_snapshot, read_reserve_snapshot_counter, read_state,
-        store_reserve_snapshot, update_reserve_snapshot, Config, ReserveSnapshot,
+        store_reserve_snapshot, update_current_reserve_snapshot, Config, ReserveSnapshot,
     },
 };
 
@@ -123,26 +123,20 @@ pub fn add_reserve_snapshot(
     base_asset_reserve: Uint128,
 ) -> StdResult<Response> {
     let height = read_reserve_snapshot_counter(storage)?;
-    let current_snapshot = read_reserve_snapshot(storage, height)?;
+    let mut snapshot = read_reserve_snapshot(storage, height)?;
 
-    if current_snapshot.block_height == env.block.height {
-        let new_snapshot = ReserveSnapshot {
-            quote_asset_reserve,
-            base_asset_reserve,
-            timestamp: current_snapshot.timestamp,
-            block_height: current_snapshot.block_height,
-        };
+    snapshot.quote_asset_reserve = quote_asset_reserve;
+    snapshot.base_asset_reserve = base_asset_reserve;
 
-        update_reserve_snapshot(storage, &new_snapshot)?;
+    // if there has already been an update in this block we overwrite the existing
+    // else we create a new snapshot
+    if snapshot.block_height == env.block.height {
+        update_current_reserve_snapshot(storage, &snapshot)?;
     } else {
-        let new_snapshot = ReserveSnapshot {
-            quote_asset_reserve,
-            base_asset_reserve,
-            timestamp: env.block.time,
-            block_height: env.block.height,
-        };
+        snapshot.timestamp = env.block.time;
+        snapshot.block_height = env.block.height;
 
-        store_reserve_snapshot(storage, &new_snapshot)?;
+        store_reserve_snapshot(storage, &snapshot)?;
     }
 
     Ok(Response::default())

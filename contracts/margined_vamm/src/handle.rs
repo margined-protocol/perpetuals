@@ -192,10 +192,9 @@ pub fn swap_output(
     )?;
 
     // flip direction when updating reserve
-    let update_direction = if direction == Direction::AddToAmm {
-        Direction::RemoveFromAmm
-    } else {
-        Direction::AddToAmm
+    let update_direction = match direction {
+        Direction::AddToAmm => Direction::RemoveFromAmm,
+        Direction::RemoveFromAmm => Direction::AddToAmm,
     };
 
     // If AddToAmm, exchanged base amount should be more than quote_asset_limit,

@@ -252,8 +252,9 @@ pub fn reverse_position_reply(
         Integer::new_negative(output),
     )?;
 
-    let margin_amount = position.margin;
+    let previous_margin = Integer::new_negative(position.margin);
 
+    // reset the position in order to reverse
     position = clear_position(env, position)?;
 
     // now increase the position again if there is additional position
@@ -279,9 +280,12 @@ pub fn reverse_position_reply(
     // add the total fees to the required funds counter
     funds.required = funds.required.checked_add(fees.amount)?;
 
+    // reduce position if old position is larger
     if swap.open_notional.checked_div(swap.leverage)? == Uint128::zero() {
         // create transfer message
-        msgs.push(execute_transfer(deps.storage, &swap.trader.clone(), margin_amount).unwrap());
+        msgs.push(
+            execute_transfer(deps.storage, &swap.trader.clone(), previous_margin.value).unwrap(),
+        );
 
         // check if native tokens are sufficient
         if let AssetInfo::NativeToken { .. } = config.eligible_collateral {
@@ -292,9 +296,10 @@ pub fn reverse_position_reply(
         remove_tmp_swap(deps.storage);
     } else {
         // determine new position
-        swap.margin_to_vault =
-            Integer::new_negative(margin_amount).checked_sub(swap.unrealized_pnl)?;
+        swap.margin_to_vault = previous_margin.checked_sub(swap.unrealized_pnl)?;
         swap.unrealized_pnl = Integer::zero();
+
+        // set fees_paid flag to true so they aren't paid twice
         swap.fees_paid = true;
 
         // update the funds required
@@ -344,10 +349,13 @@ pub fn close_position_reply(
         swap.side.clone(),
     );
 
-    let margin_delta = if position.direction != Direction::AddToAmm {
-        Integer::new_positive(swap.open_notional) - Integer::new_positive(output)
-    } else {
-        Integer::new_positive(output) - Integer::new_positive(swap.open_notional)
+    let margin_delta: Integer = match &position.direction {
+        Direction::AddToAmm => {
+            Integer::new_positive(output) - Integer::new_positive(swap.open_notional)
+        }
+        Direction::RemoveFromAmm => {
+            Integer::new_positive(swap.open_notional) - Integer::new_positive(output)
+        }
     };
 
     let RemainMarginResponse {
