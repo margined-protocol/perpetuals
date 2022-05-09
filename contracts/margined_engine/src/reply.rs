@@ -546,13 +546,11 @@ pub fn partial_liquidation_reply(
 
     let liquidation_fee: Uint128 = liquidation_penalty.checked_div(Uint128::from(2u64))?;
 
-    let signed_input = if position.size < Integer::zero() {
-        Integer::new_positive(input)
+    if position.size < Integer::zero() {
+        position.size += Integer::new_positive(input);
     } else {
-        Integer::new_negative(input)
-    };
-
-    position.size += signed_input;
+        position.size += Integer::new_negative(input);
+    }
 
     position.margin = position
         .margin
@@ -605,7 +603,7 @@ pub fn partial_liquidation_reply(
     Ok(Response::new()
         .add_submessages(messages)
         .add_attributes(vec![
-            ("action", "partial_liquidate_reply"),
+            ("action", "partial_liquidation_reply"),
             ("liquidation_fee", &liquidation_fee.to_string()),
             ("pnl", &realized_pnl.to_string()),
         ]))
