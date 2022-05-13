@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/margined-protocol/perpetuals/branch/main/graph/badge.svg?token=FDMKT04UWK)](https://codecov.io/gh/margined-protocol/perpetuals)
 
 
-This repo contains a the Margined Protocol a decentralized perpetual contract protocol on the Terra Blockchain.
+This repo contains a the Margined Protocol a decentralized perpetual contract protocol for CosmWasm networks.
 
 ## Contracts
 
