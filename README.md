@@ -1,4 +1,4 @@
-# Margined Protocol Perpertuals
+# Margined Protocol Perpetuals
 
 [![Continuous Integration](https://github.com/margined-protocol/perpetuals/actions/workflows/ci.yml/badge.svg)](https://github.com/margined-protocol/perpetuals/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/margined-protocol/perpetuals/branch/main/graph/badge.svg?token=FDMKT04UWK)](https://codecov.io/gh/margined-protocol/perpetuals)
