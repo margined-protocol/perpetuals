@@ -14,6 +14,8 @@ import {
   TxError,
   Wallet,
 } from '@terra-money/terra.js'
+import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate'
+import { toBase64, toUtf8 } from '@cosmjs/encoding'
 import { readFileSync } from 'fs'
 import { CustomError } from 'ts-custom-error'
 
@@ -150,6 +152,27 @@ export async function uploadContract(
   const uploadMsg = new MsgStoreCode(wallet.key.accAddress, contract)
   let result = await performTransaction(terra, wallet, uploadMsg)
   return Number(result.logs[0].eventsByType.store_code.code_id[0]) // code_id
+}
+
+export async function uploadCosmWasmContract(
+  client: SigningCosmWasmClient,
+  senderAddress: string,
+  filepath: string,
+) {
+  const contract = readFileSync(filepath)
+  const fee = {
+    gas: '30000000',
+    amount: [{ denom: 'ujunox', amount: '1000000' }],
+  }
+
+  console.log(await client.getHeight())
+  console.log(contract)
+  const code_id = await client.upload(senderAddress, contract, fee)
+
+  console.log(code_id)
+  // const uploadMsg = new MsgStoreCode(wallet.key.accAddress, contract)
+  // let result = await performTransaction(terra, wallet, uploadMsg)
+  // return Number(result.logs[0].eventsByType.store_code.code_id[0]) // code_id
 }
 
 export async function instantiateContract(
