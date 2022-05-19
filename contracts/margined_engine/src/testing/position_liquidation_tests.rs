@@ -185,9 +185,9 @@ fn test_alice_has_enough_margin_cant_get_liquidated() {
             to_decimals(0u64),
         )
         .unwrap();
-    let res = router.execute(carol.clone(), msg).unwrap_err();
+    let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
-        res.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: Position is overcollateralized".to_string()
     );
 }

@@ -1,6 +1,6 @@
 // use crate::testing::setup::{self, to_decimals};
-use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Uint128};
-use cw_multi_test::Executor;
+use cosmwasm_std::{BankMsg, Coin, CosmosMsg, StdError, Uint128};
+use cw_multi_test::{error::Error, Executor};
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Side};
 use margined_utils::scenarios::NativeTokenScenario;
@@ -195,8 +195,8 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
             Uint128::from(273_850_000u64),
         )
         .unwrap();
-    let result = router.execute(carol.clone(), msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: reply (id 6) error \"Generic error: Less than minimum quote asset amount limit\"");
+    let err = router.execute(carol.clone(), msg).unwrap_err();
+    assert_eq!(err.source().unwrap().to_string(), "Generic error: reply (id 6) error \"Generic error: Less than minimum quote asset amount limit\"");
 
     // if quoteAssetAmountLimit == 273.8 < 68.455 * 4 = 273.82, quote asset gets is more than expected
     let msg = engine
@@ -989,8 +989,12 @@ fn test_force_error_empty_position() {
     let msg = engine
         .liquidate(vamm.addr().to_string(), alice.to_string(), Uint128::zero())
         .unwrap();
-    let result = router.execute(carol.clone(), msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: Position is zero");
+    let err = router.execute(carol.clone(), msg).unwrap_err();
+
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Position is zero"
+    );
 }
 
 #[test]
@@ -1720,9 +1724,9 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
             vec![Coin::new(25_000_000u128, "uusd")],
         )
         .unwrap();
-    let response = env.router.execute(env.alice.clone(), msg).unwrap_err();
+    let err = env.router.execute(env.alice.clone(), msg).unwrap_err();
     assert_eq!(
-        response.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: reply (id 2) error \"Generic error: price is over fluctuation limit\""
             .to_string()
     );
@@ -1891,9 +1895,9 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
             Uint128::zero(),
         )
         .unwrap();
-    let response = env.router.execute(env.bob.clone(), msg).unwrap_err();
+    let err = env.router.execute(env.bob.clone(), msg).unwrap_err();
     assert_eq!(
-        response.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: reply (id 6) error \"Generic error: price is already over fluctuation limit\"".to_string()
     );
 }

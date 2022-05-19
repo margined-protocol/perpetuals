@@ -1,6 +1,6 @@
+use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
-use cw_multi_test::Executor;
 
 #[test]
 fn test_paused_by_admin() {
@@ -26,36 +26,36 @@ fn test_paused_by_admin() {
             vec![],
         )
         .unwrap();
-    let response = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        response.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: margin engine is paused".to_string()
     );
 
     let msg = engine
         .deposit_margin(vamm.addr().to_string(), to_decimals(1u64), vec![])
         .unwrap();
-    let response = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        response.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: margin engine is paused".to_string()
     );
 
     let msg = engine
         .withdraw_margin(vamm.addr().to_string(), to_decimals(1u64))
         .unwrap();
-    let response = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        response.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: margin engine is paused".to_string()
     );
 
     let msg = engine
         .close_position(vamm.addr().to_string(), to_decimals(0u64))
         .unwrap();
-    let response = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        response.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: margin engine is paused".to_string()
     );
 }
@@ -70,9 +70,9 @@ fn test_cant_be_paused_by_non_admin() {
     } = SimpleScenario::new();
 
     let msg = engine.set_pause(true).unwrap();
-    let response = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        response.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: unauthorized".to_string()
     );
 }
@@ -132,9 +132,9 @@ fn test_cant_unpause_when_already_unpaused_and_vice_versa() {
     } = SimpleScenario::new();
 
     let msg = engine.set_pause(false).unwrap();
-    let response = router.execute(owner.clone(), msg).unwrap_err();
+    let err = router.execute(owner.clone(), msg).unwrap_err();
     assert_eq!(
-        response.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: unauthorized".to_string()
     );
 
@@ -142,9 +142,9 @@ fn test_cant_unpause_when_already_unpaused_and_vice_versa() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine.set_pause(true).unwrap();
-    let response = router.execute(owner.clone(), msg).unwrap_err();
+    let err = router.execute(owner.clone(), msg).unwrap_err();
     assert_eq!(
-        response.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: unauthorized".to_string()
     );
 }

@@ -611,9 +611,9 @@ fn test_have_huge_funding_payment_margin_zero_cannot_remove_margin() {
     let msg = engine
         .withdraw_margin(vamm.addr().to_string(), Uint128::from(1u64))
         .unwrap();
-    let res = router.execute(bob.clone(), msg).unwrap_err();
+    let err = router.execute(bob.clone(), msg).unwrap_err();
     assert_eq!(
-        res.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: Insufficient margin".to_string()
     );
 }

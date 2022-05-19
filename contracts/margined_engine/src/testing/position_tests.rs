@@ -50,9 +50,9 @@ fn test_force_error_open_position_zero_leverage() {
             vec![],
         )
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        result.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: Input must be non-zero".to_string()
     );
 }
@@ -811,9 +811,9 @@ fn test_close_zero_position() {
     let msg = engine
         .close_position(vamm.addr().to_string(), to_decimals(0u64))
         .unwrap();
-    let res = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        res.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: Position is zero".to_string()
     );
 }
@@ -1007,9 +1007,13 @@ fn test_error_open_position_insufficient_balance() {
             vec![],
         )
         .unwrap();
-    let res = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    println!(
+        "Source {:?}",
+        err.source().unwrap().source().unwrap().source().unwrap()
+    );
     assert_eq!(
-        res.to_string(),
+        err.source().unwrap().to_string(),
         "Overflow: Cannot Sub with 40000000000 and 60000000000".to_string()
     );
 }
@@ -1034,9 +1038,9 @@ fn test_error_open_position_exceed_margin_ratio() {
             vec![],
         )
         .unwrap();
-    let res = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        res.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: Position is undercollateralized".to_string()
     );
 }
