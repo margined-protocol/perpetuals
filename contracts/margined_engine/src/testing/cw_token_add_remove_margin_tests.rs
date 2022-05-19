@@ -1,8 +1,8 @@
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Empty, Uint128};
+use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
-use terra_multi_test::Executor;
 
 pub const NEXT_FUNDING_PERIOD_DELTA: u64 = 86_400u64;
 
@@ -29,7 +29,9 @@ fn test_add_margin() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, to_decimals(60u64));
 
     let msg = engine
@@ -37,7 +39,9 @@ fn test_add_margin() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, to_decimals(140u64));
 
     let alice_position = engine
@@ -91,7 +95,9 @@ fn test_remove_margin() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, to_decimals(60u64));
 
     let free_collateral = engine
@@ -104,7 +110,9 @@ fn test_remove_margin() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, to_decimals(40u64));
 
     let alice_position = engine
@@ -144,7 +152,9 @@ fn test_remove_margin_after_paying_funding() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, to_decimals(60u64));
 
     let price: Uint128 = Uint128::from(25_500_000_000u128);
@@ -170,7 +180,9 @@ fn test_remove_margin_after_paying_funding() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, Uint128::from(36_250_000_000u128));
 
     let alice_position = engine
@@ -208,7 +220,9 @@ fn test_remove_margin_insufficient_margin() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, to_decimals(60u64));
 
     let msg = engine
@@ -241,7 +255,9 @@ fn test_remove_margin_incorrect_ratio_four_percent() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, to_decimals(60u64));
 
     let msg = engine

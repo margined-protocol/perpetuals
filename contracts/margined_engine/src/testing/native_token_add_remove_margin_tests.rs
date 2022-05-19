@@ -1,8 +1,8 @@
-use cosmwasm_std::{Coin, Uint128};
+use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Uint128};
+use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::NativeTokenScenario;
-use terra_multi_test::Executor;
 
 pub const NEXT_FUNDING_PERIOD_DELTA: u64 = 86_400u64;
 
@@ -68,21 +68,25 @@ fn test_force_error_add_incorrect_margin() {
     let NativeTokenScenario {
         mut router,
         alice,
+        bank,
         engine,
         vamm,
         ..
     } = NativeTokenScenario::new();
 
-    // give alice a balance of UST and LUNA
-    router
-        .init_bank_balance(
-            &alice,
-            vec![
-                Coin::new(5_000u128 * 10u128.pow(6), "luna"),
-                Coin::new(5_000u128 * 10u128.pow(6), "uusd"),
-            ],
-        )
-        .unwrap();
+    // give alice a balance of UST
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: alice.to_string(),
+        amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "uusd")],
+    });
+    router.execute(bank.clone(), msg).unwrap();
+
+    // give alice a balance of LUNA
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: alice.to_string(),
+        amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "luna")],
+    });
+    router.execute(bank.clone(), msg).unwrap();
 
     let msg = engine
         .deposit_margin(

@@ -1,10 +1,10 @@
 // use crate::testing::setup::{self, to_decimals};
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Empty, Uint128};
 use cw20::Cw20ExecuteMsg;
+use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Side};
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
-use terra_multi_test::Executor;
 
 #[test]
 fn test_partially_liquidate_long_position() {
@@ -132,11 +132,11 @@ fn test_partially_liquidate_long_position() {
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_positive(43_713_253u128));
 
-    let carol_balance = usdc.balance(&router, carol.clone()).unwrap();
+    let carol_balance = usdc.balance::<_, _, Empty>(&router, carol.clone()).unwrap();
     assert_eq!(carol_balance, Uint128::from(855_695_509u128));
 
     let insurance_balance = usdc
-        .balance(&router, insurance_fund.addr().clone())
+        .balance::<_, _, Empty>(&router, insurance_fund.addr().clone())
         .unwrap();
     assert_eq!(insurance_balance, Uint128::from(5_000_855_695_509u128));
 }
@@ -396,11 +396,11 @@ fn test_partially_liquidate_short_position() {
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_positive(45_736_327u128));
 
-    let carol_balance = usdc.balance(&router, carol.clone()).unwrap();
+    let carol_balance = usdc.balance::<_, _, Empty>(&router, carol.clone()).unwrap();
     assert_eq!(carol_balance, Uint128::from(553_234_429u128));
 
     let insurance_balance = usdc
-        .balance(&router, insurance_fund.addr().clone())
+        .balance::<_, _, Empty>(&router, insurance_fund.addr().clone())
         .unwrap();
     assert_eq!(insurance_balance, Uint128::from(5_000_553_234_429u128));
 }
@@ -650,12 +650,12 @@ fn test_long_position_complete_liquidation() {
         .unwrap();
     assert_eq!(position.size, Integer::zero());
 
-    let carol_balance = usdc.balance(&router, carol.clone()).unwrap();
+    let carol_balance = usdc.balance::<_, _, Empty>(&router, carol.clone()).unwrap();
     assert_eq!(carol_balance, Uint128::from(2_801_120_448u128));
 
     // 5000 - 0.91 - 2.8
     let insurance_balance = usdc
-        .balance(&router, insurance_fund.addr().clone())
+        .balance::<_, _, Empty>(&router, insurance_fund.addr().clone())
         .unwrap();
     assert_eq!(insurance_balance, Uint128::from(4_996_288_515_407u128));
 }
@@ -901,12 +901,12 @@ fn test_short_position_complete_liquidation() {
         .unwrap();
     assert_eq!(position.size, Integer::zero());
 
-    let carol_balance = usdc.balance(&router, carol.clone()).unwrap();
+    let carol_balance = usdc.balance::<_, _, Empty>(&router, carol.clone()).unwrap();
     assert_eq!(carol_balance, Uint128::from(2_793_670_659u128));
 
     // 5000 - 3.49 - 2.79
     let insurance_balance = usdc
-        .balance(&router, insurance_fund.addr().clone())
+        .balance::<_, _, Empty>(&router, insurance_fund.addr().clone())
         .unwrap();
     assert_eq!(insurance_balance, Uint128::from(4_993_712_676_564u128));
 }

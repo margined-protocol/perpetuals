@@ -1,9 +1,8 @@
 use crate::margined_vamm::Direction;
 use cosmwasm_std::{Addr, SubMsg, Uint128};
-use margined_common::integer::Integer;
+use margined_common::{asset::AssetInfo, integer::Integer};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use terraswap::asset::AssetInfo;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]

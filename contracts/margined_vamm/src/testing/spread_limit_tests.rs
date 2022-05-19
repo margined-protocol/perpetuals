@@ -1,6 +1,6 @@
 use cosmwasm_std::Uint128;
+use cw_multi_test::Executor;
 use margined_utils::scenarios::{to_decimals, VammScenario};
-use terra_multi_test::Executor;
 
 #[test]
 fn test_will_fail_is_pricefeed_zero() {

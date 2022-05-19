@@ -3,7 +3,7 @@ use cosmwasm_std::{
     WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
-use terraswap::asset::AssetInfo;
+use margined_common::asset::AssetInfo;
 
 use crate::{
     error::ContractError,
@@ -123,7 +123,7 @@ pub fn withdraw(
             amount: vec![Coin { denom, amount }],
         }),
         AssetInfo::Token { contract_addr } => CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr,
+            contract_addr: contract_addr.to_string(),
             funds: vec![],
             msg: to_binary(&Cw20ExecuteMsg::Transfer {
                 recipient: config.beneficiary.to_string(),

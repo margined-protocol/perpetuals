@@ -2,7 +2,7 @@ use cosmwasm_std::{
     to_binary, Addr, BalanceResponse, BankQuery, Deps, QueryRequest, StdResult, Uint128, WasmQuery,
 };
 use cw20::{BalanceResponse as CW20BalanceResponse, Cw20QueryMsg};
-use terraswap::asset::AssetInfo;
+use margined_common::asset::AssetInfo;
 
 pub fn query_token_balance(deps: Deps, token: AssetInfo, account_addr: Addr) -> StdResult<Uint128> {
     let balance: Uint128 = match token {
@@ -21,7 +21,7 @@ pub fn query_token_balance(deps: Deps, token: AssetInfo, account_addr: Addr) -> 
             let res: CW20BalanceResponse = deps
                 .querier
                 .query(&QueryRequest::Wasm(WasmQuery::Smart {
-                    contract_addr,
+                    contract_addr: contract_addr.to_string(),
                     msg: to_binary(&Cw20QueryMsg::Balance {
                         address: account_addr.to_string(),
                     })?,

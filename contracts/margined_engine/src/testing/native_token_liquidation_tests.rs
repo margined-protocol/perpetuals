@@ -1,9 +1,9 @@
 // use crate::testing::setup::{self, to_decimals};
-use cosmwasm_std::{Coin, Uint128};
+use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Uint128};
+use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Side};
 use margined_utils::scenarios::NativeTokenScenario;
-use terra_multi_test::Executor;
 
 #[test]
 fn test_partially_liquidate_long_position() {
@@ -1109,10 +1109,11 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         block.height += 1;
     });
 
-    let init_funds = vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")];
-    env.router
-        .init_bank_balance(&env.carol, init_funds.clone())
-        .unwrap();
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: env.carol.to_string(),
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+    });
+    env.router.execute(env.bank.clone(), msg).unwrap();
 
     let msg = env
         .vamm
@@ -1261,10 +1262,11 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     // mint funds for carol
-    let init_funds = vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")];
-    env.router
-        .init_bank_balance(&env.carol, init_funds.clone())
-        .unwrap();
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: env.carol.to_string(),
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+    });
+    env.router.execute(env.bank.clone(), msg).unwrap();
 
     // when bob create a 20 margin * 5x long position when 9.0909090909 quoteAsset = 100
     // AMM after: 1100 : 90.9090909091
@@ -1410,10 +1412,11 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     // mint funds for carol
-    let init_funds = vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")];
-    env.router
-        .init_bank_balance(&env.carol, init_funds.clone())
-        .unwrap();
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: env.carol.to_string(),
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+    });
+    env.router.execute(env.bank.clone(), msg).unwrap();
 
     // when bob create a 20 margin * 5x long position when 9.0909090909 quoteAsset = 100
     // AMM after: 1100 : 90.9090909091
@@ -1801,10 +1804,11 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     // mint funds for carol
-    let init_funds = vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")];
-    env.router
-        .init_bank_balance(&env.carol, init_funds.clone())
-        .unwrap();
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: env.carol.to_string(),
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+    });
+    env.router.execute(env.bank.clone(), msg).unwrap();
 
     // bob pays 20 margin * 5x quote to get 9.0909090909 base
     // AMM after: 1100 : 90.9090909091, price: 12.1

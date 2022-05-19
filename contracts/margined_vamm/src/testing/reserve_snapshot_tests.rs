@@ -10,7 +10,7 @@ use margined_utils::scenarios::to_decimals;
 
 #[test]
 fn test_reserve_snapshot_instantiation() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
         quote_asset: "ETH/USD".to_string(),
@@ -69,7 +69,7 @@ fn test_reserve_snapshot_instantiation() {
 
 #[test]
 fn test_reserve_snapshot_limit() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let mut env = mock_env();
     let msg = InstantiateMsg {
         decimals: 9u8,

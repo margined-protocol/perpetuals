@@ -2,7 +2,7 @@ use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, ReplyOn, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
-use terraswap::asset::AssetInfo;
+use margined_common::asset::AssetInfo;
 
 pub fn execute_transfer(token: AssetInfo, receiver: &Addr, amount: Uint128) -> StdResult<SubMsg> {
     let msg: CosmosMsg = match token {
@@ -11,7 +11,7 @@ pub fn execute_transfer(token: AssetInfo, receiver: &Addr, amount: Uint128) -> S
             amount: vec![Coin { denom, amount }],
         }),
         AssetInfo::Token { contract_addr } => CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr,
+            contract_addr: contract_addr.to_string(),
             funds: vec![],
             msg: to_binary(&Cw20ExecuteMsg::Transfer {
                 recipient: receiver.to_string(),

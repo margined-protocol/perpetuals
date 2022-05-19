@@ -1,7 +1,7 @@
-use cosmwasm_std::{Coin, Uint128};
+use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Uint128};
+use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::NativeTokenScenario;
-use terra_multi_test::Executor;
 
 #[test]
 fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
@@ -42,10 +42,11 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     // mint funds for carol
-    let init_funds = vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")];
-    env.router
-        .init_bank_balance(&env.carol, init_funds.clone())
-        .unwrap();
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: env.carol.to_string(),
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+    });
+    env.router.execute(env.bank.clone(), msg).unwrap();
 
     let msg = env
         .engine
@@ -175,10 +176,11 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     // mint funds for carol
-    let init_funds = vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")];
-    env.router
-        .init_bank_balance(&env.carol, init_funds.clone())
-        .unwrap();
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: env.carol.to_string(),
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+    });
+    env.router.execute(env.bank.clone(), msg).unwrap();
 
     let msg = env
         .engine
@@ -313,10 +315,11 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     // mint funds for carol
-    let init_funds = vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")];
-    env.router
-        .init_bank_balance(&env.carol, init_funds.clone())
-        .unwrap();
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: env.carol.to_string(),
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+    });
+    env.router.execute(env.bank.clone(), msg).unwrap();
 
     let msg = env
         .engine
@@ -444,10 +447,11 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     // mint funds for carol
-    let init_funds = vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")];
-    env.router
-        .init_bank_balance(&env.carol, init_funds.clone())
-        .unwrap();
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: env.carol.to_string(),
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+    });
+    env.router.execute(env.bank.clone(), msg).unwrap();
 
     let msg = env
         .engine
@@ -582,10 +586,11 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     // mint funds for carol
-    let init_funds = vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")];
-    env.router
-        .init_bank_balance(&env.carol, init_funds.clone())
-        .unwrap();
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: env.carol.to_string(),
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+    });
+    env.router.execute(env.bank.clone(), msg).unwrap();
 
     let msg = env
         .engine

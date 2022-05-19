@@ -6,7 +6,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{
-    to_binary, Addr, Coin, CosmosMsg, Querier, QuerierWrapper, StdResult, WasmMsg, WasmQuery,
+    to_binary, Addr, Coin, CosmosMsg, Empty, Querier, QuerierWrapper, StdResult, WasmMsg, WasmQuery,
 };
 
 /// InsuranceFundController is a wrapper around Addr that provides a lot of helpers
@@ -71,7 +71,7 @@ impl InsuranceFundController {
         }
         .into();
 
-        let res: ConfigResponse = QuerierWrapper::new(querier).query(&query)?;
+        let res: ConfigResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -88,7 +88,7 @@ impl InsuranceFundController {
         }
         .into();
 
-        let res: VammStatusResponse = QuerierWrapper::new(querier).query(&query)?;
+        let res: VammStatusResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -105,7 +105,7 @@ impl InsuranceFundController {
         }
         .into();
 
-        let res: AllVammStatusResponse = QuerierWrapper::new(querier).query(&query)?;
+        let res: AllVammStatusResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -122,7 +122,7 @@ impl InsuranceFundController {
         }
         .into();
 
-        let res: AllVammResponse = QuerierWrapper::new(querier).query(&query)?;
+        let res: AllVammResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -135,7 +135,7 @@ impl InsuranceFundController {
         }
         .into();
 
-        let res: VammResponse = QuerierWrapper::new(querier).query(&query)?;
+        let res: VammResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 }

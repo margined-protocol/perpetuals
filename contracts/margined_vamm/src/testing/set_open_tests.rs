@@ -8,7 +8,7 @@ use margined_utils::scenarios::to_decimals;
 
 #[test]
 fn test_set_open_admin_open_amm() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
         quote_asset: "ETH".to_string(),
@@ -37,7 +37,7 @@ fn test_set_open_admin_open_amm() {
 
 #[test]
 fn test_set_open_init_next_funding_time_zero() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
         quote_asset: "ETH".to_string(),
@@ -61,7 +61,7 @@ fn test_set_open_init_next_funding_time_zero() {
 
 #[test]
 fn test_set_open_admin_open_updates_next_funding_time() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
         quote_asset: "ETH".to_string(),
@@ -93,7 +93,7 @@ fn test_set_open_admin_open_updates_next_funding_time() {
 
 #[test]
 fn test_set_open_admin_closes_amm() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
         quote_asset: "ETH".to_string(),
@@ -126,7 +126,7 @@ fn test_set_open_admin_closes_amm() {
 
 #[test]
 fn test_set_open_cant_do_anything_when_its_beginning() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
         quote_asset: "ETH".to_string(),
@@ -179,7 +179,7 @@ fn test_set_open_cant_do_anything_when_its_beginning() {
 
 #[test]
 fn test_set_open_cant_do_anything_when_closed() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
         quote_asset: "ETH".to_string(),

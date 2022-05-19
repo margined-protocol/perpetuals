@@ -1,17 +1,17 @@
 use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr};
+use cw_multi_test::Executor;
 use margined_perp::margined_insurance_fund::{
     ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg,
 };
 use margined_utils::scenarios::ShutdownScenario;
-use terra_multi_test::Executor;
 
 const BENEFICIARY: &str = "beneficiary";
 
 #[test]
 fn test_instantiation() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -30,7 +30,7 @@ fn test_instantiation() {
 
 #[test]
 fn test_update_config() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -615,7 +615,7 @@ fn test_vamm_capacity() {
 #[test]
 fn test_not_owner() {
     //instantiate contract here
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("owner", &[]);
 

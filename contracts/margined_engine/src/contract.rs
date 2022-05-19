@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, ContractResult, Deps, DepsMut, Env, MessageInfo, Reply,
-    Response, StdError, StdResult, Uint128,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError,
+    StdResult, SubMsgResult, Uint128,
 };
 use cw2::set_contract_version;
 use margined_common::validate::{
@@ -191,7 +191,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
     match msg.result {
-        ContractResult::Ok(response) => match msg.id {
+        SubMsgResult::Ok(response) => match msg.id {
             INCREASE_POSITION_REPLY_ID => {
                 let (input, output) = parse_swap(response).unwrap();
                 let response = increase_position_reply(deps, env, input, output)?;
@@ -232,7 +232,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
                 msg.id
             ))),
         },
-        ContractResult::Err(e) => Err(StdError::generic_err(format!(
+        SubMsgResult::Err(e) => Err(StdError::generic_err(format!(
             "reply (id {:?}) error {:?}",
             msg.id, e
         ))),

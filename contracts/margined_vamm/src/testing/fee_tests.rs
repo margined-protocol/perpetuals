@@ -1,7 +1,7 @@
 use cosmwasm_std::Uint128;
+use cw_multi_test::Executor;
 use margined_perp::margined_vamm::CalcFeeResponse;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
-use terra_multi_test::Executor;
 
 #[test]
 fn test_calc_fee() {

@@ -1,10 +1,9 @@
-// use crate::testing::setup::{self, to_decimals};
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Empty, Uint128};
 use cw20::Cw20ExecuteMsg;
+use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
-use terra_multi_test::Executor;
 
 #[test]
 fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_liquidated() {
@@ -78,7 +77,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance = usdc.balance(&router, alice.clone()).unwrap();
+    let alice_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
     assert_eq!(alice_balance, Uint128::from(5_094_117_647_059u128));
 
     // keeper liquidate bob's under collateral position, bob's positionValue is -294.11
@@ -100,10 +99,12 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 
-    let carol_balance = usdc.balance(&router, carol.clone()).unwrap();
+    let carol_balance = usdc.balance::<_, _, Empty>(&router, carol.clone()).unwrap();
     assert_eq!(carol_balance, Uint128::from(7_352_941_176u128));
 
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, to_decimals(0u64));
 }
 
