@@ -75,11 +75,13 @@ pub fn calculate_funds_needed<Q: Querier>(
             position.margin = if position.margin > unrealised_pnl_response.unrealized_pnl.value {
                 position.margin - unrealised_pnl_response.unrealized_pnl.value
             } else {
-                margin_owed = Integer::new_positive(unrealised_pnl_response.unrealized_pnl.value - position.margin);
+                margin_owed = Integer::new_positive(
+                    unrealised_pnl_response.unrealized_pnl.value - position.margin,
+                );
                 Uint128::zero()
             }
         }
-        false => position.margin = position.margin + unrealised_pnl_response.unrealized_pnl.value,
+        false => position.margin += unrealised_pnl_response.unrealized_pnl.value,
     };
 
     // First we check if they are increasing the position or not

@@ -2712,7 +2712,7 @@ fn test_ten_percent_fee_open_long_price_down_liquidation() {
             Uint128::from(60_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(82_925_760u128,"uusd")],
+            vec![Coin::new(82_925_760u128, "uusd")],
         )
         .unwrap();
 
@@ -2833,7 +2833,7 @@ fn test_ten_percent_fee_open_long_price_down_liquidation_with_positive_margin() 
             Uint128::from(60_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(6_000_000u128,"uusd")],
+            vec![Coin::new(6_000_000u128, "uusd")],
         )
         .unwrap();
 
