@@ -1,4 +1,4 @@
-use cosmwasm_std::{Empty, Uint128};
+use cosmwasm_std::{Empty, StdError, Uint128};
 use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
 use margined_common::integer::Integer;
@@ -1008,13 +1008,11 @@ fn test_error_open_position_insufficient_balance() {
         )
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
-    println!(
-        "Source {:?}",
-        err.source().unwrap().source().unwrap().source().unwrap()
-    );
     assert_eq!(
-        err.source().unwrap().to_string(),
-        "Overflow: Cannot Sub with 40000000000 and 60000000000".to_string()
+        StdError::GenericErr {
+            msg: "Overflow: Cannot Sub with 40000000000 and 60000000000".to_string()
+        },
+        err.downcast().unwrap()
     );
 }
 
@@ -1040,8 +1038,10 @@ fn test_error_open_position_exceed_margin_ratio() {
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        err.source().unwrap().to_string(),
-        "Generic error: Position is undercollateralized".to_string()
+        StdError::GenericErr {
+            msg: "Position is undercollateralized".to_string()
+        },
+        err.downcast().unwrap(),
     );
 }
 

@@ -595,8 +595,13 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
             Uint128::from(224_100_000u128),
         )
         .unwrap();
-    let result = router.execute(carol.clone(), msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: reply (id 5) error \"Generic error: Less than minimum quote asset amount limit\"");
+    let err = router.execute(carol.clone(), msg).unwrap_err();
+    assert_eq!(
+            StdError::GenericErr {
+                msg: "reply (id 5) error \"error executing WasmMsg:\\nsender: contract5\\nExecute { contract_addr: \\\"contract4\\\", msg: Binary(7b22737761705f6f7574707574223a7b22646972656374696f6e223a226164645f746f5f616d6d222c22626173655f61737365745f616d6f756e74223a223230303030303030303030222c2271756f74655f61737365745f6c696d6974223a22323234313030303030303030227d7d), funds: [] }\"".to_string(),
+            },
+            err.downcast().unwrap()
+        );
 
     let msg = engine
         .liquidate(
@@ -845,10 +850,12 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
     let msg = engine
         .liquidate(vamm.addr().to_string(), alice.to_string(), Uint128::zero())
         .unwrap();
-    let result = router.execute(carol.clone(), msg).unwrap_err();
+    let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
-        result.to_string(),
-        "Generic error: Position is overcollateralized"
+        StdError::GenericErr {
+            msg: "Position is overcollateralized".to_string(),
+        },
+        err.downcast().unwrap()
     );
 }
 
@@ -952,10 +959,12 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
     let msg = engine
         .liquidate(vamm.addr().to_string(), alice.to_string(), Uint128::zero())
         .unwrap();
-    let result = router.execute(carol.clone(), msg).unwrap_err();
+    let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
-        result.to_string(),
-        "Generic error: Position is overcollateralized"
+        StdError::GenericErr {
+            msg: "Position is overcollateralized".to_string(),
+        },
+        err.downcast().unwrap()
     );
 }
 
@@ -1726,9 +1735,13 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
         .unwrap();
     let err = env.router.execute(env.alice.clone(), msg).unwrap_err();
     assert_eq!(
-        err.source().unwrap().to_string(),
-        "Generic error: reply (id 2) error \"Generic error: price is over fluctuation limit\""
-            .to_string()
+        StdError::GenericErr {
+            msg: "Generic error: reply (id 2) error \"Generic error: price is over fluctuation limit\"".to_string()
+        },
+        err.downcast().unwrap()
+        // err.source().unwrap().to_string(),
+        // "Generic error: reply (id 2) error \"Generic error: price is over fluctuation limit\""
+        //     .to_string()
     );
 
     let msg = env
