@@ -1,4 +1,4 @@
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{StdError, Uint128};
 use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
@@ -540,6 +540,11 @@ fn test_stop_trading_if_over_open_interest_notional_cap() {
             vec![],
         )
         .unwrap();
-    let result = router.execute(bob.clone(), msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: over limit");
+    let err = router.execute(bob.clone(), msg).unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "over limit".to_string(),
+        },
+        err.downcast().unwrap()
+    );
 }
