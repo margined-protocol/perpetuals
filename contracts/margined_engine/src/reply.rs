@@ -20,10 +20,7 @@ use crate::{
     },
 };
 
-use margined_common::{
-    asset::{Asset, AssetInfo},
-    integer::Integer,
-};
+use margined_common::{asset::AssetInfo, integer::Integer};
 use margined_perp::{
     margined_engine::{Position, RemainMarginResponse, Side},
     margined_vamm::Direction,
@@ -146,6 +143,8 @@ pub fn increase_position_reply(
     if let AssetInfo::NativeToken { .. } = config.eligible_collateral {
         funds.are_sufficient()?;
     }
+
+    println!("here???");
 
     remove_tmp_swap(deps.storage);
     remove_sent_funds(deps.storage);

@@ -43,7 +43,7 @@ pub fn execute_transfer_from(
         msg,
         gas_limit: None,
         id: 0u64,
-        reply_on: ReplyOn::Never,
+        reply_on: ReplyOn::Error,
     };
 
     Ok(transfer_msg)

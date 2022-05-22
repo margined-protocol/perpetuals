@@ -1008,6 +1008,7 @@ fn test_error_open_position_insufficient_balance() {
         )
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
+    // println!("{:?}", err.downcast().unwrap());
     assert_eq!(
         StdError::GenericErr {
             msg: "Overflow: Cannot Sub with 40000000000 and 60000000000".to_string()
