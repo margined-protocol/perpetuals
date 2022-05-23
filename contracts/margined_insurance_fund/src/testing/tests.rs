@@ -1,17 +1,17 @@
 use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{from_binary, Addr};
+use cosmwasm_std::{from_binary, Addr, StdError};
+use cw_multi_test::Executor;
 use margined_perp::margined_insurance_fund::{
     ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg,
 };
 use margined_utils::scenarios::ShutdownScenario;
-use terra_multi_test::Executor;
 
 const BENEFICIARY: &str = "beneficiary";
 
 #[test]
 fn test_instantiation() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -30,7 +30,7 @@ fn test_instantiation() {
 
 #[test]
 fn test_update_config() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -159,9 +159,13 @@ fn test_add_vamm_twice() {
 
     // try to add the same vamm here
     let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
-    let res = router.execute(owner, msg).unwrap_err();
-
-    assert_eq!(res.to_string(), "Generic error: This vAMM is already added");
+    let err = router.execute(owner, msg).unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "This vAMM is already added".to_string(),
+        },
+        err.downcast().unwrap()
+    );
 }
 
 #[test]
@@ -252,9 +256,13 @@ fn test_remove_no_vamms() {
     let msg = insurance_fund
         .remove_vamm(vamm1.addr().to_string())
         .unwrap();
-    let res = router.execute(owner, msg).unwrap_err();
-
-    assert_eq!(res.to_string(), "Generic error: No vAMMs are stored")
+    let err = router.execute(owner, msg).unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "No vAMMs are stored".to_string(),
+        },
+        err.downcast().unwrap()
+    );
 }
 
 #[test]
@@ -284,12 +292,13 @@ fn test_remove_non_existed_vamm() {
     let msg = insurance_fund
         .remove_vamm(vamm2.addr().to_string())
         .unwrap();
-    let res = router.execute(owner, msg).unwrap_err();
-
+    let err = router.execute(owner, msg).unwrap_err();
     assert_eq!(
-        res.to_string(),
-        "Generic error: This vAMM has not been added"
-    )
+        StdError::GenericErr {
+            msg: "This vAMM has not been added".to_string(),
+        },
+        err.downcast().unwrap()
+    );
 }
 
 #[test]
@@ -312,9 +321,13 @@ fn test_off_vamm_off_again() {
 
     //turn vamm off again (note the unauthorized error comes from state.open == open)
     let msg = insurance_fund.shutdown_vamms().unwrap();
-    let res = router.execute(owner.clone(), msg).unwrap_err();
-
-    assert_eq!(res.to_string(), "Generic error: unauthorized");
+    let err = router.execute(owner, msg).unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "unauthorized".to_string(),
+        },
+        err.downcast().unwrap()
+    );
 }
 
 #[test]
@@ -567,11 +580,12 @@ fn test_vamm_capacity() {
 
     //try to add a fourth vamm
     let msg = insurance_fund.add_vamm(vamm4.addr().to_string()).unwrap();
-    let res = router.execute(owner.clone(), msg).unwrap_err();
-
+    let err = router.execute(owner, msg).unwrap_err();
     assert_eq!(
-        res.to_string(),
-        "Generic error: The vAMM capacity is already reached"
+        StdError::GenericErr {
+            msg: "The vAMM capacity is already reached".to_string(),
+        },
+        err.downcast().unwrap()
     );
 
     ////////////////////////////////////////////
@@ -601,11 +615,13 @@ fn test_vamm_capacity() {
         let msg = insurance_fund.add_vamm(vamms[n - 1].clone()).unwrap();
 
         if n == 4 {
-            let res = router.execute(owner.clone(), msg).unwrap_err();
+            let err = router.execute(owner.clone(), msg).unwrap_err();
 
             assert_eq!(
-                res.to_string(),
-                "Generic error: The vAMM capacity is already reached"
+                StdError::GenericErr {
+                    msg: "The vAMM capacity is already reached".to_string(),
+                },
+                err.downcast().unwrap()
             );
             break;
         }
@@ -615,7 +631,7 @@ fn test_vamm_capacity() {
 #[test]
 fn test_not_owner() {
     //instantiate contract here
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("owner", &[]);
 
@@ -631,7 +647,7 @@ fn test_not_owner() {
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
-    assert_eq!(res.to_string(), "Unauthorized");
+    assert_eq!(res.to_string(), "Generic error: unauthorized");
 
     // try to add a vAMM
     let addr1 = "addr0001".to_string();
@@ -641,7 +657,7 @@ fn test_not_owner() {
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
-    assert_eq!(res.to_string(), "Unauthorized");
+    assert_eq!(res.to_string(), "Generic error: unauthorized");
 
     //try to remove a vAMM
     let addr1 = "addr0001".to_string();
@@ -651,7 +667,7 @@ fn test_not_owner() {
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
-    assert_eq!(res.to_string(), "Unauthorized");
+    assert_eq!(res.to_string(), "Generic error: unauthorized");
 
     //try to shutdown all vamms
     let info = mock_info("not_the_owner", &[]);
@@ -659,5 +675,5 @@ fn test_not_owner() {
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
-    assert_eq!(res.to_string(), "Unauthorized");
+    assert_eq!(res.to_string(), "Generic error: unauthorized");
 }

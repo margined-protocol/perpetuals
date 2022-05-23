@@ -1,9 +1,8 @@
-// use crate::testing::setup::{self, to_decimals};
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Empty, Uint128};
 use cw20::Cw20ExecuteMsg;
+use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
-use terra_multi_test::Executor;
 
 #[test]
 fn test_margin_engine_should_have_enough_balance_after_close_position() {
@@ -73,7 +72,9 @@ fn test_margin_engine_should_have_enough_balance_after_close_position() {
     router.execute(alice.clone(), msg).unwrap();
 
     // 20(bob's margin) + 25(alice's margin) = 45
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, to_decimals(45u64));
 
     // when bob close his position (11.11)
@@ -87,11 +88,13 @@ fn test_margin_engine_should_have_enough_balance_after_close_position() {
     router.execute(bob.clone(), msg).unwrap();
 
     let insurance_balance = usdc
-        .balance(&router, insurance_fund.addr().clone())
+        .balance::<_, _, Empty>(&router, insurance_fund.addr().clone())
         .unwrap();
     assert_eq!(insurance_balance, to_decimals(5_000u64));
 
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, Uint128::from(3_048_780_494u128));
 }
 
@@ -163,7 +166,9 @@ fn test_margin_engine_does_not_have_enough_balance_after_close_position() {
     router.execute(alice.clone(), msg).unwrap();
 
     // 20(bob's margin) + 25(alice's margin) = 40
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, to_decimals(40u64));
 
     // when bob close his position (11.11)
@@ -177,10 +182,12 @@ fn test_margin_engine_does_not_have_enough_balance_after_close_position() {
     router.execute(bob.clone(), msg).unwrap();
 
     let insurance_balance = usdc
-        .balance(&router, insurance_fund.addr().clone())
+        .balance::<_, _, Empty>(&router, insurance_fund.addr().clone())
         .unwrap();
     assert_eq!(insurance_balance, Uint128::from(4998_048_780_494u128));
 
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, Uint128::zero());
 }

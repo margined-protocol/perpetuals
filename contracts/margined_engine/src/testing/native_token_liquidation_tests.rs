@@ -1,9 +1,8 @@
-// use crate::testing::setup::{self, to_decimals};
-use cosmwasm_std::{Coin, Uint128};
+use cosmwasm_std::{BankMsg, Coin, CosmosMsg, StdError, Uint128};
+use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Side};
 use margined_utils::scenarios::NativeTokenScenario;
-use terra_multi_test::Executor;
 
 #[test]
 fn test_partially_liquidate_long_position() {
@@ -195,8 +194,13 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
             Uint128::from(273_850_000u64),
         )
         .unwrap();
-    let result = router.execute(carol.clone(), msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: reply (id 6) error \"Generic error: Less than minimum quote asset amount limit\"");
+    let err = router.execute(carol.clone(), msg).unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "partial liquidation failure - reply (id 6)".to_string(),
+        },
+        err.downcast().unwrap()
+    );
 
     // if quoteAssetAmountLimit == 273.8 < 68.455 * 4 = 273.82, quote asset gets is more than expected
     let msg = engine
@@ -399,8 +403,15 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
             Uint128::from(177_000_000u64),
         )
         .unwrap();
-    let result = router.execute(carol.clone(), msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: reply (id 6) error \"Generic error: Greater than maximum quote asset amount limit\"");
+    // let result = router.execute(carol.clone(), msg).unwrap_err();
+    // assert_eq!(result.to_string(), "Generic error: reply (id 6) error \"Generic error: Greater than maximum quote asset amount limit\"");
+    let err = router.execute(carol.clone(), msg).unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "partial liquidation failure - reply (id 6)".to_string(),
+        },
+        err.downcast().unwrap()
+    );
 
     // if quoteAssetAmountLimit == 177.1 < 44.258 * 4 = 177.032, quote asset pays is less than expected
     let msg = engine
@@ -595,8 +606,13 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
             Uint128::from(224_100_000u128),
         )
         .unwrap();
-    let result = router.execute(carol.clone(), msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: reply (id 5) error \"Generic error: Less than minimum quote asset amount limit\"");
+    let err = router.execute(carol.clone(), msg).unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "liquidation failure - reply (id 5)".to_string(),
+        },
+        err.downcast().unwrap()
+    );
 
     let msg = engine
         .liquidate(
@@ -845,10 +861,12 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
     let msg = engine
         .liquidate(vamm.addr().to_string(), alice.to_string(), Uint128::zero())
         .unwrap();
-    let result = router.execute(carol.clone(), msg).unwrap_err();
+    let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
-        result.to_string(),
-        "Generic error: Position is overcollateralized"
+        StdError::GenericErr {
+            msg: "Position is overcollateralized".to_string(),
+        },
+        err.downcast().unwrap()
     );
 }
 
@@ -952,10 +970,12 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
     let msg = engine
         .liquidate(vamm.addr().to_string(), alice.to_string(), Uint128::zero())
         .unwrap();
-    let result = router.execute(carol.clone(), msg).unwrap_err();
+    let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
-        result.to_string(),
-        "Generic error: Position is overcollateralized"
+        StdError::GenericErr {
+            msg: "Position is overcollateralized".to_string(),
+        },
+        err.downcast().unwrap()
     );
 }
 
@@ -989,8 +1009,12 @@ fn test_force_error_empty_position() {
     let msg = engine
         .liquidate(vamm.addr().to_string(), alice.to_string(), Uint128::zero())
         .unwrap();
-    let result = router.execute(carol.clone(), msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: Position is zero");
+    let err = router.execute(carol.clone(), msg).unwrap_err();
+
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Position is zero"
+    );
 }
 
 #[test]
@@ -1109,10 +1133,11 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         block.height += 1;
     });
 
-    let init_funds = vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")];
-    env.router
-        .init_bank_balance(&env.carol, init_funds.clone())
-        .unwrap();
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: env.carol.to_string(),
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+    });
+    env.router.execute(env.bank.clone(), msg).unwrap();
 
     let msg = env
         .vamm
@@ -1261,10 +1286,11 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     // mint funds for carol
-    let init_funds = vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")];
-    env.router
-        .init_bank_balance(&env.carol, init_funds.clone())
-        .unwrap();
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: env.carol.to_string(),
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+    });
+    env.router.execute(env.bank.clone(), msg).unwrap();
 
     // when bob create a 20 margin * 5x long position when 9.0909090909 quoteAsset = 100
     // AMM after: 1100 : 90.9090909091
@@ -1410,10 +1436,11 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     // mint funds for carol
-    let init_funds = vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")];
-    env.router
-        .init_bank_balance(&env.carol, init_funds.clone())
-        .unwrap();
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: env.carol.to_string(),
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+    });
+    env.router.execute(env.bank.clone(), msg).unwrap();
 
     // when bob create a 20 margin * 5x long position when 9.0909090909 quoteAsset = 100
     // AMM after: 1100 : 90.9090909091
@@ -1717,11 +1744,12 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
             vec![Coin::new(25_000_000u128, "uusd")],
         )
         .unwrap();
-    let response = env.router.execute(env.alice.clone(), msg).unwrap_err();
+    let err = env.router.execute(env.alice.clone(), msg).unwrap_err();
     assert_eq!(
-        response.to_string(),
-        "Generic error: reply (id 2) error \"Generic error: price is over fluctuation limit\""
-            .to_string()
+        StdError::GenericErr {
+            msg: "decrease position failure - reply (id 2)".to_string()
+        },
+        err.downcast().unwrap()
     );
 
     let msg = env
@@ -1801,10 +1829,11 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
     env.router.execute(env.owner.clone(), msg).unwrap();
 
     // mint funds for carol
-    let init_funds = vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")];
-    env.router
-        .init_bank_balance(&env.carol, init_funds.clone())
-        .unwrap();
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: env.carol.to_string(),
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+    });
+    env.router.execute(env.bank.clone(), msg).unwrap();
 
     // bob pays 20 margin * 5x quote to get 9.0909090909 base
     // AMM after: 1100 : 90.9090909091, price: 12.1
@@ -1887,9 +1916,11 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
             Uint128::zero(),
         )
         .unwrap();
-    let response = env.router.execute(env.bob.clone(), msg).unwrap_err();
+    let err = env.router.execute(env.alice.clone(), msg).unwrap_err();
     assert_eq!(
-        response.to_string(),
-        "Generic error: reply (id 6) error \"Generic error: price is already over fluctuation limit\"".to_string()
+        StdError::GenericErr {
+            msg: "partial liquidation failure - reply (id 6)".to_string()
+        },
+        err.downcast().unwrap()
     );
 }

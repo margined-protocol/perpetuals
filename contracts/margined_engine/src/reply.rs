@@ -1,6 +1,5 @@
 use cosmwasm_std::{DepsMut, Env, Response, StdResult, SubMsg, Uint128};
 use std::cmp::Ordering;
-use terraswap::asset::AssetInfo;
 
 use crate::{
     handle::internal_increase_position,
@@ -21,7 +20,7 @@ use crate::{
     },
 };
 
-use margined_common::integer::Integer;
+use margined_common::{asset::AssetInfo, integer::Integer};
 use margined_perp::{
     margined_engine::{Position, RemainMarginResponse, Side},
     margined_vamm::Direction,

@@ -1,8 +1,8 @@
-use cosmwasm_std::{Coin, Uint128};
+use cosmwasm_std::{BankMsg, Coin, CosmosMsg, StdError, Uint128};
+use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::NativeTokenScenario;
-use terra_multi_test::Executor;
 
 pub const NEXT_FUNDING_PERIOD_DELTA: u64 = 86_400u64;
 
@@ -68,21 +68,25 @@ fn test_force_error_add_incorrect_margin() {
     let NativeTokenScenario {
         mut router,
         alice,
+        bank,
         engine,
         vamm,
         ..
     } = NativeTokenScenario::new();
 
-    // give alice a balance of UST and LUNA
-    router
-        .init_bank_balance(
-            &alice,
-            vec![
-                Coin::new(5_000u128 * 10u128.pow(6), "luna"),
-                Coin::new(5_000u128 * 10u128.pow(6), "uusd"),
-            ],
-        )
-        .unwrap();
+    // give alice a balance of UST
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: alice.to_string(),
+        amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "uusd")],
+    });
+    router.execute(bank.clone(), msg).unwrap();
+
+    // give alice a balance of LUNA
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: alice.to_string(),
+        amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "luna")],
+    });
+    router.execute(bank.clone(), msg).unwrap();
 
     let msg = engine
         .deposit_margin(
@@ -91,11 +95,13 @@ fn test_force_error_add_incorrect_margin() {
             vec![Coin::new(85_000_000u128, "luna")],
         )
         .unwrap();
-    let res = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        res.to_string(),
-        "Generic error: Native token balance mismatch between the argument and the transferred"
-            .to_string()
+        StdError::GenericErr {
+            msg: "Native token balance mismatch between the argument and the transferred"
+                .to_string(),
+        },
+        err.downcast().unwrap()
     );
 }
 
@@ -277,8 +283,11 @@ fn test_remove_margin_insufficient_margin() {
     let msg = engine
         .withdraw_margin(vamm.addr().to_string(), Uint128::from(61_000_000u64))
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: Insufficient margin");
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Insufficient margin"
+    );
 }
 
 #[test]
@@ -313,8 +322,11 @@ fn test_remove_margin_incorrect_ratio_four_percent() {
     let msg = engine
         .withdraw_margin(vamm.addr().to_string(), Uint128::from(36_000_000u64))
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: Insufficient collateral");
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Insufficient collateral"
+    );
 }
 
 #[test]
@@ -358,8 +370,11 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price(
     let msg = engine
         .withdraw_margin(vamm.addr().to_string(), Uint128::from(45_010_000u128))
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: Insufficient collateral");
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Insufficient collateral"
+    );
 
     let free_collateral = engine
         .get_free_collateral(&router, vamm.addr().to_string(), alice.to_string())
@@ -413,8 +428,11 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() 
     let msg = engine
         .withdraw_margin(vamm.addr().to_string(), Uint128::from(24_900_000u128))
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: Insufficient collateral");
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Insufficient collateral"
+    );
 
     let free_collateral = engine
         .get_free_collateral(&router, vamm.addr().to_string(), alice.to_string())
@@ -474,8 +492,11 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price
     let msg = engine
         .withdraw_margin(vamm.addr().to_string(), Uint128::from(16_500_000u128))
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: Insufficient collateral");
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Insufficient collateral"
+    );
 
     let free_collateral = engine
         .get_free_collateral(&router, vamm.addr().to_string(), alice.to_string())
@@ -528,8 +549,11 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_spot_price()
     let msg = engine
         .withdraw_margin(vamm.addr().to_string(), Uint128::from(2_500_000u128))
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: Insufficient collateral");
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Insufficient collateral"
+    );
 
     let free_collateral = engine
         .get_free_collateral(&router, vamm.addr().to_string(), alice.to_string())
@@ -593,8 +617,11 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_twap_price(
     let msg = engine
         .withdraw_margin(vamm.addr().to_string(), Uint128::from(45_010_000u128))
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: Insufficient collateral");
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Insufficient collateral"
+    );
 
     let free_collateral = engine
         .get_free_collateral(&router, vamm.addr().to_string(), alice.to_string())
@@ -658,8 +685,11 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() 
     let msg = engine
         .withdraw_margin(vamm.addr().to_string(), Uint128::from(34_930_000u128))
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: Insufficient collateral");
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Insufficient collateral"
+    );
 
     let free_collateral = engine
         .get_free_collateral(&router, vamm.addr().to_string(), alice.to_string())
@@ -729,8 +759,11 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price
     let msg = engine
         .withdraw_margin(vamm.addr().to_string(), Uint128::from(15_600_000u128))
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: Insufficient collateral");
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Insufficient collateral"
+    );
 
     let free_collateral = engine
         .get_free_collateral(&router, vamm.addr().to_string(), alice.to_string())
@@ -800,8 +833,11 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_twap_price()
     let msg = engine
         .withdraw_margin(vamm.addr().to_string(), Uint128::from(8_700_000u128))
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: Insufficient collateral");
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Insufficient collateral"
+    );
 
     let free_collateral = engine
         .get_free_collateral(&router, vamm.addr().to_string(), alice.to_string())

@@ -1,7 +1,7 @@
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{StdError, Uint128};
+use cw_multi_test::Executor;
 use margined_perp::margined_vamm::CalcFeeResponse;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
-use terra_multi_test::Executor;
 
 #[test]
 fn test_calc_fee() {
@@ -135,9 +135,11 @@ fn test_update_not_owner() {
             None,
         )
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        result.to_string(),
-        "Generic error: unauthorized".to_string()
+        StdError::GenericErr {
+            msg: "unauthorized".to_string(),
+        },
+        err.downcast().unwrap()
     );
 }

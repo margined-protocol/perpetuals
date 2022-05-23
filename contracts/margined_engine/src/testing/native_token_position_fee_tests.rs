@@ -1,9 +1,9 @@
 use cosmwasm_std::{Coin, Uint128};
+use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Position, Side};
 use margined_utils::scenarios::NativeTokenScenario;
 use margined_utils::tools::fund_calculator::calculate_funds_needed;
-use terra_multi_test::Executor;
 
 // Note: these tests also verify the 10% fees for the amm are functioning
 
@@ -61,10 +61,10 @@ fn test_force_error_open_position_no_token_sent() {
             vec![],
         )
         .unwrap();
-    let response = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
 
     assert_eq!(
-        response.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: sent funds are insufficient".to_string()
     );
 }
@@ -169,9 +169,9 @@ fn test_force_error_insufficient_token_long_position() {
             vec![Coin::new(119_000_000u128, "uusd")],
         )
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        result.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: sent funds are insufficient".to_string()
     );
 }
@@ -278,9 +278,9 @@ fn test_force_error_insufficient_token_short_position() {
             vec![Coin::new(100_000_000u128, "uusd")],
         )
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        result.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: sent funds are insufficient".to_string()
     );
 }
@@ -1151,6 +1151,23 @@ fn test_ten_percent_fee_reduce_long_position_zero_fee() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
+    let funds = vec![Coin::new(
+        calculate_funds_needed(
+            &router,
+            engine.addr(),
+            alice.clone(),
+            Uint128::from(350_000_000u64),
+            Uint128::from(1_000_000u64),
+            Side::Sell,
+            vamm.addr(),
+        )
+        .unwrap()
+        .u128(),
+        "uusd",
+    )];
+
+    println!("{:?}", funds);
+
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
@@ -1158,23 +1175,22 @@ fn test_ten_percent_fee_reduce_long_position_zero_fee() {
             Uint128::from(350_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(17_500_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(350_000_000u64),
-                    Uint128::from(1_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            funds,
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
+
+    // let msg = engine
+    //     .open_position(
+    //         vamm.addr().to_string(),
+    //         Side::Sell,
+    //         Uint128::from(350_000_000u64),
+    //         Uint128::from(1_000_000u64),
+    //         Uint128::from(17_500_000u64),
+    //         vec![Coin::new(350_000_000u128, "uusd")],
+    //     )
+    //     .unwrap();
+    // router.execute(alice.clone(), msg).unwrap();
 
     let position: Position = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())

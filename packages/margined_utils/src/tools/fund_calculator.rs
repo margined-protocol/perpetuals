@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    to_binary, Addr, Querier, QuerierWrapper, QueryRequest, StdResult, Uint128, WasmQuery,
+    to_binary, Addr, Empty, Querier, QuerierWrapper, QueryRequest, StdResult, Uint128, WasmQuery,
 };
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::QueryMsg as EngineQueryMsg;
@@ -124,7 +124,7 @@ pub fn calculate_funds_needed<Q: Querier>(
 
 // to query the given vamm's fees for use in the fund calculator
 pub fn query_vamm_fees<Q: Querier>(querier: &Q, vamm_addr: String) -> StdResult<Uint128> {
-    let fee_rate = QuerierWrapper::new(querier)
+    let fee_rate = QuerierWrapper::<Empty>::new(querier)
         .query::<ConfigResponse>(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: vamm_addr,
             msg: to_binary(&VammQueryMsg::Config {})?,
@@ -140,11 +140,12 @@ pub fn query_existing_position<Q: Querier>(
     vamm: String,
     trader: String,
 ) -> StdResult<Position> {
-    let position =
-        QuerierWrapper::new(querier).query::<Position>(&QueryRequest::Wasm(WasmQuery::Smart {
+    let position = QuerierWrapper::<Empty>::new(querier).query::<Position>(&QueryRequest::Wasm(
+        WasmQuery::Smart {
             contract_addr: engine,
             msg: to_binary(&EngineQueryMsg::Position { vamm, trader })?,
-        }))?;
+        },
+    ))?;
     Ok(position)
 }
 
@@ -155,15 +156,14 @@ pub fn query_existing_position_pnl<Q: Querier>(
     vamm: String,
     trader: String,
 ) -> StdResult<PositionUnrealizedPnlResponse> {
-    let pnl_response = QuerierWrapper::new(querier).query::<PositionUnrealizedPnlResponse>(
-        &QueryRequest::Wasm(WasmQuery::Smart {
+    let pnl_response = QuerierWrapper::<Empty>::new(querier)
+        .query::<PositionUnrealizedPnlResponse>(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: engine,
             msg: to_binary(&EngineQueryMsg::UnrealizedPnl {
                 vamm,
                 trader,
                 calc_option: PnlCalcOption::SpotPrice,
             })?,
-        }),
-    )?;
+        }))?;
     Ok(pnl_response)
 }
