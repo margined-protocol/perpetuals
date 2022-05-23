@@ -11,7 +11,7 @@ use margined_perp::margined_pricefeed::{ConfigResponse, ExecuteMsg, InstantiateM
 
 #[test]
 fn test_instantiation() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
         oracle_hub_contract: "oracle_hub0000".to_string(),
@@ -33,7 +33,7 @@ fn test_instantiation() {
 
 #[test]
 fn test_update_config() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
         oracle_hub_contract: "oracle_hub0000".to_string(),
@@ -62,7 +62,7 @@ fn test_update_config() {
 
 #[test]
 fn test_set_and_get_price() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
         oracle_hub_contract: "oracle_hub0000".to_string(),
@@ -140,7 +140,7 @@ fn test_set_and_get_price() {
 
 #[test]
 fn test_set_multiple_price() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
         oracle_hub_contract: "oracle_hub0000".to_string(),
@@ -198,7 +198,7 @@ fn test_set_multiple_price() {
 
 #[test]
 fn test_get_previous_price() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
         oracle_hub_contract: "oracle_hub0000".to_string(),
@@ -278,7 +278,7 @@ fn test_get_previous_price() {
 
 #[test]
 fn test_get_twap_price() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let mut env = mock_env();
     let msg = InstantiateMsg {
         decimals: 9u8,
@@ -364,7 +364,7 @@ fn test_get_twap_price() {
 
 #[test]
 fn test_get_twap_variant_price_period() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let mut env = mock_env();
     let msg = InstantiateMsg {
         decimals: 9u8,
@@ -426,7 +426,7 @@ fn test_get_twap_variant_price_period() {
 
 #[test]
 fn test_get_twap_error_zero_interval() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let mut env = mock_env();
     let msg = InstantiateMsg {
         decimals: 9u8,

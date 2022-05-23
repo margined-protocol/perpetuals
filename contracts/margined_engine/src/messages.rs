@@ -3,13 +3,14 @@ use cosmwasm_std::{
     Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
-use terraswap::asset::AssetInfo;
 
 use crate::{
+    contract::TRANSFER_FAILURE_REPLY_ID,
     querier::query_vamm_calc_fee,
     state::{read_config, State},
 };
 
+use margined_common::asset::AssetInfo;
 use margined_perp::margined_engine::TransferResponse;
 use margined_perp::margined_insurance_fund::ExecuteMsg as InsuranceFundExecuteMessage;
 use margined_perp::margined_vamm::CalcFeeResponse;
@@ -29,7 +30,7 @@ pub fn execute_transfer_from(
             amount: vec![Coin { denom, amount }],
         }),
         AssetInfo::Token { contract_addr } => CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr,
+            contract_addr: contract_addr.to_string(),
             funds: vec![],
             msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
                 owner: owner.to_string(),
@@ -42,8 +43,8 @@ pub fn execute_transfer_from(
     let transfer_msg = SubMsg {
         msg,
         gas_limit: None,
-        id: 0u64,
-        reply_on: ReplyOn::Never,
+        id: TRANSFER_FAILURE_REPLY_ID,
+        reply_on: ReplyOn::Error,
     };
 
     Ok(transfer_msg)
@@ -62,7 +63,7 @@ pub fn execute_transfer(
             amount: vec![Coin { denom, amount }],
         }),
         AssetInfo::Token { contract_addr } => CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr,
+            contract_addr: contract_addr.to_string(),
             funds: vec![],
             msg: to_binary(&Cw20ExecuteMsg::Transfer {
                 recipient: receiver.to_string(),
@@ -74,8 +75,8 @@ pub fn execute_transfer(
     let transfer_msg = SubMsg {
         msg,
         gas_limit: None,
-        id: 0u64,
-        reply_on: ReplyOn::Never,
+        id: TRANSFER_FAILURE_REPLY_ID,
+        reply_on: ReplyOn::Error,
     };
 
     Ok(transfer_msg)
@@ -118,8 +119,8 @@ pub fn execute_insurance_fund_withdrawal(deps: Deps, amount: Uint128) -> StdResu
     let transfer_msg = SubMsg {
         msg: CosmosMsg::Wasm(msg),
         gas_limit: None,
-        id: 0u64,
-        reply_on: ReplyOn::Never,
+        id: TRANSFER_FAILURE_REPLY_ID,
+        reply_on: ReplyOn::Error,
     };
 
     Ok(transfer_msg)

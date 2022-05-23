@@ -8,7 +8,7 @@ use margined_utils::scenarios::to_decimals;
 /// Unit tests
 #[test]
 fn test_get_input_add_to_amm() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
         quote_asset: "ETH".to_string(),
@@ -103,7 +103,7 @@ fn test_get_input_add_to_amm() {
 
 #[test]
 fn test_get_input_and_output_price_with_reserves() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
         quote_asset: "ETH".to_string(),

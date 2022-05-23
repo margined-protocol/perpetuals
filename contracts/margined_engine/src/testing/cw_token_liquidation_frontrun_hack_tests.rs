@@ -1,9 +1,9 @@
 // use crate::testing::setup::{self, to_decimals};
 use cosmwasm_std::Uint128;
 use cw20::Cw20ExecuteMsg;
+use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
-use terra_multi_test::Executor;
 
 #[test]
 fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
@@ -370,9 +370,9 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
         .engine
         .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
         .unwrap();
-    let response = env.router.execute(env.carol.clone(), msg).unwrap_err();
+    let err = env.router.execute(env.carol.clone(), msg).unwrap_err();
     assert_eq!(
-        response.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: Only one action allowed".to_string()
     );
 }
@@ -550,9 +550,9 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
         .engine
         .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
         .unwrap();
-    let response = env.router.execute(env.carol.clone(), msg).unwrap_err();
+    let err = env.router.execute(env.carol.clone(), msg).unwrap_err();
     assert_eq!(
-        response.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: Only one action allowed".to_string()
     );
 }
@@ -737,9 +737,9 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
         .engine
         .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
         .unwrap();
-    let response = env.router.execute(env.carol.clone(), msg).unwrap_err();
+    let err = env.router.execute(env.carol.clone(), msg).unwrap_err();
     assert_eq!(
-        response.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: Only one action allowed".to_string()
     );
 }
@@ -917,9 +917,9 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
         .engine
         .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
         .unwrap();
-    let response = env.router.execute(env.carol.clone(), msg).unwrap_err();
+    let err = env.router.execute(env.carol.clone(), msg).unwrap_err();
     assert_eq!(
-        response.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: Only one action allowed".to_string()
     );
 }

@@ -43,7 +43,7 @@ pub fn execute(
     _env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response, ContractError> {
+) -> StdResult<Response> {
     match msg {
         ExecuteMsg::UpdateConfig { owner, beneficiary } => {
             update_config(deps, info, owner, beneficiary)

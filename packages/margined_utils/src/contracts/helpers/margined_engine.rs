@@ -6,7 +6,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{
-    to_binary, Addr, Coin, CosmosMsg, Querier, QuerierWrapper, StdResult, Uint128, WasmMsg,
+    to_binary, Addr, Coin, CosmosMsg, Empty, Querier, QuerierWrapper, StdResult, Uint128, WasmMsg,
     WasmQuery,
 };
 
@@ -200,7 +200,8 @@ impl EngineController {
         }
         .into();
 
-        let res: ConfigResponse = QuerierWrapper::new(querier).query(&query)?;
+        let res: ConfigResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
+
         Ok(res)
     }
 
@@ -213,7 +214,7 @@ impl EngineController {
         }
         .into();
 
-        let res: StateResponse = QuerierWrapper::new(querier).query(&query)?;
+        let res: StateResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -231,7 +232,7 @@ impl EngineController {
         }
         .into();
 
-        let res: Position = QuerierWrapper::new(querier).query(&query)?;
+        let res: Position = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -248,7 +249,7 @@ impl EngineController {
         }
         .into();
 
-        let res: Vec<Position> = QuerierWrapper::new(querier).query(&query)?;
+        let res: Vec<Position> = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -271,7 +272,8 @@ impl EngineController {
         }
         .into();
 
-        let res: PositionUnrealizedPnlResponse = QuerierWrapper::new(querier).query(&query)?;
+        let res: PositionUnrealizedPnlResponse =
+            QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -289,7 +291,7 @@ impl EngineController {
         }
         .into();
 
-        let res: Integer = QuerierWrapper::new(querier).query(&query)?;
+        let res: Integer = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -307,7 +309,7 @@ impl EngineController {
         }
         .into();
 
-        let res: Integer = QuerierWrapper::new(querier).query(&query)?;
+        let res: Integer = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -324,7 +326,7 @@ impl EngineController {
         }
         .into();
 
-        let res: Uint128 = QuerierWrapper::new(querier).query(&query)?;
+        let res: Uint128 = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -342,7 +344,7 @@ impl EngineController {
         }
         .into();
 
-        let res: Position = QuerierWrapper::new(querier).query(&query)?;
+        let res: Position = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -359,7 +361,7 @@ impl EngineController {
         }
         .into();
 
-        let res: Integer = QuerierWrapper::new(querier).query(&query)?;
+        let res: Integer = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 }

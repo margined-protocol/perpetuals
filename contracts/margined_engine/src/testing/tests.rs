@@ -1,8 +1,8 @@
 use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr, Uint128};
+use margined_common::asset::AssetInfo;
 use margined_perp::margined_engine::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-use terraswap::asset::AssetInfo;
 
 const TOKEN: &str = "token";
 const OWNER: &str = "owner";
@@ -11,7 +11,7 @@ const FEE_POOL: &str = "fee_pool";
 
 #[test]
 fn test_instantiation() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
         insurance_fund: INSURANCE_FUND.to_string(),
@@ -32,7 +32,7 @@ fn test_instantiation() {
         ConfigResponse {
             owner: info.sender,
             eligible_collateral: AssetInfo::Token {
-                contract_addr: TOKEN.to_string()
+                contract_addr: Addr::unchecked(TOKEN.to_string()),
             },
         }
     );
@@ -57,7 +57,7 @@ fn test_instantiation() {
 
 #[test]
 fn test_update_config() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
         insurance_fund: INSURANCE_FUND.to_string(),
@@ -93,7 +93,7 @@ fn test_update_config() {
         ConfigResponse {
             owner: Addr::unchecked("addr0001".to_string()),
             eligible_collateral: AssetInfo::Token {
-                contract_addr: TOKEN.to_string()
+                contract_addr: Addr::unchecked(TOKEN.to_string()),
             },
         }
     );
