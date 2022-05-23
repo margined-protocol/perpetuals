@@ -248,6 +248,22 @@ export async function executeContract(
   return result
 }
 
+export async function executeCosmWasmContract(
+  client: SigningCosmWasmClient,
+  senderAddress: string,
+  contractAddress: string,
+  msg: Record<string, unknown>,
+) {
+  const fee = {
+    gas: '30000000',
+    amount: [{ denom: 'ujunox', amount: '1000000' }],
+  }
+
+  const result = await client.execute(senderAddress, contractAddress, msg, fee)
+
+  return result
+}
+
 export async function queryContract(
   terra: LCDClient,
   contractAddress: string,

@@ -1,7 +1,7 @@
 // Init Messages
-interface InsuranceFundInitMsg {}
+type InsuranceFundInitMsg = {}
 
-interface EngineInitMsg {
+type EngineInitMsg = {
   decimals: number
   insurance_fund: string
   fee_pool: string
@@ -11,12 +11,12 @@ interface EngineInitMsg {
   liquidation_fee: string
 }
 
-interface PriceFeedInitMsg {
+type PriceFeedInitMsg = {
   decimals: number
   oracle_hub_contract: string
 }
 
-interface VammInitMsg {
+type VammInitMsg = {
   decimals: number
   pricefeed?: string
   margin_engine?: string

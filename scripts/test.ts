@@ -4,10 +4,8 @@ import {
   instantiateCosmWasmContract,
   queryCosmWasmContract,
 } from './helpers.js'
-import { CosmWasmClient, setupNodeLocal } from 'cosmwasm'
+import { setupNodeLocal } from 'cosmwasm'
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
-
-import { SigningStargateClient, StargateClient } from '@cosmjs/stargate'
 import { join } from 'path'
 
 // consts
@@ -25,11 +23,6 @@ const MARGINED_ARTIFACTS_PATH = '../artifacts'
 // main
 
 async function main() {
-  // This is your rpc endpoint
-  //   const rpcEndpoint = 'https://rpc.cliffnet.cosmwasm.com:443/'
-  //   const
-
-  //   const client = await CosmWasmClient.connect(rpcEndpoint)
   const client = await setupNodeLocal(config, mnemonic)
   // console.log(await client.getBlock())
   const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
