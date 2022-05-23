@@ -144,8 +144,6 @@ pub fn increase_position_reply(
         funds.are_sufficient()?;
     }
 
-    println!("here???");
-
     remove_tmp_swap(deps.storage);
     remove_sent_funds(deps.storage);
 

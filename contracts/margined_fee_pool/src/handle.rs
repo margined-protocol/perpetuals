@@ -38,7 +38,6 @@ pub fn add_token(deps: DepsMut, info: MessageInfo, token: String) -> StdResult<R
     // check permission
     if info.sender != config.owner {
         return Err(StdError::generic_err("unauthorized"));
-        // return Err(ContractError::Unauthorized {});
     }
 
     // validate address
@@ -56,7 +55,6 @@ pub fn remove_token(deps: DepsMut, info: MessageInfo, token: String) -> StdResul
     // check permission
     if info.sender != config.owner {
         return Err(StdError::generic_err("unauthorized"));
-        // return Err(ContractError::Unauthorized {});
     }
 
     // validate address
@@ -81,7 +79,6 @@ pub fn send_token(
     // check permissions to send the message
     if info.sender != config.owner {
         return Err(StdError::generic_err("unauthorized"));
-        // return Err(ContractError::Unauthorized {});
     }
 
     // validate the token we want to send (this also tells us if it is native token or not)
@@ -93,9 +90,6 @@ pub fn send_token(
     // check that the token is in the token list
     if !is_token(deps.storage, valid_token.clone()) {
         return Err(StdError::generic_err("This token is not supported"));
-        // return Err(ContractError::Std(GenericErr {
-        //     msg: "".to_string(),
-        // }));
     };
 
     // query the balance of the given token that this contract holds
@@ -104,9 +98,6 @@ pub fn send_token(
     // check that the balance is sufficient to pay the amount
     if balance < amount {
         return Err(StdError::generic_err("Insufficient funds"));
-        // return Err(ContractError::Std(GenericErr {
-        //     msg: "".to_string(),
-        // }));
     }
     Ok(
         Response::default().add_submessage(execute_transfer(
