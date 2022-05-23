@@ -13,7 +13,7 @@ pub struct TestingEnv {
 
 fn setup() -> TestingEnv {
     let mut env = mock_env();
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     let msg = InstantiateMsg {
         decimals: 9u8,

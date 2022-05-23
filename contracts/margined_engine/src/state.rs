@@ -7,11 +7,13 @@ use cosmwasm_storage::{
     bucket, bucket_read, singleton, singleton_read, Bucket, ReadonlyBucket, Singleton,
 };
 
-use margined_common::integer::Integer;
+use margined_common::{
+    asset::{Asset, AssetInfo},
+    integer::Integer,
+};
 use margined_perp::margined_engine::{Position, Side};
 
 use sha3::{Digest, Sha3_256};
-use terraswap::asset::{Asset, AssetInfo};
 
 pub static KEY_CONFIG: &[u8] = b"config";
 pub static KEY_POSITION: &[u8] = b"position";

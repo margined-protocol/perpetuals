@@ -1,12 +1,14 @@
 use cosmwasm_std::{
     Addr, Attribute, Deps, Env, Event, MessageInfo, Response, StdError, StdResult, Storage, SubMsg,
-    SubMsgExecutionResponse, Uint128,
+    SubMsgResponse, Uint128,
 };
-use terraswap::asset::{Asset, AssetInfo};
 
 use std::str::FromStr;
 
-use margined_common::integer::Integer;
+use margined_common::{
+    asset::{Asset, AssetInfo},
+    integer::Integer,
+};
 use margined_perp::margined_engine::{
     PnlCalcOption, Position, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
 };
@@ -306,7 +308,7 @@ pub fn require_non_zero_input(input: Uint128) -> StdResult<Response> {
     Ok(Response::new())
 }
 
-pub fn parse_swap(response: SubMsgExecutionResponse) -> StdResult<(Uint128, Uint128)> {
+pub fn parse_swap(response: SubMsgResponse) -> StdResult<(Uint128, Uint128)> {
     // Find swap inputs and output events
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");
 
@@ -339,7 +341,7 @@ pub fn parse_swap(response: SubMsgExecutionResponse) -> StdResult<(Uint128, Uint
     Ok((input, output))
 }
 
-pub fn parse_pay_funding(response: SubMsgExecutionResponse) -> (Integer, String) {
+pub fn parse_pay_funding(response: SubMsgResponse) -> (Integer, String) {
     // Find swap inputs and output events
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");
     let wasm = wasm.unwrap();

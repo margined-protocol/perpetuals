@@ -40,18 +40,17 @@ optimize = """docker run --rm -v "$(pwd)":/code \
 """
 
 [dependencies]
-cw20 = { version = "0.9.1" }
-cw2 = "0.8.0"
-cosmwasm-std = { version = "0.16.3" }
-cosmwasm-storage = { version = "0.16.3" }
+cw20 = { version = "0.13.2" }
+cw2 = "0.13.2"
+cosmwasm-std = { version = "1.0.0" }
+cosmwasm-storage = { version = "1.0.0" }
 cosmwasm-bignumber = "2.2.0"
-cw-storage-plus = "0.8.0"
+cw-storage-plus = "0.13.2"
 margined_perp = { version = "0.1.0", path = "../../packages/margined_perp" }
 margined_common = { version = "0.1.0", path = "../../packages/margined_common" }
 schemars = "0.8"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde-json-wasm = { version = "0.3.2" }
-terraswap = "2.4.0"
 thiserror = { version = "1.0" }
 
 [dev-dependencies]
@@ -60,4 +59,4 @@ cw20-base = { version = "0.9.1", features = ["library"] }
 margined_utils = { version = "0.1.0", path = "../../packages/margined_utils" }
 margined_engine = { version = "0.1.0", path = "../../contracts/margined_engine" }
 margined_pricefeed = { version = "0.1.0", path = "../../contracts/margined_pricefeed" }
-terra-multi-test = {git = "https://github.com/astroport-fi/terra-plus.git", tag = "v0.9.1-terra"}
+cw-multi-test = "0.13.2"

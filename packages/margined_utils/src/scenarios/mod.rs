@@ -3,7 +3,7 @@ use crate::contracts::helpers::{
     margined_insurance_fund::InsuranceFundController, margined_pricefeed::PricefeedController,
     margined_vamm::VammController,
 };
-use cosmwasm_std::{Addr, Coin, Empty, Response, Uint128};
+use cosmwasm_std::{Addr, BankMsg, Coin, CosmosMsg, Empty, Response, Uint128};
 use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg, MinterResponse};
 use margined_perp::margined_engine::{InstantiateMsg, Side};
 use margined_perp::margined_fee_pool::InstantiateMsg as FeePoolInstantiateMsg;
@@ -14,7 +14,8 @@ use margined_perp::margined_pricefeed::InstantiateMsg as PricefeedInstantiateMsg
 use margined_perp::margined_vamm::{
     ExecuteMsg as VammExecuteMsg, InstantiateMsg as VammInstantiateMsg,
 };
-use terra_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
+// use terra_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
+use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 
 pub struct ContractInfo {
     pub addr: Addr,
@@ -25,6 +26,7 @@ pub struct NativeTokenScenario {
     pub router: App,
     pub owner: Addr,
     pub alice: Addr,
+    pub bank: Addr,
     pub bob: Addr,
     pub carol: Addr,
     pub david: Addr,
@@ -37,8 +39,7 @@ pub struct NativeTokenScenario {
 
 impl NativeTokenScenario {
     pub fn new() -> Self {
-        let mut router: App = AppBuilder::new().build();
-
+        let bank = Addr::unchecked("bank"); //just holds a lot of funds to send to people
         let owner = Addr::unchecked("owner");
         let alice = Addr::unchecked("alice");
         let bob = Addr::unchecked("bob");
@@ -47,13 +48,29 @@ impl NativeTokenScenario {
         let native_denom = "uusd";
 
         let init_funds = vec![Coin::new(5_000u128 * 10u128.pow(6), native_denom)];
-        router
-            .init_bank_balance(&alice, init_funds.clone())
-            .unwrap();
-        router.init_bank_balance(&bob, init_funds.clone()).unwrap();
-        router
-            .init_bank_balance(&david, init_funds.clone())
-            .unwrap();
+        let bank_funds = vec![
+            Coin::new(100_000u128 * 10u128.pow(6), native_denom),
+            Coin::new(100_000u128 * 10u128.pow(6), "luna"),
+        ];
+
+        let mut router: App = App::new(|router, _, storage| {
+            router
+                .bank
+                .init_balance(storage, &alice, init_funds.clone())
+                .unwrap();
+            router
+                .bank
+                .init_balance(storage, &bob, init_funds.clone())
+                .unwrap();
+            router
+                .bank
+                .init_balance(storage, &david, init_funds.clone())
+                .unwrap();
+            router
+                .bank
+                .init_balance(storage, &bank, bank_funds.clone())
+                .unwrap();
+        });
 
         let fee_pool_id = router.store_code(contract_fee_pool());
         let engine_id = router.store_code(contract_engine());
@@ -85,9 +102,12 @@ impl NativeTokenScenario {
             .unwrap();
         let insurance_fund = InsuranceFundController(insurance_fund_addr.clone());
 
-        router
-            .init_bank_balance(&insurance_fund.addr(), init_funds)
-            .unwrap();
+        // send insurance fund funds
+        let msg = CosmosMsg::Bank(BankMsg::Send {
+            to_address: insurance_fund.addr().to_string(),
+            amount: init_funds,
+        });
+        router.execute(bank.clone(), msg).unwrap();
 
         let pricefeed_addr = router
             .instantiate_contract(
@@ -194,6 +214,7 @@ impl NativeTokenScenario {
             owner,
             alice,
             bob,
+            bank,
             carol,
             david,
             fee_pool,
@@ -258,7 +279,7 @@ pub struct SimpleScenario {
 
 impl SimpleScenario {
     pub fn new() -> Self {
-        let mut router: App = AppBuilder::new().build();
+        let mut router = AppBuilder::new().build(|_router, _, _storage| {});
 
         let owner = Addr::unchecked("owner");
         let alice = Addr::unchecked("alice");
@@ -544,7 +565,7 @@ pub struct VammScenario {
 
 impl VammScenario {
     pub fn new() -> Self {
-        let mut router: App = AppBuilder::new().build();
+        let mut router = AppBuilder::new().build(|_router, _, _storage| {});
 
         let owner = Addr::unchecked("owner");
         let alice = Addr::unchecked("alice");
@@ -662,7 +683,7 @@ pub struct ShutdownScenario {
 
 impl ShutdownScenario {
     pub fn new() -> Self {
-        let mut router: App = AppBuilder::new().build();
+        let mut router = AppBuilder::new().build(|_router, _, _storage| {});
 
         let owner = Addr::unchecked("owner");
 

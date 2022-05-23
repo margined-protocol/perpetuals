@@ -1,5 +1,5 @@
+use crate::asset::AssetInfo;
 use cosmwasm_std::{Addr, Api, Deps, Response, StdError, StdResult, Uint128};
-use terraswap::asset::AssetInfo;
 
 /// Validates that the decimals aren't zero and returns the decimal placeholder accordinglys
 pub fn validate_decimal_places(decimal_places: u8) -> StdResult<Uint128> {
@@ -39,7 +39,7 @@ pub fn validate_eligible_collateral(deps: Deps, input: String) -> StdResult<Asse
             // this should throw
             validate_address(deps.api, &input)?;
             AssetInfo::Token {
-                contract_addr: input.to_string(),
+                contract_addr: deps.api.addr_validate(&input.to_string())?,
             }
         }
     };

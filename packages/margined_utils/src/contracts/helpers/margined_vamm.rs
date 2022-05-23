@@ -5,7 +5,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{
-    to_binary, Addr, Coin, CosmosMsg, Querier, QuerierWrapper, StdResult, Uint128, WasmMsg,
+    to_binary, Addr, Coin, CosmosMsg, Empty, Querier, QuerierWrapper, StdResult, Uint128, WasmMsg,
     WasmQuery,
 };
 
@@ -171,7 +171,7 @@ impl VammController {
         }
         .into();
 
-        let res: ConfigResponse = QuerierWrapper::new(querier).query(&query)?;
+        let res: ConfigResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -184,7 +184,7 @@ impl VammController {
         }
         .into();
 
-        let res: StateResponse = QuerierWrapper::new(querier).query(&query)?;
+        let res: StateResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -202,7 +202,7 @@ impl VammController {
         }
         .into();
 
-        let res: Uint128 = QuerierWrapper::new(querier).query(&query)?;
+        let res: Uint128 = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -215,7 +215,7 @@ impl VammController {
         }
         .into();
 
-        let res: Uint128 = QuerierWrapper::new(querier).query(&query)?;
+        let res: Uint128 = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -228,7 +228,7 @@ impl VammController {
         }
         .into();
 
-        let res: Uint128 = QuerierWrapper::new(querier).query(&query)?;
+        let res: Uint128 = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -245,7 +245,7 @@ impl VammController {
         }
         .into();
 
-        let res: CalcFeeResponse = QuerierWrapper::new(querier).query(&query)?;
+        let res: CalcFeeResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -258,7 +258,7 @@ impl VammController {
         }
         .into();
 
-        let res: bool = QuerierWrapper::new(querier).query(&query)?;
+        let res: bool = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 }

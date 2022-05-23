@@ -1,8 +1,8 @@
 use cosmwasm_std::{Coin, Uint128};
+use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Position, Side};
 use margined_utils::scenarios::NativeTokenScenario;
-use terra_multi_test::Executor;
 
 // Note: these tests also verify the 10% fees for the amm are functioning
 
@@ -60,10 +60,10 @@ fn test_force_error_open_position_no_token_sent() {
             vec![],
         )
         .unwrap();
-    let response = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
 
     assert_eq!(
-        response.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: sent funds are insufficient".to_string()
     );
 }
@@ -155,9 +155,9 @@ fn test_force_error_insufficient_token_long_position() {
             vec![Coin::new(119_000_000u128, "uusd")],
         )
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        result.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: sent funds are insufficient".to_string()
     );
 }
@@ -251,9 +251,9 @@ fn test_force_error_insufficient_token_short_position() {
             vec![Coin::new(100_000_000u128, "uusd")],
         )
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        result.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: sent funds are insufficient".to_string()
     );
 }
