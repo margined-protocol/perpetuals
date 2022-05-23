@@ -1,12 +1,11 @@
 use cosmwasm_std::{
-    to_binary, BankMsg, Coin, CosmosMsg, DepsMut, MessageInfo, ReplyOn, Response, SubMsg, Uint128,
-    WasmMsg,
+    to_binary, BankMsg, Coin, CosmosMsg, DepsMut, MessageInfo, ReplyOn, Response, StdError,
+    StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use margined_common::asset::AssetInfo;
 
 use crate::{
-    error::ContractError,
     messages::execute_vamm_shutdown,
     state::{
         read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, store_config, Config,
@@ -19,12 +18,12 @@ pub fn update_config(
     info: MessageInfo,
     owner: Option<String>,
     beneficiary: Option<String>,
-) -> Result<Response, ContractError> {
+) -> StdResult<Response> {
     let mut config: Config = read_config(deps.storage)?;
 
     // check permission
     if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
+        return Err(StdError::generic_err("unauthorized"));
     }
 
     // change owner of insurance fund contract
@@ -42,12 +41,12 @@ pub fn update_config(
     Ok(Response::default())
 }
 
-pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> Result<Response, ContractError> {
+pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
 
     // check permission
     if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
+        return Err(StdError::generic_err("unauthorized"));
     }
 
     // validate address
@@ -59,16 +58,12 @@ pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> Result<Respon
     Ok(Response::default())
 }
 
-pub fn remove_vamm(
-    deps: DepsMut,
-    info: MessageInfo,
-    vamm: String,
-) -> Result<Response, ContractError> {
+pub fn remove_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
 
     // check permission
     if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
+        return Err(StdError::generic_err("unauthorized"));
     }
 
     // validate address
@@ -80,12 +75,12 @@ pub fn remove_vamm(
     Ok(Response::default())
 }
 
-pub fn shutdown_all_vamm(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+pub fn shutdown_all_vamm(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
 
     // check permission
     if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
+        return Err(StdError::generic_err("unauthorized"));
     }
 
     // initialise the submsgs vec
@@ -106,12 +101,12 @@ pub fn withdraw(
     info: MessageInfo,
     token: AssetInfo,
     amount: Uint128,
-) -> Result<Response, ContractError> {
+) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
 
     // check permission
     if info.sender != config.beneficiary {
-        return Err(ContractError::Unauthorized {});
+        return Err(StdError::generic_err("unauthorized"));
     }
 
     // TODO: check that the asset is accepted

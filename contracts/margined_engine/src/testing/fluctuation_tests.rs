@@ -1,5 +1,4 @@
-// use crate::testing::setup::{self, to_decimals};
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{StdError, Uint128};
 use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
@@ -48,11 +47,13 @@ fn test_force_error_open_position_exceeds_fluctuation_limit() {
             vec![],
         )
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        result.to_string(),
-        "Generic error: reply (id 1) error \"Generic error: price is over fluctuation limit\""
-    )
+        StdError::GenericErr {
+            msg: "increase position failure - reply (id 1)".to_string(),
+        },
+        err.downcast().unwrap()
+    );
 }
 
 #[test]
@@ -112,11 +113,13 @@ fn test_force_error_reduce_position_exceeds_fluctuation_limit() {
             vec![],
         )
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        result.to_string(),
-        "Generic error: reply (id 2) error \"Generic error: price is over fluctuation limit\""
-    )
+        StdError::GenericErr {
+            msg: "decrease position failure - reply (id 2)".to_string(),
+        },
+        err.downcast().unwrap()
+    );
 }
 
 #[test]
@@ -215,11 +218,13 @@ fn test_close_position_limit_force_error_exceeding_fluctuation_limit_twice_in_sa
     let msg = engine
         .close_position(vamm.addr().to_string(), to_decimals(0u64))
         .unwrap();
-    let result = router.execute(bob.clone(), msg).unwrap_err();
+    let err = router.execute(bob.clone(), msg).unwrap_err();
     assert_eq!(
-        result.to_string(),
-        "Generic error: reply (id 4) error \"Generic error: price is already over fluctuation limit\""
-    )
+        StdError::GenericErr {
+            msg: "close position failure - reply (id 4)".to_string(),
+        },
+        err.downcast().unwrap()
+    );
 }
 
 #[test]
@@ -494,11 +499,13 @@ fn test_force_error_close_position_slippage_limit_originally_long() {
     let msg = engine
         .close_position(vamm.addr().to_string(), to_decimals(119u64))
         .unwrap();
-    let result = router.execute(bob.clone(), msg).unwrap_err();
+    let err = router.execute(bob.clone(), msg).unwrap_err();
     assert_eq!(
-        result.to_string(),
-        "Generic error: reply (id 4) error \"Generic error: Less than minimum quote asset amount limit\""
-    )
+        StdError::GenericErr {
+            msg: "close position failure - reply (id 4)".to_string(),
+        },
+        err.downcast().unwrap()
+    );
 }
 
 #[test]
@@ -581,9 +588,11 @@ fn test_force_error_close_position_slippage_limit_originally_short() {
     let msg = engine
         .close_position(vamm.addr().to_string(), to_decimals(78u64))
         .unwrap();
-    let result = router.execute(bob.clone(), msg).unwrap_err();
+    let err = router.execute(bob.clone(), msg).unwrap_err();
     assert_eq!(
-        result.to_string(),
-        "Generic error: reply (id 4) error \"Generic error: Greater than maximum quote asset amount limit\""
-    )
+        StdError::GenericErr {
+            msg: "close position failure - reply (id 4)".to_string(),
+        },
+        err.downcast().unwrap()
+    );
 }

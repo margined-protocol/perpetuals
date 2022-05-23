@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use cosmwasm_std::{Addr, Deps, DepsMut, StdError::GenericErr, StdResult, Storage};
 use cosmwasm_storage::{singleton, singleton_read};
 use cw_storage_plus::Item;
-use margined_common::asset::{Asset, AssetInfo};
+use margined_common::asset::AssetInfo;
 
 pub static KEY_CONFIG: &[u8] = b"config";
 pub const TOKEN_LIST: Item<Vec<AssetInfo>> = Item::new("token-list");

@@ -1,6 +1,6 @@
 use cosmwasm_std::{Empty, StdError, Uint128};
 use cw20::Cw20ExecuteMsg;
-use cw_multi_test::{error::Error, Executor};
+use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Side};
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
@@ -256,7 +256,12 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
         )
         .unwrap();
     let err = router.execute(carol.clone(), msg).unwrap_err();
-    assert_eq!(err.source().unwrap().to_string(), "Generic error: reply (id 6) error \"Generic error: Less than minimum quote asset amount limit\"");
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "partial liquidation failure - reply (id 6)".to_string()
+        },
+        err.downcast().unwrap()
+    );
 
     // if quoteAssetAmountLimit == 273.8 < 68.455 * 4 = 273.82, quote asset gets is more than expected
     let msg = engine
@@ -520,7 +525,12 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
         )
         .unwrap();
     let err = router.execute(carol.clone(), msg).unwrap_err();
-    assert_eq!(err.source().unwrap().to_string(), "Generic error: reply (id 6) error \"Generic error: Greater than maximum quote asset amount limit\"");
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "partial liquidation failure - reply (id 6)".to_string()
+        },
+        err.downcast().unwrap()
+    );
 
     // if quoteAssetAmountLimit == 177.1 < 44.258 * 4 = 177.032, quote asset pays is less than expected
     let msg = engine
@@ -774,7 +784,7 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
     let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "reply (id 5) error \"error executing WasmMsg:\\nsender: contract5\\nExecute { contract_addr: \\\"contract4\\\", msg: Binary(7b22737761705f6f7574707574223a7b22646972656374696f6e223a226164645f746f5f616d6d222c22626173655f61737365745f616d6f756e74223a223230303030303030303030222c2271756f74655f61737365745f6c696d6974223a22323234313030303030303030227d7d), funds: [] }\"".to_string(),
+            msg: "liquidation failure - reply (id 5)".to_string(),
         },
         err.downcast().unwrap()
     );
@@ -2221,7 +2231,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
     let err = env.router.execute(env.alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "reply (id 2) error \"error executing WasmMsg:\\nsender: contract5\\nExecute { contract_addr: \\\"contract4\\\", msg: Binary(7b22737761705f696e707574223a7b22646972656374696f6e223a2272656d6f76655f66726f6d5f616d6d222c2271756f74655f61737365745f616d6f756e74223a223434303030303030303030222c22626173655f61737365745f6c696d6974223a2230222c2263616e5f676f5f6f7665725f666c756374756174696f6e223a66616c73657d7d), funds: [] }\"".to_string()
+            msg: "decrease position failure - reply (id 2)".to_string()
         },
         err.downcast().unwrap()
     );
@@ -2437,7 +2447,7 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
     let err = env.router.execute(env.alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "reply (id 6) error \"error executing WasmMsg:\\nsender: contract5\\nExecute { contract_addr: \\\"contract4\\\", msg: Binary(7b22737761705f6f7574707574223a7b22646972656374696f6e223a226164645f746f5f616d6d222c22626173655f61737365745f616d6f756e74223a2231393736323834353834222c2271756f74655f61737365745f6c696d6974223a2230227d7d), funds: [] }\"".to_string()
+            msg: "partial liquidation failure - reply (id 6)".to_string()
         },
         err.downcast().unwrap()
     );

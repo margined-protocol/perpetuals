@@ -1,7 +1,7 @@
 use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, Uint128, WasmMsg,
+    from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, StdError, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
@@ -604,8 +604,10 @@ fn test_send_native_token() {
         .unwrap();
     let res = router.execute(owner.clone(), msg).unwrap_err();
     assert_eq!(
-        res.to_string(),
-        "Generic error: This token is not supported"
+        StdError::GenericErr {
+            msg: "This token is not supported".to_string(),
+        },
+        res.downcast().unwrap()
     );
 
     ////////////////////////
@@ -653,8 +655,12 @@ fn test_send_native_token() {
         )
         .unwrap();
     let res = router.execute(owner.clone(), msg).unwrap_err();
-    assert_eq!(res.to_string(), "Generic error: Insufficient funds");
-
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "Insufficient funds".to_string(),
+        },
+        res.downcast().unwrap()
+    );
     // query new balance of intended recipient
     let balance = router.wrap().query_balance(&bob, "uusd").unwrap().amount;
     assert_eq!(balance, Uint128::from(5000u128 * 10u128.pow(6)));
@@ -762,8 +768,10 @@ fn test_send_cw20_token() {
         .unwrap();
     let res = router.execute(owner.clone(), msg).unwrap_err();
     assert_eq!(
-        res.to_string(),
-        "Generic error: This token is not supported"
+        StdError::GenericErr {
+            msg: "This token is not supported".to_string(),
+        },
+        res.downcast().unwrap()
     );
 
     ////////////////////////
@@ -814,7 +822,12 @@ fn test_send_cw20_token() {
         )
         .unwrap();
     let res = router.execute(owner.clone(), msg).unwrap_err();
-    assert_eq!(res.to_string(), "Generic error: Insufficient funds");
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "Insufficient funds".to_string(),
+        },
+        res.downcast().unwrap()
+    );
 
     // query new balance of bob
     let balance = usdc.balance::<_, _, Empty>(&router, bob).unwrap();
@@ -848,7 +861,7 @@ fn test_not_owner() {
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
-    assert_eq!(res.to_string(), "Unauthorized");
+    assert_eq!(res.to_string(), "Generic error: unauthorized");
 
     // try to add a token
     let info = mock_info("not_the_owner", &[]);
@@ -858,7 +871,7 @@ fn test_not_owner() {
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
-    assert_eq!(res.to_string(), "Unauthorized");
+    assert_eq!(res.to_string(), "Generic error: unauthorized");
 
     // try to remove a token
     let info = mock_info("not_the_owner", &[]);
@@ -868,7 +881,7 @@ fn test_not_owner() {
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
-    assert_eq!(res.to_string(), "Unauthorized");
+    assert_eq!(res.to_string(), "Generic error: unauthorized");
 
     // instantiate the other blockchain
     let SimpleScenario {
@@ -891,5 +904,10 @@ fn test_not_owner() {
         .execute(Addr::unchecked("not_the_owner"), msg)
         .unwrap_err();
 
-    assert_eq!(res.to_string(), "Unauthorized");
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "unauthorized".to_string(),
+        },
+        res.downcast().unwrap()
+    );
 }

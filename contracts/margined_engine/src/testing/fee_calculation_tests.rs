@@ -1,4 +1,4 @@
-use cosmwasm_std::{Empty, Uint128};
+use cosmwasm_std::{Empty, StdError, Uint128};
 use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
 use margined_perp::margined_engine::{PnlCalcOption, Side};
@@ -455,10 +455,12 @@ fn test_force_error_insufficient_balance_open_position_total_fee_ten_percent() {
             vec![],
         )
         .unwrap();
-    let response = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        response.to_string(),
-        "Overflow: Cannot Sub with 29000000000 and 30000000000".to_string()
+        StdError::GenericErr {
+            msg: "transfer failure - reply (id 8)".to_string(),
+        },
+        err.downcast().unwrap()
     );
 }
 

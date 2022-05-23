@@ -1,4 +1,4 @@
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{StdError, Uint128};
 use cw_multi_test::Executor;
 use margined_utils::scenarios::VammScenario;
 
@@ -95,10 +95,12 @@ fn test_force_error_caller_is_not_couterparty_or_owner() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = vamm.settle_funding().unwrap();
-    let res = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        res.to_string(),
-        "Generic error: sender not margin engine".to_string()
+        StdError::GenericErr {
+            msg: "sender not margin engine".to_string(),
+        },
+        err.downcast().unwrap()
     );
 }
 
@@ -127,9 +129,11 @@ fn test_cant_settle_funding_multiple_times_at_once_even_settle_funding_delay() {
     });
 
     let msg = vamm.settle_funding().unwrap();
-    let res = router.execute(owner.clone(), msg).unwrap_err();
+    let err = router.execute(owner.clone(), msg).unwrap_err();
     assert_eq!(
-        res.to_string(),
-        "Generic error: settle funding called too early".to_string()
+        StdError::GenericErr {
+            msg: "settle funding called too early".to_string(),
+        },
+        err.downcast().unwrap()
     );
 }

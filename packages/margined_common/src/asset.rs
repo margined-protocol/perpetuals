@@ -33,9 +33,6 @@ impl fmt::Display for Asset {
     }
 }
 
-/// Decimal points
-static DECIMAL_FRACTION: Uint128 = Uint128::new(1_000_000_000_000_000_000u128);
-
 impl Asset {
     /// Returns true if the token is native. Otherwise returns false.
     /// ## Params
@@ -56,7 +53,7 @@ impl Asset {
     /// * **querier** is an object of type [`QuerierWrapper`]
     ///
     /// * **recipient** is the address where the funds will be sent.
-    pub fn into_msg(self, querier: &QuerierWrapper, recipient: Addr) -> StdResult<CosmosMsg> {
+    pub fn into_msg(self, _querier: &QuerierWrapper, recipient: Addr) -> StdResult<CosmosMsg> {
         let amount = self.amount;
 
         match &self.info {
@@ -111,7 +108,7 @@ impl Asset {
 /// ## Examples
 /// ```
 /// # use cosmwasm_std::Addr;
-/// # use astroport::asset::AssetInfo::{NativeToken, Token};
+/// # use margined_common::asset::AssetInfo::{NativeToken, Token};
 /// Token { contract_addr: Addr::unchecked("terra...") };
 /// NativeToken { denom: String::from("uluna") };
 /// ```

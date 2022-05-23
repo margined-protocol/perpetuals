@@ -5,6 +5,7 @@ use cosmwasm_std::{
 use cw20::Cw20ExecuteMsg;
 
 use crate::{
+    contract::TRANSFER_FAILURE_REPLY_ID,
     querier::query_vamm_calc_fee,
     state::{read_config, State},
 };
@@ -42,7 +43,7 @@ pub fn execute_transfer_from(
     let transfer_msg = SubMsg {
         msg,
         gas_limit: None,
-        id: 0u64,
+        id: TRANSFER_FAILURE_REPLY_ID,
         reply_on: ReplyOn::Error,
     };
 
@@ -74,8 +75,8 @@ pub fn execute_transfer(
     let transfer_msg = SubMsg {
         msg,
         gas_limit: None,
-        id: 0u64,
-        reply_on: ReplyOn::Never,
+        id: TRANSFER_FAILURE_REPLY_ID,
+        reply_on: ReplyOn::Error,
     };
 
     Ok(transfer_msg)
@@ -118,8 +119,8 @@ pub fn execute_insurance_fund_withdrawal(deps: Deps, amount: Uint128) -> StdResu
     let transfer_msg = SubMsg {
         msg: CosmosMsg::Wasm(msg),
         gas_limit: None,
-        id: 0u64,
-        reply_on: ReplyOn::Never,
+        id: TRANSFER_FAILURE_REPLY_ID,
+        reply_on: ReplyOn::Error,
     };
 
     Ok(transfer_msg)

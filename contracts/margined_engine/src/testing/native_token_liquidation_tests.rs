@@ -1,6 +1,5 @@
-// use crate::testing::setup::{self, to_decimals};
 use cosmwasm_std::{BankMsg, Coin, CosmosMsg, StdError, Uint128};
-use cw_multi_test::{error::Error, Executor};
+use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Side};
 use margined_utils::scenarios::NativeTokenScenario;
@@ -196,7 +195,12 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
         )
         .unwrap();
     let err = router.execute(carol.clone(), msg).unwrap_err();
-    assert_eq!(err.source().unwrap().to_string(), "Generic error: reply (id 6) error \"Generic error: Less than minimum quote asset amount limit\"");
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "partial liquidation failure - reply (id 6)".to_string(),
+        },
+        err.downcast().unwrap()
+    );
 
     // if quoteAssetAmountLimit == 273.8 < 68.455 * 4 = 273.82, quote asset gets is more than expected
     let msg = engine
@@ -399,8 +403,15 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
             Uint128::from(177_000_000u64),
         )
         .unwrap();
-    let result = router.execute(carol.clone(), msg).unwrap_err();
-    assert_eq!(result.to_string(), "Generic error: reply (id 6) error \"Generic error: Greater than maximum quote asset amount limit\"");
+    // let result = router.execute(carol.clone(), msg).unwrap_err();
+    // assert_eq!(result.to_string(), "Generic error: reply (id 6) error \"Generic error: Greater than maximum quote asset amount limit\"");
+    let err = router.execute(carol.clone(), msg).unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "partial liquidation failure - reply (id 6)".to_string(),
+        },
+        err.downcast().unwrap()
+    );
 
     // if quoteAssetAmountLimit == 177.1 < 44.258 * 4 = 177.032, quote asset pays is less than expected
     let msg = engine
@@ -597,11 +608,11 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
         .unwrap();
     let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
-            StdError::GenericErr {
-                msg: "reply (id 5) error \"error executing WasmMsg:\\nsender: contract5\\nExecute { contract_addr: \\\"contract4\\\", msg: Binary(7b22737761705f6f7574707574223a7b22646972656374696f6e223a226164645f746f5f616d6d222c22626173655f61737365745f616d6f756e74223a223230303030303030303030222c2271756f74655f61737365745f6c696d6974223a22323234313030303030303030227d7d), funds: [] }\"".to_string(),
-            },
-            err.downcast().unwrap()
-        );
+        StdError::GenericErr {
+            msg: "liquidation failure - reply (id 5)".to_string(),
+        },
+        err.downcast().unwrap()
+    );
 
     let msg = engine
         .liquidate(
@@ -1736,12 +1747,9 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
     let err = env.router.execute(env.alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "Generic error: reply (id 2) error \"Generic error: price is over fluctuation limit\"".to_string()
+            msg: "decrease position failure - reply (id 2)".to_string()
         },
         err.downcast().unwrap()
-        // err.source().unwrap().to_string(),
-        // "Generic error: reply (id 2) error \"Generic error: price is over fluctuation limit\""
-        //     .to_string()
     );
 
     let msg = env
@@ -1908,9 +1916,11 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
             Uint128::zero(),
         )
         .unwrap();
-    let err = env.router.execute(env.bob.clone(), msg).unwrap_err();
+    let err = env.router.execute(env.alice.clone(), msg).unwrap_err();
     assert_eq!(
-        err.source().unwrap().to_string(),
-        "Generic error: reply (id 6) error \"Generic error: price is already over fluctuation limit\"".to_string()
+        StdError::GenericErr {
+            msg: "partial liquidation failure - reply (id 6)".to_string()
+        },
+        err.downcast().unwrap()
     );
 }

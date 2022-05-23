@@ -1,9 +1,8 @@
-use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdError::GenericErr, Uint128};
+use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128};
 use margined_common::validate::validate_eligible_collateral as validate_funds;
 use margined_perp::querier::query_token_balance;
 
 use crate::{
-    error::ContractError,
     messages::execute_transfer,
     state::{
         is_token, read_config, remove_token as remove_token_from_list, save_token, store_config,
@@ -15,12 +14,12 @@ pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,
     owner: Option<String>,
-) -> Result<Response, ContractError> {
+) -> StdResult<Response> {
     let mut config: Config = read_config(deps.storage)?;
 
     // check permission
     if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
+        return Err(StdError::generic_err("unauthorized"));
     }
 
     // change owner of insurance fund contract
@@ -33,16 +32,13 @@ pub fn update_config(
     Ok(Response::default())
 }
 
-pub fn add_token(
-    deps: DepsMut,
-    info: MessageInfo,
-    token: String,
-) -> Result<Response, ContractError> {
+pub fn add_token(deps: DepsMut, info: MessageInfo, token: String) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
 
     // check permission
     if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
+        return Err(StdError::generic_err("unauthorized"));
+        // return Err(ContractError::Unauthorized {});
     }
 
     // validate address
@@ -54,16 +50,13 @@ pub fn add_token(
     Ok(Response::default())
 }
 
-pub fn remove_token(
-    deps: DepsMut,
-    info: MessageInfo,
-    token: String,
-) -> Result<Response, ContractError> {
+pub fn remove_token(deps: DepsMut, info: MessageInfo, token: String) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
 
     // check permission
     if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
+        return Err(StdError::generic_err("unauthorized"));
+        // return Err(ContractError::Unauthorized {});
     }
 
     // validate address
@@ -82,12 +75,13 @@ pub fn send_token(
     token: String,
     amount: Uint128,
     recipient: String,
-) -> Result<Response, ContractError> {
+) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
 
     // check permissions to send the message
     if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
+        return Err(StdError::generic_err("unauthorized"));
+        // return Err(ContractError::Unauthorized {});
     }
 
     // validate the token we want to send (this also tells us if it is native token or not)
@@ -98,9 +92,10 @@ pub fn send_token(
 
     // check that the token is in the token list
     if !is_token(deps.storage, valid_token.clone()) {
-        return Err(ContractError::Std(GenericErr {
-            msg: "This token is not supported".to_string(),
-        }));
+        return Err(StdError::generic_err("This token is not supported"));
+        // return Err(ContractError::Std(GenericErr {
+        //     msg: "".to_string(),
+        // }));
     };
 
     // query the balance of the given token that this contract holds
@@ -108,9 +103,10 @@ pub fn send_token(
 
     // check that the balance is sufficient to pay the amount
     if balance < amount {
-        return Err(ContractError::Std(GenericErr {
-            msg: "Insufficient funds".to_string(),
-        }));
+        return Err(StdError::generic_err("Insufficient funds"));
+        // return Err(ContractError::Std(GenericErr {
+        //     msg: "".to_string(),
+        // }));
     }
     Ok(
         Response::default().add_submessage(execute_transfer(

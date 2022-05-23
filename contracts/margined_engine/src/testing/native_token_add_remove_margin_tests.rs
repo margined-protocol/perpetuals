@@ -1,4 +1,4 @@
-use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Uint128};
+use cosmwasm_std::{BankMsg, Coin, CosmosMsg, StdError, Uint128};
 use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
@@ -95,11 +95,13 @@ fn test_force_error_add_incorrect_margin() {
             vec![Coin::new(85_000_000u128, "luna")],
         )
         .unwrap();
-    let res = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        res.to_string(),
-        "Generic error: Native token balance mismatch between the argument and the transferred"
-            .to_string()
+        StdError::GenericErr {
+            msg: "Native token balance mismatch between the argument and the transferred"
+                .to_string(),
+        },
+        err.downcast().unwrap()
     );
 }
 
