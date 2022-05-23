@@ -15,7 +15,6 @@ import {
   Wallet,
 } from '@terra-money/terra.js'
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate'
-import { toBase64, toUtf8 } from '@cosmjs/encoding'
 import { readFileSync } from 'fs'
 import { CustomError } from 'ts-custom-error'
 
@@ -161,7 +160,7 @@ export async function uploadCosmWasmContract(
 ) {
   const contract = readFileSync(filepath)
   const fee = {
-    gas: '30000000',
+    gas: '60000000',
     amount: [{ denom: 'ujunox', amount: '1000000' }],
   }
 
@@ -207,7 +206,7 @@ export async function instantiateCosmWasmContract(
   }
 
   const fee = {
-    gas: '30000000',
+    gas: '60000000',
     amount: [{ denom: 'ujunox', amount: '1000000' }],
   }
 
