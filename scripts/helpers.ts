@@ -165,14 +165,9 @@ export async function uploadCosmWasmContract(
     amount: [{ denom: 'ujunox', amount: '1000000' }],
   }
 
-  console.log(await client.getHeight())
-  console.log(contract)
-  const code_id = await client.upload(senderAddress, contract, fee)
+  let code_id = await client.upload(senderAddress, contract, fee)
 
-  console.log(code_id)
-  // const uploadMsg = new MsgStoreCode(wallet.key.accAddress, contract)
-  // let result = await performTransaction(terra, wallet, uploadMsg)
-  // return Number(result.logs[0].eventsByType.store_code.code_id[0]) // code_id
+  return Number(code_id.codeId) // code_id
 }
 
 export async function instantiateContract(
@@ -196,6 +191,35 @@ export async function instantiateContract(
   let result = await performTransaction(terra, wallet, instantiateMsg)
   const attributes = result.logs[0].events[0].attributes
   return attributes[attributes.length - 1].value // contract address
+}
+
+export async function instantiateCosmWasmContract(
+  client: SigningCosmWasmClient,
+  senderAddress: string,
+  codeId: number,
+  label: string,
+  msg: Record<string, unknown>,
+  opts: Opts = {},
+) {
+  let admin = opts.admin
+  if (admin == undefined) {
+    admin = senderAddress
+  }
+
+  const fee = {
+    gas: '30000000',
+    amount: [{ denom: 'ujunox', amount: '1000000' }],
+  }
+
+  let result = await client.instantiate(
+    senderAddress,
+    codeId,
+    msg,
+    label,
+    fee,
+    opts,
+  )
+  return result.contractAddress // contract address
 }
 
 export async function executeContract(
@@ -232,6 +256,16 @@ export async function queryContract(
   return await terra.wasm.contractQuery(contractAddress, query)
 }
 
+export async function queryCosmWasmContract(
+  client: SigningCosmWasmClient,
+  contractAddress: string,
+  query: Record<string, unknown>,
+): Promise<any> {
+  let result = await client.queryContractSmart(contractAddress, query)
+  console.log(result)
+  return result
+}
+
 export async function deployContract(
   terra: LCDClient,
   wallet: Wallet,
@@ -240,6 +274,26 @@ export async function deployContract(
 ) {
   const codeId = await uploadContract(terra, wallet, filepath)
   return await instantiateContract(terra, wallet, codeId, initMsg)
+}
+
+export async function deployCosmWasmContract(
+  client: SigningCosmWasmClient,
+  senderAddress: string,
+  filepath: string,
+  label: string,
+  initMsg: Record<string, unknown>,
+  opts: object,
+) {
+  const codeId = await uploadCosmWasmContract(client, senderAddress, filepath)
+
+  return await instantiateCosmWasmContract(
+    client,
+    senderAddress,
+    codeId,
+    label,
+    initMsg,
+    opts,
+  )
 }
 
 export async function updateContractAdmin(

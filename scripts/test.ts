@@ -1,4 +1,9 @@
-import { uploadCosmWasmContract } from './helpers.js'
+import {
+  uploadCosmWasmContract,
+  deployCosmWasmContract,
+  instantiateCosmWasmContract,
+  queryCosmWasmContract,
+} from './helpers.js'
 import { CosmWasmClient, setupNodeLocal } from 'cosmwasm'
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
 
@@ -42,14 +47,32 @@ async function main() {
 
   /****************************************** Deploy Insurance Fund Contract *****************************************/
   console.log('Deploying Insurance Fund...')
-  const insuranceFundContractAddress = await uploadCosmWasmContract(
+
+  let msg = {}
+
+  const insuranceFundContractAddress = await deployCosmWasmContract(
     client,
     firstAccount.address,
-    join(MARGINED_ARTIFACTS_PATH, 'cw_erc20.wasm'),
+    join(MARGINED_ARTIFACTS_PATH, 'margined_insurance_fund.wasm'),
+    'insurance-fund',
+    msg,
+    {},
   )
   console.log(
     'Insurance Fund Contract Address: ' + insuranceFundContractAddress,
   )
+
+  let queryMsg = {
+    config: {},
+  }
+
+  let result = await queryCosmWasmContract(
+    client,
+    insuranceFundContractAddress,
+    queryMsg,
+  )
+
+  console.log(result)
 }
 
 main().catch(console.log)
