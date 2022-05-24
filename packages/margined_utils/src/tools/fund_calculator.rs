@@ -57,8 +57,6 @@ pub fn calculate_funds_needed<Q: Querier>(
         )]);
     };
 
-    println!("HERE");
-
     // initialise variable for use below
     let mut margin_owed: Integer = Integer::zero();
 
@@ -126,10 +124,10 @@ pub fn calculate_funds_needed<Q: Querier>(
     };
 
     if funds_owed.is_zero() {
-        return Ok(vec![]);
+        Ok(vec![])
+    } else {
+        Ok(vec![Coin::new(funds_owed.u128(), "uusd")])
     }
-
-    Ok(vec![Coin::new(funds_owed.u128(), "uusd")])
 }
 
 // to query the given vamm's fees for use in the fund calculator
