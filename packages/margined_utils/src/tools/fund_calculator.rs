@@ -1,5 +1,6 @@
 use cosmwasm_std::{
-    to_binary, Addr, Empty, Querier, QuerierWrapper, QueryRequest, StdResult, Uint128, WasmQuery,
+    to_binary, Addr, Coin, Empty, Querier, QuerierWrapper, QueryRequest, StdResult, Uint128,
+    WasmQuery,
 };
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::QueryMsg as EngineQueryMsg;
@@ -29,7 +30,7 @@ pub fn calculate_funds_needed<Q: Querier>(
     leverage: Uint128,
     side: Side,
     vamm: Addr,
-) -> StdResult<Uint128> {
+) -> StdResult<Vec<Coin>> {
     // pull the fees for the vamm that the position will be taken on; note that this will be shifted however many digits
     let fee_rate: Uint128 = query_vamm_fees(querier, vamm.to_string())?;
 
@@ -50,7 +51,10 @@ pub fn calculate_funds_needed<Q: Querier>(
 
     // If there is no previous position, then we only require these funds
     if position == Position::default() {
-        return Ok(fee_amount + quote_asset_amount);
+        return Ok(vec![Coin::new(
+            (fee_amount + quote_asset_amount).u128(),
+            "uusd",
+        )]);
     };
 
     println!("HERE");
@@ -68,7 +72,6 @@ pub fn calculate_funds_needed<Q: Querier>(
 
     // update the notional with PnL
     position.notional = unrealised_pnl_response.position_notional;
-    println!("{}", position.notional);
 
     // here we add the pnl to the margin
     // we check if unrealised_pnl is positive or negative to decide whether to add it or not
@@ -122,7 +125,11 @@ pub fn calculate_funds_needed<Q: Querier>(
         fee_amount
     };
 
-    Ok(funds_owed)
+    if funds_owed.is_zero() {
+        return Ok(vec![]);
+    }
+
+    Ok(vec![Coin::new(funds_owed.u128(), "uusd")])
 }
 
 // to query the given vamm's fees for use in the fund calculator
