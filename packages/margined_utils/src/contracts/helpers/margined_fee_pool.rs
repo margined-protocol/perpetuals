@@ -5,7 +5,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{
-    to_binary, Addr, Coin, CosmosMsg, Querier, QuerierWrapper, StdResult, Uint128, WasmMsg,
+    to_binary, Addr, Coin, CosmosMsg, Empty, Querier, QuerierWrapper, StdResult, Uint128, WasmMsg,
     WasmQuery,
 };
 
@@ -76,7 +76,7 @@ impl FeePoolController {
         }
         .into();
 
-        let res: ConfigResponse = QuerierWrapper::new(querier).query(&query)?;
+        let res: ConfigResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -89,7 +89,7 @@ impl FeePoolController {
         }
         .into();
 
-        let res: TokenLengthResponse = QuerierWrapper::new(querier).query(&query)?;
+        let res: TokenLengthResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -106,7 +106,7 @@ impl FeePoolController {
         }
         .into();
 
-        let res: AllTokenResponse = QuerierWrapper::new(querier).query(&query)?;
+        let res: AllTokenResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
@@ -119,7 +119,7 @@ impl FeePoolController {
         }
         .into();
 
-        let res: TokenResponse = QuerierWrapper::new(querier).query(&query)?;
+        let res: TokenResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 }

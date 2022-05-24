@@ -2,7 +2,6 @@ use cosmwasm_std::{
     to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError, StdResult,
     SubMsg, Uint128, WasmMsg,
 };
-use terraswap::asset::{Asset, AssetInfo};
 
 use crate::{
     contract::{
@@ -25,6 +24,7 @@ use crate::{
     },
 };
 use margined_common::{
+    asset::{Asset, AssetInfo},
     integer::Integer,
     validate::{validate_address, validate_eligible_collateral, validate_ratio},
 };

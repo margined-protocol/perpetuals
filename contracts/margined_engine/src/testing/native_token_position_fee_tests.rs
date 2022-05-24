@@ -1,9 +1,9 @@
 use cosmwasm_std::{Coin, Uint128};
+use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Position, Side};
 use margined_utils::scenarios::NativeTokenScenario;
 use margined_utils::tools::fund_calculator::calculate_funds_needed;
-use terra_multi_test::Executor;
 
 // Note: these tests also verify the 10% fees for the amm are functioning
 
@@ -61,10 +61,10 @@ fn test_force_error_open_position_no_token_sent() {
             vec![],
         )
         .unwrap();
-    let response = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
 
     assert_eq!(
-        response.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: sent funds are insufficient".to_string()
     );
 }
@@ -97,20 +97,16 @@ fn test_ten_percent_fee_open_long_position() {
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(37_500_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(60_000_000u64),
-                    Uint128::from(10_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(60_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -169,9 +165,9 @@ fn test_force_error_insufficient_token_long_position() {
             vec![Coin::new(119_000_000u128, "uusd")],
         )
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        result.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: sent funds are insufficient".to_string()
     );
 }
@@ -204,20 +200,16 @@ fn test_ten_percent_fee_open_short_position() {
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(150_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(60_000_000u64),
-                    Uint128::from(10_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(60_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -278,9 +270,9 @@ fn test_force_error_insufficient_token_short_position() {
             vec![Coin::new(100_000_000u128, "uusd")],
         )
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        result.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: sent funds are insufficient".to_string()
     );
 }
@@ -313,20 +305,16 @@ fn test_ten_percent_fee_increase_long_position() {
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(20_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(25_000_000u64),
-                    Uint128::from(10_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(25_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -343,20 +331,16 @@ fn test_ten_percent_fee_increase_long_position() {
             Uint128::from(175_000_000u64),
             Uint128::from(2_000_000u64),
             Uint128::from(17_500_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(175_000_000u64),
-                    Uint128::from(2_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(175_000_000u64),
+                Uint128::from(2_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -419,20 +403,16 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(20_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(25_000_000u64),
-                    Uint128::from(10_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(25_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -449,20 +429,16 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
             Uint128::from(35_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(17_500_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    bob.clone(),
-                    Uint128::from(35_000_000u64),
-                    Uint128::from(10_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                bob.clone(),
+                Uint128::from(35_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -486,20 +462,16 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
             Uint128::from(200_000_000u64),
             Uint128::from(2_000_000u64),
             Uint128::from(12_500_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(200_000_000u64),
-                    Uint128::from(2_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(200_000_000u64),
+                Uint128::from(2_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -558,20 +530,16 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
             Uint128::from(125_000_000u64),
             Uint128::from(2_000_000u64),
             Uint128::from(20_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(125_000_000u64),
-                    Uint128::from(2_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(125_000_000u64),
+                Uint128::from(2_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -587,20 +555,16 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
             Uint128::from(125_000_000u64),
             Uint128::from(2_000_000u64),
             Uint128::from(20_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(125_000_000u64),
-                    Uint128::from(2_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(125_000_000u64),
+                Uint128::from(2_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -627,20 +591,16 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
             Uint128::from(50_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(20_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(50_000_000u64),
-                    Uint128::from(5_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(50_000_000u64),
+                Uint128::from(5_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -688,20 +648,16 @@ fn test_ten_percent_fee_increase_short_position() {
             Uint128::from(100_000_000u64),
             Uint128::from(2_000_000u64),
             Uint128::from(25_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(100_000_000u64),
-                    Uint128::from(2_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(100_000_000u64),
+                Uint128::from(2_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -717,20 +673,16 @@ fn test_ten_percent_fee_increase_short_position() {
             Uint128::from(50_000_000u64),
             Uint128::from(8_000_000u64),
             Uint128::from(125_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(50_000_000u64),
-                    Uint128::from(8_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(50_000_000u64),
+                Uint128::from(8_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -789,20 +741,16 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
             Uint128::from(100_000_000u64),
             Uint128::from(2_000_000u64),
             Uint128::from(25_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(100_000_000u64),
-                    Uint128::from(2_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(100_000_000u64),
+                Uint128::from(2_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -818,20 +766,16 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
             Uint128::from(150_000_000u64),
             Uint128::from(2_000_000u64),
             Uint128::from(75_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    bob.clone(),
-                    Uint128::from(150_000_000u64),
-                    Uint128::from(2_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                bob.clone(),
+                Uint128::from(150_000_000u64),
+                Uint128::from(2_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -858,20 +802,16 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
             Uint128::from(100_000_000u64),
             Uint128::from(3_000_000u64),
             Uint128::from(300_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(100_000_000u64),
-                    Uint128::from(3_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(100_000_000u64),
+                Uint128::from(3_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -920,20 +860,16 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
             Uint128::from(200_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(25_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(200_000_000u64),
-                    Uint128::from(1_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(200_000_000u64),
+                Uint128::from(1_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -949,20 +885,16 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
             Uint128::from(200_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(25_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    bob.clone(),
-                    Uint128::from(200_000_000u64),
-                    Uint128::from(1_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                bob.clone(),
+                Uint128::from(200_000_000u64),
+                Uint128::from(1_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -989,20 +921,16 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
             Uint128::from(50_000_000u64),
             Uint128::from(4_000_000u64),
             Uint128::from(25_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(50_000_000u64),
-                    Uint128::from(4_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(50_000_000u64),
+                Uint128::from(4_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1048,20 +976,16 @@ fn test_ten_percent_fee_reduce_long_position() {
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(37_500_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(60_000_000u64),
-                    Uint128::from(10_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(60_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1073,20 +997,16 @@ fn test_ten_percent_fee_reduce_long_position() {
             Uint128::from(350_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(17_500_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(350_000_000u64),
-                    Uint128::from(1_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(350_000_000u64),
+                Uint128::from(1_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1133,20 +1053,16 @@ fn test_ten_percent_fee_reduce_long_position_zero_fee() {
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(37_500_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(60_000_000u64),
-                    Uint128::from(10_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(60_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1158,20 +1074,16 @@ fn test_ten_percent_fee_reduce_long_position_zero_fee() {
             Uint128::from(350_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(17_500_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(350_000_000u64),
-                    Uint128::from(1_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(350_000_000u64),
+                Uint128::from(1_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1219,20 +1131,16 @@ fn test_ten_percent_fee_reduce_short_position() {
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(150_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(60_000_000u64),
-                    Uint128::from(10_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(60_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1244,20 +1152,16 @@ fn test_ten_percent_fee_reduce_short_position() {
             Uint128::from(400_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(125_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(400_000_000u64),
-                    Uint128::from(1_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(400_000_000u64),
+                Uint128::from(1_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1306,20 +1210,16 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(37_500_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(60_000_000u64),
-                    Uint128::from(10_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(60_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1331,20 +1231,16 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
             Uint128::from(400_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(12_500_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    bob.clone(),
-                    Uint128::from(400_000_000u64),
-                    Uint128::from(1_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                bob.clone(),
+                Uint128::from(400_000_000u64),
+                Uint128::from(1_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -1366,20 +1262,16 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
             Uint128::from(400_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(12_500_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(400_000_000u64),
-                    Uint128::from(1_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(400_000_000u64),
+                Uint128::from(1_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1428,20 +1320,16 @@ fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
             Uint128::from(500_000_000u64),
             Uint128::from(2_000_000u64),
             Uint128::from(50_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(500_000_000u64),
-                    Uint128::from(2_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(500_000_000u64),
+                Uint128::from(2_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1453,20 +1341,16 @@ fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
             Uint128::from(400_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(12_500_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    bob.clone(),
-                    Uint128::from(400_000_000u64),
-                    Uint128::from(1_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                bob.clone(),
+                Uint128::from(400_000_000u64),
+                Uint128::from(1_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -1488,20 +1372,16 @@ fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
             Uint128::from(350_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(17_500_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(350_000_000u64),
-                    Uint128::from(1_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(350_000_000u64),
+                Uint128::from(1_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1550,20 +1430,16 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
             Uint128::from(100_000_000u64),
             Uint128::from(2_000_000u64),
             Uint128::from(25_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(100_000_000u64),
-                    Uint128::from(2_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(100_000_000u64),
+                Uint128::from(2_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1575,20 +1451,16 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
             Uint128::from(50_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(7_350_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    bob.clone(),
-                    Uint128::from(50_000_000u64),
-                    Uint128::from(1_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                bob.clone(),
+                Uint128::from(50_000_000u64),
+                Uint128::from(1_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -1610,20 +1482,16 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
             Uint128::from(150_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(17_640_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(150_000_000u64),
-                    Uint128::from(1_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(150_000_000u64),
+                Uint128::from(1_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1672,20 +1540,16 @@ fn test_ten_percent_fee_reduce_short_position_price_down_short_again() {
             Uint128::from(250_000_000u64),
             Uint128::from(2_000_000u64),
             Uint128::from(100_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(250_000_000u64),
-                    Uint128::from(2_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(250_000_000u64),
+                Uint128::from(2_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1697,20 +1561,16 @@ fn test_ten_percent_fee_reduce_short_position_price_down_short_again() {
             Uint128::from(100_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(50_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    bob.clone(),
-                    Uint128::from(100_000_000u64),
-                    Uint128::from(1_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                bob.clone(),
+                Uint128::from(100_000_000u64),
+                Uint128::from(1_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -1732,20 +1592,16 @@ fn test_ten_percent_fee_reduce_short_position_price_down_short_again() {
             Uint128::from(100_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(50_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(100_000_000u64),
-                    Uint128::from(1_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(100_000_000u64),
+                Uint128::from(1_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1792,20 +1648,16 @@ fn test_ten_percent_fee_open_long_price_remains_close_manually() {
             Uint128::from(50_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(20_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(50_000_000u64),
-                    Uint128::from(5_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(50_000_000u64),
+                Uint128::from(5_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1819,20 +1671,16 @@ fn test_ten_percent_fee_open_long_price_remains_close_manually() {
             Uint128::from(250_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(20_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(250_000_000u64),
-                    Uint128::from(1_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(250_000_000u64),
+                Uint128::from(1_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1876,20 +1724,16 @@ fn test_ten_percent_fee_open_short_price_remains_close_manually() {
             Uint128::from(100_000_000u64),
             Uint128::from(2_000_000u64),
             Uint128::from(25_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(100_000_000u64),
-                    Uint128::from(2_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(100_000_000u64),
+                Uint128::from(2_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1903,20 +1747,16 @@ fn test_ten_percent_fee_open_short_price_remains_close_manually() {
             Uint128::from(200_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(25_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(200_000_000u64),
-                    Uint128::from(1_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(200_000_000u64),
+                Uint128::from(1_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1959,20 +1799,16 @@ fn test_ten_percent_fee_open_long_price_remains_close_opening_larger_short() {
             Uint128::from(125_000_000u64),
             Uint128::from(2_000_000u64),
             Uint128::from(20_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(125_000_000u64),
-                    Uint128::from(2_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(125_000_000u64),
+                Uint128::from(2_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1986,20 +1822,16 @@ fn test_ten_percent_fee_open_long_price_remains_close_opening_larger_short() {
             Uint128::from(45_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(45_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(45_000_000u64),
-                    Uint128::from(10_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(45_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -2042,20 +1874,16 @@ fn test_ten_percent_fee_open_short_price_remains_close_opening_larger_long() {
             Uint128::from(20_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(25_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(20_000_000u64),
-                    Uint128::from(10_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(20_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -2069,20 +1897,16 @@ fn test_ten_percent_fee_open_short_price_remains_close_opening_larger_long() {
             Uint128::from(90_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(45_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(90_000_000u64),
-                    Uint128::from(5_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(90_000_000u64),
+                Uint128::from(5_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -2138,20 +1962,16 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(20_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(25_000_000u64),
-                    Uint128::from(10_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(25_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -2165,20 +1985,16 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
             Uint128::from(35_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(17_500_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    bob.clone(),
-                    Uint128::from(35_000_000u64),
-                    Uint128::from(10_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                bob.clone(),
+                Uint128::from(35_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -2200,20 +2016,16 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
             Uint128::from(100_000_000u64),
             Uint128::from(8_000_000u64),
             Uint128::from(62_510_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(100_000_000u64),
-                    Uint128::from(8_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(100_000_000u64),
+                Uint128::from(8_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -2275,20 +2087,16 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
             Uint128::from(125_000_000u64),
             Uint128::from(2_000_000u64),
             Uint128::from(20_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(125_000_000u64),
-                    Uint128::from(2_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(125_000_000u64),
+                Uint128::from(2_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -2302,20 +2110,16 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
             Uint128::from(125_000_000u64),
             Uint128::from(2_000_000u64),
             Uint128::from(20_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    bob.clone(),
-                    Uint128::from(125_000_000u64),
-                    Uint128::from(2_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                bob.clone(),
+                Uint128::from(125_000_000u64),
+                Uint128::from(2_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -2337,20 +2141,16 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(1_450_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(60_000_000u64),
-                    Uint128::from(10_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(60_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -2405,20 +2205,16 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
             Uint128::from(200_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(25_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(200_000_000u64),
-                    Uint128::from(1_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(200_000_000u64),
+                Uint128::from(1_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -2430,20 +2226,16 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
             Uint128::from(50_000_000u64),
             Uint128::from(4_000_000u64),
             Uint128::from(7_349_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    bob.clone(),
-                    Uint128::from(50_000_000u64),
-                    Uint128::from(4_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                bob.clone(),
+                Uint128::from(50_000_000u64),
+                Uint128::from(4_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -2465,20 +2257,16 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(37_490_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(60_000_000u64),
-                    Uint128::from(10_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(60_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -2526,20 +2314,16 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
             Uint128::from(500_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(100_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(500_000_000u64),
-                    Uint128::from(1_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(500_000_000u64),
+                Uint128::from(1_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -2553,20 +2337,16 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
             Uint128::from(100_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(50_000_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    bob.clone(),
-                    Uint128::from(100_000_000u64),
-                    Uint128::from(1_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                bob.clone(),
+                Uint128::from(100_000_000u64),
+                Uint128::from(1_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -2588,20 +2368,16 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(149_990_000u64),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(60_000_000u64),
-                    Uint128::from(10_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(60_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -2645,20 +2421,16 @@ fn test_ten_percent_fee_open_long_price_down_liquidation() {
             Uint128::from(5_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(5_000_000u64),
-                    Uint128::from(10_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(5_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -2670,20 +2442,16 @@ fn test_ten_percent_fee_open_long_price_down_liquidation() {
             Uint128::from(50_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    bob.clone(),
-                    Uint128::from(50_000_000u64),
-                    Uint128::from(10_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                bob.clone(),
+                Uint128::from(50_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -2726,9 +2494,8 @@ fn test_ten_percent_fee_open_long_price_down_liquidation() {
             Side::Sell,
             vamm.addr(),
         )
-        .unwrap()
-        .u128(),
-        82_925_760u128
+        .unwrap(),
+        vec![Coin::new(82_925_760u128, "uusd")]
     );
 
     router.execute(alice.clone(), msg).unwrap();
@@ -2766,20 +2533,16 @@ fn test_ten_percent_fee_open_long_price_down_liquidation_with_positive_margin() 
             Uint128::from(10_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    alice.clone(),
-                    Uint128::from(10_000_000u64),
-                    Uint128::from(10_000_000u64),
-                    Side::Buy,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                alice.clone(),
+                Uint128::from(10_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -2791,20 +2554,16 @@ fn test_ten_percent_fee_open_long_price_down_liquidation_with_positive_margin() 
             Uint128::from(10_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(
-                calculate_funds_needed(
-                    &router,
-                    engine.addr(),
-                    bob.clone(),
-                    Uint128::from(10_000_000u64),
-                    Uint128::from(5_000_000u64),
-                    Side::Sell,
-                    vamm.addr(),
-                )
-                .unwrap()
-                .u128(),
-                "uusd",
-            )],
+            calculate_funds_needed(
+                &router,
+                engine.addr(),
+                bob.clone(),
+                Uint128::from(10_000_000u64),
+                Uint128::from(5_000_000u64),
+                Side::Sell,
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -2847,9 +2606,8 @@ fn test_ten_percent_fee_open_long_price_down_liquidation_with_positive_margin() 
             Side::Sell,
             vamm.addr(),
         )
-        .unwrap()
-        .u128(),
-        6_000_000u128
+        .unwrap(),
+        vec![Coin::new(6_000_000u128, "uusd")]
     );
 
     router.execute(alice.clone(), msg).unwrap();

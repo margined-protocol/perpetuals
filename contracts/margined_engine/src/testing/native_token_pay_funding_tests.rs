@@ -1,8 +1,8 @@
 use cosmwasm_std::{Coin, Uint128};
+use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::NativeTokenScenario;
-use terra_multi_test::Executor;
 
 pub const NEXT_FUNDING_PERIOD_DELTA: u64 = 86_400u64;
 
@@ -621,9 +621,9 @@ fn test_have_huge_funding_payment_margin_zero_cannot_remove_margin() {
     let msg = engine
         .withdraw_margin(vamm.addr().to_string(), Uint128::from(1u64))
         .unwrap();
-    let res = router.execute(bob.clone(), msg).unwrap_err();
+    let err = router.execute(bob.clone(), msg).unwrap_err();
     assert_eq!(
-        res.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: Insufficient margin".to_string()
     );
 }

@@ -1,10 +1,9 @@
-// use crate::testing::setup::{self, to_decimals};
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Empty, StdError, Uint128};
 use cw20::Cw20ExecuteMsg;
+use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Position, Side};
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
-use terra_multi_test::Executor;
 
 #[test]
 fn test_initialization() {
@@ -19,13 +18,15 @@ fn test_initialization() {
     } = SimpleScenario::new();
 
     // verfiy the balances
-    let owner_balance = usdc.balance(&router, owner.clone()).unwrap();
+    let owner_balance = usdc.balance::<_, _, Empty>(&router, owner.clone()).unwrap();
     assert_eq!(owner_balance, Uint128::zero());
-    let alice_balance = usdc.balance(&router, alice.clone()).unwrap();
+    let alice_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
     assert_eq!(alice_balance, Uint128::new(5_000_000_000_000));
-    let bob_balance = usdc.balance(&router, bob.clone()).unwrap();
+    let bob_balance = usdc.balance::<_, _, Empty>(&router, bob.clone()).unwrap();
     assert_eq!(bob_balance, Uint128::new(5_000_000_000_000));
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, Uint128::zero());
 }
 
@@ -49,9 +50,9 @@ fn test_force_error_open_position_zero_leverage() {
             vec![],
         )
         .unwrap();
-    let result = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        result.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: Input must be non-zero".to_string()
     );
 }
@@ -93,7 +94,9 @@ fn test_get_all_positions_open_position_long() {
     assert_eq!(positions[0].margin, to_decimals(60u64));
 
     // clearing house token balance should be 60
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, to_decimals(60));
 }
 
@@ -134,7 +137,9 @@ fn test_open_position_long() {
     assert_eq!(position.margin, to_decimals(60u64));
 
     // clearing house token balance should be 60
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, to_decimals(60));
 }
 
@@ -657,7 +662,7 @@ fn test_close_safe_position() {
     assert_eq!(state.base_asset_reserve, Uint128::from(93_055_555_556u128));
 
     // alice balance should be 4985.373134319
-    let engine_balance = usdc.balance(&router, alice.clone()).unwrap();
+    let engine_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(4_985_373_134_319u128));
 }
 
@@ -779,15 +784,17 @@ fn test_close_under_collateral_position() {
     assert_eq!(position.size, Integer::zero());
 
     // alice balance should be 4975
-    let alice_balance = usdc.balance(&router, alice.clone()).unwrap();
+    let alice_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
     assert_eq!(alice_balance, Uint128::from(4_975_000_000_000u128));
 
     let insurance_balance = usdc
-        .balance(&router, insurance_fund.addr().clone())
+        .balance::<_, _, Empty>(&router, insurance_fund.addr().clone())
         .unwrap();
     assert_eq!(insurance_balance, Uint128::from(4_941_666_666_666u128));
 
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, Uint128::from(333_333_333_334u128));
 }
 
@@ -804,9 +811,9 @@ fn test_close_zero_position() {
     let msg = engine
         .close_position(vamm.addr().to_string(), to_decimals(0u64))
         .unwrap();
-    let res = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        res.to_string(),
+        err.source().unwrap().to_string(),
         "Generic error: Position is zero".to_string()
     );
 }
@@ -852,7 +859,9 @@ fn test_openclose_position_to_check_fee_is_charged() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, to_decimals(60u64));
 
     let msg = engine
@@ -860,15 +869,19 @@ fn test_openclose_position_to_check_fee_is_charged() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, to_decimals(0u64));
 
     let insurance_balance = usdc
-        .balance(&router, insurance_fund.addr().clone())
+        .balance::<_, _, Empty>(&router, insurance_fund.addr().clone())
         .unwrap();
     assert_eq!(insurance_balance, to_decimals(5024u64));
 
-    let fee_pool_balance = usdc.balance(&router, fee_pool.addr().clone()).unwrap();
+    let fee_pool_balance = usdc
+        .balance::<_, _, Empty>(&router, fee_pool.addr().clone())
+        .unwrap();
     assert_eq!(fee_pool_balance, to_decimals(12u64));
 }
 
@@ -994,10 +1007,12 @@ fn test_error_open_position_insufficient_balance() {
             vec![],
         )
         .unwrap();
-    let res = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        res.to_string(),
-        "Overflow: Cannot Sub with 40000000000 and 60000000000".to_string()
+        StdError::GenericErr {
+            msg: "transfer failure - reply (id 8)".to_string()
+        },
+        err.downcast().unwrap()
     );
 }
 
@@ -1021,10 +1036,12 @@ fn test_error_open_position_exceed_margin_ratio() {
             vec![],
         )
         .unwrap();
-    let res = router.execute(alice.clone(), msg).unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        res.to_string(),
-        "Generic error: Position is undercollateralized".to_string()
+        StdError::GenericErr {
+            msg: "Position is undercollateralized".to_string()
+        },
+        err.downcast().unwrap(),
     );
 }
 
@@ -1100,7 +1117,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance = usdc.balance(&router, alice.clone()).unwrap();
+    let alice_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
     assert_eq!(alice_balance, Uint128::from(5_094_117_647_059u128));
 
     // bob close his under collateral position, positionValue is -294.11
@@ -1113,14 +1130,16 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let bob_balance = usdc.balance(&router, bob.clone()).unwrap();
+    let bob_balance = usdc.balance::<_, _, Empty>(&router, bob.clone()).unwrap();
     assert_eq!(bob_balance, Uint128::from(4_980_000_000_000u128));
 
-    let engine_balance = usdc.balance(&router, engine.addr().clone()).unwrap();
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
     assert_eq!(engine_balance, Uint128::zero());
 
     let insurance_balance = usdc
-        .balance(&router, insurance_fund.addr().clone())
+        .balance::<_, _, Empty>(&router, insurance_fund.addr().clone())
         .unwrap();
     assert_eq!(insurance_balance, Uint128::from(4_925_882_352_941u128));
 }

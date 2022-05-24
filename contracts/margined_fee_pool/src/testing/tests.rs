@@ -1,18 +1,20 @@
 use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{from_binary, to_binary, Addr, Coin, CosmosMsg, Uint128, WasmMsg};
+use cosmwasm_std::{
+    from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, StdError, Uint128, WasmMsg,
+};
 use cw20::Cw20ExecuteMsg;
+use cw_multi_test::Executor;
+use margined_common::asset::AssetInfo;
 use margined_perp::margined_fee_pool::{
     AllTokenResponse, ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, TokenLengthResponse,
     TokenResponse,
 };
 use margined_utils::scenarios::{NativeTokenScenario, SimpleScenario};
-use terra_multi_test::Executor;
-use terraswap::asset::AssetInfo;
 
 #[test]
 fn test_instantiation() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
 
     let info = mock_info("addr0000", &[]);
@@ -26,7 +28,7 @@ fn test_instantiation() {
 
 #[test]
 fn test_update_config() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("addr0000", &[]);
 
@@ -48,7 +50,7 @@ fn test_update_config() {
 }
 #[test]
 fn test_query_token() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("owner", &[]);
 
@@ -81,7 +83,7 @@ fn test_query_token() {
 #[test]
 fn test_query_all_token() {
     // instantiate contract here
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("owner", &[]);
 
@@ -128,7 +130,7 @@ fn test_query_all_token() {
         list,
         vec![
             AssetInfo::Token {
-                contract_addr: "token1".to_string()
+                contract_addr: Addr::unchecked("token1".to_string())
             },
             AssetInfo::NativeToken {
                 denom: "uusd".to_string()
@@ -140,7 +142,7 @@ fn test_query_all_token() {
 #[test]
 fn test_add_token() {
     // instantiate contract here
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("owner", &[]);
 
@@ -188,7 +190,7 @@ fn test_add_token() {
 #[test]
 fn test_add_token_twice() {
     // instantiate contract here
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("owner", &[]);
 
@@ -219,7 +221,7 @@ fn test_add_token_twice() {
 #[test]
 fn test_add_second_token() {
     // instantiate contract here
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("owner", &[]);
 
@@ -260,7 +262,7 @@ fn test_add_second_token() {
 #[test]
 fn test_remove_token() {
     // instantiate contract here
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("owner", &[]);
 
@@ -316,7 +318,7 @@ fn test_remove_token() {
 #[test]
 fn test_remove_when_no_tokens() {
     // instantiate contract here
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("owner", &[]);
 
@@ -351,7 +353,7 @@ fn test_remove_when_no_tokens() {
 #[test]
 fn test_remove_non_existed_token() {
     // instantiate contract here
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("owner", &[]);
 
@@ -399,7 +401,7 @@ fn test_token_capacity() {
     // for the purpose of this test, TOKEN_LIMIT is set to 3 (so four exceeds it!)
 
     // instantiate contract here
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("owner", &[]);
 
@@ -444,7 +446,7 @@ fn test_token_capacity() {
     ////////////////////////////////////////////
 
     // instantiate contract here
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("owner", &[]);
 
@@ -480,7 +482,7 @@ fn test_token_capacity() {
 #[test]
 fn test_token_length() {
     // instantiate contract here
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("owner", &[]);
 
@@ -521,18 +523,18 @@ fn test_send_native_token() {
     let NativeTokenScenario {
         mut router,
         owner,
+        bank,
         bob,
         fee_pool,
         ..
     } = NativeTokenScenario::new();
 
     // give funds to the fee pool contract
-    router
-        .init_bank_balance(
-            &fee_pool.addr(),
-            vec![Coin::new(5_000u128 * 10u128.pow(6), "uusd")],
-        )
-        .unwrap();
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: fee_pool.addr().to_string(),
+        amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "uusd")],
+    });
+    router.execute(bank.clone(), msg).unwrap();
 
     // add the token so we can send funds with it
     let msg = fee_pool.add_token("uusd".to_string()).unwrap();
@@ -579,18 +581,18 @@ fn test_send_native_token() {
     let NativeTokenScenario {
         mut router,
         owner,
+        bank,
         bob,
         fee_pool,
         ..
     } = NativeTokenScenario::new();
 
     // give funds to the fee pool contract
-    router
-        .init_bank_balance(
-            &fee_pool.addr(),
-            vec![Coin::new(5_000u128 * 10u128.pow(6), "uusd")],
-        )
-        .unwrap();
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: fee_pool.addr().to_string(),
+        amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "uusd")],
+    });
+    router.execute(bank.clone(), msg).unwrap();
 
     // try to send token - note this fails because we have not added the token to the token list, so it is not accepted/supported yet
     let msg = fee_pool
@@ -602,8 +604,10 @@ fn test_send_native_token() {
         .unwrap();
     let res = router.execute(owner.clone(), msg).unwrap_err();
     assert_eq!(
-        res.to_string(),
-        "Generic error: This token is not supported"
+        StdError::GenericErr {
+            msg: "This token is not supported".to_string(),
+        },
+        res.downcast().unwrap()
     );
 
     ////////////////////////
@@ -613,18 +617,18 @@ fn test_send_native_token() {
     let NativeTokenScenario {
         mut router,
         owner,
+        bank,
         bob,
         fee_pool,
         ..
     } = NativeTokenScenario::new();
 
     // give funds to the fee pool contract
-    router
-        .init_bank_balance(
-            &fee_pool.addr(),
-            vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
-        )
-        .unwrap();
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: fee_pool.addr().to_string(),
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+    });
+    router.execute(bank.clone(), msg).unwrap();
 
     // add the token so we can send funds with it
     let msg = fee_pool.add_token("uusd".to_string()).unwrap();
@@ -651,8 +655,12 @@ fn test_send_native_token() {
         )
         .unwrap();
     let res = router.execute(owner.clone(), msg).unwrap_err();
-    assert_eq!(res.to_string(), "Generic error: Insufficient funds");
-
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "Insufficient funds".to_string(),
+        },
+        res.downcast().unwrap()
+    );
     // query new balance of intended recipient
     let balance = router.wrap().query_balance(&bob, "uusd").unwrap().amount;
     assert_eq!(balance, Uint128::from(5000u128 * 10u128.pow(6)));
@@ -696,11 +704,13 @@ fn test_send_cw20_token() {
     router.execute(owner.clone(), msg).unwrap();
 
     // query balance of intended recipient (say, bob)
-    let balance = usdc.balance(&router, bob.clone()).unwrap();
+    let balance = usdc.balance::<_, _, Empty>(&router, bob.clone()).unwrap();
     assert_eq!(balance, Uint128::from(5000u128 * 10u128.pow(9)));
 
     // query balance of contract
-    let balance = usdc.balance(&router, fee_pool.addr()).unwrap();
+    let balance = usdc
+        .balance::<_, _, Empty>(&router, fee_pool.addr())
+        .unwrap();
     assert_eq!(balance, Uint128::from(5000u128 * 10u128.pow(9)));
 
     // send token to bob
@@ -714,11 +724,13 @@ fn test_send_cw20_token() {
     router.execute(owner.clone(), msg).unwrap();
 
     // query new balance of bob
-    let balance = usdc.balance(&router, bob).unwrap();
+    let balance = usdc.balance::<_, _, Empty>(&router, bob).unwrap();
     assert_eq!(balance, Uint128::from(6000u128 * 10u128.pow(9)));
 
     // Query new contract balance
-    let balance = usdc.balance(&router, fee_pool.addr()).unwrap();
+    let balance = usdc
+        .balance::<_, _, Empty>(&router, fee_pool.addr())
+        .unwrap();
     assert_eq!(balance, Uint128::from(4000u128 * 10u128.pow(9)));
 
     /////////////////////////
@@ -756,8 +768,10 @@ fn test_send_cw20_token() {
         .unwrap();
     let res = router.execute(owner.clone(), msg).unwrap_err();
     assert_eq!(
-        res.to_string(),
-        "Generic error: This token is not supported"
+        StdError::GenericErr {
+            msg: "This token is not supported".to_string(),
+        },
+        res.downcast().unwrap()
     );
 
     ////////////////////////
@@ -790,11 +804,13 @@ fn test_send_cw20_token() {
     router.execute(owner.clone(), msg).unwrap();
 
     // query balance of intended recipient (say, bob)
-    let balance = usdc.balance(&router, bob.clone()).unwrap();
+    let balance = usdc.balance::<_, _, Empty>(&router, bob.clone()).unwrap();
     assert_eq!(balance, Uint128::from(5000u128 * 10u128.pow(9)));
 
     // query balance of contract
-    let balance = usdc.balance(&router, fee_pool.addr()).unwrap();
+    let balance = usdc
+        .balance::<_, _, Empty>(&router, fee_pool.addr())
+        .unwrap();
     assert_eq!(balance, Uint128::from(1000u128 * 10u128.pow(9)));
 
     // send token to bob
@@ -806,14 +822,21 @@ fn test_send_cw20_token() {
         )
         .unwrap();
     let res = router.execute(owner.clone(), msg).unwrap_err();
-    assert_eq!(res.to_string(), "Generic error: Insufficient funds");
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "Insufficient funds".to_string(),
+        },
+        res.downcast().unwrap()
+    );
 
     // query new balance of bob
-    let balance = usdc.balance(&router, bob).unwrap();
+    let balance = usdc.balance::<_, _, Empty>(&router, bob).unwrap();
     assert_eq!(balance, Uint128::from(5000u128 * 10u128.pow(9)));
 
     // Query new contract balance
-    let balance = usdc.balance(&router, fee_pool.addr()).unwrap();
+    let balance = usdc
+        .balance::<_, _, Empty>(&router, fee_pool.addr())
+        .unwrap();
     assert_eq!(balance, Uint128::from(1000u128 * 10u128.pow(9)));
 }
 
@@ -824,7 +847,7 @@ fn test_send_cw20_token() {
 #[test]
 fn test_not_owner() {
     // instantiate contract here
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("owner", &[]);
 
@@ -838,7 +861,7 @@ fn test_not_owner() {
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
-    assert_eq!(res.to_string(), "Unauthorized");
+    assert_eq!(res.to_string(), "Generic error: unauthorized");
 
     // try to add a token
     let info = mock_info("not_the_owner", &[]);
@@ -848,7 +871,7 @@ fn test_not_owner() {
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
-    assert_eq!(res.to_string(), "Unauthorized");
+    assert_eq!(res.to_string(), "Generic error: unauthorized");
 
     // try to remove a token
     let info = mock_info("not_the_owner", &[]);
@@ -858,7 +881,7 @@ fn test_not_owner() {
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
-    assert_eq!(res.to_string(), "Unauthorized");
+    assert_eq!(res.to_string(), "Generic error: unauthorized");
 
     // instantiate the other blockchain
     let SimpleScenario {
@@ -881,5 +904,10 @@ fn test_not_owner() {
         .execute(Addr::unchecked("not_the_owner"), msg)
         .unwrap_err();
 
-    assert_eq!(res.to_string(), "Unauthorized");
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "unauthorized".to_string(),
+        },
+        res.downcast().unwrap()
+    );
 }
