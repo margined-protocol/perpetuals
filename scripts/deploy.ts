@@ -13,7 +13,7 @@ import { join } from 'path'
 
 const config = {
   chainId: 'testing',
-  rpcEndpoint: 'http://127.0.0.1:26657',
+  rpcEndpoint: 'http://144.91.72.93:26657',
   prefix: 'juno',
 }
 
