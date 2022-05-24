@@ -281,7 +281,7 @@ dependencies = [
  "anyhow",
  "cosmwasm-std 1.0.0",
  "cosmwasm-storage",
- "cw-storage-plus 0.13.2",
+ "cw-storage-plus",
  "cw-utils",
  "derivative",
  "itertools",
@@ -289,17 +289,6 @@ dependencies = [
  "schemars",
  "serde",
  "thiserror",
-]
-
-[[package]]
-name = "cw-storage-plus"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a8e401ed71bd64abb9b91151a9ff4f7b34e81b2b3eceab23e3cb67fe47e39938"
-dependencies = [
- "cosmwasm-std 0.16.7",
- "schemars",
- "serde",
 ]
 
 [[package]]
@@ -326,49 +315,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "cw0"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d759bb5418a3bdf091e1f1be17de2a15d95d2be4fee28045c2e461f4c6d9d1ca"
-dependencies = [
- "cosmwasm-std 0.16.7",
- "schemars",
- "serde",
- "thiserror",
-]
-
-[[package]]
-name = "cw2"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c6380164fb236412ff43c7ca075d95847c6fa8c51b2d3a513c23127a0f2a8f6"
-dependencies = [
- "cosmwasm-std 0.16.7",
- "cw-storage-plus 0.9.1",
- "schemars",
- "serde",
-]
-
-[[package]]
 name = "cw2"
 version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "993df11574f29574dd443eb0c189484bb91bc0638b6de3e32ab7f9319c92122d"
 dependencies = [
  "cosmwasm-std 1.0.0",
- "cw-storage-plus 0.13.2",
- "schemars",
- "serde",
-]
-
-[[package]]
-name = "cw20"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac49b013ca1e355fd988cc1926acc9a16d7fd45cfb595ee330455582a788b100"
-dependencies = [
- "cosmwasm-std 0.16.7",
- "cw0",
+ "cw-storage-plus",
  "schemars",
  "serde",
 ]
@@ -387,31 +340,15 @@ dependencies = [
 
 [[package]]
 name = "cw20-base"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b731a291b63cc26d484b159e8469f0965b0082a20e874616f869537b31d64bb"
-dependencies = [
- "cosmwasm-std 0.16.7",
- "cw-storage-plus 0.9.1",
- "cw0",
- "cw2 0.9.1",
- "cw20 0.9.1",
- "schemars",
- "serde",
- "thiserror",
-]
-
-[[package]]
-name = "cw20-base"
 version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3b370e5fb6b35db58cabd7903b8f9bd4c3bcff701c63bf1a7185a84e60bfa502"
 dependencies = [
  "cosmwasm-std 1.0.0",
- "cw-storage-plus 0.13.2",
+ "cw-storage-plus",
  "cw-utils",
- "cw2 0.13.2",
- "cw20 0.13.2",
+ "cw2",
+ "cw20",
  "schemars",
  "serde",
  "thiserror",
@@ -725,7 +662,7 @@ dependencies = [
  "cosmwasm-bignumber",
  "cosmwasm-std 1.0.0",
  "cosmwasm-storage",
- "cw20 0.13.2",
+ "cw20",
  "schemars",
  "serde",
  "serde_json",
@@ -740,10 +677,10 @@ dependencies = [
  "cosmwasm-std 1.0.0",
  "cosmwasm-storage",
  "cw-multi-test",
- "cw-storage-plus 0.13.2",
- "cw2 0.13.2",
- "cw20 0.13.2",
- "cw20-base 0.9.1",
+ "cw-storage-plus",
+ "cw2",
+ "cw20",
+ "cw20-base",
  "margined_common",
  "margined_perp",
  "margined_utils",
@@ -763,9 +700,9 @@ dependencies = [
  "cosmwasm-std 1.0.0",
  "cosmwasm-storage",
  "cw-multi-test",
- "cw-storage-plus 0.13.2",
- "cw2 0.13.2",
- "cw20 0.13.2",
+ "cw-storage-plus",
+ "cw2",
+ "cw20",
  "margined_common",
  "margined_perp",
  "margined_utils",
@@ -783,9 +720,9 @@ dependencies = [
  "cosmwasm-std 1.0.0",
  "cosmwasm-storage",
  "cw-multi-test",
- "cw-storage-plus 0.13.2",
- "cw2 0.13.2",
- "cw20 0.13.2",
+ "cw-storage-plus",
+ "cw2",
+ "cw20",
  "margined_common",
  "margined_perp",
  "margined_utils",
@@ -801,7 +738,7 @@ dependencies = [
  "cosmwasm-bignumber",
  "cosmwasm-std 1.0.0",
  "cosmwasm-storage",
- "cw20 0.13.2",
+ "cw20",
  "margined_common",
  "schemars",
  "serde",
@@ -817,8 +754,8 @@ dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std 1.0.0",
  "cosmwasm-storage",
- "cw-storage-plus 0.13.2",
- "cw2 0.13.2",
+ "cw-storage-plus",
+ "cw2",
  "margined_common",
  "margined_perp",
  "schemars",
@@ -834,8 +771,8 @@ dependencies = [
  "cosmwasm-std 1.0.0",
  "cosmwasm-storage",
  "cw-multi-test",
- "cw20 0.13.2",
- "cw20-base 0.13.2",
+ "cw20",
+ "cw20-base",
  "margined_common",
  "margined_engine",
  "margined_fee_pool",
@@ -858,10 +795,10 @@ dependencies = [
  "cosmwasm-std 1.0.0",
  "cosmwasm-storage",
  "cw-multi-test",
- "cw-storage-plus 0.13.2",
- "cw2 0.13.2",
- "cw20 0.13.2",
- "cw20-base 0.9.1",
+ "cw-storage-plus",
+ "cw2",
+ "cw20",
+ "cw20-base",
  "margined_common",
  "margined_engine",
  "margined_perp",

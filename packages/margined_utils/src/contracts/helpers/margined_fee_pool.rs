@@ -110,7 +110,7 @@ impl FeePoolController {
         Ok(res)
     }
 
-    /// query if the given vamm is actually stored
+    /// query if the given token is actually stored
     pub fn is_token<Q: Querier>(&self, token: String, querier: &Q) -> StdResult<TokenResponse> {
         let msg = QueryMsg::IsToken { token };
         let query = WasmQuery::Smart {
