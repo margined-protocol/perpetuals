@@ -1175,7 +1175,7 @@ fn test_ten_percent_fee_reduce_long_position_zero_fee() {
             Uint128::from(350_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(17_500_000u64),
-            funds,
+            vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();

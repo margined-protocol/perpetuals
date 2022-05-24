@@ -53,6 +53,8 @@ pub fn calculate_funds_needed<Q: Querier>(
         return Ok(fee_amount + quote_asset_amount);
     };
 
+    println!("HERE");
+
     // initialise variable for use below
     let mut margin_owed: Integer = Integer::zero();
 
@@ -66,6 +68,7 @@ pub fn calculate_funds_needed<Q: Querier>(
 
     // update the notional with PnL
     position.notional = unrealised_pnl_response.position_notional;
+    println!("{}", position.notional);
 
     // here we add the pnl to the margin
     // we check if unrealised_pnl is positive or negative to decide whether to add it or not
