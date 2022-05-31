@@ -81,6 +81,21 @@ pub fn store_position(storage: &mut dyn Storage, position: &Position) -> StdResu
     position_bucket(storage).save(&hash, position)
 }
 
+pub fn remove_position(storage: &mut dyn Storage, position: &Position) {
+    // hash the vAMM and trader together to get a unique position key
+    let mut hasher = Sha3_256::new();
+
+    // write input message
+    hasher.update(position.vamm.as_bytes());
+    hasher.update(position.trader.as_bytes());
+
+    // read hash digest
+    let hash = hasher.finalize();
+
+    // remove the position stored under the key
+    position_bucket(storage).remove(&hash)
+}
+
 pub fn read_position(storage: &dyn Storage, vamm: &Addr, trader: &Addr) -> StdResult<Position> {
     // hash the vAMM and trader together to get a unique position key
     let mut hasher = Sha3_256::new();

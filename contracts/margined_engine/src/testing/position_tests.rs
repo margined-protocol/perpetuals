@@ -647,12 +647,13 @@ fn test_close_safe_position() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position: Position = engine
+    let err = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
-        .unwrap();
-    assert_eq!(position.size, Integer::zero());
-    assert_eq!(position.margin, Uint128::zero());
-    assert_eq!(position.notional, Uint128::zero());
+        .unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "Generic error: Querier contract error: Generic error: No position found"
+    );
 
     let state = vamm.state(&router).unwrap();
     assert_eq!(
@@ -711,10 +712,13 @@ fn test_close_position_over_maintenance_margin_ration() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position: Position = engine
+    let err = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
-        .unwrap();
-    assert_eq!(position.size, Integer::zero());
+        .unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "Generic error: Querier contract error: Generic error: No position found"
+    );
 
     let state = vamm.state(&router).unwrap();
     assert_eq!(
@@ -778,10 +782,13 @@ fn test_close_under_collateral_position() {
     // alice.balance = all(5000) - margin(25) = 4975
     // insuranceFund.balance = 5000 + realizedPnl(-58.33) = 4941.66...
     // clearingHouse.balance = 250 + +25 + 58.33(pnl from insuranceFund) = 333.33
-    let position: Position = engine
+    let err = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
-        .unwrap();
-    assert_eq!(position.size, Integer::zero());
+        .unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "Generic error: Querier contract error: Generic error: No position found"
+    );
 
     // alice balance should be 4975
     let alice_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
@@ -1142,4 +1149,67 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
         .balance::<_, _, Empty>(&router, insurance_fund.addr().clone())
         .unwrap();
     assert_eq!(insurance_balance, Uint128::from(4_925_882_352_941u128));
+}
+
+#[test]
+fn test_query_non_position() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    // alice opens a position
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(20u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    // bob opens a position
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(20u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    // alice closes her position
+    let msg = engine
+        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    // we query alice' position to ensure it was closed
+    let err = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "Generic error: Querier contract error: Generic error: No position found"
+    );
+
+    // bob closes his position
+    let msg = engine
+        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    // we query all of bob's positions (should return an empty array)
+    let positions: Vec<Position> = engine.get_all_positions(&router, bob.to_string()).unwrap();
+    assert_eq!(positions, vec![]);
 }

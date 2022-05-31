@@ -1,4 +1,4 @@
-use cosmwasm_std::{Deps, StdResult, Uint128};
+use cosmwasm_std::{Deps, StdError, StdResult, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
     ConfigResponse, PnlCalcOption, Position, PositionUnrealizedPnlResponse, StateResponse,
@@ -42,6 +42,10 @@ pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Pos
     )
     .unwrap();
 
+    if position.trader != trader {
+        return Err(StdError::generic_err("No position found"));
+    }
+
     Ok(position)
 }
 
@@ -56,7 +60,9 @@ pub fn query_all_positions(deps: Deps, trader: String) -> StdResult<Vec<Position
         let position =
             read_position(deps.storage, vamm, &deps.api.addr_validate(&trader)?).unwrap();
 
-        response.push(position)
+        if position.trader == trader {
+            response.push(position)
+        }
     }
 
     Ok(response)
