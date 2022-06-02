@@ -10,9 +10,9 @@ use crate::{
     querier::query_vamm_state,
     state::{
         append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_sent_funds,
-        read_state, read_tmp_liquidator, read_tmp_swap, remove_sent_funds, remove_tmp_liquidator,
-        remove_tmp_swap, store_position, store_sent_funds, store_state, store_tmp_swap, State,
-        TmpSwapInfo,
+        read_state, read_tmp_liquidator, read_tmp_swap, remove_position, remove_sent_funds,
+        remove_tmp_liquidator, remove_tmp_swap, store_position, store_sent_funds, store_state,
+        store_tmp_swap, State, TmpSwapInfo,
     },
     utils::{
         calc_remain_margin_with_funding_payment, clear_position, get_position, realize_bad_debt,
@@ -340,7 +340,7 @@ pub fn close_position_reply(
     let mut state = read_state(deps.storage)?;
     let swap = read_tmp_swap(deps.storage)?;
 
-    let mut position = get_position(
+    let position = get_position(
         env.clone(),
         deps.storage,
         &swap.vamm.clone(),
@@ -374,7 +374,7 @@ pub fn close_position_reply(
         msgs.append(
             &mut withdraw(
                 deps.as_ref(),
-                env.clone(),
+                env,
                 &mut state,
                 &swap.trader,
                 config.eligible_collateral,
@@ -402,9 +402,7 @@ pub fn close_position_reply(
 
     update_open_interest_notional(&deps.as_ref(), &mut state, swap.vamm, value.invert_sign())?;
 
-    position = clear_position(env, position)?;
-
-    store_position(deps.storage, &position)?;
+    remove_position(deps.storage, &position);
     store_state(deps.storage, &state)?;
 
     remove_tmp_swap(deps.storage);

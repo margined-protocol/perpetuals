@@ -148,12 +148,13 @@ pub fn query_existing_position<Q: Querier>(
     vamm: String,
     trader: String,
 ) -> StdResult<Position> {
-    let position = QuerierWrapper::<Empty>::new(querier).query::<Position>(&QueryRequest::Wasm(
-        WasmQuery::Smart {
+    let position = QuerierWrapper::<Empty>::new(querier)
+        .query::<Position>(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: engine,
             msg: to_binary(&EngineQueryMsg::Position { vamm, trader })?,
-        },
-    ))?;
+        }))
+        .unwrap_or_default();
+
     Ok(position)
 }
 
