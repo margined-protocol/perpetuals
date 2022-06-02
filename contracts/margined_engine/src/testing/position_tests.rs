@@ -651,8 +651,10 @@ fn test_close_safe_position() {
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap_err();
     assert_eq!(
-        err.to_string(),
-        "Generic error: Querier contract error: Generic error: No position found"
+        StdError::GenericErr {
+            msg: "Querier contract error: Generic error: No position found".to_string()
+        },
+        err
     );
 
     let state = vamm.state(&router).unwrap();
@@ -716,8 +718,10 @@ fn test_close_position_over_maintenance_margin_ration() {
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap_err();
     assert_eq!(
-        err.to_string(),
-        "Generic error: Querier contract error: Generic error: No position found"
+        StdError::GenericErr {
+            msg: "Querier contract error: Generic error: No position found".to_string()
+        },
+        err
     );
 
     let state = vamm.state(&router).unwrap();
@@ -786,8 +790,10 @@ fn test_close_under_collateral_position() {
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap_err();
     assert_eq!(
-        err.to_string(),
-        "Generic error: Querier contract error: Generic error: No position found"
+        StdError::GenericErr {
+            msg: "Querier contract error: Generic error: No position found".to_string()
+        },
+        err
     );
 
     // alice balance should be 4975
@@ -820,8 +826,10 @@ fn test_close_zero_position() {
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        err.source().unwrap().to_string(),
-        "Generic error: Position is zero".to_string()
+        StdError::GenericErr {
+            msg: "Position is zero".to_string()
+        },
+        err.downcast().unwrap()
     );
 }
 
@@ -1152,7 +1160,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
 }
 
 #[test]
-fn test_query_non_position() {
+fn test_query_no_user_positions() {
     let SimpleScenario {
         mut router,
         alice,
@@ -1199,8 +1207,10 @@ fn test_query_non_position() {
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap_err();
     assert_eq!(
-        err.to_string(),
-        "Generic error: Querier contract error: Generic error: No position found"
+        StdError::GenericErr {
+            msg: "Querier contract error: Generic error: No position found".to_string()
+        },
+        err
     );
 
     // bob closes his position

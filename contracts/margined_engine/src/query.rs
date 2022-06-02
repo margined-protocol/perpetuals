@@ -42,6 +42,7 @@ pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Pos
     )
     .unwrap();
 
+    // a default is returned if no position found with no trader set
     if position.trader != trader {
         return Err(StdError::generic_err("No position found"));
     }
@@ -60,6 +61,7 @@ pub fn query_all_positions(deps: Deps, trader: String) -> StdResult<Vec<Position
         let position =
             read_position(deps.storage, vamm, &deps.api.addr_validate(&trader)?).unwrap();
 
+        // a default is returned if no position found with no trader set
         if position.trader == trader {
             response.push(position)
         }
