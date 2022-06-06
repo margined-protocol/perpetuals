@@ -21,7 +21,7 @@ export const testnet: Config = {
     base_asset: 'UST',
     quote_asset_reserve: '1000000000', // 1,000.00
     base_asset_reserve: '100000000', // 100.00
-    funding_period: 86_400, // 1 day in seconds
+    funding_period: 3_600, // 1 hour in seconds
     toll_ratio: '0',
     spread_ratio: '0',
     fluctuation_limit_ratio: '0',
@@ -50,7 +50,7 @@ export const local: Config = {
     base_asset: 'UST',
     quote_asset_reserve: '1000000000', // 1,000.00
     base_asset_reserve: '100000000', // 100.00
-    funding_period: 86_400, // 1 day in seconds
+    funding_period: 3_600, // 1 hour in seconds
     toll_ratio: '0',
     spread_ratio: '0',
     fluctuation_limit_ratio: '0',
