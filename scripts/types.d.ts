@@ -5,7 +5,7 @@ type EngineInitMsg = {
   decimals: number
   insurance_fund: string
   fee_pool: string
-  eligible_collateral: string
+  eligible_collateral?: string
   initial_margin_ratio: string
   maintenance_margin_ratio: string
   liquidation_fee: string

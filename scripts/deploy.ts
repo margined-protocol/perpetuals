@@ -92,7 +92,7 @@ async function main() {
   /*************************************** Deploy Margin Engine Contract *****************************************/
   console.log('Deploy Margin Engine...')
   deployConfig.engineInitMsg.insurance_fund = insuranceFundContractAddress
-  deployConfig.engineInitMsg.fee_pool = insuranceFundContractAddress // TODO this needs its own contract
+  deployConfig.engineInitMsg.fee_pool = feePoolContractAddress
   deployConfig.engineInitMsg.eligible_collateral = 'ujunox' // TODO this needs its own contract
   const marginEngineContractAddress = await deployContract(
     client,
