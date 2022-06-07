@@ -29,7 +29,7 @@ fn test_paused_by_admin() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         err.source().unwrap().to_string(),
-        "Generic error: margin engine is paused".to_string()
+        "Generic error: Margin engine is paused".to_string()
     );
 
     let msg = engine
@@ -38,7 +38,7 @@ fn test_paused_by_admin() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         err.source().unwrap().to_string(),
-        "Generic error: margin engine is paused".to_string()
+        "Generic error: Margin engine is paused".to_string()
     );
 
     let msg = engine
@@ -47,7 +47,7 @@ fn test_paused_by_admin() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         err.source().unwrap().to_string(),
-        "Generic error: margin engine is paused".to_string()
+        "Generic error: Margin engine is paused".to_string()
     );
 
     let msg = engine
@@ -56,7 +56,7 @@ fn test_paused_by_admin() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         err.source().unwrap().to_string(),
-        "Generic error: margin engine is paused".to_string()
+        "Generic error: Margin engine is paused".to_string()
     );
 }
 
