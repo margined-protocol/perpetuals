@@ -38,7 +38,9 @@ async function main() {
 
   console.log(`Wallet address from seed: ${account.address}`)
 
-  /****************************************** Deploy Fee Pool Contract *****************************************/
+  ///
+  /// Deploy Fee Pool Contract
+  ///
   console.log('Deploying Fee Pool...')
   const feePoolContractAddress = await deployContract(
     client,
@@ -50,7 +52,9 @@ async function main() {
   )
   console.log('Fee Pool Contract Address: ' + feePoolContractAddress)
 
-  /****************************************** Deploy Insurance Fund Contract *****************************************/
+  ///
+  /// Deploy Insurance Fund Contract
+  ///
   console.log('Deploying Insurance Fund...')
   const insuranceFundContractAddress = await deployContract(
     client,
@@ -64,7 +68,9 @@ async function main() {
     'Insurance Fund Contract Address: ' + insuranceFundContractAddress,
   )
 
-  /******************************************* Deploy Mock PriceFeed Contract *****************************************/
+  ///
+  /// Deploy Mock PriceFeed Contract
+  ///
   console.log('Deploying Mock PriceFeed...')
   const priceFeedAddress = await deployContract(
     client,
@@ -76,7 +82,9 @@ async function main() {
   )
   console.log('Mock PriceFeed Address: ' + priceFeedAddress)
 
-  /******************************************** Deploy ETH:UST vAMM Contract ******************************************/
+  ///
+  /// Deploy ETH:UST vAMM Contract
+  ///
   console.log('Deploying ETH:UST vAMM...')
   deployConfig.vammInitMsg.pricefeed = priceFeedAddress
   const vammContractAddress = await deployContract(
@@ -89,7 +97,9 @@ async function main() {
   )
   console.log('ETH:UST vAMM Address: ' + vammContractAddress)
 
-  /*************************************** Deploy Margin Engine Contract *****************************************/
+  ///
+  /// Deploy Margin Engine Contract
+  ///
   console.log('Deploy Margin Engine...')
   deployConfig.engineInitMsg.insurance_fund = insuranceFundContractAddress
   deployConfig.engineInitMsg.fee_pool = feePoolContractAddress
@@ -104,7 +114,7 @@ async function main() {
   )
   console.log('Margin Engine Address: ' + marginEngineContractAddress)
 
-  /************************************* Define Margin engine address in vAMM *************************************/
+  // Define Margin engine address in vAMM
   console.log('Set Margin Engine in vAMM...')
   await executeContract(client, account.address, vammContractAddress, {
     update_config: {
@@ -113,7 +123,9 @@ async function main() {
   })
   console.log('margin engine set in vAMM')
 
-  /************************************** Register vAMM in Insurance Fund ******************************************************/
+  ///
+  /// Register vAMM in Insurance Fund
+  ///
   console.log('Register vAMM in Insurance Fund...')
   await executeContract(client, account.address, insuranceFundContractAddress, {
     add_vamm: {
@@ -122,7 +134,22 @@ async function main() {
   })
   console.log('vAMM registered')
 
-  /*********************************************** Set vAMM Open ******************************************************/
+  ///
+  ///
+  /// Define Margin Engine as Insurance Fund Beneficiary
+  ///
+  ///
+  console.log('Define Margin Engine as Insurance Fund Beneficiary...')
+  await executeContract(client, account.address, insuranceFundContractAddress, {
+    update_config: {
+      beneficiary: marginEngineContractAddress,
+    },
+  })
+  console.log('Margin Engine set as beneficiary')
+
+  ///
+  /// Set vAMM Open
+  ///
   console.log('Set vAMM Open...')
   await executeContract(client, account.address, vammContractAddress, {
     set_open: {
@@ -131,7 +158,9 @@ async function main() {
   })
   console.log('vAMM set to open')
 
-  /************************************************ Query vAMM state **********************************************/
+  ///
+  /// Query vAMM state
+  ///
   console.log('Querying vAMM state...')
   let state = await queryContract(client, vammContractAddress, {
     state: {},
