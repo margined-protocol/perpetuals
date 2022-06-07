@@ -225,7 +225,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
                 Ok(response)
             }
             PAY_FUNDING_REPLY_ID => {
-                let (premium_fraction, sender) = parse_pay_funding(response);
+                let (premium_fraction, sender) = parse_pay_funding(response).unwrap();
                 let response = pay_funding_reply(deps, env, premium_fraction, sender)?;
                 Ok(response)
             }

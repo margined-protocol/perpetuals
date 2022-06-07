@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    Addr, Attribute, Deps, Env, Event, MessageInfo, Response, StdError, StdResult, Storage, SubMsg,
+    Addr, Deps, Env, Event, MessageInfo, Response, StdError, StdResult, Storage, SubMsg,
     SubMsgResponse, Uint128,
 };
 
@@ -293,7 +293,7 @@ pub fn require_not_restriction_mode(
 pub fn require_not_paused(paused: bool) -> StdResult<Response> {
     // check margin engine is not paused
     if paused {
-        return Err(StdError::generic_err("margin engine is paused"));
+        return Err(StdError::generic_err("Margin engine is paused"));
     }
 
     Ok(Response::new())
@@ -314,53 +314,75 @@ pub fn parse_swap(response: SubMsgResponse) -> StdResult<(Uint128, Uint128)> {
 
     let wasm = wasm.unwrap();
 
-    let swap = read_event("action".to_string(), wasm).value;
+    let swap = read_event("action".to_string(), wasm)?;
 
     let input: Uint128;
     let output: Uint128;
     match swap.as_str() {
         "swap_input" => {
-            let input_str = read_event("quote_asset_amount".to_string(), wasm).value;
-            let output_str = read_event("base_asset_amount".to_string(), wasm).value;
+            let input_str = read_event("quote_asset_amount".to_string(), wasm)?;
+            let output_str = read_event("base_asset_amount".to_string(), wasm)?;
 
             input = Uint128::from_str(&input_str).unwrap();
             output = Uint128::from_str(&output_str).unwrap();
         }
         "swap_output" => {
-            let input_str = read_event("base_asset_amount".to_string(), wasm).value;
-            let output_str = read_event("quote_asset_amount".to_string(), wasm).value;
+            let input_str = read_event("base_asset_amount".to_string(), wasm)?;
+            let output_str = read_event("quote_asset_amount".to_string(), wasm)?;
 
             input = Uint128::from_str(&input_str).unwrap();
             output = Uint128::from_str(&output_str).unwrap();
         }
         _ => {
-            return Err(StdError::generic_err("can't parse swap"));
+            return Err(StdError::generic_err("Cannot parse swap"));
         }
     }
 
     Ok((input, output))
 }
 
-pub fn parse_pay_funding(response: SubMsgResponse) -> (Integer, String) {
+pub fn parse_pay_funding(response: SubMsgResponse) -> StdResult<(Integer, String)> {
     // Find swap inputs and output events
     let wasm = response.events.iter().find(|&e| e.ty == "wasm");
     let wasm = wasm.unwrap();
 
-    let premium_str = read_event("premium_fraction".to_string(), wasm).value;
+    let premium_str = read_event("premium_fraction".to_string(), wasm)?;
     let premium: Integer = Integer::from_str(&premium_str).unwrap();
 
-    let sender = read_event("_contract_addr".to_string(), wasm).value;
+    let sender = read_contract_address(wasm).unwrap();
 
-    (premium, sender)
+    Ok((premium, sender))
 }
 
-fn read_event(key: String, event: &Event) -> Attribute {
-    let result = event
+// TODO: make this consistent
+fn read_contract_address(event: &Event) -> StdResult<String> {
+    let mut result = event
         .attributes
         .iter()
-        .find(|&attr| attr.key == key)
-        .unwrap();
-    result.clone()
+        .find(|&attr| attr.key == *"_contract_addr".to_string());
+
+    if result.is_none() {
+        result = event
+            .attributes
+            .iter()
+            .find(|&attr| attr.key == *"_contract_address".to_string());
+    }
+
+    let value = &result.unwrap().value;
+
+    Ok(value.to_string())
+}
+
+fn read_event(key: String, event: &Event) -> StdResult<String> {
+    let result = event.attributes.iter().find(|&attr| attr.key == key);
+
+    if result.is_none() {
+        return Err(StdError::generic_err(format!("No event found: {}", key)));
+    }
+
+    let value = &result.unwrap().value;
+
+    Ok(value.to_string())
 }
 
 // takes the side (buy|sell) and returns the direction (long|short)
