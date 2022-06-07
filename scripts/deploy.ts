@@ -1,9 +1,5 @@
 import 'dotenv/config.js'
-import {
-  deployCosmWasmContract,
-  executeCosmWasmContract,
-  queryCosmWasmContract,
-} from './helpers.js'
+import { deployContract, executeContract, queryContract } from './helpers.js'
 import { setupNodeLocal } from 'cosmwasm'
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
 import { local, testnet } from './deploy_configs.js'
@@ -42,9 +38,21 @@ async function main() {
 
   console.log(`Wallet address from seed: ${account.address}`)
 
+  /****************************************** Deploy Fee Pool Contract *****************************************/
+  console.log('Deploying Fee Pool...')
+  const feePoolContractAddress = await deployContract(
+    client,
+    account.address,
+    join(MARGINED_ARTIFACTS_PATH, 'margined_fee_pool.wasm'),
+    'margined_fee_pool',
+    {},
+    {},
+  )
+  console.log('Fee Pool Contract Address: ' + feePoolContractAddress)
+
   /****************************************** Deploy Insurance Fund Contract *****************************************/
   console.log('Deploying Insurance Fund...')
-  const insuranceFundContractAddress = await deployCosmWasmContract(
+  const insuranceFundContractAddress = await deployContract(
     client,
     account.address,
     join(MARGINED_ARTIFACTS_PATH, 'margined_insurance_fund.wasm'),
@@ -58,7 +66,7 @@ async function main() {
 
   /******************************************* Deploy Mock PriceFeed Contract *****************************************/
   console.log('Deploying Mock PriceFeed...')
-  const priceFeedAddress = await deployCosmWasmContract(
+  const priceFeedAddress = await deployContract(
     client,
     account.address,
     join(MARGINED_ARTIFACTS_PATH, 'mock_pricefeed.wasm'),
@@ -71,7 +79,7 @@ async function main() {
   /******************************************** Deploy ETH:UST vAMM Contract ******************************************/
   console.log('Deploying ETH:UST vAMM...')
   deployConfig.vammInitMsg.pricefeed = priceFeedAddress
-  const vammContractAddress = await deployCosmWasmContract(
+  const vammContractAddress = await deployContract(
     client,
     account.address,
     join(MARGINED_ARTIFACTS_PATH, 'margined_vamm.wasm'),
@@ -84,9 +92,9 @@ async function main() {
   /*************************************** Deploy Margin Engine Contract *****************************************/
   console.log('Deploy Margin Engine...')
   deployConfig.engineInitMsg.insurance_fund = insuranceFundContractAddress
-  deployConfig.engineInitMsg.fee_pool = insuranceFundContractAddress // TODO this needs its own contract
-  deployConfig.engineInitMsg.eligible_collateral = 'uusd' // TODO this needs its own contract
-  const marginEngineContractAddress = await deployCosmWasmContract(
+  deployConfig.engineInitMsg.fee_pool = feePoolContractAddress
+  deployConfig.engineInitMsg.eligible_collateral = 'ujunox' // TODO this needs its own contract
+  const marginEngineContractAddress = await deployContract(
     client,
     account.address,
     join(MARGINED_ARTIFACTS_PATH, 'margined_engine.wasm'),
@@ -98,7 +106,7 @@ async function main() {
 
   /************************************* Define Margin engine address in vAMM *************************************/
   console.log('Set Margin Engine in vAMM...')
-  await executeCosmWasmContract(client, account.address, vammContractAddress, {
+  await executeContract(client, account.address, vammContractAddress, {
     update_config: {
       margin_engine: marginEngineContractAddress,
     },
@@ -107,21 +115,16 @@ async function main() {
 
   /************************************** Register vAMM in Insurance Fund ******************************************************/
   console.log('Register vAMM in Insurance Fund...')
-  await executeCosmWasmContract(
-    client,
-    account.address,
-    insuranceFundContractAddress,
-    {
-      add_vamm: {
-        vamm: vammContractAddress,
-      },
+  await executeContract(client, account.address, insuranceFundContractAddress, {
+    add_vamm: {
+      vamm: vammContractAddress,
     },
-  )
+  })
   console.log('vAMM registered')
 
   /*********************************************** Set vAMM Open ******************************************************/
   console.log('Set vAMM Open...')
-  await executeCosmWasmContract(client, account.address, vammContractAddress, {
+  await executeContract(client, account.address, vammContractAddress, {
     set_open: {
       open: true,
     },
@@ -130,7 +133,7 @@ async function main() {
 
   /************************************************ Query vAMM state **********************************************/
   console.log('Querying vAMM state...')
-  let state = await queryCosmWasmContract(client, vammContractAddress, {
+  let state = await queryContract(client, vammContractAddress, {
     state: {},
   })
   console.log('vAMM state:\n', state)

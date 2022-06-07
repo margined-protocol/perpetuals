@@ -1,3 +1,4 @@
 .env
 /node-modules
+/tests
 package-lock.json

@@ -14,7 +14,7 @@ In order to run the scripts locally you must:
 
 ## Deploy and Run Locally
 
-1. Launch Local Terra network
+1. Launch local network
 
 2. Build artifacts
 
@@ -22,7 +22,7 @@ In order to run the scripts locally you must:
 ./scripts/build_artifacts.sh
 ```
 
-3. Deploy the contracts to LocalTerra
+3. Deploy the contracts to local cosmwasm testnet:
 
 First enter the scripts directory:
 ```
