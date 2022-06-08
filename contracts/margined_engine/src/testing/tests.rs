@@ -31,9 +31,16 @@ fn test_instantiation() {
         config,
         ConfigResponse {
             owner: info.sender,
+            insurance_fund: Addr::unchecked(INSURANCE_FUND.to_string()),
+            fee_pool: Addr::unchecked(FEE_POOL.to_string()),
             eligible_collateral: AssetInfo::Token {
                 contract_addr: Addr::unchecked(TOKEN.to_string()),
             },
+            decimals: Uint128::from(10u128.pow(9u32)),
+            initial_margin_ratio: Uint128::from(50_000_000u128),
+            maintenance_margin_ratio: Uint128::from(50_000_000u128),
+            partial_liquidation_margin_ratio: Uint128::zero(),
+            liquidation_fee: Uint128::from(100u128),
         }
     );
 
@@ -92,9 +99,16 @@ fn test_update_config() {
         config,
         ConfigResponse {
             owner: Addr::unchecked("addr0001".to_string()),
+            insurance_fund: Addr::unchecked(INSURANCE_FUND.to_string()),
+            fee_pool: Addr::unchecked(FEE_POOL.to_string()),
             eligible_collateral: AssetInfo::Token {
                 contract_addr: Addr::unchecked(TOKEN.to_string()),
             },
+            decimals: Uint128::from(10u128.pow(9u32)),
+            initial_margin_ratio: Uint128::from(50_000_000u128),
+            maintenance_margin_ratio: Uint128::from(50_000_000u128),
+            partial_liquidation_margin_ratio: Uint128::zero(),
+            liquidation_fee: Uint128::from(100u128),
         }
     );
 

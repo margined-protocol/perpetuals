@@ -131,7 +131,14 @@ pub struct MigrateMsg {}
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: Addr,
+    pub insurance_fund: Addr,
+    pub fee_pool: Addr,
     pub eligible_collateral: AssetInfo,
+    pub decimals: Uint128,
+    pub initial_margin_ratio: Uint128,
+    pub maintenance_margin_ratio: Uint128,
+    pub partial_liquidation_margin_ratio: Uint128,
+    pub liquidation_fee: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
