@@ -25,6 +25,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         decimals: config.decimals,
         initial_margin_ratio: config.initial_margin_ratio,
         maintenance_margin_ratio: config.maintenance_margin_ratio,
+        partial_liquidation_margin_ratio: config.partial_liquidation_margin_ratio,
         liquidation_fee: config.liquidation_fee,
     })
 }

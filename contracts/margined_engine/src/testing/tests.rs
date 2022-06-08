@@ -39,6 +39,7 @@ fn test_instantiation() {
             decimals: Uint128::from(10u128.pow(9u32)),
             initial_margin_ratio: Uint128::from(50_000_000u128),
             maintenance_margin_ratio: Uint128::from(50_000_000u128),
+            partial_liquidation_margin_ratio: Uint128::zero(),
             liquidation_fee: Uint128::from(100u128),
         }
     );
@@ -106,6 +107,7 @@ fn test_update_config() {
             decimals: Uint128::from(10u128.pow(9u32)),
             initial_margin_ratio: Uint128::from(50_000_000u128),
             maintenance_margin_ratio: Uint128::from(50_000_000u128),
+            partial_liquidation_margin_ratio: Uint128::zero(),
             liquidation_fee: Uint128::from(100u128),
         }
     );
