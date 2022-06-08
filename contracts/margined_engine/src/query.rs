@@ -19,7 +19,13 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 
     Ok(ConfigResponse {
         owner: config.owner,
+        insurance_fund: config.insurance_fund,
+        fee_pool: config.fee_pool,
         eligible_collateral: config.eligible_collateral,
+        decimals: config.decimals,
+        initial_margin_ratio: config.initial_margin_ratio,
+        maintenance_margin_ratio: config.maintenance_margin_ratio,
+        liquidation_fee: config.liquidation_fee,
     })
 }
 
