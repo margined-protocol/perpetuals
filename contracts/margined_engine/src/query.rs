@@ -18,9 +18,9 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config: Config = read_config(deps.storage)?;
 
     Ok(ConfigResponse {
-        owner: config.owner,
-        insurance_fund: config.insurance_fund,
-        fee_pool: config.fee_pool,
+        owner: config.owner.to_string(),
+        insurance_fund: config.insurance_fund.to_string(),
+        fee_pool: config.fee_pool.to_string(),
         eligible_collateral: config.eligible_collateral,
         decimals: config.decimals,
         initial_margin_ratio: config.initial_margin_ratio,
