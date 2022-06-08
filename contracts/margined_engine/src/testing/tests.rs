@@ -30,9 +30,9 @@ fn test_instantiation() {
     assert_eq!(
         config,
         ConfigResponse {
-            owner: info.sender.to_string(),
-            insurance_fund: INSURANCE_FUND.to_string(),
-            fee_pool: FEE_POOL.to_string(),
+            owner: info.sender,
+            insurance_fund: Addr::unchecked(INSURANCE_FUND.to_string()),
+            fee_pool: Addr::unchecked(FEE_POOL.to_string()),
             eligible_collateral: AssetInfo::Token {
                 contract_addr: Addr::unchecked(TOKEN.to_string()),
             },
@@ -98,9 +98,9 @@ fn test_update_config() {
     assert_eq!(
         config,
         ConfigResponse {
-            owner: "addr0001".to_string(),
-            insurance_fund: INSURANCE_FUND.to_string(),
-            fee_pool: FEE_POOL.to_string(),
+            owner: Addr::unchecked("addr0001".to_string()),
+            insurance_fund: Addr::unchecked(INSURANCE_FUND.to_string()),
+            fee_pool: Addr::unchecked(FEE_POOL.to_string()),
             eligible_collateral: AssetInfo::Token {
                 contract_addr: Addr::unchecked(TOKEN.to_string()),
             },
