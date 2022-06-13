@@ -1,25 +1,41 @@
 {
-  "name": "scripts",
-  "version": "1.0.0",
-  "main": "index.js",
-  "author": "Margined Protocol",
-  "license": "MIT",
-  "type": "module",
-  "scripts": {
-    "deploy": "node --loader ts-node/esm deploy.ts"
-  },
-  "dependencies": {
-    "@terra-money/terra.js": "^2.1.8",
-    "@types/glob": "^7.2.0",
-    "bignumber.js": "^9.0.1",
-    "dotenv": "^10.0.0",
-    "glob": "^7.2.0",
-    "ts-custom-error": "^3.2.0",
-    "cosmwasm": "latest"
-  },
-  "devDependencies": {
-    "ts-node": "^10.7.0",
-    "tslib": "^2.3.1",
-    "typescript": "^4.6.3"
+    "name": "scripts",
+    "version": "1.0.0",
+    "main": "index.js",
+    "author": "Margined Protocol",
+    "license": "MIT",
+    "type": "module",
+    "scripts": {
+      "deploy": "node --loader ts-node/esm deploy.ts",
+      "preinstall": "npx npm-force-resolutions"
+    },
+    "dependencies": {
+      "@terra-money/terra.js": "^2.1.8",
+      "@types/glob": "^7.2.0",
+      "bignumber.js": "^9.0.1",
+      "dotenv": "^10.0.0",
+      "glob": "^7.2.0",
+      "ts-custom-error": "^3.2.0",
+      "cosmwasm": "^1.1.1"
+    },
+    "devDependencies": {
+      "ts-node": "^10.7.0",
+      "tslib": "^2.3.1",
+      "typescript": "^4.6.3"
+    },
+    "resolutions": {
+        "**/@cosmjs/tendermint-rpc": "0.28.4",
+        "**/@cosmjs/encoding": "0.28.4",
+        "**/@cosmjs/utils": "0.28.4",
+        "**/@cosmjs/stream": "0.28.4",
+        "**/@cosmjs/math": "0.28.4",
+        "**/@cosmjs/amino": "0.28.4",
+        "**/@cosmjs/proto-signing": "0.28.4",
+        "**/@cosmjs/crypto": "0.28.4",
+        "**/@cosmjs/cosmwasm-stargate": "0.28.4",
+        "**/@cosmjs/faucet": "0.28.4",
+        "**/@cosmjs/cli": "0.28.4",
+        "**/@cosmjs/stargate": "0.28.4",
+        "**/@cosmjs/ledger-amino": "0.28.4"
+      }
   }
-}
