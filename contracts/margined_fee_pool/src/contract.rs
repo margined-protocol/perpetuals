@@ -7,10 +7,10 @@ use crate::{
 };
 
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
 use cw2::set_contract_version;
-use margined_perp::margined_fee_pool::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use margined_perp::margined_fee_pool::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 /// Contract name that is used for migration.
 const CONTRACT_NAME: &str = "fee-pool";

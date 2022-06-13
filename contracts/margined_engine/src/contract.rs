@@ -6,7 +6,7 @@ use cw2::set_contract_version;
 use margined_common::validate::{
     validate_address, validate_decimal_places, validate_eligible_collateral, validate_ratio,
 };
-use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
 use crate::{
