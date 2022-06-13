@@ -276,7 +276,19 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
-    // No state migrations performed, just returned a Response
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
+    let ver = cw2::get_contract_version(deps.storage)?;
+    // ensure we are migrating from an allowed contract
+    if ver.contract.as_str() != CONTRACT_NAME {
+        return Err(StdError::generic_err("Can only upgrade from same type"));
+    }
+    // note: better to do proper semver compare, but string compare *usually* works
+    if ver.version.as_str() >= CONTRACT_VERSION {
+        return Err(StdError::generic_err("Cannot upgrade from a newer version"));
+    }
+
+    // set the new version
+    cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
     Ok(Response::default())
 }
