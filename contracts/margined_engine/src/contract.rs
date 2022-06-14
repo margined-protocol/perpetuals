@@ -6,7 +6,7 @@ use cw2::set_contract_version;
 use margined_common::validate::{
     validate_address, validate_decimal_places, validate_eligible_collateral, validate_ratio,
 };
-use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
 use crate::{
@@ -273,10 +273,4 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
             ))),
         },
     }
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
-    // No state migrations performed, just returned a Response
-    Ok(Response::default())
 }
