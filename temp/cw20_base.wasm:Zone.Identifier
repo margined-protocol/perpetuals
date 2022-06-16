@@ -1,0 +1,4 @@
+[ZoneTransfer]
+ZoneId=3
+ReferrerUrl=https://github.com/CosmWasm/cw-plus/releases?page=2
+HostUrl=https://objects.githubusercontent.com/github-production-release-asset-2e65be/272626471/70d2e85d-b046-4185-8e1c-d63b75645c39?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIWNJYAX4CSVEH53A%2F20220616%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220616T141044Z&X-Amz-Expires=300&X-Amz-Signature=58b7562d40ea10b0dd53233eaac97131964528353b54439b988db64b5d7a6e63&X-Amz-SignedHeaders=host&actor_id=100441519&key_id=0&repo_id=272626471&response-content-disposition=attachment%3B%20filename%3Dcw20_base.wasm&response-content-type=application%2Foctet-stream

@@ -17,6 +17,7 @@ const mnemonic =
   'clip hire initial neck maid actor venue client foam budget lock catalog sweet steak waste crater broccoli pipe steak sister coyote moment obvious choose'
 
 const MARGINED_ARTIFACTS_PATH = '../artifacts'
+const MARGINED_CW20_PATH = '../temp'
 
 // main
 
@@ -166,6 +167,22 @@ async function main() {
     state: {},
   })
   console.log('vAMM state:\n', state)
+
+  ///
+  /// Deploy CW20 Token Contract
+  ///
+  console.log('Deploy Margined CW20...')
+  deployConfig.cw20InitMsg.initial_balances.push({address: insuranceFundContractAddress, amount: 1000000000})
+  deployConfig.cw20InitMsg.initial_balances.push({address: marginEngineContractAddress, amount: 100000000000})
+  const marginCW20ContractAddress = await deployContract(
+    client,
+    account.address,
+    join(MARGINED_CW20_PATH, 'cw20_base.wasm'),
+    'margined_engine',
+    deployConfig.cw20InitMsg,
+    {},
+  )
+  console.log('Margin CW20 Address: ' + marginCW20ContractAddress)
 }
 
 main().catch(console.log)
