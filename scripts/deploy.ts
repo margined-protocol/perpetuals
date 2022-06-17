@@ -4,7 +4,6 @@ import { setupNodeLocal } from 'cosmwasm'
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
 import { local, testnet } from './deploy_configs.js'
 import { join } from 'path'
-import { SimplePublicKey } from '@terra-money/terra.js'
 
 // consts
 
@@ -128,7 +127,7 @@ async function main() {
     client,
     account.address,
     join(MARGINED_CW20_PATH, 'cw20_base.wasm'),
-    'margined_engine',
+    'margined_cw20',
     deployConfig.cw20InitMsg,
     {},
   )

@@ -1,6 +1,6 @@
 type cw20coin = {
   address: string,
-  amount: number,
+  amount: string,
 }
 
 // Init Messages
