@@ -4,6 +4,7 @@ import { setupNodeLocal } from 'cosmwasm'
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
 import { local, testnet } from './deploy_configs.js'
 import { join } from 'path'
+import { SimplePublicKey } from '@terra-money/terra.js'
 
 // consts
 
@@ -115,6 +116,24 @@ async function main() {
   )
   console.log('Margin Engine Address: ' + marginEngineContractAddress)
 
+  ///
+  /// Deploy CW20 Token Contract
+  ///
+  console.log('Deploy Margined CW20...')
+  deployConfig.cw20InitMsg.initial_balances.push({
+    address: insuranceFundContractAddress,
+    amount: '1000000000',
+  })
+  const marginCW20ContractAddress = await deployContract(
+    client,
+    account.address,
+    join(MARGINED_CW20_PATH, 'cw20_base.wasm'),
+    'margined_engine',
+    deployConfig.cw20InitMsg,
+    {},
+  )
+  console.log('Margin CW20 Address: ' + marginCW20ContractAddress)
+
   // Define Margin engine address in vAMM
   console.log('Set Margin Engine in vAMM...')
   await executeContract(client, account.address, vammContractAddress, {
@@ -167,22 +186,6 @@ async function main() {
     state: {},
   })
   console.log('vAMM state:\n', state)
-
-  ///
-  /// Deploy CW20 Token Contract
-  ///
-  console.log('Deploy Margined CW20...')
-  deployConfig.cw20InitMsg.initial_balances.push({address: insuranceFundContractAddress, amount: 1000000000})
-  deployConfig.cw20InitMsg.initial_balances.push({address: marginEngineContractAddress, amount: 100000000000})
-  const marginCW20ContractAddress = await deployContract(
-    client,
-    account.address,
-    join(MARGINED_CW20_PATH, 'cw20_base.wasm'),
-    'margined_engine',
-    deployConfig.cw20InitMsg,
-    {},
-  )
-  console.log('Margin CW20 Address: ' + marginCW20ContractAddress)
 }
 
 main().catch(console.log)
