@@ -36,6 +36,8 @@ async function main() {
     deployConfig = local
   }
 
+  console.log(deployConfig)
+
   console.log(`Wallet address from seed: ${account.address}`)
 
   ///
@@ -103,7 +105,7 @@ async function main() {
   console.log('Deploy Margin Engine...')
   deployConfig.engineInitMsg.insurance_fund = insuranceFundContractAddress
   deployConfig.engineInitMsg.fee_pool = feePoolContractAddress
-  deployConfig.engineInitMsg.eligible_collateral = 'ujunox' // TODO this needs its own contract
+  deployConfig.engineInitMsg.eligible_collateral = 'ujunox'
   const marginEngineContractAddress = await deployContract(
     client,
     account.address,
