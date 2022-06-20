@@ -31,6 +31,8 @@ export const testnet: Config = {
     symbol: 'musd',
     decimals: 6,
     initial_balances: [],
+    mint: undefined,
+    marketing: undefined,
   },
 }
 
@@ -67,5 +69,7 @@ export const local: Config = {
     symbol: 'musd',
     decimals: 6,
     initial_balances: [],
+    mint: undefined,
+    marketing: undefined,
   },
 }

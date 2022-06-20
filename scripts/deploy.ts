@@ -45,8 +45,8 @@ async function main() {
 const url = 'https://github.com/CosmWasm/cw-plus/releases/download/v0.10.2/cw20_base.wasm';
   
 https.get(url,(res) => {
-    // Image will be stored at this path
-    const filePath = fs.createWriteStream(`${path.join(path.resolve(), '../')}/cw20_base.wasm`);
+    // Bytecode will be stored at this path
+    const filePath = fs.createWriteStream(`${path.join(path.resolve(), '../artifacts')}/cw20_base.wasm`);
     res.pipe(filePath);
     filePath.on('finish',() => {
         filePath.close();
@@ -162,7 +162,7 @@ https.get(url,(res) => {
       margin_engine: marginEngineContractAddress,
     },
   })
-  console.log('margin engine set in vAMM')
+  console.log('Margin Engine set in vAMM')
 
   ///
   /// Register vAMM in Insurance Fund
