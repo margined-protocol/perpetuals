@@ -26,7 +26,16 @@ export const testnet: Config = {
     spread_ratio: '0',
     fluctuation_limit_ratio: '0',
   },
+  cw20InitMsg: {
+    name: 'margined_usd',
+    symbol: 'musd',
+    decimals: 6,
+    initial_balances: [],
+    mint: undefined,
+    marketing: undefined,
+  },
 }
+
 export const local: Config = {
   initialAssets: [],
   insuranceFundInitMsg: {},
@@ -54,5 +63,13 @@ export const local: Config = {
     toll_ratio: '0',
     spread_ratio: '0',
     fluctuation_limit_ratio: '0',
+  },
+  cw20InitMsg: {
+    name: 'margined_usd',
+    symbol: 'musd',
+    decimals: 6,
+    initial_balances: [],
+    mint: undefined,
+    marketing: undefined,
   },
 }

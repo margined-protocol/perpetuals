@@ -1,3 +1,8 @@
+type cw20coin = {
+  address: string,
+  amount: string,
+}
+
 // Init Messages
 type InsuranceFundInitMsg = {}
 
@@ -30,10 +35,20 @@ type VammInitMsg = {
   fluctuation_limit_ratio: string
 }
 
+type cw20InitMsg = {
+  name: string
+  symbol: string
+  decimals: number
+  initial_balances: Array<cw20coin>
+  mint?: string
+  marketing?: string
+}
+
 interface Config {
   insuranceFundInitMsg: InsuranceFundInitMsg
   engineInitMsg: EngineInitMsg
   priceFeedInitMsg: PriceFeedInitMsg
   vammInitMsg: VammInitMsg
+  cw20InitMsg: cw20InitMsg
   initialAssets: Asset[]
 }
