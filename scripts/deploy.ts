@@ -4,7 +4,10 @@ import { setupNodeLocal } from 'cosmwasm'
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
 import { local, testnet } from './deploy_configs.js'
 import { join } from 'path'
-import { existsSync } from 'fs'
+import fs from 'fs'
+import https from 'https'
+import path from 'path'
+
 
 // consts
 
@@ -18,7 +21,7 @@ const mnemonic =
   'clip hire initial neck maid actor venue client foam budget lock catalog sweet steak waste crater broccoli pipe steak sister coyote moment obvious choose'
 
 const MARGINED_ARTIFACTS_PATH = '../artifacts'
-const MARGINED_CW20_PATH = '../artifacts/cw20_base.wasm'
+const MARGINED_CW20_PATH = '../cw20_base.wasm'
 
 // main
 
@@ -38,29 +41,19 @@ async function main() {
     deployConfig = local
   }
 
-  /*
-  //download 1
-  function downloadUsingAnchorElement() {
-    const anchor = document.createElement("a");
-    anchor.href = 'https://github.com/CosmWasm/cw-plus/releases/download/v0.10.2/cw20_base.wasm';
-    anchor.download = 'cw20_base.wasm';
-    
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-  }
+// URL of the image
+const url = 'https://github.com/CosmWasm/cw-plus/releases/download/v0.10.2/cw20_base.wasm';
+  
+https.get(url,(res) => {
+    // Image will be stored at this path
+    const filePath = fs.createWriteStream(`${path.join(path.resolve(), '../')}/cw20_base.wasm`);
+    res.pipe(filePath);
+    filePath.on('finish',() => {
+        filePath.close();
+        console.log('Downloaded WASM bytecode'); 
+    })
+})
 
-  //download 2
-fetch(url).then(response => response.blob()).then(blob => {
-    // Use the blob here...
-    const blobUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = "data.png";
-    document.body.appendChild(link);
-    link.click();
-});
-*/
   console.log(`Wallet address from seed: ${account.address}`)
 
   ///
@@ -142,7 +135,7 @@ fetch(url).then(response => response.blob()).then(blob => {
   ///
   /// Deploy CW20 Token Contract
   ///
-  if (existsSync(MARGINED_CW20_PATH)) {
+  if (fs.existsSync(MARGINED_CW20_PATH)) {
     console.log('Margined CW20 bytecode has been downloaded')
     console.log('Deploy Margined CW20...')
     deployConfig.cw20InitMsg.initial_balances.push({
