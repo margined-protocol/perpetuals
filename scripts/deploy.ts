@@ -21,7 +21,7 @@ const mnemonic =
   'clip hire initial neck maid actor venue client foam budget lock catalog sweet steak waste crater broccoli pipe steak sister coyote moment obvious choose'
 
 const MARGINED_ARTIFACTS_PATH = '../artifacts'
-const MARGINED_CW20_PATH = '../cw20_base.wasm'
+const MARGINED_CW20_PATH = '../artifacts/cw20_base.wasm'
 
 // main
 
@@ -135,14 +135,16 @@ https.get(url,(res) => {
   ///
   /// Deploy CW20 Token Contract
   ///
+  let marginCW20ContractAddress = ''
   if (fs.existsSync(MARGINED_CW20_PATH)) {
-    console.log('Margined CW20 bytecode has been downloaded')
     console.log('Deploy Margined CW20...')
+    // add starting balances here
     deployConfig.cw20InitMsg.initial_balances.push({
       address: insuranceFundContractAddress,
       amount: '1000000000',
     })
-    const marginCW20ContractAddress = await deployContract(
+    deployConfig.cw20InitMsg.mint = account.address
+    marginCW20ContractAddress = await deployContract(
       client,
       account.address,
       join(MARGINED_ARTIFACTS_PATH, 'cw20_base.wasm'),
@@ -163,6 +165,17 @@ https.get(url,(res) => {
     },
   })
   console.log('Margin Engine set in vAMM')
+
+  ///
+  /// Define the token address in the Margine Engine
+  ///
+  console.log('Set Eligible Collateral in Margin Engine...')
+  await executeContract(client, account.address, marginEngineContractAddress, {
+    update_config: {
+      eligible_collateral: marginCW20ContractAddress,
+    },
+  })
+  console.log('Margin Engine set in vAMM')  
 
   ///
   /// Register vAMM in Insurance Fund

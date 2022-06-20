@@ -32,7 +32,7 @@ export const testnet: Config = {
     decimals: 6,
     initial_balances: [],
     mint: undefined,
-    marketing: undefined,
+    marketing: '',
   },
 }
 
@@ -70,6 +70,6 @@ export const local: Config = {
     decimals: 6,
     initial_balances: [],
     mint: undefined,
-    marketing: undefined,
+    marketing: '',
   },
 }
