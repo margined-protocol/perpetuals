@@ -427,7 +427,7 @@ pub fn liquidate_reply(
     let swap = read_tmp_swap(deps.storage)?;
     let liquidator = read_tmp_liquidator(deps.storage)?;
 
-    let mut position = get_position(
+    let position = get_position(
         env.clone(),
         deps.storage,
         &swap.vamm,
@@ -487,10 +487,7 @@ pub fn liquidate_reply(
         .unwrap(),
     );
 
-    position = clear_position(env.clone(), position)?;
-
-    store_position(deps.storage, &position)?;
-
+    remove_position(deps.storage, &position);
     remove_tmp_swap(deps.storage);
     remove_tmp_liquidator(deps.storage);
 
