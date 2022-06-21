@@ -113,7 +113,11 @@ async function main() {
       initial_balances: [
         {
           address: account.address,
-          amount: '1000000000000000000',
+          amount: '1000000000000000000', // 1mn
+        },
+        {
+          address: insuranceFundContractAddress,
+          amount: '5000000000', // 5,000
         },
       ],
       mint: {
