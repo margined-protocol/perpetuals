@@ -8,7 +8,6 @@ import fs from 'fs'
 import https from 'https'
 import path from 'path'
 
-
 // consts
 
 const config = {
@@ -41,18 +40,21 @@ async function main() {
     deployConfig = local
   }
 
-// URL of the image
-const url = 'https://github.com/CosmWasm/cw-plus/releases/download/v0.10.2/cw20_base.wasm';
-  
-https.get(url,(res) => {
+  // URL of the image
+  const url =
+    'https://github.com/CosmWasm/cw-plus/releases/download/v0.10.2/cw20_base.wasm'
+
+  https.get(url, (res) => {
     // Bytecode will be stored at this path
-    const filePath = fs.createWriteStream(`${path.join(path.resolve(), '../artifacts')}/cw20_base.wasm`);
-    res.pipe(filePath);
-    filePath.on('finish',() => {
-        filePath.close();
-        console.log('Downloaded WASM bytecode'); 
+    const filePath = fs.createWriteStream(
+      `${path.join(path.resolve(), '../artifacts')}/cw20_base.wasm`,
+    )
+    res.pipe(filePath)
+    filePath.on('finish', () => {
+      filePath.close()
+      console.log('Downloaded WASM bytecode')
     })
-})
+  })
 
   console.log(`Wallet address from seed: ${account.address}`)
 
@@ -121,7 +123,7 @@ https.get(url,(res) => {
   console.log('Deploy Margin Engine...')
   deployConfig.engineInitMsg.insurance_fund = insuranceFundContractAddress
   deployConfig.engineInitMsg.fee_pool = feePoolContractAddress
-  deployConfig.engineInitMsg.eligible_collateral = 'ujunox' // TODO this needs its own contract
+  deployConfig.engineInitMsg.eligible_collateral = 'ujunox'
   const marginEngineContractAddress = await deployContract(
     client,
     account.address,

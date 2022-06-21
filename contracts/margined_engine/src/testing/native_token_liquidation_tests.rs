@@ -506,10 +506,15 @@ fn test_long_position_complete_liquidation() {
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 
-    let position = engine
+    let err = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
-        .unwrap();
-    assert_eq!(position.size, Integer::zero());
+        .unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "Querier contract error: Generic error: No position found".to_string()
+        },
+        err
+    );
 
     let carol_balance = router.wrap().query_balance(&carol, "uusd").unwrap().amount;
     assert_eq!(carol_balance, Uint128::from(2_801_120u128));
@@ -706,11 +711,15 @@ fn test_short_position_complete_liquidation() {
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 
-    let position = engine
+    let err = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
-        .unwrap();
-    assert_eq!(position.size, Integer::zero());
-
+        .unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "Querier contract error: Generic error: No position found".to_string()
+        },
+        err
+    );
     let carol_balance = router.wrap().query_balance(&carol, "uusd").unwrap().amount;
     assert_eq!(carol_balance, Uint128::from(2_793_670u128));
 
