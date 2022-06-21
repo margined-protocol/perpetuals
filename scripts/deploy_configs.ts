@@ -28,11 +28,11 @@ export const testnet: Config = {
   },
   cw20InitMsg: {
     name: 'margined_usd',
-    symbol: 'musd',
+    symbol: 'USDm',
     decimals: 6,
     initial_balances: [],
     mint: undefined,
-    marketing: '',
+    marketing: undefined,
   },
 }
 
@@ -66,10 +66,10 @@ export const local: Config = {
   },
   cw20InitMsg: {
     name: 'margined_usd',
-    symbol: 'musd',
+    symbol: 'USDm',
     decimals: 6,
     initial_balances: [],
     mint: undefined,
-    marketing: '',
+    marketing: undefined,
   },
 }

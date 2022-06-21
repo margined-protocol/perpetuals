@@ -7,7 +7,7 @@ import { join } from 'path'
 import fs from 'fs'
 import https from 'https'
 import path from 'path'
-
+import axios from "axios";
 
 // consts
 
@@ -24,7 +24,6 @@ const MARGINED_ARTIFACTS_PATH = '../artifacts'
 const MARGINED_CW20_PATH = '../artifacts/cw20_base.wasm'
 
 // main
-
 async function main() {
   const client = await setupNodeLocal(config, mnemonic)
   const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
@@ -43,16 +42,21 @@ async function main() {
 
 // URL of the image
 const url = 'https://github.com/CosmWasm/cw-plus/releases/download/v0.10.2/cw20_base.wasm';
-  
-https.get(url,(res) => {
-    // Bytecode will be stored at this path
-    const filePath = fs.createWriteStream(`${path.join(path.resolve(), '../artifacts')}/cw20_base.wasm`);
-    res.pipe(filePath);
-    filePath.on('finish',() => {
-        filePath.close();
-        console.log('Downloaded WASM bytecode'); 
-    })
-})
+
+if (fs.existsSync(MARGINED_CW20_PATH)) {
+  console.log('WASM bytecode not found, downloading now...')
+  axios({
+    method: 'get',
+    url: url,
+    responseType: 'stream'
+  })
+    .then(function (response) {
+      response.data.pipe(fs.createWriteStream('../artifacts/cw20_base.wasm'))
+    });
+  console.log('WASM bytecode downloaded')
+} else {
+  console.log('WASM bytecode already downloaded')
+}
 
   console.log(`Wallet address from seed: ${account.address}`)
 

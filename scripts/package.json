@@ -11,6 +11,7 @@
   "dependencies": {
     "@terra-money/terra.js": "^2.1.8",
     "@types/glob": "^7.2.0",
+    "axios": "0.27.2",
     "bignumber.js": "^9.0.1",
     "cosmwasm": "latest",
     "dotenv": "^10.0.0",
