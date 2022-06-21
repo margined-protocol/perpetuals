@@ -26,6 +26,17 @@ export const testnet: Config = {
     spread_ratio: '0',
     fluctuation_limit_ratio: '0',
   },
+<<<<<<< HEAD
+=======
+  cw20InitMsg: {
+    name: 'margined_usd',
+    symbol: 'USDm',
+    decimals: 6,
+    initial_balances: [],
+    mint: undefined,
+    marketing: undefined,
+  },
+>>>>>>> 7a5c091e6731aa285b4ddae9df223458613a0100
 }
 
 export const local: Config = {
@@ -56,4 +67,15 @@ export const local: Config = {
     spread_ratio: '0',
     fluctuation_limit_ratio: '0',
   },
+<<<<<<< HEAD
+=======
+  cw20InitMsg: {
+    name: 'margined_usd',
+    symbol: 'USDm',
+    decimals: 6,
+    initial_balances: [],
+    mint: undefined,
+    marketing: undefined,
+  },
+>>>>>>> 7a5c091e6731aa285b4ddae9df223458613a0100
 }

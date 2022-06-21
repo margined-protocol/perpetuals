@@ -19,7 +19,6 @@ const mnemonic =
 const MARGINED_ARTIFACTS_PATH = '../artifacts'
 
 // main
-
 async function main() {
   const client = await setupNodeLocal(config, mnemonic)
   const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
