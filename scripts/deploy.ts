@@ -4,9 +4,6 @@ import { setupNodeLocal } from 'cosmwasm'
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
 import { local, testnet } from './deploy_configs.js'
 import { join } from 'path'
-import fs from 'fs'
-import https from 'https'
-import path from 'path'
 
 // consts
 
@@ -20,10 +17,8 @@ const mnemonic =
   'clip hire initial neck maid actor venue client foam budget lock catalog sweet steak waste crater broccoli pipe steak sister coyote moment obvious choose'
 
 const MARGINED_ARTIFACTS_PATH = '../artifacts'
-const MARGINED_CW20_PATH = '../cw20_base.wasm'
 
 // main
-
 async function main() {
   const client = await setupNodeLocal(config, mnemonic)
   const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
@@ -39,22 +34,6 @@ async function main() {
   } else {
     deployConfig = local
   }
-
-  // URL of the image
-  const url =
-    'https://github.com/CosmWasm/cw-plus/releases/download/v0.10.2/cw20_base.wasm'
-
-  https.get(url, (res) => {
-    // Bytecode will be stored at this path
-    const filePath = fs.createWriteStream(
-      `${path.join(path.resolve(), '../artifacts')}/cw20_base.wasm`,
-    )
-    res.pipe(filePath)
-    filePath.on('finish', () => {
-      filePath.close()
-      console.log('Downloaded WASM bytecode')
-    })
-  })
 
   console.log(`Wallet address from seed: ${account.address}`)
 
@@ -118,8 +97,41 @@ async function main() {
   console.log('ETH:UST vAMM Address: ' + vammContractAddress)
 
   ///
+  /// Deploy CW20 Token Contract
+  ///
+  console.log('Deploy Margined CW20...')
+
+  let marginCW20ContractAddress = await deployContract(
+    client,
+    account.address,
+    join(MARGINED_ARTIFACTS_PATH, 'cw20_base.wasm'),
+    'margined_cw20',
+    {
+      name: 'Margined USD',
+      symbol: 'USDm',
+      decimals: 6,
+      initial_balances: [
+        {
+          address: account.address,
+          amount: '1000000000000000000', // 1mn
+        },
+        {
+          address: insuranceFundContractAddress,
+          amount: '5000000000', // 5,000
+        },
+      ],
+      mint: {
+        minter: account.address,
+      },
+    },
+    {},
+  )
+  console.log('Margin CW20 Address: ' + marginCW20ContractAddress)
+
+  ///
   /// Deploy Margin Engine Contract
   ///
+
   console.log('Deploy Margin Engine...')
   deployConfig.engineInitMsg.insurance_fund = insuranceFundContractAddress
   deployConfig.engineInitMsg.fee_pool = feePoolContractAddress
@@ -134,34 +146,22 @@ async function main() {
   )
   console.log('Margin Engine Address: ' + marginEngineContractAddress)
 
-  ///
-  /// Deploy CW20 Token Contract
-  ///
-  if (fs.existsSync(MARGINED_CW20_PATH)) {
-    console.log('Margined CW20 bytecode has been downloaded')
-    console.log('Deploy Margined CW20...')
-    deployConfig.cw20InitMsg.initial_balances.push({
-      address: insuranceFundContractAddress,
-      amount: '1000000000',
-    })
-    const marginCW20ContractAddress = await deployContract(
-      client,
-      account.address,
-      join(MARGINED_ARTIFACTS_PATH, 'cw20_base.wasm'),
-      'margined_cw20',
-      deployConfig.cw20InitMsg,
-      {},
-    )
-    console.log('Margin CW20 Address: ' + marginCW20ContractAddress)
-  } else {
-    console.log('Margined CW20 bytecode not found')
-  }
-
   // Define Margin engine address in vAMM
   console.log('Set Margin Engine in vAMM...')
   await executeContract(client, account.address, vammContractAddress, {
     update_config: {
       margin_engine: marginEngineContractAddress,
+    },
+  })
+  console.log('Margin Engine set in vAMM')
+
+  ///
+  /// Define the token address in the Margin Engine
+  ///
+  console.log('Set Eligible Collateral in Margin Engine...')
+  await executeContract(client, account.address, marginEngineContractAddress, {
+    update_config: {
+      eligible_collateral: marginCW20ContractAddress,
     },
   })
   console.log('Margin Engine set in vAMM')
