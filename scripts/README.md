@@ -18,11 +18,13 @@ In order to run the scripts locally you must:
 
 2. Build artifacts
 
+**Note:** run using sudo so that additional files can be written to the `artifacts` directory created by docker.
+
 ```
-./scripts/build_artifacts.sh
+sudo ./scripts/build_artifacts.sh
 ```
 
-3. Deploy the contracts to local cosmwasm testnet:
+1. Deploy the contracts to local cosmwasm testnet:
 
 First enter the scripts directory:
 ```

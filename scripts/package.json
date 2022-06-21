@@ -15,7 +15,6 @@
     "cosmwasm": "latest",
     "dotenv": "^10.0.0",
     "glob": "^7.2.0",
-    "node-fetch": "3.2.6",
     "ts-custom-error": "^3.2.0"
   },
   "devDependencies": {
