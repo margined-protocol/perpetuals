@@ -696,7 +696,7 @@ fn test_swap_output_short_and_indivisable() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::OutputPrice {
+        QueryMsg::OutputAmount {
             direction: Direction::AddToAmm,
             amount: to_decimals(5),
         },
@@ -772,7 +772,7 @@ fn test_swap_output_long_and_indivisable() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::OutputPrice {
+        QueryMsg::OutputAmount {
             direction: Direction::RemoveFromAmm,
             amount: to_decimals(5),
         },
@@ -849,7 +849,7 @@ fn test_swap_output_long_short_same_size_should_get_diff_base_asset_amount() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::OutputPrice {
+        QueryMsg::OutputAmount {
             direction: Direction::RemoveFromAmm,
             amount: to_decimals(10),
         },
@@ -878,7 +878,7 @@ fn test_swap_output_long_short_same_size_should_get_diff_base_asset_amount() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::OutputPrice {
+        QueryMsg::OutputAmount {
             direction: Direction::AddToAmm,
             amount: to_decimals(10),
         },

@@ -72,6 +72,14 @@ pub enum QueryMsg {
         direction: Direction,
         amount: Uint128,
     },
+    InputAmount {
+        direction: Direction,
+        amount: Uint128,
+    },
+    OutputAmount {
+        direction: Direction,
+        amount: Uint128,
+    },
     InputTwap {
         direction: Direction,
         amount: Uint128,
@@ -80,8 +88,6 @@ pub enum QueryMsg {
         direction: Direction,
         amount: Uint128,
     },
-    // UnderlyingPrice {},
-    // UnderlyingTwapPrice {},
     SpotPrice {},
     TwapPrice {
         interval: u64,
@@ -89,7 +95,6 @@ pub enum QueryMsg {
     CalcFee {
         quote_asset_amount: Uint128,
     },
-    // IsOverFluctuationLimit{},
     IsOverSpreadLimit {},
     ReserveSnapshotHeight {},
     ReserveSnapshots {

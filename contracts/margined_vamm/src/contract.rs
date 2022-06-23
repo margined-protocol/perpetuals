@@ -11,8 +11,8 @@ use crate::error::ContractError;
 use crate::{
     handle::{set_open, settle_funding, swap_input, swap_output, update_config},
     query::{
-        query_calc_fee, query_config, query_input_price, query_input_twap,
-        query_is_over_spread_limit, query_output_price, query_output_twap,
+        query_calc_fee, query_config, query_input_amount, query_input_price, query_input_twap,
+        query_is_over_spread_limit, query_output_amount, query_output_price, query_output_twap,
         query_reserve_snapshot_height, query_reserve_snapshots, query_spot_price, query_state,
         query_twap_price,
     },
@@ -158,6 +158,12 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         }
         QueryMsg::OutputPrice { direction, amount } => {
             to_binary(&query_output_price(deps, direction, amount)?)
+        }
+        QueryMsg::InputAmount { direction, amount } => {
+            to_binary(&query_input_amount(deps, direction, amount)?)
+        }
+        QueryMsg::OutputAmount { direction, amount } => {
+            to_binary(&query_output_amount(deps, direction, amount)?)
         }
         QueryMsg::InputTwap { direction, amount } => {
             to_binary(&query_input_twap(deps, env, direction, amount)?)

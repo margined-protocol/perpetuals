@@ -10,7 +10,7 @@ use crate::{
         REVERSE_POSITION_REPLY_ID,
     },
     messages::{execute_transfer_from, withdraw},
-    querier::query_vamm_output_price,
+    querier::query_vamm_output_amount,
     query::{query_free_collateral, query_margin_ratio},
     state::{
         read_config, read_position, read_state, store_config, store_position, store_sent_funds,
@@ -561,7 +561,7 @@ fn partial_liquidation(
         .checked_div(config.decimals)
         .unwrap();
 
-    let current_notional = query_vamm_output_price(
+    let current_notional = query_vamm_output_amount(
         &deps.as_ref(),
         vamm.to_string(),
         position.direction.clone(),

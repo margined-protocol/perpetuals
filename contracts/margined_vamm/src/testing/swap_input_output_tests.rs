@@ -40,7 +40,7 @@ fn test_use_getoutputprice_use_to_swapinput_long() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::OutputPrice {
+        QueryMsg::OutputAmount {
             direction: Direction::RemoveFromAmm,
             amount: to_decimals(10),
         },
@@ -119,7 +119,7 @@ fn test_use_getoutputprice_use_to_swapinput_short() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::OutputPrice {
+        QueryMsg::OutputAmount {
             direction: Direction::AddToAmm,
             amount: to_decimals(10),
         },
@@ -198,7 +198,7 @@ fn test_use_getinputprice_long_use_to_swapoutput() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::InputPrice {
+        QueryMsg::InputAmount {
             direction: Direction::AddToAmm,
             amount: to_decimals(10),
         },
@@ -276,7 +276,7 @@ fn test_use_getinputprice_short_use_to_swapoutput() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::InputPrice {
+        QueryMsg::InputAmount {
             direction: Direction::RemoveFromAmm,
             amount: to_decimals(10),
         },
