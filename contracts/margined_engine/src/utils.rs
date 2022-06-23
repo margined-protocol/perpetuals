@@ -17,7 +17,7 @@ use margined_perp::margined_vamm::Direction;
 use crate::{
     messages::execute_insurance_fund_withdrawal,
     querier::{
-        query_insurance_is_vamm, query_vamm_config, query_vamm_output_price,
+        query_insurance_is_vamm, query_vamm_config, query_vamm_output_amount,
         query_vamm_output_twap, query_vamm_state,
     },
     query::query_cumulative_premium_fraction,
@@ -132,7 +132,7 @@ pub fn get_position_notional_unrealized_pnl(
                 )?;
             }
             PnlCalcOption::SpotPrice => {
-                output_notional = query_vamm_output_price(
+                output_notional = query_vamm_output_amount(
                     &deps,
                     position.vamm.to_string(),
                     position.direction.clone(),

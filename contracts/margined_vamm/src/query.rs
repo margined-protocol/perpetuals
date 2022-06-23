@@ -51,9 +51,10 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
 
 /// Queries input price
 pub fn query_input_price(deps: Deps, direction: Direction, amount: Uint128) -> StdResult<Uint128> {
+    let config: Config = read_config(deps.storage)?;
     let state: State = read_state(deps.storage)?;
 
-    let res = get_input_price_with_reserves(
+    let output = get_input_price_with_reserves(
         deps,
         &direction,
         amount,
@@ -61,14 +62,17 @@ pub fn query_input_price(deps: Deps, direction: Direction, amount: Uint128) -> S
         state.base_asset_reserve,
     )?;
 
-    Ok(res)
+    let price = amount.checked_mul(config.decimals)?.checked_div(output)?;
+
+    Ok(price)
 }
 
 /// Queries output price
 pub fn query_output_price(deps: Deps, direction: Direction, amount: Uint128) -> StdResult<Uint128> {
+    let config: Config = read_config(deps.storage)?;
     let state: State = read_state(deps.storage)?;
 
-    let res = get_output_price_with_reserves(
+    let output = get_output_price_with_reserves(
         deps,
         &direction,
         amount,
@@ -76,7 +80,43 @@ pub fn query_output_price(deps: Deps, direction: Direction, amount: Uint128) -> 
         state.base_asset_reserve,
     )?;
 
-    Ok(res)
+    let price = amount.checked_mul(config.decimals)?.checked_div(output)?;
+
+    Ok(price)
+}
+
+/// Queries input amount
+pub fn query_input_amount(deps: Deps, direction: Direction, amount: Uint128) -> StdResult<Uint128> {
+    let state: State = read_state(deps.storage)?;
+
+    let output = get_input_price_with_reserves(
+        deps,
+        &direction,
+        amount,
+        state.quote_asset_reserve,
+        state.base_asset_reserve,
+    )?;
+
+    Ok(output)
+}
+
+/// Queries output amount
+pub fn query_output_amount(
+    deps: Deps,
+    direction: Direction,
+    amount: Uint128,
+) -> StdResult<Uint128> {
+    let state: State = read_state(deps.storage)?;
+
+    let output = get_output_price_with_reserves(
+        deps,
+        &direction,
+        amount,
+        state.quote_asset_reserve,
+        state.base_asset_reserve,
+    )?;
+
+    Ok(output)
 }
 
 /// Queries spot price of the vAMM

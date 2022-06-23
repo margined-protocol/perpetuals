@@ -26,6 +26,8 @@ fn test_get_input_add_to_amm() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     // getInputPrice, add to amm
+    // amount = 100(quote asset reserved) - (100 * 1000) / (1000 + 50) = 4.7619...
+    // price = 50 / 4.7619 = 10.499
     let res = query(
         deps.as_ref(),
         mock_env(),
@@ -36,9 +38,10 @@ fn test_get_input_add_to_amm() {
     )
     .unwrap();
     let result: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(result, Uint128::from(4761904761u128));
+    assert_eq!(result, Uint128::from(10_500_000_001u128));
 
-    // getInputPrice, remove from amm
+    // amount = (100 * 1000) / (1000 - 50) - 100(quote asset reserved) = 5.2631578947368
+    // price = 50 / 5.263 = 9.5
     let res = query(
         deps.as_ref(),
         mock_env(),
@@ -49,7 +52,7 @@ fn test_get_input_add_to_amm() {
     )
     .unwrap();
     let result: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(result, Uint128::from(5263157895u128));
+    assert_eq!(result, Uint128::from(9_499_999_999u128));
 
     // getOutputPrice, add to amm
     let res = query(
@@ -62,7 +65,7 @@ fn test_get_input_add_to_amm() {
     )
     .unwrap();
     let result: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(result, Uint128::from(47619047619u128));
+    assert_eq!(result, Uint128::from(105_000_000u128));
 
     let res = query(
         deps.as_ref(),
@@ -74,7 +77,7 @@ fn test_get_input_add_to_amm() {
     )
     .unwrap();
     let result: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(result, Uint128::from(200_000_000_000u128));
+    assert_eq!(result, Uint128::from(125_000_000u128));
 
     let res = query(
         deps.as_ref(),
@@ -86,12 +89,82 @@ fn test_get_input_add_to_amm() {
     )
     .unwrap();
     let result: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(result, Uint128::from(52_631_578_948u128));
+    assert_eq!(result, Uint128::from(94_999_999u128));
 
     let res = query(
         deps.as_ref(),
         mock_env(),
         QueryMsg::OutputPrice {
+            direction: Direction::RemoveFromAmm,
+            amount: Uint128::from(37_500_000_000u128),
+        },
+    )
+    .unwrap();
+    let result: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(result, Uint128::from(62_500_000u128));
+}
+
+/// Unit tests
+#[test]
+fn test_get_output_amount() {
+    let mut deps = mock_dependencies();
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        quote_asset: "ETH".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: to_decimals(1_000),
+        base_asset_reserve: to_decimals(100),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        margin_engine: Some("addr0000".to_string()),
+        pricefeed: "oracle".to_string(),
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // getOutputPrice, add to amm
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::OutputAmount {
+            direction: Direction::AddToAmm,
+            amount: to_decimals(5),
+        },
+    )
+    .unwrap();
+    let result: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(result, Uint128::from(47619047619u128));
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::OutputAmount {
+            direction: Direction::AddToAmm,
+            amount: to_decimals(25),
+        },
+    )
+    .unwrap();
+    let result: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(result, Uint128::from(200_000_000_000u128));
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::OutputAmount {
+            direction: Direction::RemoveFromAmm,
+            amount: to_decimals(5),
+        },
+    )
+    .unwrap();
+    let result: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(result, Uint128::from(52_631_578_948u128));
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::OutputAmount {
             direction: Direction::RemoveFromAmm,
             amount: Uint128::from(37_500_000_000u128),
         },

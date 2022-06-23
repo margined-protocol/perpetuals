@@ -25,7 +25,7 @@ pub fn query_vamm_state(deps: &Deps, address: String) -> StdResult<StateResponse
 
 // returns the state of the request vamm
 // can be used to calculate the input and outputs
-pub fn query_vamm_output_price(
+pub fn query_vamm_output_amount(
     deps: &Deps,
     address: String,
     direction: Direction,
@@ -33,7 +33,7 @@ pub fn query_vamm_output_price(
 ) -> StdResult<Uint128> {
     deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: address,
-        msg: to_binary(&QueryMsg::OutputPrice { direction, amount })?,
+        msg: to_binary(&QueryMsg::OutputAmount { direction, amount })?,
     }))
 }
 
