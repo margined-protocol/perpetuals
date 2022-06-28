@@ -281,7 +281,7 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
     Ok(Response::new().add_attributes(vec![
         ("action", "settle_funding"),
         ("premium_fraction", &premium_fraction.to_string()),
-        ("underlying_price", &premium_fraction.to_string()),
+        ("underlying_price", &underlying_price.to_string()),
     ]))
 }
 
