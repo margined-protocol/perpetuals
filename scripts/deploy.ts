@@ -119,6 +119,26 @@ async function main() {
           address: insuranceFundContractAddress,
           amount: '5000000000', // 5,000
         },
+        {
+          address: 'juno1w5jfhzm93vkpevpverdgkj33dw3dfus825mfnm',
+          amount: '1000000000', // 1,000
+        },
+        {
+          address: 'juno1dedkvygl3kx903axl7ypnrhu0g2p855sflz305',
+          amount: '1000000000', // 1,000
+        },
+        {
+          address: 'juno1evd2a75k42450nkkteatsmpmlq8kzk50vja0n8',
+          amount: '1000000000', // 1,000
+        },
+        {
+          address: 'juno18da0wya36037qq73whp4vkaf8fw078hl9y2kf5',
+          amount: '1000000000', // 1,000
+        },
+        {
+          address: 'juno1peu2fm3rtuc3hrpaskazzh68qle8g654z68y2w',
+          amount: '1000000000', // 1,000
+        },
       ],
       mint: {
         minter: account.address,

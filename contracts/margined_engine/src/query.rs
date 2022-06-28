@@ -97,9 +97,9 @@ pub fn query_position_notional_unrealized_pnl(
     Ok(result)
 }
 
-/// Queries user position
+/// Queries cumulative premium fractions
 pub fn query_cumulative_premium_fraction(deps: Deps, vamm: String) -> StdResult<Integer> {
-    // read the msg.senders position
+    // retrieve vamm data
     let vamm_map = read_vamm_map(deps.storage, deps.api.addr_validate(&vamm)?).unwrap();
 
     let result = match vamm_map.cumulative_premium_fractions.len() {
