@@ -267,11 +267,11 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
         .unwrap();
     let response = router.execute(carol.clone(), msg).unwrap();
     assert_eq!(
-        response.events[4].attributes[2].value,
+        response.events[5].attributes[2].value,
         Uint128::from(8_030_973_451u128).to_string()
     ); // liquidation fee
     assert_eq!(
-        response.events[4].attributes[3].value,
+        response.events[5].attributes[3].value,
         Integer::new_negative(278_761_061_950u64).to_string()
     ); // pnl (unsigned)
 }

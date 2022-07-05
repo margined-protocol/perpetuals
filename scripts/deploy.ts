@@ -139,6 +139,10 @@ async function main() {
           address: 'juno1peu2fm3rtuc3hrpaskazzh68qle8g654z68y2w',
           amount: '1000000000', // 1,000
         },
+        {
+          address: 'juno1qrqw3650zq7md6txk4g3pyt98vr6f02neq0krc',
+          amount: '1000000000', // 1,000
+        },
       ],
       mint: {
         minter: account.address,

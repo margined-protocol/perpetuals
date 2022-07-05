@@ -107,7 +107,7 @@ pub fn update_config(
 
     store_config(deps.storage, &config)?;
 
-    Ok(Response::default())
+    Ok(Response::default().add_attribute("action", "update_config"))
 }
 
 pub fn set_pause(deps: DepsMut, _env: Env, info: MessageInfo, pause: bool) -> StdResult<Response> {
@@ -123,7 +123,7 @@ pub fn set_pause(deps: DepsMut, _env: Env, info: MessageInfo, pause: bool) -> St
 
     store_state(deps.storage, &state)?;
 
-    Ok(Response::default())
+    Ok(Response::default().add_attribute("action", "set_pause"))
 }
 
 // Opens a position
@@ -197,8 +197,8 @@ pub fn open_position(
     store_tmp_swap(
         deps.storage,
         &TmpSwapInfo {
-            vamm,
-            trader,
+            vamm: vamm.clone(),
+            trader: trader.clone(),
             side,
             quote_asset_amount,
             leverage,
@@ -218,9 +218,13 @@ pub fn open_position(
         },
     )?;
 
-    Ok(Response::new()
-        .add_submessage(msg)
-        .add_attributes(vec![("action", "open_position")]))
+    Ok(Response::new().add_submessage(msg).add_attributes(vec![
+        ("action", "open_position"),
+        ("vamm", &vamm.to_string()),
+        ("trader", &trader.to_string()),
+        ("amount", &quote_asset_amount.to_string()),
+        ("leverage", &leverage.to_string()),
+    ]))
 }
 
 pub fn close_position(
@@ -247,9 +251,11 @@ pub fn close_position(
     let msg =
         internal_close_position(deps, &position, quote_amount_limit, CLOSE_POSITION_REPLY_ID)?;
 
-    Ok(Response::new()
-        .add_submessage(msg)
-        .add_attributes(vec![("action", "close_position")]))
+    Ok(Response::new().add_submessage(msg).add_attributes(vec![
+        ("action", "close_position"),
+        ("vamm", &vamm.to_string()),
+        ("trader", &trader.to_string()),
+    ]))
 }
 
 pub fn liquidate(
@@ -285,12 +291,16 @@ pub fn liquidate(
     let msg = if margin_ratio.value > config.liquidation_fee
         && !config.partial_liquidation_margin_ratio.is_zero()
     {
-        partial_liquidation(deps, env, vamm, trader, quote_asset_limit)?
+        partial_liquidation(deps, env, vamm.clone(), trader.clone(), quote_asset_limit)?
     } else {
         internal_close_position(deps, &position, quote_asset_limit, LIQUIDATION_REPLY_ID)?
     };
 
-    Ok(Response::default().add_submessage(msg))
+    Ok(Response::new().add_submessage(msg).add_attributes(vec![
+        ("action", "liquidate"),
+        ("vamm", &vamm.to_string()),
+        ("trader", &trader.to_string()),
+    ]))
 }
 
 /// settles funding in amm specified
@@ -319,7 +329,9 @@ pub fn pay_funding(
         reply_on: ReplyOn::Always,
     };
 
-    Ok(Response::new().add_submessage(funding_msg))
+    Ok(Response::new()
+        .add_submessage(funding_msg)
+        .add_attribute("action", "pay_funding"))
 }
 
 /// Enables a user to directly deposit margin into their position

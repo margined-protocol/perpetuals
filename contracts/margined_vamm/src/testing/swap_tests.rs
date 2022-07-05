@@ -5,7 +5,7 @@ use margined_common::integer::Integer;
 use margined_perp::margined_vamm::{
     ConfigResponse, Direction, ExecuteMsg, InstantiateMsg, QueryMsg, StateResponse,
 };
-use margined_utils::scenarios::{to_decimals, DECIMAL_MULTIPLIER};
+use margined_utils::scenarios::{parse_event, to_decimals, DECIMAL_MULTIPLIER};
 
 #[test]
 fn test_instantiation() {
@@ -711,31 +711,14 @@ fn test_swap_output_short_and_indivisable() {
     };
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+    assert_eq!(parse_event(&result, "action"), "swap");
+    assert_eq!(parse_event(&result, "type"), "output");
     assert_eq!(
-        result
-            .attributes
-            .iter()
-            .find(|&attr| attr.key == "action")
-            .unwrap()
-            .value,
-        "swap_output"
-    );
-    assert_eq!(
-        result
-            .attributes
-            .iter()
-            .find(|&attr| attr.key == "quote_asset_amount")
-            .unwrap()
-            .value,
+        parse_event(&result, "quote_asset_amount"),
         amount.to_string()
     );
     assert_eq!(
-        result
-            .attributes
-            .iter()
-            .find(|&attr| attr.key == "base_asset_amount")
-            .unwrap()
-            .value,
+        parse_event(&result, "base_asset_amount"),
         to_decimals(5u64).to_string()
     );
 }
@@ -787,31 +770,14 @@ fn test_swap_output_long_and_indivisable() {
     };
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+    assert_eq!(parse_event(&result, "action"), "swap");
+    assert_eq!(parse_event(&result, "type"), "output");
     assert_eq!(
-        result
-            .attributes
-            .iter()
-            .find(|&attr| attr.key == "action")
-            .unwrap()
-            .value,
-        "swap_output"
-    );
-    assert_eq!(
-        result
-            .attributes
-            .iter()
-            .find(|&attr| attr.key == "quote_asset_amount")
-            .unwrap()
-            .value,
+        parse_event(&result, "quote_asset_amount"),
         amount.to_string()
     );
     assert_eq!(
-        result
-            .attributes
-            .iter()
-            .find(|&attr| attr.key == "base_asset_amount")
-            .unwrap()
-            .value,
+        parse_event(&result, "base_asset_amount"),
         to_decimals(5u64).to_string()
     );
 }

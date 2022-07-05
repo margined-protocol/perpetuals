@@ -314,19 +314,19 @@ pub fn parse_swap(response: SubMsgResponse) -> StdResult<(Uint128, Uint128)> {
 
     let wasm = wasm.unwrap();
 
-    let swap = read_event("action".to_string(), wasm)?;
+    let swap = read_event("type".to_string(), wasm)?;
 
     let input: Uint128;
     let output: Uint128;
     match swap.as_str() {
-        "swap_input" => {
+        "input" => {
             let input_str = read_event("quote_asset_amount".to_string(), wasm)?;
             let output_str = read_event("base_asset_amount".to_string(), wasm)?;
 
             input = Uint128::from_str(&input_str).unwrap();
             output = Uint128::from_str(&output_str).unwrap();
         }
-        "swap_output" => {
+        "output" => {
             let input_str = read_event("base_asset_amount".to_string(), wasm)?;
             let output_str = read_event("quote_asset_amount".to_string(), wasm)?;
 

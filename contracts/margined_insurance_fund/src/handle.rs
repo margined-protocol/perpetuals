@@ -38,7 +38,7 @@ pub fn update_config(
 
     store_config(deps.storage, &config)?;
 
-    Ok(Response::default())
+    Ok(Response::default().add_attribute("action", "update_config"))
 }
 
 pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Response> {
