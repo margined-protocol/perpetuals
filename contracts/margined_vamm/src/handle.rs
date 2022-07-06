@@ -87,7 +87,7 @@ pub fn update_config(
 
     store_config(deps.storage, &config)?;
 
-    Ok(Response::default())
+    Ok(Response::default().add_attribute("action", "update_config"))
 }
 
 pub fn set_open(deps: DepsMut, env: Env, info: MessageInfo, open: bool) -> StdResult<Response> {
@@ -109,7 +109,7 @@ pub fn set_open(deps: DepsMut, env: Env, info: MessageInfo, open: bool) -> StdRe
 
     store_state(deps.storage, &state)?;
 
-    Ok(Response::default())
+    Ok(Response::default().add_attribute("action", "set_open"))
 }
 
 // Function should only be called by the margin engine
@@ -161,7 +161,8 @@ pub fn swap_input(
     )?;
 
     Ok(response.add_attributes(vec![
-        ("action", "swap_input"),
+        ("action", "swap"),
+        ("type", "input"),
         ("direction", &direction.to_string()),
         ("quote_asset_amount", &quote_asset_amount.to_string()),
         ("base_asset_amount", &base_asset_amount.to_string()),
@@ -223,7 +224,8 @@ pub fn swap_output(
     )?;
 
     Ok(response.add_attributes(vec![
-        ("action", "swap_output"),
+        ("action", "swap"),
+        ("type", "output"),
         ("direction", &direction.to_string()),
         ("quote_asset_amount", &quote_asset_amount.to_string()),
         ("base_asset_amount", &base_asset_amount.to_string()),

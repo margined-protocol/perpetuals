@@ -24,7 +24,7 @@ pub fn update_config(
 
     store_config(deps.storage, &config)?;
 
-    Ok(Response::default())
+    Ok(Response::default().add_attribute("action", "update_config"))
 }
 
 /// this is a mock function that enables storage of data
@@ -46,7 +46,7 @@ pub fn append_price(
 
     store_price_data(deps.storage, key, price, timestamp)?;
 
-    Ok(Response::default())
+    Ok(Response::default().add_attribute("action", "append_price"))
 }
 
 /// this is a mock function that enables storage of data

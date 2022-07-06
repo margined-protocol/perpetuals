@@ -149,7 +149,7 @@ pub fn increase_position_reply(
 
     Ok(Response::new()
         .add_submessages(msgs)
-        .add_attributes(vec![("action", "increase_position")]))
+        .add_attributes(vec![("action", "increase_position_reply")]))
 }
 
 // Decreases position after successful execution of the swap
@@ -221,7 +221,7 @@ pub fn decrease_position_reply(
     // remove the tmp position
     remove_tmp_swap(deps.storage);
 
-    Ok(Response::new().add_attributes(vec![("action", "decrease_position")]))
+    Ok(Response::new().add_attributes(vec![("action", "decrease_position_reply")]))
 }
 
 // reverse position after successful execution of the swap
@@ -326,7 +326,7 @@ pub fn reverse_position_reply(
 
     Ok(Response::new()
         .add_submessages(msgs)
-        .add_attributes(vec![("action", "reverse_position")]))
+        .add_attributes(vec![("action", "reverse_position_reply")]))
 }
 
 // Closes position after successful execution of the swap

@@ -184,7 +184,7 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
         .unwrap();
     let response = env.router.execute(env.carol.clone(), msg).unwrap();
     assert_eq!(
-        response.events[4].attributes[1].value,
+        response.events[5].attributes[1].value,
         "partial_liquidation_reply".to_string()
     );
 }
