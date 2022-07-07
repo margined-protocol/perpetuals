@@ -96,11 +96,6 @@ pub enum QueryMsg {
         quote_asset_amount: Uint128,
     },
     IsOverSpreadLimit {},
-    ReserveSnapshotHeight {},
-    ReserveSnapshots {
-        start: Option<u64>,
-        limit: Option<u32>,
-    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
