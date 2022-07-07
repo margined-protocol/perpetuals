@@ -74,8 +74,8 @@ async function main() {
   const priceFeedAddress = await deployContract(
     client,
     account.address,
-    join(MARGINED_ARTIFACTS_PATH, 'mock_pricefeed.wasm'),
-    'mock_pricefeed',
+    join(MARGINED_ARTIFACTS_PATH, 'margined_pricefeed.wasm'),
+    'margined_pricefeed',
     deployConfig.priceFeedInitMsg,
     {},
   )
