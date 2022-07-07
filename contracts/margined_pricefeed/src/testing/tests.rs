@@ -136,16 +136,6 @@ fn test_set_and_get_price() {
             timestamp: Timestamp::from_seconds(1_000_000_001),
         }
     );
-
-    // Set some market data
-    let msg = ExecuteMsg::AppendPrice {
-        key: "ETH".to_string(),
-        price: Uint128::from(600_000_000u128), // 0.5 I think
-        timestamp: 1_000_000_001,              // 0.5 I think
-    };
-
-    let info = mock_info("addr0000", &[]);
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 }
 
 #[test]
