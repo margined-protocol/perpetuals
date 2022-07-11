@@ -113,7 +113,7 @@ fn test_set_and_get_price() {
     let msg = ExecuteMsg::AppendPrice {
         key: "ETHUSD".to_string(),
         price: Uint128::from(600_000_000u128), // 0.5 I think
-        timestamp: 1_000_000_001,              // 0.5 I think
+        timestamp: 1_000_001,                  // 0.5 I think
     };
 
     let info = mock_info("addr0000", &[]);
@@ -165,7 +165,7 @@ fn test_set_multiple_price() {
         Uint128::from(700_000_000u128),
     ];
 
-    let timestamps = vec![1_000_000, 1_000_000_001, 1_000_000_002];
+    let timestamps = vec![1_000_000, 1_000_001, 1_000_002];
 
     // Set some market data
     let msg = ExecuteMsg::AppendMultiplePrice {
@@ -227,12 +227,7 @@ fn test_get_previous_price() {
     ];
 
     let timestamps = vec![
-        1_000_000,
-        1_000_000_001,
-        1_000_000_002,
-        1_000_000_003,
-        1_000_000_004,
-        1_000_000_005,
+        1_000_000, 1_000_001, 1_000_002, 1_000_003, 1_000_004, 1_000_005,
     ];
 
     // Set some market data
