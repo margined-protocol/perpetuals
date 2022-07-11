@@ -99,7 +99,6 @@ pub fn query_get_twap_price(
         latest_round = prices.last().unwrap();
 
         if latest_round.timestamp.seconds() <= base_timestamp {
-            // let delta_timestamp = Uint128::from(base_timestamp.checked_sub(timestamp).unwrap());
             let delta_timestamp = Uint128::from(timestamp.checked_sub(base_timestamp).unwrap());
 
             weighted_price = weighted_price
