@@ -74,6 +74,12 @@ pub fn query_get_twap_price(
     let mut latest_round = prices.last().unwrap();
     let mut timestamp = latest_round.timestamp.seconds();
 
+    // if latest updated timestamp is earlier than target timestamp, return the latest price.
+    if latest_round.timestamp.seconds() < base_timestamp || latest_round.round_id == Uint128::zero()
+    {
+        return Ok(latest_round.price);
+    }
+
     let mut cumulative_time =
         Uint128::from(env.block.time.seconds().checked_sub(timestamp).unwrap());
 

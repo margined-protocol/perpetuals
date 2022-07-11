@@ -322,7 +322,7 @@ fn test_get_twap_price() {
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), env.clone(), info, msg).unwrap();
 
-    // TWAP Price
+    // twap Price
     let res = query(
         deps.as_ref(),
         env.clone(),
@@ -336,6 +336,7 @@ fn test_get_twap_price() {
     let twap: Uint128 = from_binary(&res).unwrap();
     assert_eq!(twap, Uint128::from(405_000_000u128));
 
+    // asking interval more than aggregator has
     let res = query(
         deps.as_ref(),
         env.clone(),
@@ -349,6 +350,7 @@ fn test_get_twap_price() {
     let twap: Uint128 = from_binary(&res).unwrap();
     assert_eq!(twap, Uint128::from(405_000_000u128));
 
+    // asking interval less than aggregator has
     let res = query(
         deps.as_ref(),
         env,
@@ -423,6 +425,66 @@ fn test_get_twap_variant_price_period() {
 
     let twap: Uint128 = from_binary(&res).unwrap();
     assert_eq!(twap, Uint128::from(409_736_842u128));
+}
+
+#[test]
+fn test_get_twap_latest_price_update_is_earlier_than_request() {
+    let mut deps = mock_dependencies();
+    let mut env = mock_env();
+    let msg = InstantiateMsg {
+        decimals: 6u8,
+        oracle_hub_contract: "oracle_hub0000".to_string(),
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+    let res = query(deps.as_ref(), env.clone(), QueryMsg::Config {}).unwrap();
+    let config: ConfigResponse = from_binary(&res).unwrap();
+    let info = mock_info("addr0000", &[]);
+    assert_eq!(
+        config,
+        ConfigResponse {
+            owner: info.sender,
+            decimals: Uint128::from(1_000_000_u128),
+        }
+    );
+
+    let prices = vec![
+        Uint128::from(400_000_000u128),
+        Uint128::from(405_000_000u128),
+        Uint128::from(410_000_000u128),
+    ];
+
+    let timestamps: Vec<u64> = vec![
+        env.block.time.seconds(),
+        env.block.time.seconds() + 15,
+        env.block.time.seconds() + 30,
+    ];
+
+    // Set some market data
+    let msg = ExecuteMsg::AppendMultiplePrice {
+        key: "ETHUSD".to_string(),
+        prices,
+        timestamps,
+    };
+
+    env.block.time = env.block.time.plus_seconds(100);
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+    let res = query(
+        deps.as_ref(),
+        env,
+        QueryMsg::GetTwapPrice {
+            key: "ETHUSD".to_string(),
+            interval: 45,
+        },
+    )
+    .unwrap();
+
+    let twap: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(twap, Uint128::from(410_000_000u128));
 }
 
 #[test]
