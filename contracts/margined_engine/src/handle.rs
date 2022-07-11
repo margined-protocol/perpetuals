@@ -310,6 +310,7 @@ pub fn pay_funding(
     _info: MessageInfo,
     vamm: String,
 ) -> StdResult<Response> {
+    println!("pay funding");
     let config: Config = read_config(deps.storage)?;
 
     // validate address inputs

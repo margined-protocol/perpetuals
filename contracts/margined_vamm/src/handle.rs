@@ -233,6 +233,7 @@ pub fn swap_output(
 }
 
 pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<Response> {
+    println!("settle funding");
     let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
 

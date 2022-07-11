@@ -53,3 +53,5 @@ thiserror = { version = "1.0" }
 
 [dev-dependencies]
 cosmwasm-schema = { version = "1.0.0-beta" }
+margined_utils = { version = "0.1.0", path = "../../packages/margined_utils" }
+cw-multi-test = "0.13.2"

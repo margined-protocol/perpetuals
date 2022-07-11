@@ -61,6 +61,7 @@ pub fn query_get_twap_price(
     key: String,
     interval: u64,
 ) -> StdResult<Uint128> {
+    println!("get twap price");
     if interval == 0 {
         return Err(StdError::generic_err("Interval can't be zero"));
     }
@@ -79,7 +80,10 @@ pub fn query_get_twap_price(
     let mut weighted_price = latest_round.price.checked_mul(cumulative_time)?;
 
     loop {
+        println!("1");
+        println!("{}, {}", timestamp, base_timestamp);
         if latest_round.round_id == Uint128::from(1u128) {
+            println!("1");
             let twap = weighted_price.checked_div(cumulative_time).unwrap();
             return Ok(twap);
         }
@@ -88,6 +92,10 @@ pub fn query_get_twap_price(
         latest_round = prices.last().unwrap();
 
         if latest_round.timestamp.seconds() <= base_timestamp {
+            // println!("{}", timestamp - base_timestamp);
+            println!("2");
+
+            // let delta_timestamp = Uint128::from(base_timestamp.checked_sub(timestamp).unwrap());
             let delta_timestamp = Uint128::from(timestamp.checked_sub(base_timestamp).unwrap());
 
             weighted_price = weighted_price
