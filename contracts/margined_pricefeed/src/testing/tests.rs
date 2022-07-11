@@ -488,6 +488,40 @@ fn test_get_twap_latest_price_update_is_earlier_than_request() {
 }
 
 #[test]
+fn test_get_twap_no_rounds() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let msg = InstantiateMsg {
+        decimals: 6u8,
+        oracle_hub_contract: "oracle_hub0000".to_string(),
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+    let res = query(deps.as_ref(), env.clone(), QueryMsg::Config {}).unwrap();
+    let config: ConfigResponse = from_binary(&res).unwrap();
+    let info = mock_info("addr0000", &[]);
+    assert_eq!(
+        config,
+        ConfigResponse {
+            owner: info.sender,
+            decimals: Uint128::from(1_000_000_u128),
+        }
+    );
+
+    let res = query(
+        deps.as_ref(),
+        env,
+        QueryMsg::GetTwapPrice {
+            key: "ETHUSD".to_string(),
+            interval: 45,
+        },
+    )
+    .unwrap_err();
+    assert_eq!(res.to_string(), "Generic error: Insufficient history");
+}
+
+#[test]
 fn test_get_twap_error_zero_interval() {
     let mut deps = mock_dependencies();
     let mut env = mock_env();

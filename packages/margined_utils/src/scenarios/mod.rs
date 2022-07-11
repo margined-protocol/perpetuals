@@ -894,7 +894,7 @@ fn contract_engine() -> Box<dyn Contract<Empty>> {
 }
 
 // note this is unused as it will take a lot of work to have the pricefeed full of data
-fn contract_pricefeed() -> Box<dyn Contract<Empty>> {
+fn _contract_pricefeed() -> Box<dyn Contract<Empty>> {
     let contract = ContractWrapper::new_with_empty(
         margined_pricefeed::contract::execute,
         margined_pricefeed::contract::instantiate,
