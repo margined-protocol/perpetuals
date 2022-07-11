@@ -133,7 +133,7 @@ fn test_set_and_get_price() {
         PriceData {
             round_id: Uint128::from(2u64),
             price: Uint128::from(600_000_000u128),
-            timestamp: Timestamp::from_seconds(1_000_000_001),
+            timestamp: Timestamp::from_seconds(1_000_001),
         }
     );
 }
@@ -191,7 +191,7 @@ fn test_set_multiple_price() {
         PriceData {
             round_id: Uint128::from(3u64),
             price: Uint128::from(700_000_000u128),
-            timestamp: Timestamp::from_seconds(1_000_000_002),
+            timestamp: Timestamp::from_seconds(1_000_002),
         }
     );
 }
@@ -256,7 +256,7 @@ fn test_get_previous_price() {
         PriceData {
             round_id: Uint128::from(3u64),
             price: Uint128::from(700_000_000u128),
-            timestamp: Timestamp::from_seconds(1_000_000_002),
+            timestamp: Timestamp::from_seconds(1_000_002),
         }
     );
 
