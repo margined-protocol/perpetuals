@@ -1,8 +1,8 @@
 use cosmwasm_std::{
-    OverflowError,
+    DivideByZeroError, OverflowError,
     OverflowOperation::{Add, Mul, Sub},
     StdError, Uint128,
-}; // DivideByZeroError,
+};
 use schemars::JsonSchema;
 use serde::{de, ser, Deserialize, Deserializer, Serialize};
 use std::fmt::Write;
@@ -235,11 +235,8 @@ impl Integer {
         }
     }
 
-    /*
-    //Importing the DivideByZeroError is not possible on the current version of cosmwasm-std (0.16.6)
-
     /// division with overflow check
-    pub fn checked_mul(self, other: Self) -> Result<Self, DivideByZeroError> {
+    pub fn checked_div(self, other: Self) -> Result<Self, DivideByZeroError> {
         let abs_value = self.value.checked_div(other.value)?;
 
         match (self.negative, other.negative) {
@@ -247,7 +244,6 @@ impl Integer {
             (false, true) | (true, false) => Ok(Self::new_negative(abs_value)),
         }
     }
-    */
 }
 
 // Conversion
@@ -541,7 +537,7 @@ impl<'de> de::Visitor<'de> for IntegerVisitor {
 #[cfg(test)]
 mod test {
     use cosmwasm_std::OverflowOperation::{Add, Mul, Sub};
-    use cosmwasm_std::{OverflowError, Uint128}; //, DivideByZeroError
+    use cosmwasm_std::{DivideByZeroError, OverflowError, Uint128};
 
     use super::Integer;
     use std::str::FromStr;
@@ -707,9 +703,11 @@ mod test {
         assert_eq!(min.checked_mul(Integer::from(2u128)), Err(e_mul_min));
 
         //check for correct error upon division by zero
-        //let max = Integer::MAX;
-        //let e_div_zero = DivideByZeroError {operand: Integer::MAX.to_string()};
-        //assert_eq!(max.checked_div(Integer::from(0u128)), Err(e_div_zero));
+        let max = Integer::MAX;
+        let e_div_zero = DivideByZeroError {
+            operand: Integer::MAX.to_string(),
+        };
+        assert_eq!(max.checked_div(Integer::from(0u128)), Err(e_div_zero));
     }
 
     #[test]

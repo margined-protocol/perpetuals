@@ -252,16 +252,17 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
         query_twap_price(deps.as_ref(), env.clone(), config.spot_price_twap_interval)?;
 
     // let premium = calculate_premium(underlying_price, index_price)?;
-    let premium = Integer::new_positive(index_price) - Integer::new_positive(underlying_price);
+    let premium =
+        Integer::new_positive(index_price).checked_sub(Integer::new_positive(underlying_price))?;
 
-    let premium_fraction = premium * Integer::new_positive(config.funding_period)
-        / Integer::new_positive(ONE_DAY_IN_SECONDS);
+    let premium_fraction = premium
+        .checked_mul(Integer::new_positive(config.funding_period))?
+        .checked_div(Integer::new_positive(ONE_DAY_IN_SECONDS))?;
 
     // update funding rate = premiumFraction / twapIndexPrice
     state.funding_rate = premium_fraction
-        .value
-        .checked_mul(config.decimals)?
-        .checked_div(underlying_price)?;
+        .checked_mul(Integer::new_positive(config.decimals))?
+        .checked_div(Integer::new_positive(underlying_price))?;
 
     // in order to prevent multiple funding settlement during very short time after network congestion
     let min_next_funding_time = env.block.time.plus_seconds(config.funding_buffer_period);
