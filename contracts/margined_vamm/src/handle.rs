@@ -258,10 +258,8 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
         / Integer::new_positive(ONE_DAY_IN_SECONDS);
 
     // update funding rate = premiumFraction / twapIndexPrice
-    state.funding_rate = premium_fraction
-        .value
-        .checked_mul(config.decimals)?
-        .checked_div(underlying_price)?;
+    state.funding_rate = premium_fraction * Integer::new_positive(config.decimals)
+        / Integer::new_positive(underlying_price);
 
     // in order to prevent multiple funding settlement during very short time after network congestion
     let min_next_funding_time = env.block.time.plus_seconds(config.funding_buffer_period);

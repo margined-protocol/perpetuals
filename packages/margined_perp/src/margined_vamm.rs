@@ -120,7 +120,7 @@ pub struct StateResponse {
     pub quote_asset_reserve: Uint128,
     pub base_asset_reserve: Uint128,
     pub total_position_size: Integer,
-    pub funding_rate: Uint128,
+    pub funding_rate: Integer,
     pub next_funding_time: u64,
 }
 

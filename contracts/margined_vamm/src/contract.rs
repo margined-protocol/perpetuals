@@ -72,7 +72,7 @@ pub fn instantiate(
         base_asset_reserve: msg.base_asset_reserve,
         quote_asset_reserve: msg.quote_asset_reserve,
         total_position_size: Integer::zero(),
-        funding_rate: Uint128::zero(),
+        funding_rate: Integer::zero(),
         next_funding_time: 0u64,
     };
 
