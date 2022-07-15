@@ -11,11 +11,12 @@ export async function uploadContract(
   client: SigningCosmWasmClient,
   senderAddress: string,
   filepath: string,
+  feeAmount: string,
 ) {
   const contract = readFileSync(filepath)
   const fee = {
     gas: '60000000',
-    amount: [{ denom: 'ujunox', amount: '1000000' }],
+    amount: [{ denom: 'ujunox', amount: feeAmount }],
   }
 
   let code_id = await client.upload(senderAddress, contract, fee)
@@ -29,6 +30,7 @@ export async function instantiateContract(
   codeId: number,
   label: string,
   msg: Record<string, unknown>,
+  feeAmount: string,
   opts: Opts = {},
 ) {
   let admin = opts.admin
@@ -38,7 +40,7 @@ export async function instantiateContract(
 
   const fee = {
     gas: '60000000',
-    amount: [{ denom: 'ujunox', amount: '1000000' }],
+    amount: [{ denom: 'ujunox', amount: feeAmount }],
   }
 
   let result = await client.instantiate(
@@ -57,11 +59,12 @@ export async function executeContract(
   senderAddress: string,
   contractAddress: string,
   msg: Record<string, unknown>,
+  feeAmount: string,
   funds?: Coin[],
 ) {
   const fee = {
     gas: '30000000',
-    amount: [{ denom: 'ujunox', amount: '1000000' }],
+    amount: [{ denom: 'ujunox', amount: feeAmount }],
   }
 
   const result = await client.execute(
@@ -92,9 +95,15 @@ export async function deployContract(
   filepath: string,
   label: string,
   initMsg: Record<string, unknown>,
+  feeAmount: string,
   opts: object,
 ) {
-  const codeId = await uploadContract(client, senderAddress, filepath)
+  const codeId = await uploadContract(
+    client,
+    senderAddress,
+    filepath,
+    feeAmount,
+  )
 
   return await instantiateContract(
     client,
@@ -102,6 +111,7 @@ export async function deployContract(
     codeId,
     label,
     initMsg,
+    feeAmount,
     opts,
   )
 }
@@ -114,7 +124,7 @@ export async function sendToken(
 ) {
   const fee = {
     gas: '30000000',
-    amount: [{ denom: 'ujunox', amount: '1000000' }],
+    amount: [{ denom: 'ujunox', amount: '150000' }],
   }
 
   return await client.sendTokens(
