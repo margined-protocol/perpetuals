@@ -33,7 +33,6 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    // Receive(Cw20ReceiveMsg),
     UpdateConfig {
         owner: Option<String>,
         insurance_fund: Option<String>,
@@ -74,17 +73,6 @@ pub enum ExecuteMsg {
     },
     SetPause {
         pause: bool,
-    },
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum Cw20HookMsg {
-    // allows you to open a position and directly transfer funds
-    OpenPosition {
-        vamm: String,
-        side: Side,
-        leverage: Uint128,
     },
 }
 
