@@ -14,7 +14,6 @@ pub static KEY_PRICES: &[u8] = b"prices";
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
-    pub decimals: u8,
     pub oracle_hub_contract: String, // address of the oracle hub we are using
 }
 
@@ -56,7 +55,6 @@ pub enum QueryMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: Addr,
-    pub decimals: Uint128,
 }
 
 #[cfg(not(tarpaulin_include))]
@@ -65,12 +63,9 @@ pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    msg: InstantiateMsg,
+    _msg: InstantiateMsg,
 ) -> StdResult<Response> {
-    let config = Config {
-        owner: info.sender,
-        decimals: Uint128::from(10u128.pow(msg.decimals as u32)),
-    };
+    let config = Config { owner: info.sender };
 
     store_config(deps.storage, &config)?;
 
@@ -178,7 +173,6 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 
     Ok(ConfigResponse {
         owner: config.owner,
-        decimals: config.decimals,
     })
 }
 
@@ -212,7 +206,6 @@ pub fn query_get_twap_price(
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
-    pub decimals: Uint128,
 }
 
 #[cfg(not(tarpaulin_include))]

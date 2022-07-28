@@ -96,11 +96,6 @@ pub enum QueryMsg {
         quote_asset_amount: Uint128,
     },
     IsOverSpreadLimit {},
-    ReserveSnapshotHeight {},
-    ReserveSnapshots {
-        start: Option<u64>,
-        limit: Option<u32>,
-    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -125,7 +120,7 @@ pub struct StateResponse {
     pub quote_asset_reserve: Uint128,
     pub base_asset_reserve: Uint128,
     pub total_position_size: Integer,
-    pub funding_rate: Uint128,
+    pub funding_rate: Integer,
     pub next_funding_time: u64,
 }
 

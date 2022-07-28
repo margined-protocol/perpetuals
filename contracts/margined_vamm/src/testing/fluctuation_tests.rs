@@ -57,7 +57,8 @@ fn test_swap_input_price_goes_up_within_fluctuation_limit() {
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
-    assert_eq!(parse_event(&result, "action"), "swap_input");
+    assert_eq!(parse_event(&result, "action"), "swap");
+    assert_eq!(parse_event(&result, "type"), "input");
 }
 
 #[test]
@@ -75,7 +76,8 @@ fn test_swap_input_price_goes_down_within_fluctuation_limit() {
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
-    assert_eq!(parse_event(&result, "action"), "swap_input");
+    assert_eq!(parse_event(&result, "action"), "swap");
+    assert_eq!(parse_event(&result, "type"), "input");
 }
 
 #[test]
@@ -115,7 +117,8 @@ fn test_swap_input_price_goes_down_then_up_and_down_within_fluctuation_limit() {
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env, info, swap_msg).unwrap();
-    assert_eq!(parse_event(&result, "action"), "swap_input");
+    assert_eq!(parse_event(&result, "action"), "swap");
+    assert_eq!(parse_event(&result, "type"), "input");
 }
 
 #[test]
@@ -134,7 +137,8 @@ fn test_swap_input_price_goes_can_go_over_fluctuation_limit_once() {
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
-    assert_eq!(parse_event(&result, "action"), "swap_input");
+    assert_eq!(parse_event(&result, "action"), "swap");
+    assert_eq!(parse_event(&result, "type"), "input");
 }
 
 #[test]
@@ -151,7 +155,8 @@ fn test_swap_output_price_goes_up_within_fluctuation_limit() {
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
-    assert_eq!(parse_event(&result, "action"), "swap_output");
+    assert_eq!(parse_event(&result, "action"), "swap");
+    assert_eq!(parse_event(&result, "type"), "output");
 }
 
 #[test]
@@ -168,7 +173,8 @@ fn test_swap_output_price_goes_down_within_fluctuation_limit() {
 
     let info = mock_info("addr0000", &[]);
     let result = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
-    assert_eq!(parse_event(&result, "action"), "swap_output");
+    assert_eq!(parse_event(&result, "action"), "swap");
+    assert_eq!(parse_event(&result, "type"), "output");
 }
 
 #[test]

@@ -8,7 +8,7 @@ use crate::state::{read_config, Config};
 // returns the underlying price provided by an oracle
 pub fn query_underlying_price(deps: &Deps) -> StdResult<Uint128> {
     let config: Config = read_config(deps.storage)?;
-    let key: String = config.quote_asset;
+    let key: String = config.base_asset;
 
     deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: config.pricefeed.to_string(),
@@ -19,7 +19,7 @@ pub fn query_underlying_price(deps: &Deps) -> StdResult<Uint128> {
 // returns the underlying twap price provided by an oracle
 pub fn query_underlying_twap_price(deps: &Deps, interval: u64) -> StdResult<Uint128> {
     let config: Config = read_config(deps.storage)?;
-    let key: String = config.quote_asset;
+    let key: String = config.base_asset;
 
     deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: config.pricefeed.to_string(),

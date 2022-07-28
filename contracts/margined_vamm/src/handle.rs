@@ -87,7 +87,7 @@ pub fn update_config(
 
     store_config(deps.storage, &config)?;
 
-    Ok(Response::default())
+    Ok(Response::default().add_attribute("action", "update_config"))
 }
 
 pub fn set_open(deps: DepsMut, env: Env, info: MessageInfo, open: bool) -> StdResult<Response> {
@@ -109,7 +109,7 @@ pub fn set_open(deps: DepsMut, env: Env, info: MessageInfo, open: bool) -> StdRe
 
     store_state(deps.storage, &state)?;
 
-    Ok(Response::default())
+    Ok(Response::default().add_attribute("action", "set_open"))
 }
 
 // Function should only be called by the margin engine
@@ -161,7 +161,8 @@ pub fn swap_input(
     )?;
 
     Ok(response.add_attributes(vec![
-        ("action", "swap_input"),
+        ("action", "swap"),
+        ("type", "input"),
         ("direction", &direction.to_string()),
         ("quote_asset_amount", &quote_asset_amount.to_string()),
         ("base_asset_amount", &base_asset_amount.to_string()),
@@ -223,7 +224,8 @@ pub fn swap_output(
     )?;
 
     Ok(response.add_attributes(vec![
-        ("action", "swap_output"),
+        ("action", "swap"),
+        ("type", "output"),
         ("direction", &direction.to_string()),
         ("quote_asset_amount", &quote_asset_amount.to_string()),
         ("base_asset_amount", &base_asset_amount.to_string()),
@@ -250,16 +252,17 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
         query_twap_price(deps.as_ref(), env.clone(), config.spot_price_twap_interval)?;
 
     // let premium = calculate_premium(underlying_price, index_price)?;
-    let premium = Integer::new_positive(index_price) - Integer::new_positive(underlying_price);
+    let premium =
+        Integer::new_positive(index_price).checked_sub(Integer::new_positive(underlying_price))?;
 
-    let premium_fraction = premium * Integer::new_positive(config.funding_period)
-        / Integer::new_positive(ONE_DAY_IN_SECONDS);
+    let premium_fraction = premium
+        .checked_mul(Integer::new_positive(config.funding_period))?
+        .checked_div(Integer::new_positive(ONE_DAY_IN_SECONDS))?;
 
     // update funding rate = premiumFraction / twapIndexPrice
     state.funding_rate = premium_fraction
-        .value
-        .checked_mul(config.decimals)?
-        .checked_div(underlying_price)?;
+        .checked_mul(Integer::new_positive(config.decimals))?
+        .checked_div(Integer::new_positive(underlying_price))?;
 
     // in order to prevent multiple funding settlement during very short time after network congestion
     let min_next_funding_time = env.block.time.plus_seconds(config.funding_buffer_period);

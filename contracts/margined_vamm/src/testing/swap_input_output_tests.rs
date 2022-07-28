@@ -380,7 +380,7 @@ fn test_swap_input_twice_short_long() {
             quote_asset_reserve: to_decimals(1_000),
             base_asset_reserve: Uint128::from(100_000_000_001u128),
             total_position_size: Integer::new_negative(1u128),
-            funding_rate: Uint128::zero(),
+            funding_rate: Integer::zero(),
             next_funding_time: 1_571_801_019u64,
         }
     );
@@ -445,7 +445,7 @@ fn test_swap_input_twice_long_short() {
             quote_asset_reserve: to_decimals(1_000),
             base_asset_reserve: Uint128::from(100_000_000_001u128),
             total_position_size: Integer::new_negative(1u128),
-            funding_rate: Uint128::zero(),
+            funding_rate: Integer::zero(),
             next_funding_time: 1_571_801_019u64,
         }
     );
@@ -508,7 +508,7 @@ fn test_swap_output_twice_short_long() {
             quote_asset_reserve: Uint128::from(1_000_000_000_001u128),
             base_asset_reserve: to_decimals(100),
             total_position_size: Integer::default(),
-            funding_rate: Uint128::zero(),
+            funding_rate: Integer::zero(),
             next_funding_time: 1_571_801_019u64,
         }
     );
@@ -571,7 +571,7 @@ fn test_swap_output_twice_long_short() {
             quote_asset_reserve: Uint128::from(1_000_000_000_001u128),
             base_asset_reserve: to_decimals(100),
             total_position_size: Integer::default(),
-            funding_rate: Uint128::zero(),
+            funding_rate: Integer::zero(),
             next_funding_time: 1_571_801_019u64,
         }
     );

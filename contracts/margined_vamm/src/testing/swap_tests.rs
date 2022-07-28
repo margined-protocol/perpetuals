@@ -5,7 +5,7 @@ use margined_common::integer::Integer;
 use margined_perp::margined_vamm::{
     ConfigResponse, Direction, ExecuteMsg, InstantiateMsg, QueryMsg, StateResponse,
 };
-use margined_utils::scenarios::{to_decimals, DECIMAL_MULTIPLIER};
+use margined_utils::scenarios::{parse_event, to_decimals, DECIMAL_MULTIPLIER};
 
 #[test]
 fn test_instantiation() {
@@ -56,19 +56,10 @@ fn test_instantiation() {
             quote_asset_reserve: Uint128::from(100u128),
             base_asset_reserve: Uint128::from(10_000u128),
             total_position_size: Integer::default(),
-            funding_rate: Uint128::zero(),
+            funding_rate: Integer::zero(),
             next_funding_time: 0u64,
         }
     );
-
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::ReserveSnapshotHeight {},
-    )
-    .unwrap();
-    let height: u64 = from_binary(&res).unwrap();
-    assert_eq!(height, 1u64);
 }
 
 #[test]
@@ -215,7 +206,7 @@ fn test_swap_input_long() {
             quote_asset_reserve: to_decimals(1_600),
             base_asset_reserve: Uint128::from(62_500_000_000u128),
             total_position_size: Integer::new_positive(37_500_000_000u128),
-            funding_rate: Uint128::zero(),
+            funding_rate: Integer::zero(),
             next_funding_time: 1_571_801_019u64,
         }
     );
@@ -269,7 +260,7 @@ fn test_swap_input_short() {
             quote_asset_reserve: to_decimals(400),
             base_asset_reserve: to_decimals(250),
             total_position_size: Integer::new_negative(to_decimals(150)),
-            funding_rate: Uint128::zero(),
+            funding_rate: Integer::zero(),
             next_funding_time: 1_571_801_019u64,
         }
     );
@@ -322,7 +313,7 @@ fn test_swap_output_short() {
             quote_asset_reserve: to_decimals(400),
             base_asset_reserve: to_decimals(250),
             total_position_size: Integer::new_negative(to_decimals(150)),
-            funding_rate: Uint128::zero(),
+            funding_rate: Integer::zero(),
             next_funding_time: 1_571_801_019u64,
         }
     );
@@ -375,7 +366,7 @@ fn test_swap_output_long() {
             quote_asset_reserve: to_decimals(2_000),
             base_asset_reserve: to_decimals(50),
             total_position_size: Integer::new_positive(to_decimals(50)),
-            funding_rate: Uint128::zero(),
+            funding_rate: Integer::zero(),
             next_funding_time: 1_571_801_019u64,
         }
     );
@@ -430,7 +421,7 @@ fn test_swap_input_short_long() {
             quote_asset_reserve: to_decimals(520),
             base_asset_reserve: Uint128::from(192_307_692_308u128),
             total_position_size: Integer::new_negative(92_307_692_308u128),
-            funding_rate: Uint128::zero(),
+            funding_rate: Integer::zero(),
             next_funding_time: 1_571_801_019u64,
         }
     );
@@ -454,7 +445,7 @@ fn test_swap_input_short_long() {
             quote_asset_reserve: to_decimals(1_480),
             base_asset_reserve: Uint128::from(67_567_567_568u128),
             total_position_size: Integer::new_positive(32_432_432_432u128),
-            funding_rate: Uint128::zero(),
+            funding_rate: Integer::zero(),
             next_funding_time: 1_571_801_019u64,
         }
     );
@@ -508,7 +499,7 @@ fn test_swap_input_short_long_long() {
             quote_asset_reserve: to_decimals(800),
             base_asset_reserve: to_decimals(125),
             total_position_size: Integer::new_negative(25_000_000_000u128),
-            funding_rate: Uint128::zero(),
+            funding_rate: Integer::zero(),
             next_funding_time: 1_571_801_019u64,
         }
     );
@@ -532,7 +523,7 @@ fn test_swap_input_short_long_long() {
             quote_asset_reserve: to_decimals(900),
             base_asset_reserve: Uint128::from(111_111_111_112u128),
             total_position_size: Integer::new_negative(11_111_111_112u128),
-            funding_rate: Uint128::zero(),
+            funding_rate: Integer::zero(),
             next_funding_time: 1_571_801_019u64,
         }
     );
@@ -556,7 +547,7 @@ fn test_swap_input_short_long_long() {
             quote_asset_reserve: to_decimals(1100),
             base_asset_reserve: Uint128::from(90_909_090_910u128),
             total_position_size: Integer::new_positive(90_909_090_90u128),
-            funding_rate: Uint128::zero(),
+            funding_rate: Integer::zero(),
             next_funding_time: 1_571_801_019u64,
         }
     );
@@ -610,7 +601,7 @@ fn test_swap_input_short_long_short() {
             quote_asset_reserve: to_decimals(800),
             base_asset_reserve: to_decimals(125),
             total_position_size: Integer::new_negative(25_000_000_000u128),
-            funding_rate: Uint128::zero(),
+            funding_rate: Integer::zero(),
             next_funding_time: 1_571_801_019u64,
         }
     );
@@ -634,7 +625,7 @@ fn test_swap_input_short_long_short() {
             quote_asset_reserve: to_decimals(1250),
             base_asset_reserve: to_decimals(80),
             total_position_size: Integer::new_positive(20_000_000_000u128),
-            funding_rate: Uint128::zero(),
+            funding_rate: Integer::zero(),
             next_funding_time: 1_571_801_019u64,
         }
     );
@@ -658,7 +649,7 @@ fn test_swap_input_short_long_short() {
             quote_asset_reserve: to_decimals(1000),
             base_asset_reserve: to_decimals(100),
             total_position_size: Integer::default(),
-            funding_rate: Uint128::zero(),
+            funding_rate: Integer::zero(),
             next_funding_time: 1_571_801_019u64,
         }
     );
@@ -711,31 +702,14 @@ fn test_swap_output_short_and_indivisable() {
     };
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+    assert_eq!(parse_event(&result, "action"), "swap");
+    assert_eq!(parse_event(&result, "type"), "output");
     assert_eq!(
-        result
-            .attributes
-            .iter()
-            .find(|&attr| attr.key == "action")
-            .unwrap()
-            .value,
-        "swap_output"
-    );
-    assert_eq!(
-        result
-            .attributes
-            .iter()
-            .find(|&attr| attr.key == "quote_asset_amount")
-            .unwrap()
-            .value,
+        parse_event(&result, "quote_asset_amount"),
         amount.to_string()
     );
     assert_eq!(
-        result
-            .attributes
-            .iter()
-            .find(|&attr| attr.key == "base_asset_amount")
-            .unwrap()
-            .value,
+        parse_event(&result, "base_asset_amount"),
         to_decimals(5u64).to_string()
     );
 }
@@ -787,31 +761,14 @@ fn test_swap_output_long_and_indivisable() {
     };
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+    assert_eq!(parse_event(&result, "action"), "swap");
+    assert_eq!(parse_event(&result, "type"), "output");
     assert_eq!(
-        result
-            .attributes
-            .iter()
-            .find(|&attr| attr.key == "action")
-            .unwrap()
-            .value,
-        "swap_output"
-    );
-    assert_eq!(
-        result
-            .attributes
-            .iter()
-            .find(|&attr| attr.key == "quote_asset_amount")
-            .unwrap()
-            .value,
+        parse_event(&result, "quote_asset_amount"),
         amount.to_string()
     );
     assert_eq!(
-        result
-            .attributes
-            .iter()
-            .find(|&attr| attr.key == "base_asset_amount")
-            .unwrap()
-            .value,
+        parse_event(&result, "base_asset_amount"),
         to_decimals(5u64).to_string()
     );
 }

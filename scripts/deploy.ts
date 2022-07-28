@@ -8,18 +8,24 @@ import { join } from 'path'
 // consts
 
 const config = {
-  chainId: 'testing',
-  rpcEndpoint: 'http://144.91.72.93:26657',
+  chainId: 'uni-3',
+  rpcEndpoint: 'https://rpc.margined.io',
   prefix: 'juno',
 }
-
-const mnemonic =
-  'clip hire initial neck maid actor venue client foam budget lock catalog sweet steak waste crater broccoli pipe steak sister coyote moment obvious choose'
 
 const MARGINED_ARTIFACTS_PATH = '../artifacts'
 
 // main
 async function main() {
+  const mnemonic = process.env.MNEMONIC
+
+  // just check mnemonic has actually been defined
+  if (mnemonic === null || mnemonic === undefined) {
+    const message = `mnemonic undefined`
+
+    throw new Error(message)
+  }
+
   const client = await setupNodeLocal(config, mnemonic)
   const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
     prefix: 'juno',
@@ -47,6 +53,7 @@ async function main() {
     join(MARGINED_ARTIFACTS_PATH, 'margined_fee_pool.wasm'),
     'margined_fee_pool',
     {},
+    '150000',
     {},
   )
   console.log('Fee Pool Contract Address: ' + feePoolContractAddress)
@@ -61,6 +68,7 @@ async function main() {
     join(MARGINED_ARTIFACTS_PATH, 'margined_insurance_fund.wasm'),
     'margined_insurance_fund',
     {},
+    '150000',
     {},
   )
   console.log(
@@ -74,9 +82,10 @@ async function main() {
   const priceFeedAddress = await deployContract(
     client,
     account.address,
-    join(MARGINED_ARTIFACTS_PATH, 'mock_pricefeed.wasm'),
-    'mock_pricefeed',
+    join(MARGINED_ARTIFACTS_PATH, 'margined_pricefeed.wasm'),
+    'margined_pricefeed',
     deployConfig.priceFeedInitMsg,
+    '150000',
     {},
   )
   console.log('Mock PriceFeed Address: ' + priceFeedAddress)
@@ -92,6 +101,7 @@ async function main() {
     join(MARGINED_ARTIFACTS_PATH, 'margined_vamm.wasm'),
     'margined_vamm',
     deployConfig.vammInitMsg,
+    '300000',
     {},
   )
   console.log('ETH:UST vAMM Address: ' + vammContractAddress)
@@ -139,11 +149,16 @@ async function main() {
           address: 'juno1peu2fm3rtuc3hrpaskazzh68qle8g654z68y2w',
           amount: '1000000000', // 1,000
         },
+        {
+          address: 'juno1qrqw3650zq7md6txk4g3pyt98vr6f02neq0krc',
+          amount: '1000000000', // 1,000
+        },
       ],
       mint: {
         minter: account.address,
       },
     },
+    '150000',
     {},
   )
   console.log('Margin CW20 Address: ' + marginCW20ContractAddress)
@@ -162,39 +177,58 @@ async function main() {
     join(MARGINED_ARTIFACTS_PATH, 'margined_engine.wasm'),
     'margined_engine',
     deployConfig.engineInitMsg,
+    '300000',
     {},
   )
   console.log('Margin Engine Address: ' + marginEngineContractAddress)
 
   // Define Margin engine address in vAMM
   console.log('Set Margin Engine in vAMM...')
-  await executeContract(client, account.address, vammContractAddress, {
-    update_config: {
-      margin_engine: marginEngineContractAddress,
+  await executeContract(
+    client,
+    account.address,
+    vammContractAddress,
+    {
+      update_config: {
+        margin_engine: marginEngineContractAddress,
+      },
     },
-  })
+    '150000',
+  )
   console.log('Margin Engine set in vAMM')
 
   ///
   /// Define the token address in the Margin Engine
   ///
   console.log('Set Eligible Collateral in Margin Engine...')
-  await executeContract(client, account.address, marginEngineContractAddress, {
-    update_config: {
-      eligible_collateral: marginCW20ContractAddress,
+  await executeContract(
+    client,
+    account.address,
+    marginEngineContractAddress,
+    {
+      update_config: {
+        eligible_collateral: marginCW20ContractAddress,
+      },
     },
-  })
+    '150000',
+  )
   console.log('Margin Engine set in vAMM')
 
   ///
   /// Register vAMM in Insurance Fund
   ///
   console.log('Register vAMM in Insurance Fund...')
-  await executeContract(client, account.address, insuranceFundContractAddress, {
-    add_vamm: {
-      vamm: vammContractAddress,
+  await executeContract(
+    client,
+    account.address,
+    insuranceFundContractAddress,
+    {
+      add_vamm: {
+        vamm: vammContractAddress,
+      },
     },
-  })
+    '150000',
+  )
   console.log('vAMM registered')
 
   ///
@@ -203,22 +237,34 @@ async function main() {
   ///
   ///
   console.log('Define Margin Engine as Insurance Fund Beneficiary...')
-  await executeContract(client, account.address, insuranceFundContractAddress, {
-    update_config: {
-      beneficiary: marginEngineContractAddress,
+  await executeContract(
+    client,
+    account.address,
+    insuranceFundContractAddress,
+    {
+      update_config: {
+        beneficiary: marginEngineContractAddress,
+      },
     },
-  })
+    '150000',
+  )
   console.log('Margin Engine set as beneficiary')
 
   ///
   /// Set vAMM Open
   ///
   console.log('Set vAMM Open...')
-  await executeContract(client, account.address, vammContractAddress, {
-    set_open: {
-      open: true,
+  await executeContract(
+    client,
+    account.address,
+    vammContractAddress,
+    {
+      set_open: {
+        open: true,
+      },
     },
-  })
+    '150000',
+  )
   console.log('vAMM set to open')
 
   ///

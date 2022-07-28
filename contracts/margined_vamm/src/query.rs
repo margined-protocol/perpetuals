@@ -6,10 +6,7 @@ use crate::{
     contract::MAX_ORACLE_SPREAD_RATIO,
     handle::{get_input_price_with_reserves, get_output_price_with_reserves},
     querier::query_underlying_price,
-    state::{
-        read_config, read_reserve_snapshot_counter, read_reserve_snapshots, read_state, Config,
-        ReserveSnapshot, State,
-    },
+    state::{read_config, read_reserve_snapshot_counter, read_state, Config, State},
     utils::{calc_twap, TwapCalcOption, TwapInputAsset, TwapPriceCalcParams},
 };
 
@@ -232,18 +229,4 @@ pub fn query_is_over_spread_limit(deps: Deps) -> StdResult<bool> {
 
     // TODO this is only 10% if the decimals are matching, and probably we should do this more nicely
     Ok(current_spread_ratio.abs() >= Integer::new_positive(MAX_ORACLE_SPREAD_RATIO))
-}
-
-/// query_reserve_snapshot_height
-pub fn query_reserve_snapshot_height(deps: Deps) -> StdResult<u64> {
-    read_reserve_snapshot_counter(deps.storage)
-}
-
-/// query reserve snapshots, returns as many snapshots as possible
-pub fn query_reserve_snapshots(
-    deps: Deps,
-    start: Option<u64>,
-    limit: Option<u32>,
-) -> StdResult<Vec<ReserveSnapshot>> {
-    read_reserve_snapshots(deps.storage, start, limit)
 }

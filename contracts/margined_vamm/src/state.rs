@@ -1,8 +1,8 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Order, StdResult, Storage, Timestamp, Uint128};
-use cosmwasm_storage::{bucket, bucket_read, singleton, singleton_read, ReadonlyBucket};
+use cosmwasm_std::{Addr, StdResult, Storage, Timestamp, Uint128};
+use cosmwasm_storage::{bucket, bucket_read, singleton, singleton_read};
 
 use margined_common::integer::Integer;
 
@@ -10,9 +10,6 @@ pub static KEY_CONFIG: &[u8] = b"config";
 pub static KEY_STATE: &[u8] = b"state";
 pub static KEY_RESERVE_SNAPSHOT: &[u8] = b"reserve_snapshot";
 pub static KEY_RESERVE_SNAPSHOT_COUNTER: &[u8] = b"reserve_snapshot_counter";
-
-const MAX_LIMIT: u32 = 30;
-const DEFAULT_LIMIT: u32 = 10;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
@@ -46,7 +43,7 @@ pub struct State {
     pub quote_asset_reserve: Uint128,
     pub base_asset_reserve: Uint128,
     pub total_position_size: Integer,
-    pub funding_rate: Uint128,
+    pub funding_rate: Integer,
     pub next_funding_time: u64,
 }
 
@@ -68,27 +65,6 @@ pub struct ReserveSnapshot {
 
 pub fn read_reserve_snapshot(storage: &dyn Storage, height: u64) -> StdResult<ReserveSnapshot> {
     bucket_read(storage, KEY_RESERVE_SNAPSHOT).load(&height.to_be_bytes())
-}
-
-/// reads multiple reserve snapshots and returns an array
-pub fn read_reserve_snapshots(
-    storage: &dyn Storage,
-    start: Option<u64>,
-    limit: Option<u32>,
-) -> StdResult<Vec<ReserveSnapshot>> {
-    let limit: usize = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-
-    let snapshots: ReadonlyBucket<ReserveSnapshot> =
-        ReadonlyBucket::new(storage, KEY_RESERVE_SNAPSHOT);
-
-    snapshots
-        .range(calc_range_start(start).as_deref(), None, Order::Ascending)
-        .take(limit)
-        .map(|item| {
-            let (_, v) = item?;
-            Ok(v)
-        })
-        .collect()
 }
 
 /// Stores a new reserve snapshot
@@ -127,13 +103,4 @@ pub fn increment_reserve_snapshot_counter(storage: &mut dyn Storage) -> StdResul
     let val = read_reserve_snapshot_counter(storage)? + 1;
 
     singleton(storage, KEY_RESERVE_SNAPSHOT_COUNTER).save(&val)
-}
-
-// this will set the first key after the provided key, by appending a 1 byte
-fn calc_range_start(start_after: Option<u64>) -> Option<Vec<u8>> {
-    start_after.map(|id| {
-        let mut v = id.to_be_bytes().to_vec();
-        v.push(1);
-        v
-    })
 }
