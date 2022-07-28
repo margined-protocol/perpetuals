@@ -1,8 +1,0 @@
-@startuml
-actor Alice as alice
-participant USDC as token
-participant "Margin Engine" as margin
-collections vAMM as vamm
-participant Oracle as oracle
-
-@enduml
