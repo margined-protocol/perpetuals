@@ -114,7 +114,6 @@ impl NativeTokenScenario {
                 pricefeed_id,
                 owner.clone(),
                 &PricefeedInstantiateMsg {
-                    decimals: 6u8,
                     oracle_hub_contract: "oracle_hub0000".to_string(),
                 },
                 &[],
@@ -325,7 +324,7 @@ impl SimpleScenario {
                 &cw20_base::msg::InstantiateMsg {
                     name: "USDC".to_string(),
                     symbol: "USDC".to_string(),
-                    decimals: 9,
+                    decimals: 9, //see here
                     initial_balances: vec![
                         Cw20Coin {
                             address: alice.to_string(),
@@ -363,7 +362,6 @@ impl SimpleScenario {
                 pricefeed_id,
                 owner.clone(),
                 &PricefeedInstantiateMsg {
-                    decimals: 9u8,
                     oracle_hub_contract: "oracle_hub0000".to_string(),
                 },
                 &[],
@@ -378,7 +376,7 @@ impl SimpleScenario {
                 vamm_id,
                 owner.clone(),
                 &VammInstantiateMsg {
-                    decimals: 9u8,
+                    decimals: 9u8, //see here
                     quote_asset: "ETH".to_string(),
                     base_asset: "USD".to_string(),
                     quote_asset_reserve: to_decimals(1_000),
@@ -410,7 +408,7 @@ impl SimpleScenario {
                 engine_id,
                 owner.clone(),
                 &InstantiateMsg {
-                    decimals: 9u8,
+                    decimals: 9u8, //see here
                     insurance_fund: insurance_fund.addr().to_string(),
                     fee_pool: fee_pool.addr().to_string(),
                     eligible_collateral: usdc_addr.to_string(),
@@ -583,7 +581,7 @@ impl VammScenario {
                 &cw20_base::msg::InstantiateMsg {
                     name: "USDC".to_string(),
                     symbol: "USDC".to_string(),
-                    decimals: 9,
+                    decimals: 9, //see here
                     initial_balances: vec![
                         Cw20Coin {
                             address: alice.to_string(),
@@ -614,7 +612,6 @@ impl VammScenario {
                 pricefeed_id,
                 owner.clone(),
                 &PricefeedInstantiateMsg {
-                    decimals: 9u8,
                     oracle_hub_contract: "oracle_hub0000".to_string(),
                 },
                 &[],
@@ -629,7 +626,7 @@ impl VammScenario {
                 vamm_id,
                 owner.clone(),
                 &VammInstantiateMsg {
-                    decimals: 9u8,
+                    decimals: 9u8, //see here
                     quote_asset: "ETH".to_string(),
                     base_asset: "USD".to_string(),
                     quote_asset_reserve: to_decimals(1_000),
@@ -708,7 +705,6 @@ impl ShutdownScenario {
                 pricefeed_id,
                 owner.clone(),
                 &PricefeedInstantiateMsg {
-                    decimals: 9u8,
                     oracle_hub_contract: "oracle_hub0000".to_string(),
                 },
                 &[],
@@ -723,7 +719,7 @@ impl ShutdownScenario {
                 vamm_id,
                 insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
-                    decimals: 9u8,
+                    decimals: 9u8, //see here
                     quote_asset: "ETH".to_string(),
                     base_asset: "USD".to_string(),
                     quote_asset_reserve: to_decimals(1_000),
@@ -750,7 +746,7 @@ impl ShutdownScenario {
                 vamm_id,
                 insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
-                    decimals: 9u8,
+                    decimals: 9u8, //see here
                     quote_asset: "ETH".to_string(),
                     base_asset: "USD".to_string(),
                     quote_asset_reserve: to_decimals(1_000),
@@ -777,7 +773,7 @@ impl ShutdownScenario {
                 vamm_id,
                 insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
-                    decimals: 9u8,
+                    decimals: 9u8, //see here
                     quote_asset: "ETH".to_string(),
                     base_asset: "USD".to_string(),
                     quote_asset_reserve: to_decimals(1_000),
@@ -804,7 +800,7 @@ impl ShutdownScenario {
                 vamm_id,
                 insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
-                    decimals: 9u8,
+                    decimals: 9u8, //see here
                     quote_asset: "ETH".to_string(),
                     base_asset: "USD".to_string(),
                     quote_asset_reserve: to_decimals(1_000),

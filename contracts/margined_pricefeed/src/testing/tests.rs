@@ -12,34 +12,26 @@ use margined_perp::margined_pricefeed::{ConfigResponse, ExecuteMsg, InstantiateM
 #[test]
 fn test_instantiation() {
     let mut deps = mock_dependencies();
-    let msg = InstantiateMsg {
-        decimals: 6u8,
+    let _msg = InstantiateMsg {
         oracle_hub_contract: "oracle_hub0000".to_string(),
     };
     let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    instantiate(deps.as_mut(), mock_env(), info, _msg).unwrap();
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
     let info = mock_info("addr0000", &[]);
-    assert_eq!(
-        config,
-        ConfigResponse {
-            owner: info.sender,
-            decimals: Uint128::from(1_000_000_u128),
-        }
-    );
+    assert_eq!(config, ConfigResponse { owner: info.sender });
 }
 
 #[test]
 fn test_update_config() {
     let mut deps = mock_dependencies();
-    let msg = InstantiateMsg {
-        decimals: 6u8,
+    let _msg = InstantiateMsg {
         oracle_hub_contract: "oracle_hub0000".to_string(),
     };
     let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    instantiate(deps.as_mut(), mock_env(), info, _msg).unwrap();
 
     // Update the config
     let msg = ExecuteMsg::UpdateConfig {
@@ -55,7 +47,6 @@ fn test_update_config() {
         config,
         ConfigResponse {
             owner: Addr::unchecked("addr0001".to_string()),
-            decimals: Uint128::from(1_000_000u128),
         }
     );
 }
@@ -63,23 +54,16 @@ fn test_update_config() {
 #[test]
 fn test_set_and_get_price() {
     let mut deps = mock_dependencies();
-    let msg = InstantiateMsg {
-        decimals: 6u8,
+    let _msg = InstantiateMsg {
         oracle_hub_contract: "oracle_hub0000".to_string(),
     };
     let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    instantiate(deps.as_mut(), mock_env(), info, _msg).unwrap();
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
     let info = mock_info("addr0000", &[]);
-    assert_eq!(
-        config,
-        ConfigResponse {
-            owner: info.sender,
-            decimals: Uint128::from(1_000_000u128),
-        }
-    );
+    assert_eq!(config, ConfigResponse { owner: info.sender });
 
     // Set some market data
     let msg = ExecuteMsg::AppendPrice {
@@ -141,23 +125,16 @@ fn test_set_and_get_price() {
 #[test]
 fn test_set_multiple_price() {
     let mut deps = mock_dependencies();
-    let msg = InstantiateMsg {
-        decimals: 6u8,
+    let _msg = InstantiateMsg {
         oracle_hub_contract: "oracle_hub0000".to_string(),
     };
     let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    instantiate(deps.as_mut(), mock_env(), info, _msg).unwrap();
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
     let info = mock_info("addr0000", &[]);
-    assert_eq!(
-        config,
-        ConfigResponse {
-            owner: info.sender,
-            decimals: Uint128::from(1_000_000_u128),
-        }
-    );
+    assert_eq!(config, ConfigResponse { owner: info.sender });
 
     let prices = vec![
         Uint128::from(500_000_000u128),
@@ -199,23 +176,16 @@ fn test_set_multiple_price() {
 #[test]
 fn test_get_previous_price() {
     let mut deps = mock_dependencies();
-    let msg = InstantiateMsg {
-        decimals: 6u8,
+    let _msg = InstantiateMsg {
         oracle_hub_contract: "oracle_hub0000".to_string(),
     };
     let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    instantiate(deps.as_mut(), mock_env(), info, _msg).unwrap();
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
     let info = mock_info("addr0000", &[]);
-    assert_eq!(
-        config,
-        ConfigResponse {
-            owner: info.sender,
-            decimals: Uint128::from(1_000_000_u128),
-        }
-    );
+    assert_eq!(config, ConfigResponse { owner: info.sender });
 
     let prices = vec![
         Uint128::from(500_000_000u128),
@@ -275,23 +245,16 @@ fn test_get_previous_price() {
 fn test_get_twap_price() {
     let mut deps = mock_dependencies();
     let mut env = mock_env();
-    let msg = InstantiateMsg {
-        decimals: 6u8,
+    let _msg = InstantiateMsg {
         oracle_hub_contract: "oracle_hub0000".to_string(),
     };
     let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
+    instantiate(deps.as_mut(), env.clone(), info, _msg).unwrap();
 
     let res = query(deps.as_ref(), env.clone(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
     let info = mock_info("addr0000", &[]);
-    assert_eq!(
-        config,
-        ConfigResponse {
-            owner: info.sender,
-            decimals: Uint128::from(1_000_000u128),
-        }
-    );
+    assert_eq!(config, ConfigResponse { owner: info.sender });
 
     let prices = vec![
         Uint128::from(400_000_000u128),
@@ -364,23 +327,16 @@ fn test_get_twap_price() {
 fn test_get_twap_variant_price_period() {
     let mut deps = mock_dependencies();
     let mut env = mock_env();
-    let msg = InstantiateMsg {
-        decimals: 6u8,
+    let _msg = InstantiateMsg {
         oracle_hub_contract: "oracle_hub0000".to_string(),
     };
     let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
+    instantiate(deps.as_mut(), env.clone(), info, _msg).unwrap();
 
     let res = query(deps.as_ref(), env.clone(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
     let info = mock_info("addr0000", &[]);
-    assert_eq!(
-        config,
-        ConfigResponse {
-            owner: info.sender,
-            decimals: Uint128::from(1_000_000_u128),
-        }
-    );
+    assert_eq!(config, ConfigResponse { owner: info.sender });
 
     let prices = vec![
         Uint128::from(400_000_000u128),
@@ -426,23 +382,16 @@ fn test_get_twap_variant_price_period() {
 fn test_get_twap_latest_price_update_is_earlier_than_request() {
     let mut deps = mock_dependencies();
     let mut env = mock_env();
-    let msg = InstantiateMsg {
-        decimals: 6u8,
+    let _msg = InstantiateMsg {
         oracle_hub_contract: "oracle_hub0000".to_string(),
     };
     let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
+    instantiate(deps.as_mut(), env.clone(), info, _msg).unwrap();
 
     let res = query(deps.as_ref(), env.clone(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
     let info = mock_info("addr0000", &[]);
-    assert_eq!(
-        config,
-        ConfigResponse {
-            owner: info.sender,
-            decimals: Uint128::from(1_000_000_u128),
-        }
-    );
+    assert_eq!(config, ConfigResponse { owner: info.sender });
 
     let prices = vec![
         Uint128::from(400_000_000u128),
@@ -486,23 +435,16 @@ fn test_get_twap_latest_price_update_is_earlier_than_request() {
 fn test_get_twap_no_rounds() {
     let mut deps = mock_dependencies();
     let env = mock_env();
-    let msg = InstantiateMsg {
-        decimals: 6u8,
+    let _msg = InstantiateMsg {
         oracle_hub_contract: "oracle_hub0000".to_string(),
     };
     let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
+    instantiate(deps.as_mut(), env.clone(), info, _msg).unwrap();
 
     let res = query(deps.as_ref(), env.clone(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
     let info = mock_info("addr0000", &[]);
-    assert_eq!(
-        config,
-        ConfigResponse {
-            owner: info.sender,
-            decimals: Uint128::from(1_000_000_u128),
-        }
-    );
+    assert_eq!(config, ConfigResponse { owner: info.sender });
 
     let res = query(
         deps.as_ref(),
@@ -520,23 +462,16 @@ fn test_get_twap_no_rounds() {
 fn test_get_twap_error_zero_interval() {
     let mut deps = mock_dependencies();
     let mut env = mock_env();
-    let msg = InstantiateMsg {
-        decimals: 6u8,
+    let _msg = InstantiateMsg {
         oracle_hub_contract: "oracle_hub0000".to_string(),
     };
     let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
+    instantiate(deps.as_mut(), env.clone(), info, _msg).unwrap();
 
     let res = query(deps.as_ref(), env.clone(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
     let info = mock_info("addr0000", &[]);
-    assert_eq!(
-        config,
-        ConfigResponse {
-            owner: info.sender,
-            decimals: Uint128::from(1_000_000_u128),
-        }
-    );
+    assert_eq!(config, ConfigResponse { owner: info.sender });
 
     let prices = vec![
         Uint128::from(400_000_000u128),

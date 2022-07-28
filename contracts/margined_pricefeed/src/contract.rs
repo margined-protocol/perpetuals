@@ -5,7 +5,6 @@ use crate::{
     state::{store_config, Config},
 };
 use cw2::set_contract_version;
-use margined_common::validate::validate_decimal_places;
 
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
@@ -22,17 +21,11 @@ pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    msg: InstantiateMsg,
+    _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    // validate decimal places are correct, and return ratio max.
-    let decimals = validate_decimal_places(msg.decimals)?;
-
-    let config = Config {
-        owner: info.sender,
-        decimals,
-    };
+    let config = Config { owner: info.sender };
 
     store_config(deps.storage, &config)?;
 
