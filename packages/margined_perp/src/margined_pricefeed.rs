@@ -12,7 +12,6 @@ pub enum Direction {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
-    pub decimals: u8,
     pub oracle_hub_contract: String, // address of the oracle hub we are using
 }
 
@@ -54,5 +53,4 @@ pub enum QueryMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: Addr,
-    pub decimals: Uint128,
 }

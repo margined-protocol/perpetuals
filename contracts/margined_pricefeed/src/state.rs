@@ -12,7 +12,6 @@ pub const PRICES: Map<String, Vec<PriceData>> = Map::new("prices");
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
-    pub decimals: Uint128,
 }
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {

@@ -27,10 +27,7 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    let config = Config {
-        owner: info.sender,
-        decimals: Uint128::from(10u128.pow(msg.decimals as u32)),
-    };
+    let config = Config { owner: info.sender };
 
     store_config(deps.storage, &config)?;
 
