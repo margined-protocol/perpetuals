@@ -26,7 +26,9 @@ use crate::{
 use margined_common::{
     asset::{Asset, AssetInfo},
     integer::Integer,
-    validate::{validate_address, validate_eligible_collateral, validate_ratio},
+    validate::{
+        validate_address, validate_decimal_places, validate_eligible_collateral, validate_ratio,
+    },
 };
 use margined_perp::margined_engine::{
     PnlCalcOption, Position, PositionUnrealizedPnlResponse, Side,
@@ -41,7 +43,6 @@ pub fn update_config(
     insurance_fund: Option<String>,
     fee_pool: Option<String>,
     eligible_collateral: Option<String>,
-    decimals: Option<Uint128>,
     initial_margin_ratio: Option<Uint128>,
     maintenance_margin_ratio: Option<Uint128>,
     partial_liquidation_margin_ratio: Option<Uint128>,
@@ -69,16 +70,17 @@ pub fn update_config(
         config.fee_pool = validate_address(deps.api, fee_pool.as_str())?;
     }
 
-    // update eligible collaterals
+    // update eligible collaterals and therefore also decimals
     if let Some(eligible_collateral) = eligible_collateral {
         // validate eligible collateral
         config.eligible_collateral =
             validate_eligible_collateral(deps.as_ref(), eligible_collateral)?;
-    }
 
-    // TODO: use the decimals defined in each eligible collateral, this should not be updatable
-    if let Some(decimals) = decimals {
-        config.decimals = decimals;
+        // find decimals of asset
+        let decimal_response = config.eligible_collateral.get_decimals(deps.as_ref())?;
+
+        // validate decimal places are correct, and return ratio max.
+        config.decimals = validate_decimal_places(decimal_response)?;
     }
 
     // update initial margin ratio

@@ -21,21 +21,14 @@ pub fn validate_ratio(value: Uint128, decimals: Uint128) -> StdResult<Response> 
     Ok(Response::new())
 }
 
-/// Verfiy that the address used for collateral is native token or cw token and returns as type AssetInfo
+/// Validates that the address used for collateral is native token or cw token and returns as type AssetInfo
 pub fn validate_eligible_collateral(deps: Deps, input: String) -> StdResult<AssetInfo> {
-    // verify if the string is any of the native stables for terra
+    // verify if the string is any of the native tokens for the deployed network
     let response = match input.as_str() {
-        "uusd" => AssetInfo::NativeToken {
-            denom: input.to_string(),
-        },
-        "ukrw" => AssetInfo::NativeToken {
-            denom: input.to_string(),
-        },
-        "uluna" => AssetInfo::NativeToken {
-            denom: input.to_string(),
-        },
-        // TODO remove as this is only for testing
         "ujunox" => AssetInfo::NativeToken {
+            denom: input.to_string(),
+        },
+        "uwasm" => AssetInfo::NativeToken {
             denom: input.to_string(),
         },
         _ => {

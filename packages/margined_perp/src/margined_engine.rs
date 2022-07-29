@@ -21,7 +21,6 @@ pub enum PnlCalcOption {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
-    pub decimals: u8,
     pub insurance_fund: String,
     pub fee_pool: String,
     pub eligible_collateral: String,
@@ -38,7 +37,6 @@ pub enum ExecuteMsg {
         insurance_fund: Option<String>,
         fee_pool: Option<String>,
         eligible_collateral: Option<String>,
-        decimals: Option<Uint128>,
         initial_margin_ratio: Option<Uint128>,
         maintenance_margin_ratio: Option<Uint128>,
         partial_liquidation_margin_ratio: Option<Uint128>,

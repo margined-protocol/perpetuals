@@ -23,14 +23,14 @@ fn test_add_margin() {
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(60_000_000u128, "uusd")],
+            vec![Coin::new(60_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let engine_balance = router
         .wrap()
-        .query_balance(&engine.addr(), "uusd")
+        .query_balance(&engine.addr(), "uwasm")
         .unwrap()
         .amount;
     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
@@ -39,14 +39,14 @@ fn test_add_margin() {
         .deposit_margin(
             vamm.addr().to_string(),
             Uint128::from(80_000_000u64),
-            vec![Coin::new(80_000_000u128, "uusd")],
+            vec![Coin::new(80_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let engine_balance = router
         .wrap()
-        .query_balance(&engine.addr(), "uusd")
+        .query_balance(&engine.addr(), "uwasm")
         .unwrap()
         .amount;
     assert_eq!(engine_balance, Uint128::from(140_000_000u64));
@@ -74,17 +74,17 @@ fn test_force_error_add_incorrect_margin() {
         ..
     } = NativeTokenScenario::new();
 
-    // give alice a balance of UST
+    // give alice a balance of uwasm
     let msg = CosmosMsg::Bank(BankMsg::Send {
         to_address: alice.to_string(),
-        amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "uusd")],
+        amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "uwasm")],
     });
     router.execute(bank.clone(), msg).unwrap();
 
-    // give alice a balance of LUNA
+    // give alice a balance of ucosmos
     let msg = CosmosMsg::Bank(BankMsg::Send {
         to_address: alice.to_string(),
-        amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "luna")],
+        amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "ucosmos")],
     });
     router.execute(bank.clone(), msg).unwrap();
 
@@ -92,7 +92,7 @@ fn test_force_error_add_incorrect_margin() {
         .deposit_margin(
             vamm.addr().to_string(),
             Uint128::from(85_000_000u64),
-            vec![Coin::new(85_000_000u128, "luna")],
+            vec![Coin::new(85_000_000u128, "ucosmos")],
         )
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
@@ -119,7 +119,7 @@ fn test_add_margin_no_open_position() {
         .deposit_margin(
             vamm.addr().to_string(),
             Uint128::from(80_000_000u64),
-            vec![Coin::new(80_000_000u128, "uusd")],
+            vec![Coin::new(80_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -142,14 +142,14 @@ fn test_remove_margin() {
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(60_000_000u128, "uusd")],
+            vec![Coin::new(60_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let engine_balance = router
         .wrap()
-        .query_balance(&engine.addr(), "uusd")
+        .query_balance(&engine.addr(), "uwasm")
         .unwrap()
         .amount;
     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
@@ -161,7 +161,7 @@ fn test_remove_margin() {
 
     let engine_balance = router
         .wrap()
-        .query_balance(&engine.addr(), "uusd")
+        .query_balance(&engine.addr(), "uwasm")
         .unwrap()
         .amount;
     assert_eq!(engine_balance, Uint128::from(40_000_000u64));
@@ -197,14 +197,14 @@ fn test_remove_margin_after_paying_funding() {
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(0_000_000u64),
-            vec![Coin::new(60_000_000u128, "uusd")],
+            vec![Coin::new(60_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let engine_balance = router
         .wrap()
-        .query_balance(&engine.addr(), "uusd")
+        .query_balance(&engine.addr(), "uwasm")
         .unwrap()
         .amount;
     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
@@ -234,7 +234,7 @@ fn test_remove_margin_after_paying_funding() {
 
     let engine_balance = router
         .wrap()
-        .query_balance(&engine.addr(), "uusd")
+        .query_balance(&engine.addr(), "uwasm")
         .unwrap()
         .amount;
     assert_eq!(engine_balance, Uint128::from(36_250_000u128));
@@ -268,14 +268,14 @@ fn test_remove_margin_insufficient_margin() {
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(0_000_000u64),
-            vec![Coin::new(60_000_000u128, "uusd")],
+            vec![Coin::new(60_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let engine_balance = router
         .wrap()
-        .query_balance(&engine.addr(), "uusd")
+        .query_balance(&engine.addr(), "uwasm")
         .unwrap()
         .amount;
     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
@@ -307,14 +307,14 @@ fn test_remove_margin_incorrect_ratio_four_percent() {
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(0_000_000u64),
-            vec![Coin::new(60_000_000u128, "uusd")],
+            vec![Coin::new(60_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let engine_balance = router
         .wrap()
-        .query_balance(&engine.addr(), "uusd")
+        .query_balance(&engine.addr(), "uwasm")
         .unwrap()
         .amount;
     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
@@ -348,7 +348,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price(
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0_000_000u64),
-            vec![Coin::new(60_000_000u128, "uusd")],
+            vec![Coin::new(60_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -361,7 +361,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price(
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0_000_000u64),
-            vec![Coin::new(60_000_000u128, "uusd")],
+            vec![Coin::new(60_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -406,7 +406,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() 
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(60_000_000u128, "uusd")],
+            vec![Coin::new(60_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -419,7 +419,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() 
             Uint128::from(10_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(10_000_000u128, "uusd")],
+            vec![Coin::new(10_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -463,7 +463,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -476,7 +476,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -528,7 +528,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_spot_price()
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -540,7 +540,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_spot_price()
             Uint128::from(10_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(10_000_000u128, "uusd")],
+            vec![Coin::new(10_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -585,7 +585,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_twap_price(
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(60_000_000u128, "uusd")],
+            vec![Coin::new(60_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -603,7 +603,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_twap_price(
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(60_000_000u128, "uusd")],
+            vec![Coin::new(60_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -653,7 +653,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() 
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(60_000_000u128, "uusd")],
+            vec![Coin::new(60_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -671,7 +671,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() 
             Uint128::from(10_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(10_000_000u128, "uusd")],
+            vec![Coin::new(10_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -720,7 +720,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -738,7 +738,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -795,7 +795,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_twap_price()
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -812,7 +812,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_twap_price()
             Uint128::from(10_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(10_000_000u128, "uusd")],
+            vec![Coin::new(10_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();

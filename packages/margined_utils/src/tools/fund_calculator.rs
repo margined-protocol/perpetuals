@@ -82,7 +82,7 @@ pub fn calculate_funds_needed<Q: Querier>(
     if funds_owed.is_zero() {
         Ok(vec![])
     } else {
-        Ok(vec![Coin::new(funds_owed.u128(), "uusd")])
+        Ok(vec![Coin::new(funds_owed.u128(), "uwasm")])
     }
 }
 

@@ -4,7 +4,7 @@ use cosmwasm_std::{from_binary, Addr, Uint128};
 use margined_common::asset::AssetInfo;
 use margined_perp::margined_engine::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 
-const TOKEN: &str = "token";
+const TOKEN: &str = "uwasm";
 const OWNER: &str = "owner";
 const INSURANCE_FUND: &str = "insurance_fund";
 const FEE_POOL: &str = "fee_pool";
@@ -13,12 +13,11 @@ const FEE_POOL: &str = "fee_pool";
 fn test_instantiation() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
-        decimals: 9u8,
         insurance_fund: INSURANCE_FUND.to_string(),
         fee_pool: FEE_POOL.to_string(),
         eligible_collateral: TOKEN.to_string(),
-        initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
-        maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
+        initial_margin_ratio: Uint128::from(50_000u128), // 0.05
+        maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
         liquidation_fee: Uint128::from(100u128),
     };
     let info = mock_info(OWNER, &[]);
@@ -33,32 +32,15 @@ fn test_instantiation() {
             owner: info.sender,
             insurance_fund: Addr::unchecked(INSURANCE_FUND.to_string()),
             fee_pool: Addr::unchecked(FEE_POOL.to_string()),
-            eligible_collateral: AssetInfo::Token {
-                contract_addr: Addr::unchecked(TOKEN.to_string()),
+            eligible_collateral: AssetInfo::NativeToken {
+                denom: TOKEN.to_string(),
             },
-            decimals: Uint128::from(10u128.pow(9u32)),
-            initial_margin_ratio: Uint128::from(50_000_000u128),
-            maintenance_margin_ratio: Uint128::from(50_000_000u128),
+            decimals: Uint128::from(10u128.pow(6u32)),
+            initial_margin_ratio: Uint128::from(50_000u128),
+            maintenance_margin_ratio: Uint128::from(50_000u128),
             partial_liquidation_margin_ratio: Uint128::zero(),
             liquidation_fee: Uint128::from(100u128),
         }
-    );
-
-    // fails if decimals are 0
-    let msg = InstantiateMsg {
-        decimals: 0u8,
-        insurance_fund: INSURANCE_FUND.to_string(),
-        fee_pool: FEE_POOL.to_string(),
-        eligible_collateral: TOKEN.to_string(),
-        initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
-        maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
-        liquidation_fee: Uint128::from(100u128),
-    };
-    let info = mock_info(OWNER, &[]);
-    let result = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-    assert_eq!(
-        result.to_string(),
-        "Generic error: Decimal places cannot be zero".to_string()
     );
 }
 
@@ -66,12 +48,11 @@ fn test_instantiation() {
 fn test_update_config() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
-        decimals: 9u8,
         insurance_fund: INSURANCE_FUND.to_string(),
         fee_pool: FEE_POOL.to_string(),
         eligible_collateral: TOKEN.to_string(),
-        initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
-        maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
+        initial_margin_ratio: Uint128::from(50_000u128), // 0.05
+        maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
         liquidation_fee: Uint128::from(100u128),
     };
     let info = mock_info(OWNER, &[]);
@@ -83,7 +64,6 @@ fn test_update_config() {
         insurance_fund: None,
         fee_pool: None,
         eligible_collateral: None,
-        decimals: None,
         initial_margin_ratio: None,
         maintenance_margin_ratio: None,
         partial_liquidation_margin_ratio: None,
@@ -101,12 +81,12 @@ fn test_update_config() {
             owner: Addr::unchecked("addr0001".to_string()),
             insurance_fund: Addr::unchecked(INSURANCE_FUND.to_string()),
             fee_pool: Addr::unchecked(FEE_POOL.to_string()),
-            eligible_collateral: AssetInfo::Token {
-                contract_addr: Addr::unchecked(TOKEN.to_string()),
+            eligible_collateral: AssetInfo::NativeToken {
+                denom: TOKEN.to_string(),
             },
-            decimals: Uint128::from(10u128.pow(9u32)),
-            initial_margin_ratio: Uint128::from(50_000_000u128),
-            maintenance_margin_ratio: Uint128::from(50_000_000u128),
+            decimals: Uint128::from(10u128.pow(6u32)),
+            initial_margin_ratio: Uint128::from(50_000u128),
+            maintenance_margin_ratio: Uint128::from(50_000u128),
             partial_liquidation_margin_ratio: Uint128::zero(),
             liquidation_fee: Uint128::from(100u128),
         }
@@ -118,7 +98,6 @@ fn test_update_config() {
         insurance_fund: None,
         fee_pool: None,
         eligible_collateral: None,
-        decimals: None,
         initial_margin_ratio: None,
         maintenance_margin_ratio: None,
         partial_liquidation_margin_ratio: None,
@@ -135,7 +114,6 @@ fn test_update_config() {
         insurance_fund: None,
         fee_pool: None,
         eligible_collateral: None,
-        decimals: None,
         initial_margin_ratio: Some(Uint128::MAX),
         maintenance_margin_ratio: None,
         partial_liquidation_margin_ratio: None,

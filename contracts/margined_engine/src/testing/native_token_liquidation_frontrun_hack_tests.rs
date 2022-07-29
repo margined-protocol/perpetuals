@@ -44,7 +44,7 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
     // mint funds for carol
     let msg = CosmosMsg::Bank(BankMsg::Send {
         to_address: env.carol.to_string(),
-        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uwasm")],
     });
     env.router.execute(env.bank.clone(), msg).unwrap();
 
@@ -56,7 +56,7 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(9_090_000u128),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -74,7 +74,7 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     env.router.execute(env.alice.clone(), msg).unwrap();
@@ -92,7 +92,7 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -110,7 +110,7 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
@@ -178,7 +178,7 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
     // mint funds for carol
     let msg = CosmosMsg::Bank(BankMsg::Send {
         to_address: env.carol.to_string(),
-        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uwasm")],
     });
     env.router.execute(env.bank.clone(), msg).unwrap();
 
@@ -190,7 +190,7 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(9_090_000u128),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -208,7 +208,7 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(7_570_000u128),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     env.router.execute(env.alice.clone(), msg).unwrap();
@@ -226,7 +226,7 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(7_580_000u128),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -244,7 +244,7 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
@@ -317,7 +317,7 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
     // mint funds for carol
     let msg = CosmosMsg::Bank(BankMsg::Send {
         to_address: env.carol.to_string(),
-        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uwasm")],
     });
     env.router.execute(env.bank.clone(), msg).unwrap();
 
@@ -329,7 +329,7 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -347,7 +347,7 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     env.router.execute(env.alice.clone(), msg).unwrap();
@@ -376,7 +376,7 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
@@ -449,7 +449,7 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
     // mint funds for carol
     let msg = CosmosMsg::Bank(BankMsg::Send {
         to_address: env.carol.to_string(),
-        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uwasm")],
     });
     env.router.execute(env.bank.clone(), msg).unwrap();
 
@@ -461,7 +461,7 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(9_090_000u128),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -479,7 +479,7 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(7_570_000u128),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     env.router.execute(env.alice.clone(), msg).unwrap();
@@ -497,7 +497,7 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(7_580_000u128),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -515,7 +515,7 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
             Uint128::from(10_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(10_000_000u128, "uusd")],
+            vec![Coin::new(10_000_000u128, "uwasm")],
         )
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
@@ -588,7 +588,7 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
     // mint funds for carol
     let msg = CosmosMsg::Bank(BankMsg::Send {
         to_address: env.carol.to_string(),
-        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uwasm")],
     });
     env.router.execute(env.bank.clone(), msg).unwrap();
 
@@ -600,7 +600,7 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -618,7 +618,7 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     env.router.execute(env.alice.clone(), msg).unwrap();
@@ -647,7 +647,7 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
             Uint128::from(10_000_000u64),
             Uint128::from(1u64),
             Uint128::zero(),
-            vec![Coin::new(10_000_000u128, "uusd")],
+            vec![Coin::new(10_000_000u128, "uwasm")],
         )
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
