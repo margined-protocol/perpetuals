@@ -57,7 +57,7 @@ fn test_partially_liquidate_long_position() {
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(25_000_000u128, "uusd")],
+            vec![Coin::new(25_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -76,7 +76,7 @@ fn test_partially_liquidate_long_position() {
             Uint128::from(45_180_723u128),
             Uint128::from(1_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(45_180_723u128, "uusd")],
+            vec![Coin::new(45_180_723u128, "uwasm")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -97,12 +97,12 @@ fn test_partially_liquidate_long_position() {
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_positive(43_713u128));
 
-    let carol_balance = router.wrap().query_balance(&carol, "uusd").unwrap().amount;
+    let carol_balance = router.wrap().query_balance(&carol, "uwasm").unwrap().amount;
     assert_eq!(carol_balance, Uint128::from(855_695u128));
 
     let insurance_balance = router
         .wrap()
-        .query_balance(&insurance_fund.addr(), "uusd")
+        .query_balance(&insurance_fund.addr(), "uwasm")
         .unwrap()
         .amount;
     assert_eq!(insurance_balance, Uint128::from(5_000_855_695u128));
@@ -160,7 +160,7 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(25_000_000u128, "uusd")],
+            vec![Coin::new(25_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -179,7 +179,7 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
             Uint128::from(45_180_723u128),
             Uint128::from(1_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(45_180_723u128, "uusd")],
+            vec![Coin::new(45_180_723u128, "uwasm")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -266,7 +266,7 @@ fn test_partially_liquidate_short_position() {
             Uint128::from(20_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -285,7 +285,7 @@ fn test_partially_liquidate_short_position() {
             Uint128::from(19_672_131u128),
             Uint128::from(1_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(19_672_131u128, "uusd")],
+            vec![Coin::new(19_672_131u128, "uwasm")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -306,12 +306,12 @@ fn test_partially_liquidate_short_position() {
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_positive(45_736u128));
 
-    let carol_balance = router.wrap().query_balance(&carol, "uusd").unwrap().amount;
+    let carol_balance = router.wrap().query_balance(&carol, "uwasm").unwrap().amount;
     assert_eq!(carol_balance, Uint128::from(553_234u128));
 
     let insurance_balance = router
         .wrap()
-        .query_balance(&insurance_fund.addr(), "uusd")
+        .query_balance(&insurance_fund.addr(), "uwasm")
         .unwrap()
         .amount;
     assert_eq!(insurance_balance, Uint128::from(5_000_553_234u128));
@@ -369,7 +369,7 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
             Uint128::from(20_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -388,7 +388,7 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
             Uint128::from(19_672_131u128),
             Uint128::from(1_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(19_672_131u128, "uusd")],
+            vec![Coin::new(19_672_131u128, "uwasm")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -477,7 +477,7 @@ fn test_long_position_complete_liquidation() {
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(25_000_000u128, "uusd")],
+            vec![Coin::new(25_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -496,7 +496,7 @@ fn test_long_position_complete_liquidation() {
             Uint128::from(73_529_411u128),
             Uint128::from(1_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(73_529_411u128, "uusd")],
+            vec![Coin::new(73_529_411u128, "uwasm")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -516,13 +516,13 @@ fn test_long_position_complete_liquidation() {
         err
     );
 
-    let carol_balance = router.wrap().query_balance(&carol, "uusd").unwrap().amount;
+    let carol_balance = router.wrap().query_balance(&carol, "uwasm").unwrap().amount;
     assert_eq!(carol_balance, Uint128::from(2_801_120u128));
 
     // 5000 - 0.91 - 2.8
     let insurance_balance = router
         .wrap()
-        .query_balance(&insurance_fund.addr(), "uusd")
+        .query_balance(&insurance_fund.addr(), "uwasm")
         .unwrap()
         .amount;
     assert_eq!(insurance_balance, Uint128::from(4_996_288_516u128));
@@ -580,7 +580,7 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(25_000_000u128, "uusd")],
+            vec![Coin::new(25_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -599,7 +599,7 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
             Uint128::from(73_529_411u128),
             Uint128::from(1_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(73_529_411u128, "uusd")],
+            vec![Coin::new(73_529_411u128, "uwasm")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -682,7 +682,7 @@ fn test_short_position_complete_liquidation() {
             Uint128::from(20_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -701,7 +701,7 @@ fn test_short_position_complete_liquidation() {
             Uint128::from(40_336_134u128),
             Uint128::from(1_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(40_336_134u128, "uusd")],
+            vec![Coin::new(40_336_134u128, "uwasm")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -720,13 +720,13 @@ fn test_short_position_complete_liquidation() {
         },
         err
     );
-    let carol_balance = router.wrap().query_balance(&carol, "uusd").unwrap().amount;
+    let carol_balance = router.wrap().query_balance(&carol, "uwasm").unwrap().amount;
     assert_eq!(carol_balance, Uint128::from(2_793_670u128));
 
     // 5000 - 3.49 - 2.79
     let insurance_balance = router
         .wrap()
-        .query_balance(&insurance_fund.addr(), "uusd")
+        .query_balance(&insurance_fund.addr(), "uwasm")
         .unwrap()
         .amount;
     assert_eq!(insurance_balance, Uint128::from(4_993_712_679u128));
@@ -784,7 +784,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -803,7 +803,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -822,7 +822,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -930,7 +930,7 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(20_000_000u128, "uusd")],
+            vec![Coin::new(20_000_000u128, "uwasm")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -1144,7 +1144,7 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
 
     let msg = CosmosMsg::Bank(BankMsg::Send {
         to_address: env.carol.to_string(),
-        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uwasm")],
     });
     env.router.execute(env.bank.clone(), msg).unwrap();
 
@@ -1297,7 +1297,7 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
     // mint funds for carol
     let msg = CosmosMsg::Bank(BankMsg::Send {
         to_address: env.carol.to_string(),
-        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uwasm")],
     });
     env.router.execute(env.bank.clone(), msg).unwrap();
 
@@ -1447,7 +1447,7 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
     // mint funds for carol
     let msg = CosmosMsg::Bank(BankMsg::Send {
         to_address: env.carol.to_string(),
-        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uwasm")],
     });
     env.router.execute(env.bank.clone(), msg).unwrap();
 
@@ -1750,7 +1750,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
             Uint128::from(44_000_000u64),
             Uint128::from(1_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(25_000_000u128, "uusd")],
+            vec![Coin::new(25_000_000u128, "uwasm")],
         )
         .unwrap();
     let err = env.router.execute(env.alice.clone(), msg).unwrap_err();
@@ -1840,7 +1840,7 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
     // mint funds for carol
     let msg = CosmosMsg::Bank(BankMsg::Send {
         to_address: env.carol.to_string(),
-        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uwasm")],
     });
     env.router.execute(env.bank.clone(), msg).unwrap();
 

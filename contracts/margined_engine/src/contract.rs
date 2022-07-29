@@ -52,20 +52,23 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    // validate decimal places are correct, and return ratio max.
-    let decimals = validate_decimal_places(msg.decimals)?;
-
-    // validate the ratios conform to the decimals
-    validate_ratio(msg.initial_margin_ratio, decimals)?;
-    validate_ratio(msg.maintenance_margin_ratio, decimals)?;
-    validate_ratio(msg.liquidation_fee, decimals)?;
-
     // validate message addresses
     let insurance_fund = validate_address(deps.api, &msg.insurance_fund)?;
     let fee_pool = validate_address(deps.api, &msg.fee_pool)?;
 
     // validate eligible collateral
     let eligible_collateral = validate_eligible_collateral(deps.as_ref(), msg.eligible_collateral)?;
+
+    // find decimals of asset
+    let decimal_response = eligible_collateral.get_decimals(deps.as_ref())?;
+
+    // validate decimal places are correct, and return ratio max.
+    let decimals = validate_decimal_places(decimal_response)?;
+
+    // validate the ratios conform to the decimals
+    validate_ratio(msg.initial_margin_ratio, decimals)?;
+    validate_ratio(msg.maintenance_margin_ratio, decimals)?;
+    validate_ratio(msg.liquidation_fee, decimals)?;
 
     // config parameters
     let config = Config {
@@ -103,7 +106,6 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             insurance_fund,
             fee_pool,
             eligible_collateral,
-            decimals,
             initial_margin_ratio,
             maintenance_margin_ratio,
             partial_liquidation_margin_ratio,
@@ -115,7 +117,6 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             insurance_fund,
             fee_pool,
             eligible_collateral,
-            decimals,
             initial_margin_ratio,
             maintenance_margin_ratio,
             partial_liquidation_margin_ratio,

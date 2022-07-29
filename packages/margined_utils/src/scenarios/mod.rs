@@ -45,12 +45,12 @@ impl NativeTokenScenario {
         let bob = Addr::unchecked("bob");
         let carol = Addr::unchecked("carol");
         let david = Addr::unchecked("david");
-        let native_denom = "uusd";
+        let native_denom = "uwasm";
 
         let init_funds = vec![Coin::new(5_000u128 * 10u128.pow(6), native_denom)];
         let bank_funds = vec![
             Coin::new(100_000u128 * 10u128.pow(6), native_denom),
-            Coin::new(100_000u128 * 10u128.pow(6), "luna"),
+            Coin::new(100_000u128 * 10u128.pow(6), "ucosmos"),
         ];
 
         let mut router: App = App::new(|router, _, storage| {
@@ -160,7 +160,6 @@ impl NativeTokenScenario {
                 engine_id,
                 owner.clone(),
                 &InstantiateMsg {
-                    decimals: 6u8,
                     insurance_fund: insurance_fund.addr().to_string(),
                     fee_pool: fee_pool.addr().to_string(),
                     eligible_collateral: native_denom.to_string(),
@@ -242,7 +241,7 @@ impl NativeTokenScenario {
                     quote_asset_amount,
                     leverage,
                     Uint128::zero(),
-                    vec![Coin::new(fees, "uusd")],
+                    vec![Coin::new(fees, "uwasm")],
                 )
                 .unwrap();
             self.router.execute(account.clone(), msg).unwrap();
@@ -408,7 +407,6 @@ impl SimpleScenario {
                 engine_id,
                 owner.clone(),
                 &InstantiateMsg {
-                    decimals: 9u8, //see here
                     insurance_fund: insurance_fund.addr().to_string(),
                     fee_pool: fee_pool.addr().to_string(),
                     eligible_collateral: usdc_addr.to_string(),

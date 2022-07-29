@@ -110,7 +110,7 @@ fn test_query_all_token() {
     // add another token
     let info = mock_info("owner", &[]);
     let msg = ExecuteMsg::AddToken {
-        token: "uusd".to_string(),
+        token: "uwasm".to_string(),
     };
 
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -133,7 +133,7 @@ fn test_query_all_token() {
                 contract_addr: Addr::unchecked("token1".to_string())
             },
             AssetInfo::NativeToken {
-                denom: "uusd".to_string()
+                denom: "uwasm".to_string()
             },
         ]
     );
@@ -532,22 +532,22 @@ fn test_send_native_token() {
     // give funds to the fee pool contract
     let msg = CosmosMsg::Bank(BankMsg::Send {
         to_address: fee_pool.addr().to_string(),
-        amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "uusd")],
+        amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "uwasm")],
     });
     router.execute(bank.clone(), msg).unwrap();
 
     // add the token so we can send funds with it
-    let msg = fee_pool.add_token("uusd".to_string()).unwrap();
+    let msg = fee_pool.add_token("uwasm".to_string()).unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
     // query balance of bob
-    let balance = router.wrap().query_balance(&bob, "uusd").unwrap().amount;
+    let balance = router.wrap().query_balance(&bob, "uwasm").unwrap().amount;
     assert_eq!(balance, Uint128::from(5000u128 * 10u128.pow(6)));
 
     // query balance of contract
     let balance = router
         .wrap()
-        .query_balance(&fee_pool.addr(), "uusd")
+        .query_balance(&fee_pool.addr(), "uwasm")
         .unwrap()
         .amount;
     assert_eq!(balance, Uint128::from(5000u128 * 10u128.pow(6)));
@@ -555,7 +555,7 @@ fn test_send_native_token() {
     // send token
     let msg = fee_pool
         .send_token(
-            "uusd".to_string(),
+            "uwasm".to_string(),
             Uint128::from(1000u128 * 10u128.pow(6)),
             bob.clone().to_string(),
         )
@@ -563,13 +563,13 @@ fn test_send_native_token() {
     router.execute(owner.clone(), msg).unwrap();
 
     // query new balance of intended recipient
-    let balance = router.wrap().query_balance(&bob, "uusd").unwrap().amount;
+    let balance = router.wrap().query_balance(&bob, "uwasm").unwrap().amount;
     assert_eq!(balance, Uint128::from(6000u128 * 10u128.pow(6)));
 
     // Query new contract balance
     let balance = router
         .wrap()
-        .query_balance(&fee_pool.addr(), "uusd")
+        .query_balance(&fee_pool.addr(), "uwasm")
         .unwrap()
         .amount;
     assert_eq!(balance, Uint128::from(4000u128 * 10u128.pow(6)));
@@ -590,14 +590,14 @@ fn test_send_native_token() {
     // give funds to the fee pool contract
     let msg = CosmosMsg::Bank(BankMsg::Send {
         to_address: fee_pool.addr().to_string(),
-        amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "uusd")],
+        amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "uwasm")],
     });
     router.execute(bank.clone(), msg).unwrap();
 
     // try to send token - note this fails because we have not added the token to the token list, so it is not accepted/supported yet
     let msg = fee_pool
         .send_token(
-            "uusd".to_string(),
+            "uwasm".to_string(),
             Uint128::from(1000u128 * 10u128.pow(6)),
             bob.clone().to_string(),
         )
@@ -626,22 +626,22 @@ fn test_send_native_token() {
     // give funds to the fee pool contract
     let msg = CosmosMsg::Bank(BankMsg::Send {
         to_address: fee_pool.addr().to_string(),
-        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uusd")],
+        amount: vec![Coin::new(1_000u128 * 10u128.pow(6), "uwasm")],
     });
     router.execute(bank.clone(), msg).unwrap();
 
     // add the token so we can send funds with it
-    let msg = fee_pool.add_token("uusd".to_string()).unwrap();
+    let msg = fee_pool.add_token("uwasm".to_string()).unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
     // query balance of bob
-    let balance = router.wrap().query_balance(&bob, "uusd").unwrap().amount;
+    let balance = router.wrap().query_balance(&bob, "uwasm").unwrap().amount;
     assert_eq!(balance, Uint128::from(5000u128 * 10u128.pow(6)));
 
     // query balance of contract
     let balance = router
         .wrap()
-        .query_balance(&fee_pool.addr(), "uusd")
+        .query_balance(&fee_pool.addr(), "uwasm")
         .unwrap()
         .amount;
     assert_eq!(balance, Uint128::from(1000u128 * 10u128.pow(6)));
@@ -649,7 +649,7 @@ fn test_send_native_token() {
     // send token
     let msg = fee_pool
         .send_token(
-            "uusd".to_string(),
+            "uwasm".to_string(),
             Uint128::from(2000u128 * 10u128.pow(6)),
             bob.clone().to_string(),
         )
@@ -662,13 +662,13 @@ fn test_send_native_token() {
         res.downcast().unwrap()
     );
     // query new balance of intended recipient
-    let balance = router.wrap().query_balance(&bob, "uusd").unwrap().amount;
+    let balance = router.wrap().query_balance(&bob, "uwasm").unwrap().amount;
     assert_eq!(balance, Uint128::from(5000u128 * 10u128.pow(6)));
 
     // Query new contract balance
     let balance = router
         .wrap()
-        .query_balance(&fee_pool.addr(), "uusd")
+        .query_balance(&fee_pool.addr(), "uwasm")
         .unwrap()
         .amount;
     assert_eq!(balance, Uint128::from(1000u128 * 10u128.pow(6)));

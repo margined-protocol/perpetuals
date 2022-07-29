@@ -2,20 +2,11 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-// use crate::factory::PairType;
-// use crate::pair::QueryMsg as PairQueryMsg;
-// use crate::querier::{query_balance, query_token_balance, query_token_symbol};
 use cosmwasm_std::{
-    to_binary, Addr, Api, BankMsg, Coin, CosmosMsg, MessageInfo, QuerierWrapper, StdError,
-    StdResult, Uint128, WasmMsg,
+    to_binary, Addr, Api, BankMsg, Coin, CosmosMsg, Deps, MessageInfo, QuerierWrapper,
+    QueryRequest, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::Cw20ExecuteMsg;
-// use terra_cosmwasm::TerraQuerier;
-
-/// UST token denomination
-pub const UUSD_DENOM: &str = "uusd";
-/// LUNA token denomination
-pub const ULUNA_DENOM: &str = "uluna";
+use cw20::{Cw20ExecuteMsg, Cw20QueryMsg, TokenInfoResponse};
 
 /// ## Description
 /// This enum describes a Terra asset (native or CW20).
@@ -104,14 +95,6 @@ impl Asset {
     }
 }
 
-/// This enum describes available Token types.
-/// ## Examples
-/// ```
-/// # use cosmwasm_std::Addr;
-/// # use margined_common::asset::AssetInfo::{NativeToken, Token};
-/// Token { contract_addr: Addr::unchecked("terra...") };
-/// NativeToken { denom: String::from("uluna") };
-/// ```
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum AssetInfo {
@@ -198,6 +181,27 @@ impl AssetInfo {
             }
         }
         Ok(())
+    }
+
+    /// returns the decimal places used by the token, places some assumption that native tokens
+    /// use the `utoken` convention, will fail if native token does not follow this
+    pub fn get_decimals(&self, deps: Deps) -> StdResult<u8> {
+        match &self {
+            // Note: we are assuming all natives use the `utoken` convention this may not be true
+            AssetInfo::NativeToken { .. } => Ok(6u8),
+            AssetInfo::Token { contract_addr } => {
+                // query the CW20 contract for its decimals
+                let response: TokenInfoResponse = deps
+                    .querier
+                    .query(&QueryRequest::Wasm(WasmQuery::Smart {
+                        contract_addr: contract_addr.to_string(),
+                        msg: to_binary(&Cw20QueryMsg::TokenInfo {})?,
+                    }))
+                    .unwrap();
+
+                Ok(response.decimals)
+            }
+        }
     }
 }
 
