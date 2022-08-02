@@ -21,7 +21,7 @@ pub enum ExecuteMsg {
     SendToken {
         token: String,
         amount: Uint128,
-        recipient: String, // to be hardcoded later?
+        recipient: String,
     },
 }
 

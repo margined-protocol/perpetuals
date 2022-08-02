@@ -6,11 +6,10 @@ The margin engine is responsible for managing user positions and collateral. All
 
 ## InstantiateMsg
 
-The instantiation message takes the decimals to be used by the contract, the addresses of the insurance and fee contracts. It also takes the eligible collateral to be used and the margin ratios and liquidation fees.
+The instantiation message takes the addresses of the insurance and fee contracts. It also takes the eligible collateral to be used and the margin ratios and liquidation fees.
 
 ```json
 {
-    "decimals": 6,
     "insurance_fund": "juno...",
     "fee_pool": "juno...",
     "eligible_collateral": "juno...",
@@ -33,7 +32,6 @@ Enables owner to update key contract parameters.
         "insurance_fund": "juno...",
         "fee_pool": "juno...",
         "eligible_collateral": "juno...",
-        "decimals": "6",
         "initial_margin_ratio": "10000",
         "maintenance_margin_ratio": "10000",
         "partial_liquidation_margin_ratio": "10000",

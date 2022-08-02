@@ -8,30 +8,71 @@ Price feed was meant to integrate against the [TeFi oracle hub](https://github.c
 
 ## InstantiateMsg
 
-The instantiation message takes the decimals to be used by the contract, the addresses of the insurance and fee contracts. It also takes the eligible collateral to be used and the margin ratios and liquidation fees.
-
+The instantiation message takes the oracle hub contract, that would be used in a production version.
 ```json
 {
-    
+    "oracle_hub_contract": "juno..."
 }
 ```
 
 ## ExecuteMsg
 
-### `example_execute`
+### `update_config`
 
 ```json
 {
-    
+    "update_config": {
+        "owner": "juno..."
+    }
 }
 ```
 
 ## QueryMsg
 
-### `example_query`
+### `config`
+
+Returns contract parameters.
 
 ```json
 {
-    
+    "config": {}
+}
+```
+
+### `get_price`
+
+Returns latest price submitted to the contract.
+
+```json
+{
+    "get_price": {
+        "key": "BTC",
+    }
+}
+```
+
+### `get_previous_price`
+
+Returns a price submitted in a previous round.
+
+```json
+{
+    "get_previous_price": {
+        "key": "BTC",
+        "num_round_back": 9,
+    }
+}
+```
+
+### `get_twap_price`
+
+Returns a twap of the prices submitted to the contract.
+
+```json
+{
+    "get_twap_price": {
+        "key": "BTC",
+        "interval": 900,
+    }
 }
 ```
