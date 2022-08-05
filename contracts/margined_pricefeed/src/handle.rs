@@ -17,7 +17,7 @@ pub fn update_config(
         return Err(ContractError::Unauthorized {});
     }
 
-    // change owner of amm
+    // change owner of pricefeed
     if let Some(owner) = owner {
         config.owner = deps.api.addr_validate(owner.as_str())?;
     }

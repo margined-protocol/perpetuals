@@ -30,7 +30,7 @@ pub struct TwapPriceCalcParams {
 }
 
 pub fn require_margin_engine(sender: Addr, margin_engine: Addr) -> StdResult<Response> {
-    // check that it is a registered vamm
+    // check that sender is the margin engine
     if sender != margin_engine {
         return Err(StdError::generic_err("sender not margin engine"));
     }
@@ -39,7 +39,7 @@ pub fn require_margin_engine(sender: Addr, margin_engine: Addr) -> StdResult<Res
 }
 
 pub fn require_open(open: bool) -> StdResult<Response> {
-    // check that it is a registered vamm
+    // check that the vamm is open
     if !open {
         return Err(StdError::generic_err("amm is closed"));
     }

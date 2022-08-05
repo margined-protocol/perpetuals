@@ -55,7 +55,7 @@ pub fn update_config(
         return Err(StdError::generic_err("unauthorized"));
     }
 
-    // change owner of amm
+    // change owner of engine
     if let Some(owner) = owner {
         config.owner = validate_address(deps.api, owner.as_str())?;
     }
