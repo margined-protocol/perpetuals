@@ -251,7 +251,6 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
     let index_price: Uint128 =
         query_twap_price(deps.as_ref(), env.clone(), config.spot_price_twap_interval)?;
 
-    // let premium = calculate_premium(underlying_price, index_price)?;
     let premium =
         Integer::new_positive(index_price).checked_sub(Integer::new_positive(underlying_price))?;
 

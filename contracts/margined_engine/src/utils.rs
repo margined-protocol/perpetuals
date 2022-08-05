@@ -354,7 +354,8 @@ pub fn parse_pay_funding(response: SubMsgResponse) -> StdResult<(Integer, String
     Ok((premium, sender))
 }
 
-// TODO: make this consistent
+// Reads contract address from an event takes into account that there are
+// inconistencies between cosmwasm versions and multitest etc...
 fn read_contract_address(event: &Event) -> StdResult<String> {
     let mut result = event
         .attributes
