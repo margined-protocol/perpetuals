@@ -26,7 +26,7 @@ pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
 // function checks if an addr is already added and adds it if not
 // We also check that we have not reached the limit of tokens here
 pub fn save_token(deps: DepsMut, input: AssetInfo) -> StdResult<()> {
-    // check if there is a vector
+    // check if the list exists already
     let mut token_list = match TOKEN_LIST.may_load(deps.storage)? {
         None => vec![],
         Some(list) => list,
@@ -75,7 +75,7 @@ pub fn is_token(storage: &dyn Storage, token: AssetInfo) -> bool {
 
 // this function deletes the entry under the given key
 pub fn remove_token(deps: DepsMut, token: AssetInfo) -> StdResult<()> {
-    // check if there are any tokens stored
+    // check if the list exists
     let mut token_list = match TOKEN_LIST.may_load(deps.storage)? {
         None => {
             return Err(GenericErr {
