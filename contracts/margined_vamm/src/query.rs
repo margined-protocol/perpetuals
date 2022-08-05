@@ -227,6 +227,5 @@ pub fn query_is_over_spread_limit(deps: Deps) -> StdResult<bool> {
         * Integer::new_positive(config.decimals)
         / Integer::new_positive(oracle_price);
 
-    // TODO this is only 10% if the decimals are matching, and probably we should do this more nicely
     Ok(current_spread_ratio.abs() >= Integer::new_positive(MAX_ORACLE_SPREAD_RATIO))
 }

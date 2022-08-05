@@ -109,8 +109,6 @@ pub fn withdraw(
         return Err(StdError::generic_err("unauthorized"));
     }
 
-    // TODO: check that the asset is accepted
-
     // send tokens if native or cw20
     let msg: CosmosMsg = match token {
         AssetInfo::NativeToken { denom } => CosmosMsg::Bank(BankMsg::Send {
