@@ -94,7 +94,7 @@ pub fn increase_position_reply(
 
     let mut msgs: Vec<SubMsg> = vec![];
 
-    // create transfer messages TODO make this a nice function for use in each
+    // create transfer messages depending on PnL
     match swap.margin_to_vault.cmp(&Integer::zero()) {
         Ordering::Less => {
             msgs.append(
@@ -629,5 +629,8 @@ pub fn pay_funding_reply(
         response = response.add_submessage(msg);
     };
 
-    Ok(response.add_attributes(vec![("action", "pay_funding_reply")]))
+    Ok(response.add_attributes(vec![
+        ("action", "pay_funding_reply"),
+        ("funding_payment", &funding_payment.to_string()),
+    ]))
 }
