@@ -23,7 +23,7 @@ pub static KEY_TMP_SWAP: &[u8] = b"tmp-swap";
 pub static KEY_TMP_LIQUIDATOR: &[u8] = b"tmp-liquidator";
 pub static KEY_VAMM_MAP: &[u8] = b"vamm-map";
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
     pub insurance_fund: Addr,
@@ -44,7 +44,7 @@ pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
     singleton_read(storage, KEY_CONFIG).load()
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct State {
     pub open_interest_notional: Uint128,
     pub bad_debt: Uint128,
@@ -115,7 +115,7 @@ pub fn read_position(storage: &dyn Storage, vamm: &Addr, trader: &Addr) -> StdRe
 
 /// Used to monitor that transferred native tokens are sufficient when opening a
 /// new position or relevant operations
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct SentFunds {
     pub asset: Asset,
     pub required: Uint128,
@@ -153,7 +153,7 @@ pub fn read_sent_funds(storage: &dyn Storage) -> StdResult<SentFunds> {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct TmpSwapInfo {
     pub vamm: Addr,
     pub trader: Addr,
@@ -207,7 +207,7 @@ pub fn read_tmp_liquidator(storage: &dyn Storage) -> StdResult<Addr> {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq, JsonSchema)]
 pub struct VammMap {
     pub last_restriction_block: u64,
     pub cumulative_premium_fractions: Vec<Integer>,

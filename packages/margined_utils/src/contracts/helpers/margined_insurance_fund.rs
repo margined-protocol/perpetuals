@@ -11,7 +11,7 @@ use cosmwasm_std::{
 
 /// InsuranceFundController is a wrapper around Addr that provides a lot of helpers
 /// for working with this.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct InsuranceFundController(pub Addr);
 
 impl InsuranceFundController {

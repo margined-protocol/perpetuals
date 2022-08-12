@@ -11,7 +11,7 @@ pub static KEY_STATE: &[u8] = b"state";
 pub static KEY_RESERVE_SNAPSHOT: &[u8] = b"reserve_snapshot";
 pub static KEY_RESERVE_SNAPSHOT_COUNTER: &[u8] = b"reserve_snapshot_counter";
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
     pub margin_engine: Addr,
@@ -37,7 +37,7 @@ pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
     singleton_read(storage, KEY_CONFIG).load()
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct State {
     pub open: bool,
     pub quote_asset_reserve: Uint128,
@@ -55,7 +55,7 @@ pub fn read_state(storage: &dyn Storage) -> StdResult<State> {
     singleton_read(storage, KEY_STATE).load()
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema, Default)]
 pub struct ReserveSnapshot {
     pub quote_asset_reserve: Uint128,
     pub base_asset_reserve: Uint128,

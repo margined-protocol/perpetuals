@@ -9,7 +9,7 @@ pub static KEY_CONFIG: &[u8] = b"config";
 
 pub const PRICES: Map<String, Vec<PriceData>> = Map::new("prices");
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
 }
@@ -22,7 +22,7 @@ pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
     singleton_read(storage, KEY_CONFIG).load()
 }
 
-#[derive(Serialize, Default, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Default, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct PriceData {
     pub round_id: Uint128,
     pub price: Uint128,

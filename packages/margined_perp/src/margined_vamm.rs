@@ -6,14 +6,14 @@ use strum_macros::Display;
 
 use margined_common::integer::Integer;
 
-#[derive(Serialize, Display, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Display, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Direction {
     AddToAmm,
     RemoveFromAmm,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct InstantiateMsg {
     pub decimals: u8,
     pub pricefeed: String,
@@ -28,8 +28,9 @@ pub struct InstantiateMsg {
     pub fluctuation_limit_ratio: Uint128,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
+#[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
     UpdateConfig {
         owner: Option<String>,
@@ -59,7 +60,7 @@ pub enum ExecuteMsg {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
@@ -98,7 +99,7 @@ pub enum QueryMsg {
     IsOverSpreadLimit {},
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: Addr,
     pub base_asset_holding_cap: Uint128,
@@ -114,7 +115,7 @@ pub struct ConfigResponse {
     pub funding_period: u64,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct StateResponse {
     pub open: bool,
     pub quote_asset_reserve: Uint128,
@@ -124,7 +125,7 @@ pub struct StateResponse {
     pub next_funding_time: u64,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct CalcFeeResponse {
     pub toll_fee: Uint128,
     pub spread_fee: Uint128,

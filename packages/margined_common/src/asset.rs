@@ -10,7 +10,7 @@ use cw20::{Cw20ExecuteMsg, Cw20QueryMsg, TokenInfoResponse};
 
 /// ## Description
 /// This enum describes a Terra asset (native or CW20).
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct Asset {
     /// Information about an asset stored in a [`AssetInfo`] struct
     pub info: AssetInfo,
@@ -95,7 +95,7 @@ impl Asset {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum AssetInfo {
     /// Non-native Token
