@@ -629,5 +629,8 @@ pub fn pay_funding_reply(
         response = response.add_submessage(msg);
     };
 
-    Ok(response.add_attributes(vec![("action", "pay_funding_reply")]))
+    Ok(response.add_attributes(vec![
+        ("action", "pay_funding_reply"),
+        ("funding_payment", &funding_payment.to_string()),
+    ]))
 }

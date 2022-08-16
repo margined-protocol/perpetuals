@@ -145,7 +145,7 @@ pub fn open_position(
 
     // validate address inputs
     let vamm = validate_address(deps.api, &vamm)?;
-    let trader = validate_address(deps.api, &info.sender.to_string())?;
+    let trader = validate_address(deps.api, info.sender.as_ref())?;
 
     require_not_paused(state.pause)?;
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
@@ -222,8 +222,8 @@ pub fn open_position(
 
     Ok(Response::new().add_submessage(msg).add_attributes(vec![
         ("action", "open_position"),
-        ("vamm", &vamm.to_string()),
-        ("trader", &trader.to_string()),
+        ("vamm", vamm.as_ref()),
+        ("trader", trader.as_ref()),
         ("amount", &quote_asset_amount.to_string()),
         ("leverage", &leverage.to_string()),
     ]))
@@ -240,7 +240,7 @@ pub fn close_position(
 
     // validate address inputs
     let vamm = validate_address(deps.api, &vamm)?;
-    let trader = validate_address(deps.api, &info.sender.to_string())?;
+    let trader = validate_address(deps.api, info.sender.as_ref())?;
 
     // read the position for the trader from vamm
     let position = read_position(deps.storage, &vamm, &trader).unwrap();
@@ -255,8 +255,8 @@ pub fn close_position(
 
     Ok(Response::new().add_submessage(msg).add_attributes(vec![
         ("action", "close_position"),
-        ("vamm", &vamm.to_string()),
-        ("trader", &trader.to_string()),
+        ("vamm", vamm.as_ref()),
+        ("trader", trader.as_ref()),
     ]))
 }
 
@@ -300,8 +300,8 @@ pub fn liquidate(
 
     Ok(Response::new().add_submessage(msg).add_attributes(vec![
         ("action", "liquidate"),
-        ("vamm", &vamm.to_string()),
-        ("trader", &trader.to_string()),
+        ("vamm", vamm.as_ref()),
+        ("trader", trader.as_ref()),
     ]))
 }
 
@@ -380,7 +380,7 @@ pub fn deposit_margin(
 
     Ok(response.add_attributes([
         ("action", "deposit_margin"),
-        ("trader", &trader.to_string()),
+        ("trader", trader.as_ref()),
         ("amount", &amount.to_string()),
     ]))
 }
@@ -442,7 +442,7 @@ pub fn withdraw_margin(
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "withdraw_margin"),
-        ("trader", &trader.to_string()),
+        ("trader", trader.as_ref()),
         ("amount", &amount.to_string()),
     ]))
 }

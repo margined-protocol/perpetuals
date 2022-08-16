@@ -14,7 +14,7 @@ use margined_common::integer::Integer;
 
 /// EngineController is a wrapper around Addr that provides a lot of helpers
 /// for working with this.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct EngineController(pub Addr);
 
 impl EngineController {

@@ -9,20 +9,20 @@ use crate::{
     },
 };
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TwapCalcOption {
     Reserve,
     Input,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TwapInputAsset {
     pub direction: Direction,
     pub amount: Uint128,
     pub quote: bool, // [true|false] -> [quote_in|quote_out]
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TwapPriceCalcParams {
     pub opt: TwapCalcOption,
     pub snapshot_index: u64,

@@ -85,7 +85,7 @@ pub fn remove_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
     // saves the updated vamm_list
     VAMM_LIST.save(deps.storage, &vamm_list)
 }
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
     pub beneficiary: Addr,
