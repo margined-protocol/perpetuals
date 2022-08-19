@@ -120,15 +120,14 @@ pub fn get_position_notional_unrealized_pnl(
     let mut output_notional = Uint128::zero();
     let mut unrealized_pnl = Integer::zero();
 
-    let position_size = position.size;
-    if !position_size.is_zero() {
+    if !position.size.is_zero() {
         match calc_option {
             PnlCalcOption::Twap => {
                 output_notional = query_vamm_output_twap(
                     &deps,
                     position.vamm.to_string(),
                     position.direction.clone(),
-                    position_size.value,
+                    position.size.value,
                 )?;
             }
             PnlCalcOption::SpotPrice => {
@@ -136,7 +135,7 @@ pub fn get_position_notional_unrealized_pnl(
                     &deps,
                     position.vamm.to_string(),
                     position.direction.clone(),
-                    position_size.value,
+                    position.size.value,
                 )?;
             }
             PnlCalcOption::Oracle => {}
