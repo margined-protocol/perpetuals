@@ -645,7 +645,7 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
             env.vamm.addr().to_string(),
             Side::Sell,
             Uint128::from(10_000_000u64),
-            Uint128::from(1u64),
+            Uint128::from(1_000_000u64),
             Uint128::zero(),
             vec![Coin::new(10_000_000u128, "uwasm")],
         )

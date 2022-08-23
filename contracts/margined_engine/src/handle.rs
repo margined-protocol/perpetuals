@@ -20,8 +20,7 @@ use crate::{
         calc_remain_margin_with_funding_payment, direction_to_side, get_asset, get_position,
         get_position_notional_unrealized_pnl, require_additional_margin, require_bad_debt,
         require_insufficient_margin, require_non_zero_input, require_not_paused,
-        require_not_restriction_mode, require_position_not_zero, require_valid_leverage,
-        require_vamm, side_to_direction,
+        require_not_restriction_mode, require_position_not_zero, require_vamm, side_to_direction,
     },
 };
 use margined_common::{
@@ -153,7 +152,7 @@ pub fn open_position(
     require_not_restriction_mode(deps.storage, &vamm, &trader, env.block.height)?;
     require_non_zero_input(leverage)?;
 
-    if (leverage < config.decimals) {
+    if leverage < config.decimals {
         return Err(StdError::generic_err("Leverage must be greater than 1"));
     }
 
