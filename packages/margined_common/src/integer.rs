@@ -477,7 +477,11 @@ impl std::cmp::PartialOrd for Integer {
         } else if self.is_positive() && other.is_negative() {
             Some(Ordering::Greater)
         } else {
-            self.value.partial_cmp(&other.value)
+            if self.is_positive() {
+                self.value.partial_cmp(&other.value)
+            } else {
+                other.value.partial_cmp(&self.value)
+            }
         }
     }
 }
@@ -489,7 +493,11 @@ impl std::cmp::Ord for Integer {
         } else if self.is_positive() && other.is_negative() {
             Ordering::Greater
         } else {
-            self.value.cmp(&other.value)
+            if self.is_positive() {
+                self.value.cmp(&other.value)
+            } else {
+                other.value.cmp(&self.value)
+            }
         }
     }
 }
@@ -609,6 +617,19 @@ mod test {
         assert!(a == b);
 
         let a = Integer::from_str("42").unwrap();
+        let b = Integer::from_str("-42").unwrap();
+
+        assert!(a > b);
+        assert!(!(a == b));
+
+        let a = Integer::from_str("-42").unwrap();
+        let b = Integer::from_str("-42").unwrap();
+
+        assert!(!(a > b));
+        assert!(a >= b);
+        assert!(a == b);
+
+        let a = Integer::from_str("-007").unwrap();
         let b = Integer::from_str("-42").unwrap();
 
         assert!(a > b);
