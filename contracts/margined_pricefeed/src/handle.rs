@@ -1,4 +1,4 @@
-use cosmwasm_std::{DepsMut, MessageInfo, Response, Uint128};
+use cosmwasm_std::{DepsMut, MessageInfo, Response, StdError, Uint128};
 
 use crate::{
     error::ContractError,
@@ -66,9 +66,11 @@ pub fn append_multiple_price(
         return Err(ContractError::Unauthorized {});
     }
 
-    // prices and timestamps are the same length
+    // This throws if the prices and timestamps are not the same length
     if prices.len() != timestamps.len() {
-        return Err(ContractError::Unauthorized {});
+        return Err(ContractError::Std(StdError::generic_err(
+            "Prices and timestamps are not the same length",
+        )));
     }
 
     for index in 0..prices.len() {

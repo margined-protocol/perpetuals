@@ -1,5 +1,5 @@
 use crate::asset::AssetInfo;
-use cosmwasm_std::{Addr, Api, Deps, Response, StdError, StdResult, Uint128};
+use cosmwasm_std::{Deps, Response, StdError, StdResult, Uint128};
 
 /// Validates that the decimals aren't zero and returns the decimal placeholder accordinglys
 pub fn validate_decimal_places(decimal_places: u8) -> StdResult<Uint128> {
