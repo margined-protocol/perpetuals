@@ -34,23 +34,12 @@ pub fn validate_eligible_collateral(deps: Deps, input: String) -> StdResult<Asse
         _ => {
             // check that the input is a valid address else
             // this should throw
-            validate_address(deps.api, &input)?;
+            let valid_addr = deps.api.addr_validate(&input)?;
             AssetInfo::Token {
-                contract_addr: deps.api.addr_validate(&input.to_string())?,
+                contract_addr: valid_addr,
             }
         }
     };
 
     Ok(response)
-}
-
-/// Validates an address is correctly formatted and normalized
-pub fn validate_address(api: &dyn Api, addr: &str) -> StdResult<Addr> {
-    if addr.to_lowercase() != addr {
-        return Err(StdError::generic_err(format!(
-            "Address {} should be lowercase",
-            addr
-        )));
-    }
-    api.addr_validate(addr)
 }
