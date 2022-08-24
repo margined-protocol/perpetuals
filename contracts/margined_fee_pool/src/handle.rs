@@ -22,7 +22,7 @@ pub fn update_config(
         return Err(StdError::generic_err("unauthorized"));
     }
 
-    // change owner of insurance fund contract
+    // change owner of fee pool contract
     if let Some(owner) = owner {
         config.owner = deps.api.addr_validate(owner.as_str())?;
     }

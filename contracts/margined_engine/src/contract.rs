@@ -4,7 +4,7 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use margined_common::validate::{
-    validate_address, validate_decimal_places, validate_eligible_collateral, validate_ratio,
+    validate_decimal_places, validate_eligible_collateral, validate_ratio,
 };
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
@@ -53,8 +53,8 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     // validate message addresses
-    let insurance_fund = validate_address(deps.api, &msg.insurance_fund)?;
-    let fee_pool = validate_address(deps.api, &msg.fee_pool)?;
+    let insurance_fund = deps.api.addr_validate(&msg.insurance_fund)?;
+    let fee_pool = deps.api.addr_validate(&msg.fee_pool)?;
 
     // validate eligible collateral
     let eligible_collateral = validate_eligible_collateral(deps.as_ref(), msg.eligible_collateral)?;
