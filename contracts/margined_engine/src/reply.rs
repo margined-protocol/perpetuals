@@ -208,6 +208,9 @@ pub fn decrease_position_reply(
             - Integer::new_positive(swap.open_notional)
     };
 
+    // calculate the fees
+    let fees = transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional).unwrap();
+
     // set the new position
     position.size += signed_output;
     position.margin = margin;
@@ -221,7 +224,9 @@ pub fn decrease_position_reply(
     // remove the tmp position
     remove_tmp_swap(deps.storage);
 
-    Ok(Response::new().add_attributes(vec![("action", "decrease_position_reply")]))
+    Ok(Response::new()
+        .add_submessages(fees.messages)
+        .add_attributes(vec![("action", "decrease_position_reply")]))
 }
 
 // reverse position after successful execution of the swap
@@ -264,7 +269,7 @@ pub fn reverse_position_reply(
         output.checked_sub(swap.open_notional)?
     };
 
-    // create messages to pay for toll and spread fees, check flag is true if this follows a reverse
+    // create messages to pay for toll and spread fees
     let fees = transfer_fees(
         deps.as_ref(),
         swap.trader.clone(),
