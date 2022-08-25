@@ -222,7 +222,7 @@ pub fn open_position(
         ("action", "open_position"),
         ("vamm", vamm.as_ref()),
         ("trader", trader.as_ref()),
-        ("amount", &quote_asset_amount.to_string()),
+        ("quote_asset_amount", &quote_asset_amount.to_string()),
         ("leverage", &leverage.to_string()),
     ]))
 }
@@ -379,7 +379,7 @@ pub fn deposit_margin(
     Ok(response.add_attributes([
         ("action", "deposit_margin"),
         ("trader", trader.as_ref()),
-        ("amount", &amount.to_string()),
+        ("deposit_amount", &amount.to_string()),
     ]))
 }
 
@@ -441,7 +441,7 @@ pub fn withdraw_margin(
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "withdraw_margin"),
         ("trader", trader.as_ref()),
-        ("amount", &amount.to_string()),
+        ("withdrawal_amount", &amount.to_string()),
     ]))
 }
 
