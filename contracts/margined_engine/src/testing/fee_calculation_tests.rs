@@ -435,17 +435,6 @@ fn test_open_position_reduce_position_short_then_long_total_fee_ten_percent() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let pnl = engine
-        .get_unrealized_pnl(
-            &router,
-            vamm.addr().to_string(),
-            alice.to_string(),
-            PnlCalcOption::SpotPrice,
-        )
-        .unwrap();
-
-    println!("{}", pnl.position_notional);
-
     let msg = engine
         .open_position(
             vamm.addr().to_string(),

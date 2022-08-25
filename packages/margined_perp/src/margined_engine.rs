@@ -186,5 +186,6 @@ pub struct RemainMarginResponse {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct TransferResponse {
     pub messages: Vec<SubMsg>,
-    pub amount: Uint128,
+    pub spread_fee: Uint128,
+    pub toll_fee: Uint128,
 }
