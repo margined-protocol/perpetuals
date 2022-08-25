@@ -16,7 +16,6 @@ backtraces = ["cosmwasm-std/backtraces"]
 cw20 = { version = "0.13.2" }
 cw20-base = { version = "0.13.2", features = ["library"] }
 cw-multi-test = "0.13.2"
-cosmwasm-bignumber = "2.2.0"
 cosmwasm-std = { version = "1.0.0" }
 cosmwasm-storage = { version = "1.0.0" }
 margined_common = { version = "0.1.0", path = "../margined_common"}
