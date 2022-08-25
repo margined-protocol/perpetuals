@@ -155,8 +155,8 @@ pub fn transfer_fees(
 
     Ok(TransferResponse {
         messages,
-        spread_fee: spread_fee,
-        toll_fee: toll_fee,
+        spread_fee,
+        toll_fee,
     })
 }
 
