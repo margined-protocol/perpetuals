@@ -339,6 +339,141 @@ fn test_open_position_close_manually_open_reverse_position_short_then_long_total
 }
 
 #[test]
+fn test_open_position_reduce_position_total_fee_ten_percent() {
+    let SimpleScenario {
+        mut router,
+        owner,
+        alice,
+        usdc,
+        fee_pool,
+        engine,
+        vamm,
+        insurance_fund,
+        ..
+    } = SimpleScenario::new();
+
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(50_000_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm
+        .set_spread_ratio(Uint128::from(50_000_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(300_000_000_000u64),
+            Uint128::from(2_000_000_000u64),
+            Uint128::zero(),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            Uint128::from(300_000_000_000u64),
+            Uint128::from(1_000_000_000u64),
+            Uint128::zero(),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    // 1st tx fee = 300 * 2 * 5% = 30
+    // 1st tx spread = 300 * 2 * 5% = 30
+    // 2nd tx fee = 300 * 2 * 5% = 15
+    // 2nd tx fee = 300 * 2 * 5% = 15
+    let fee_pool_balance = usdc
+        .balance::<_, _, Empty>(&router, fee_pool.addr().clone())
+        .unwrap();
+    assert_eq!(fee_pool_balance, Uint128::from(45_000_000_000u128));
+
+    let insurance_balance = usdc
+        .balance::<_, _, Empty>(&router, insurance_fund.addr().clone())
+        .unwrap();
+    assert_eq!(insurance_balance, Uint128::from(5045_000_000_000u128));
+}
+
+#[test]
+fn test_open_position_reduce_position_short_then_long_total_fee_ten_percent() {
+    let SimpleScenario {
+        mut router,
+        owner,
+        alice,
+        usdc,
+        fee_pool,
+        engine,
+        vamm,
+        insurance_fund,
+        ..
+    } = SimpleScenario::new();
+
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(50_000_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm
+        .set_spread_ratio(Uint128::from(50_000_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            Uint128::from(300_000_000_000u64),
+            Uint128::from(2_000_000_000u64),
+            Uint128::zero(),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router,
+            vamm.addr().to_string(),
+            alice.to_string(),
+            PnlCalcOption::SpotPrice,
+        )
+        .unwrap();
+
+    println!("{}", pnl.position_notional);
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(300_000_000_000u128),
+            Uint128::from(1_000_000_000u64),
+            Uint128::zero(),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    // 1st tx fee = 300 * 2 * 5% = 30
+    // 1st tx spread = 300 * 2 * 5% = 30
+    // 2nd tx fee = 150 * 2 * 5% = 15
+    // 2nd tx fee = 150 * 2 * 5% = 15
+    let fee_pool_balance = usdc
+        .balance::<_, _, Empty>(&router, fee_pool.addr().clone())
+        .unwrap();
+    assert_eq!(fee_pool_balance, Uint128::from(45_000_000_000u128));
+
+    let insurance_balance = usdc
+        .balance::<_, _, Empty>(&router, insurance_fund.addr().clone())
+        .unwrap();
+    assert_eq!(insurance_balance, Uint128::from(5045_000_000_000u128));
+}
+
+#[test]
 fn test_close_under_collateral_position_total_fee_ten_percent() {
     let SimpleScenario {
         mut router,
