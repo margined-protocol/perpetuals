@@ -218,6 +218,9 @@ pub fn decrease_position_reply(
             - Integer::new_positive(swap.open_notional)
     };
 
+    // calculate the fees
+    let fees = transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional).unwrap();
+
     // set the new position
     position.size += signed_output;
     position.margin = margin;
@@ -231,11 +234,13 @@ pub fn decrease_position_reply(
     // remove the tmp position
     remove_tmp_swap(deps.storage);
 
-    Ok(Response::new().add_attributes(vec![
-        ("action", "decrease_position_reply"),
-        ("spread_fee", "increase_position_reply"),
-        ("toll_fee", "increase_position_reply"),
-    ]))
+    Ok(Response::new()
+        .add_submessages(fees.messages)
+        .add_attributes(vec![
+            ("action", "decrease_position_reply"),
+            ("spread_fee", &fees.spread_fee.to_string()),
+            ("toll_fee", &fees.toll_fee.to_string()),
+        ]))
 }
 
 // reverse position after successful execution of the swap
@@ -278,7 +283,7 @@ pub fn reverse_position_reply(
         output.checked_sub(swap.open_notional)?
     };
 
-    // create messages to pay for toll and spread fees, check flag is true if this follows a reverse
+    // create messages to pay for toll and spread fees
     let fees = transfer_fees(
         deps.as_ref(),
         swap.trader.clone(),
@@ -404,17 +409,22 @@ pub fn close_position_reply(
         );
     }
 
+    // create array for fee amounts
+    let mut fees_amount: [Uint128; 2] = [Uint128::zero(), Uint128::zero()];
+
     if !position.notional.is_zero() {
-        msgs.append(
-            &mut transfer_fees(
-                deps.as_ref(),
-                swap.trader,
-                swap.vamm.clone(),
-                position.notional,
-            )
-            .unwrap()
-            .messages,
-        );
+        let mut fees = transfer_fees(
+            deps.as_ref(),
+            swap.trader,
+            swap.vamm.clone(),
+            position.notional,
+        )
+        .unwrap();
+
+        fees_amount[0] = fees.spread_fee;
+        fees_amount[1] = fees.toll_fee;
+
+        msgs.append(&mut fees.messages);
     }
 
     let value =
@@ -429,8 +439,8 @@ pub fn close_position_reply(
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "close_position_reply"),
-        ("spread_fee", "increase_position_reply"),
-        ("toll_fee", "increase_position_reply"),
+        ("spread_fee", &fees_amount[0].to_string()),
+        ("toll_fee", &fees_amount[1].to_string()),
         ("funding_payment", &funding_payment.to_string()),
         ("bad_debt", &bad_debt.to_string()),
     ]))
