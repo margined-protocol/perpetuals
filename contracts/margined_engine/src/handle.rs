@@ -150,6 +150,10 @@ pub fn open_position(
     require_not_restriction_mode(deps.storage, &vamm, &trader, env.block.height)?;
     require_non_zero_input(leverage)?;
 
+    if leverage < config.decimals {
+        return Err(StdError::generic_err("Leverage must be greater than 1"));
+    }
+
     // calculate the margin ratio of new position wrt to leverage
     let margin_ratio = config
         .decimals

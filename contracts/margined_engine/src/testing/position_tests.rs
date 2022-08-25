@@ -31,7 +31,7 @@ fn test_initialization() {
 }
 
 #[test]
-fn test_force_error_open_position_zero_leverage() {
+fn test_force_error_open_position_zero_leverage_or_fractional_leverage() {
     let SimpleScenario {
         mut router,
         alice,
@@ -54,6 +54,22 @@ fn test_force_error_open_position_zero_leverage() {
     assert_eq!(
         err.source().unwrap().to_string(),
         "Generic error: Input must be non-zero".to_string()
+    );
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(60u64),
+            Uint128::from(1u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Leverage must be greater than 1".to_string()
     );
 }
 
