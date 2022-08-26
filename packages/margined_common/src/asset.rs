@@ -100,30 +100,8 @@ impl Asset {
         // grab the denom from self so we can test
         if let AssetInfo::NativeToken { denom } = &self.info {
             // call `must_pay` to ensure its the right denom
-            msg_amount = match must_pay(message_info, denom) {
-                Ok(amount) => amount,
-                Err(e) => match e {
-                    PaymentError::MissingDenom(string) => {
-                        return Err(StdError::generic_err(format!(
-                            "Must send reserve token {}",
-                            string
-                        )))
-                    }
-                    PaymentError::ExtraDenom(string) => {
-                        return Err(StdError::generic_err(format!(
-                            "Received unsupported denom {}",
-                            string
-                        )))
-                    }
-                    PaymentError::MultipleDenoms {} => {
-                        return Err(StdError::generic_err("Sent more than one denomination"))
-                    }
-                    PaymentError::NoFunds {} => return Err(StdError::generic_err("No funds sent")),
-                    PaymentError::NonPayable {} => {
-                        return Err(StdError::generic_err("This message does not accept funds"))
-                    }
-                },
-            };
+            msg_amount = must_pay(message_info, denom)
+                .map_err(|error| StdError::generic_err(format!("{}", error)))?
         } else {
             return Err(StdError::generic_err("You did not send Native Token"));
         };
