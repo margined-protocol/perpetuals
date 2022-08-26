@@ -98,7 +98,7 @@ fn test_force_error_add_incorrect_margin() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "Must send reserve token uwasm".to_string(),
+            msg: "Must send reserve token 'uwasm'".to_string(),
         },
         err.downcast().unwrap()
     );

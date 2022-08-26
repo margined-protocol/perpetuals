@@ -7,7 +7,7 @@ use cosmwasm_std::{
     QueryRequest, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Cw20ExecuteMsg, Cw20QueryMsg, TokenInfoResponse};
-use cw_utils::{must_pay, PaymentError};
+use cw_utils::must_pay;
 
 /// ## Description
 /// This enum describes a Terra asset (native or CW20).
@@ -72,28 +72,6 @@ impl Asset {
     /// * **self** is the type of the caller object.
     ///
     /// * **message_info** is an object of type [`MessageInfo`]
-    // pub fn assert_sent_native_token_balance(&self, message_info: &MessageInfo) -> StdResult<()> {
-    //     if let AssetInfo::NativeToken { denom } = &self.info {
-    //         match message_info.funds.iter().find(|x| x.denom == *denom) {
-    //             Some(coin) => {
-    //                 if self.amount == coin.amount {
-    //                     Ok(())
-    //                 } else {
-    //                     Err(StdError::generic_err("Native token balance mismatch between the argument and the transferred"))
-    //                 }
-    //             }
-    //             None => {
-    //                 if self.amount.is_zero() {
-    //                     Ok(())
-    //                 } else {
-    //                     Err(StdError::generic_err("Native token balance mismatch between the argument and the transferred"))
-    //                 }
-    //             }
-    //         }
-    //     } else {
-    //         Ok(())
-    //     }
-    // }
     pub fn assert_sent_native_token_balance(&self, message_info: &MessageInfo) -> StdResult<()> {
         let msg_amount: Uint128;
 
