@@ -29,7 +29,7 @@ use crate::{
 };
 
 /// Contract name that is used for migration.
-const CONTRACT_NAME: &str = "margin-engine";
+const CONTRACT_NAME: &str = "crates.io:margined-engine";
 /// Contract version that is used for migration.
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 

@@ -13,7 +13,7 @@ use cw2::set_contract_version;
 use margined_perp::margined_fee_pool::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 /// Contract name that is used for migration.
-const CONTRACT_NAME: &str = "fee-pool";
+const CONTRACT_NAME: &str = "crates.io:margined-fee-pool";
 /// Contract version that is used for migration.
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
