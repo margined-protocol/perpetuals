@@ -280,12 +280,14 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
 // fn test_alice_long_position_underwater_oracle_price_activated_doesnt_get_liquidated() {
 //     let SimpleScenario {
 //         mut router,
+//         owner,
 //         alice,
 //         bob,
 //         carol,
 //         engine,
 //         usdc,
 //         vamm,
+//         pricefeed,
 //         ..
 //     } = SimpleScenario::new();
 
@@ -321,36 +323,51 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
 //             Side::Buy,
 //             to_decimals(150u64),
 //             to_decimals(4u64),
-// to_decimals(0u64),
+//             to_decimals(0u64),
+//             vec![],
 //         )
 //         .unwrap();
 //     router.execute(alice.clone(), msg).unwrap();
 
-//     let spot_price = vamm.spot_price(&router).unwrap();
+//     // sync amm price to oracle = 25.6
+//     let price = vamm.spot_price(&router).unwrap();
+//     let timestamp: u64 = 1_000_000_000;
+//     let msg = pricefeed
+//         .append_price("ETH".to_string(), price, timestamp)
+//         .unwrap();
+//     router.execute(owner.clone(), msg).unwrap();
+//     // assert_eq!(1, 2);
+
+//     let msg = engine
+//         .open_position(
+//             vamm.addr().to_string(),
+//             Side::Sell,
+//             to_decimals(500u64),
+//             to_decimals(1u64),
+//             to_decimals(0u64),
+//             vec![],
+//         )
+//         .unwrap();
+//     router.execute(bob.clone(), msg).unwrap();
+
+//     // alice's margin ratio = (margin + unrealizedPnl) / openNotional = (150 + (-278.77)) / 600 = -21.46%
+
+//     // however, oracle price is more than 10% higher than spot ((25.6 - 12.1) / 12.1 = 111.570247%)
+//     //   price = 25.6
+//     //   position notional = 25.6 * 37.5 = 960
+//     //   unrealizedPnl = 960 - 600 = 360
+//     //   margin ratio = (150 + 360) / 960 = 53.125% (won't liquidate)
+//     let msg = engine
+//         .liquidate(
+//             vamm.addr().to_string(),
+//             alice.to_string(),
+//             to_decimals(0u64),
+//         )
+//         .unwrap();
+//     let err = router.execute(carol.clone(), msg).unwrap();
 //     assert_eq!(1, 2);
-
-//     // let msg = engine
-//     //     .open_position(
-//     //         vamm.addr().to_string(),
-//     //         Side::Sell,
-//     //         to_decimals(500u64),
-//     //         to_decimals(1u64),
-// to_decimals(0u64),
-//     //     )
-//     //     .unwrap();
-//     // router.execute(bob.clone(), msg).unwrap();
-
-//     // // alice's margin ratio = (margin + unrealizedPnl) / openNotional = (150 + (-278.77)) / 600 = -21.46%
-//     // let msg = engine
-//     //     .liquidate(vamm.addr().to_string(), alice.to_string())
-//     //     .unwrap();
-//     // let response = router.execute(carol.clone(), msg).unwrap();
 //     // assert_eq!(
-//     //     response.events[4].attributes[2].value,
-//     //     Uint128::from(8_030_973_451u128).to_string()
-//     // ); // liquidation fee
-//     // assert_eq!(
-//     //     response.events[4].attributes[3].value,
-//     //     Uint128::from(278_761_061_950u128).to_string()
-//     // ); // pnl (unsigned)
+//     //     err.source().unwrap().to_string(),
+//     //     "Generic error: Insufficient margin"
+//     // );
 // }
