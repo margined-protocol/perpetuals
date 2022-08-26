@@ -7,6 +7,7 @@ use cosmwasm_std::{
     QueryRequest, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Cw20ExecuteMsg, Cw20QueryMsg, TokenInfoResponse};
+use cw_utils::{must_pay, PaymentError};
 
 /// ## Description
 /// This enum describes a Terra asset (native or CW20).
@@ -71,26 +72,68 @@ impl Asset {
     /// * **self** is the type of the caller object.
     ///
     /// * **message_info** is an object of type [`MessageInfo`]
+    // pub fn assert_sent_native_token_balance(&self, message_info: &MessageInfo) -> StdResult<()> {
+    //     if let AssetInfo::NativeToken { denom } = &self.info {
+    //         match message_info.funds.iter().find(|x| x.denom == *denom) {
+    //             Some(coin) => {
+    //                 if self.amount == coin.amount {
+    //                     Ok(())
+    //                 } else {
+    //                     Err(StdError::generic_err("Native token balance mismatch between the argument and the transferred"))
+    //                 }
+    //             }
+    //             None => {
+    //                 if self.amount.is_zero() {
+    //                     Ok(())
+    //                 } else {
+    //                     Err(StdError::generic_err("Native token balance mismatch between the argument and the transferred"))
+    //                 }
+    //             }
+    //         }
+    //     } else {
+    //         Ok(())
+    //     }
+    // }
     pub fn assert_sent_native_token_balance(&self, message_info: &MessageInfo) -> StdResult<()> {
+        let msg_amount: Uint128;
+
+        // grab the denom from self so we can test
         if let AssetInfo::NativeToken { denom } = &self.info {
-            match message_info.funds.iter().find(|x| x.denom == *denom) {
-                Some(coin) => {
-                    if self.amount == coin.amount {
-                        Ok(())
-                    } else {
-                        Err(StdError::generic_err("Native token balance mismatch between the argument and the transferred"))
+            // call `must_pay` to ensure its the right denom
+            msg_amount = match must_pay(message_info, denom) {
+                Ok(amount) => amount,
+                Err(e) => match e {
+                    PaymentError::MissingDenom(string) => {
+                        return Err(StdError::generic_err(format!(
+                            "Must send reserve token {}",
+                            string
+                        )))
                     }
-                }
-                None => {
-                    if self.amount.is_zero() {
-                        Ok(())
-                    } else {
-                        Err(StdError::generic_err("Native token balance mismatch between the argument and the transferred"))
+                    PaymentError::ExtraDenom(string) => {
+                        return Err(StdError::generic_err(format!(
+                            "Received unsupported denom {}",
+                            string
+                        )))
                     }
-                }
-            }
+                    PaymentError::MultipleDenoms {} => {
+                        return Err(StdError::generic_err("Sent more than one denomination"))
+                    }
+                    PaymentError::NoFunds {} => return Err(StdError::generic_err("No funds sent")),
+                    PaymentError::NonPayable {} => {
+                        return Err(StdError::generic_err("This message does not accept funds"))
+                    }
+                },
+            };
         } else {
+            return Err(StdError::generic_err("You did not send Native Token"));
+        };
+
+        if self.amount == msg_amount {
             Ok(())
+        } else {
+            Err(StdError::generic_err(
+                "Native token balance mismatch between the argument and the transferred",
+            ))
         }
     }
 }

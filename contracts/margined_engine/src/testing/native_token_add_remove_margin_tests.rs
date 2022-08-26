@@ -98,8 +98,7 @@ fn test_force_error_add_incorrect_margin() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "Native token balance mismatch between the argument and the transferred"
-                .to_string(),
+            msg: "Must send reserve token uwasm".to_string(),
         },
         err.downcast().unwrap()
     );
