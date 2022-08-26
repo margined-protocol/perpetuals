@@ -8,15 +8,16 @@ use crate::{
         execute_transfer_to_insurance_fund, transfer_fees, withdraw,
     },
     querier::query_vamm_state,
+    query::query_margin_ratio,
     state::{
         append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_sent_funds,
         read_state, read_tmp_liquidator, read_tmp_swap, remove_position, remove_sent_funds,
         remove_tmp_liquidator, remove_tmp_swap, store_position, store_sent_funds, store_state,
-        store_tmp_swap, State, TmpSwapInfo,
+        store_tmp_swap, Config, State, TmpSwapInfo,
     },
     utils::{
         calc_remain_margin_with_funding_payment, clear_position, get_position, realize_bad_debt,
-        side_to_direction, update_open_interest_notional,
+        require_additional_margin, side_to_direction, update_open_interest_notional,
     },
 };
 
@@ -147,10 +148,19 @@ pub fn increase_position_reply(
         fees_amount[0] = fees.spread_fee;
         fees_amount[1] = fees.toll_fee;
     };
+
     // check if native tokens are sufficient
     if let AssetInfo::NativeToken { .. } = config.eligible_collateral {
         funds.are_sufficient()?;
     }
+
+    // check that the maintenance margin is correct
+    let margin_ratio = query_margin_ratio(
+        deps.as_ref(),
+        position.vamm.to_string(),
+        position.trader.to_string(),
+    )?;
+    require_additional_margin(margin_ratio, config.maintenance_margin_ratio)?;
 
     remove_tmp_swap(deps.storage);
     remove_sent_funds(deps.storage);
@@ -169,6 +179,7 @@ pub fn decrease_position_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
     let swap: TmpSwapInfo = read_tmp_swap(deps.storage)?;
 
@@ -231,6 +242,13 @@ pub fn decrease_position_reply(
     store_position(deps.storage, &position)?;
     store_state(deps.storage, &state)?;
 
+    // check that the maintenance margin is correct
+    let margin_ratio = query_margin_ratio(
+        deps.as_ref(),
+        position.vamm.to_string(),
+        position.trader.to_string(),
+    )?;
+    require_additional_margin(margin_ratio, config.maintenance_margin_ratio)?;
     // remove the tmp position
     remove_tmp_swap(deps.storage);
 

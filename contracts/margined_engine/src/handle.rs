@@ -160,7 +160,7 @@ pub fn open_position(
         .decimals
         .checked_mul(config.decimals)?
         .checked_div(leverage)?;
-    require_additional_margin(margin_ratio, config.initial_margin_ratio)?;
+    require_additional_margin(Integer::from(margin_ratio), config.initial_margin_ratio)?;
 
     // retrieves existing position or creates a new one
     let position: Position = get_position(env.clone(), deps.storage, &vamm, &trader, side.clone());

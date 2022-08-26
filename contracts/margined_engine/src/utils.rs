@@ -292,11 +292,10 @@ pub fn require_position_not_zero(size: Uint128) -> StdResult<Response> {
 
 // Checks that margin ratio is greater than base margin
 pub fn require_additional_margin(
-    margin_ratio: Uint128,
+    margin_ratio: Integer,
     base_margin: Uint128,
 ) -> StdResult<Response> {
-    let remaining_margin_ratio =
-        Integer::new_positive(margin_ratio) - Integer::new_positive(base_margin);
+    let remaining_margin_ratio = margin_ratio - Integer::new_positive(base_margin);
     if remaining_margin_ratio < Integer::zero() {
         return Err(StdError::generic_err("Position is undercollateralized"));
     }
