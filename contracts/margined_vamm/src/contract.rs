@@ -8,6 +8,7 @@ use margined_common::{integer::Integer, validate::validate_ratio};
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
+use crate::querier::{query_underlying_price, query_underlying_twap_price};
 use crate::{
     handle::{set_open, settle_funding, swap_input, swap_output, update_config},
     query::{
@@ -169,6 +170,10 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         }
         QueryMsg::OutputTwap { direction, amount } => {
             to_binary(&query_output_twap(deps, env, direction, amount)?)
+        }
+        QueryMsg::UnderlyingPrice {} => to_binary(&query_underlying_price(&deps)?),
+        QueryMsg::UnderlyingTwapPrice { interval } => {
+            to_binary(&query_underlying_twap_price(&deps, interval)?)
         }
         QueryMsg::CalcFee { quote_asset_amount } => {
             to_binary(&query_calc_fee(deps, quote_asset_amount)?)

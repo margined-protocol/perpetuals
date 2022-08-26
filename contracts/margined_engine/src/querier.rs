@@ -63,6 +63,22 @@ pub fn query_vamm_calc_fee(
     }))
 }
 
+// returns bool if vamm is over spread limit
+pub fn query_vamm_over_spread_limit(deps: &Deps, address: String) -> StdResult<bool> {
+    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: address,
+        msg: to_binary(&QueryMsg::IsOverSpreadLimit {})?,
+    }))
+}
+
+// returns pricefeed price of underlying in vamm
+pub fn query_vamm_underlying_price(deps: &Deps, address: String) -> StdResult<Uint128> {
+    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: address,
+        msg: to_binary(&QueryMsg::UnderlyingPrice {})?,
+    }))
+}
+
 // returns true if vamm has been registered with the insurance contract
 pub fn query_insurance_is_vamm(
     deps: &Deps,

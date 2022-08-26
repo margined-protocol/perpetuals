@@ -10,17 +10,18 @@ use crate::{
         REVERSE_POSITION_REPLY_ID,
     },
     messages::{execute_transfer_from, withdraw},
-    querier::query_vamm_output_amount,
+    querier::{query_vamm_output_amount, query_vamm_over_spread_limit},
     query::{query_free_collateral, query_margin_ratio},
     state::{
         read_config, read_position, read_state, store_config, store_position, store_sent_funds,
         store_state, store_tmp_liquidator, store_tmp_swap, Config, SentFunds, State, TmpSwapInfo,
     },
     utils::{
-        calc_remain_margin_with_funding_payment, direction_to_side, get_asset, get_position,
-        get_position_notional_unrealized_pnl, require_additional_margin, require_bad_debt,
-        require_insufficient_margin, require_non_zero_input, require_not_paused,
-        require_not_restriction_mode, require_position_not_zero, require_vamm, side_to_direction,
+        calc_remain_margin_with_funding_payment, direction_to_side, get_asset,
+        get_margin_ratio_calc_option, get_position, get_position_notional_unrealized_pnl,
+        require_additional_margin, require_bad_debt, require_insufficient_margin,
+        require_non_zero_input, require_not_paused, require_not_restriction_mode,
+        require_position_not_zero, require_vamm, side_to_direction,
     },
 };
 use margined_common::{
@@ -280,7 +281,21 @@ pub fn liquidate(
     store_tmp_liquidator(deps.storage, &info.sender)?;
 
     // retrieve the existing margin ratio of the position
-    let margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
+    let mut margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
+
+    // let over_spread_limit = ;
+    if query_vamm_over_spread_limit(&deps.as_ref(), vamm.to_string())? {
+        let oracle_margin_ratio = get_margin_ratio_calc_option(
+            deps.as_ref(),
+            vamm.to_string(),
+            trader.to_string(),
+            PnlCalcOption::Oracle,
+        )?;
+
+        if oracle_margin_ratio.checked_sub(margin_ratio)? > Integer::zero() {
+            margin_ratio = oracle_margin_ratio
+        }
+    }
 
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
     require_insufficient_margin(margin_ratio, config.maintenance_margin_ratio)?;
