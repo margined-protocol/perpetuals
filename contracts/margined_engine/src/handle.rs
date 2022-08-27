@@ -139,6 +139,7 @@ pub fn open_position(
     leverage: Uint128,
     base_asset_limit: Uint128,
 ) -> StdResult<Response> {
+    println!("open poisition");
     let config: Config = read_config(deps.storage)?;
     let state: State = read_state(deps.storage)?;
 
@@ -161,6 +162,9 @@ pub fn open_position(
         .checked_mul(config.decimals)?
         .checked_div(leverage)?;
     require_additional_margin(Integer::from(margin_ratio), config.initial_margin_ratio)?;
+    println!("margin ratio: {}", margin_ratio);
+    println!("init margin: {}", config.initial_margin_ratio);
+    println!("hello2");
 
     // retrieves existing position or creates a new one
     let position: Position = get_position(env.clone(), deps.storage, &vamm, &trader, side.clone());

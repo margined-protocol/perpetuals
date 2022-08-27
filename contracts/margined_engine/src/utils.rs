@@ -339,7 +339,6 @@ pub fn require_not_paused(paused: bool) -> StdResult<Response> {
 
     Ok(Response::new())
 }
-
 // check an input is non-zero
 pub fn require_non_zero_input(input: Uint128) -> StdResult<Response> {
     if input.is_zero() {

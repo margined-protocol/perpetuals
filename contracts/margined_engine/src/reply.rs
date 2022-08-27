@@ -34,6 +34,7 @@ pub fn increase_position_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    println!("increase position reply");
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
 
@@ -66,6 +67,8 @@ pub fn increase_position_reply(
         .open_notional
         .checked_mul(config.decimals)?
         .checked_div(swap.leverage)?;
+
+    println!("swpa margin: {}", swap_margin);
 
     swap.margin_to_vault = swap
         .margin_to_vault
@@ -153,13 +156,20 @@ pub fn increase_position_reply(
     if let AssetInfo::NativeToken { .. } = config.eligible_collateral {
         funds.are_sufficient()?;
     }
-
+    println!("here");
     // check that the maintenance margin is correct
     let margin_ratio = query_margin_ratio(
         deps.as_ref(),
         position.vamm.to_string(),
         position.trader.to_string(),
     )?;
+
+    println!("margin ration: {}", margin_ratio);
+    println!(
+        "maintenance margin ration: {}",
+        config.maintenance_margin_ratio
+    );
+
     require_additional_margin(margin_ratio, config.maintenance_margin_ratio)?;
 
     remove_tmp_swap(deps.storage);
@@ -179,6 +189,7 @@ pub fn decrease_position_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    println!("decrease position reply");
     let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
     let swap: TmpSwapInfo = read_tmp_swap(deps.storage)?;
@@ -248,7 +259,14 @@ pub fn decrease_position_reply(
         position.vamm.to_string(),
         position.trader.to_string(),
     )?;
+
+    println!("margin ration: {}", margin_ratio);
+    println!(
+        "maintenance margin ration: {}",
+        config.maintenance_margin_ratio
+    );
     require_additional_margin(margin_ratio, config.maintenance_margin_ratio)?;
+
     // remove the tmp position
     remove_tmp_swap(deps.storage);
 
@@ -268,6 +286,7 @@ pub fn reverse_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    println!("reverse position reply");
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
     let mut swap = read_tmp_swap(deps.storage)?;

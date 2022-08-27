@@ -278,7 +278,7 @@ fn test_force_error_insufficient_token_short_position() {
 }
 
 #[test]
-fn test_ten_percent_fee_increase_long_position() {
+fn test_ten_percent_fee_long_position_price_remains_long_again() {
     let NativeTokenScenario {
         mut router,
         owner,
@@ -622,7 +622,7 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
 }
 
 #[test]
-fn test_ten_percent_fee_increase_short_position() {
+fn test_ten_percent_fee_short_position_price_remains_short_again() {
     let NativeTokenScenario {
         mut router,
         owner,
@@ -952,7 +952,7 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
 }
 
 #[test]
-fn test_ten_percent_fee_reduce_long_position() {
+fn test_ten_percent_fee_long_position_price_remains_reduce_position() {
     let NativeTokenScenario {
         mut router,
         owner,
@@ -1107,7 +1107,7 @@ fn test_ten_percent_fee_reduce_long_position_zero_fee() {
 }
 
 #[test]
-fn test_ten_percent_fee_reduce_short_position() {
+fn test_ten_percent_fee_short_position_price_remains_reduce_position() {
     let NativeTokenScenario {
         mut router,
         owner,
