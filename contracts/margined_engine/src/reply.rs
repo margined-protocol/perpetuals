@@ -92,7 +92,6 @@ pub fn increase_position_reply(
     position.block_number = env.block.height;
 
     store_position(deps.storage, &position)?;
-    store_state(deps.storage, &state)?;
 
     // check the new position doesn't exceed any caps
     check_base_asset_holding_cap(&deps.as_ref(), swap.vamm.clone(), position.size.value)?;
@@ -165,6 +164,8 @@ pub fn increase_position_reply(
     )?;
 
     require_additional_margin(margin_ratio, config.maintenance_margin_ratio)?;
+
+    store_state(deps.storage, &state)?;
 
     remove_tmp_swap(deps.storage);
     remove_sent_funds(deps.storage);
@@ -458,6 +459,7 @@ pub fn close_position_reply(
     update_open_interest_notional(&deps.as_ref(), &mut state, swap.vamm, value.invert_sign())?;
 
     remove_position(deps.storage, &position);
+
     store_state(deps.storage, &state)?;
 
     remove_tmp_swap(deps.storage);
@@ -543,6 +545,8 @@ pub fn liquidate_reply(
         )
         .unwrap(),
     );
+
+    store_state(deps.storage, &state)?;
 
     remove_position(deps.storage, &position);
     remove_tmp_swap(deps.storage);
@@ -641,6 +645,7 @@ pub fn partial_liquidation_reply(
     );
 
     store_position(deps.storage, &position)?;
+    store_state(deps.storage, &state)?;
 
     remove_tmp_swap(deps.storage);
     remove_tmp_liquidator(deps.storage);

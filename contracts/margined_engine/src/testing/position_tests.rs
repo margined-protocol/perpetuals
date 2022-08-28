@@ -1239,3 +1239,84 @@ fn test_query_no_user_positions() {
     let positions: Vec<Position> = engine.get_all_positions(&router, bob.to_string()).unwrap();
     assert_eq!(positions, vec![]);
 }
+
+#[test]
+fn test_bad_debt_recorded() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        engine,
+        vamm,
+        usdc,
+        insurance_fund,
+        ..
+    } = SimpleScenario::new();
+
+    // insurance contract have 5000 USDC balance
+    let insurance_balance = usdc
+        .balance::<_, _, Empty>(&router, insurance_fund.addr().clone())
+        .unwrap();
+    assert_eq!(insurance_balance, to_decimals(5000u64));
+
+    // alice opens a 60 USDC position
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(60u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    // engine contract now have 60 USDC (0 balance + 60)
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
+    assert_eq!(engine_balance, to_decimals(60u64));
+
+    // from oak:
+    // we try to trigger bad debt by making the engine contract having
+    // insufficient balance to repay the user
+    // we do this via mocking the engine contract to burn all their USDC
+    // this would cause the engine contract unable to repay the user, hence
+    // having a positive amount of bad debt
+    // burn all usdc from engine balance
+    let burn_msg = Cw20ExecuteMsg::Burn {
+        amount: engine_balance,
+    };
+
+    // wrap into CosmosMsg
+    let cosmos_burn_msg = usdc.call(burn_msg).unwrap();
+
+    // execute the burn msg
+    router
+        .execute(engine.addr().clone(), cosmos_burn_msg)
+        .unwrap();
+
+    // engine contract now have 0 balance
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
+    assert_eq!(engine_balance, to_decimals(0u64));
+
+    // alice withdraws 20 USDC margin from engine contract while engine contract
+    // have 0 balance
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), to_decimals(20u64))
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    // shortfall event occured, insurance funds are used instead
+    // insurance contract should have 4980 USDC (5000 balance - 20)
+    let insurance_balance = usdc
+        .balance::<_, _, Empty>(&router, insurance_fund.addr().clone())
+        .unwrap();
+    assert_eq!(insurance_balance, to_decimals(4980u64));
+
+    // engine contract's state should reflect bad debt as 20
+    let bad_debt = engine.state(&router).unwrap().bad_debt;
+    assert_eq!(bad_debt, to_decimals(20u64));
+}

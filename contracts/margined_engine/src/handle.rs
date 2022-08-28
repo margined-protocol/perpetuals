@@ -444,8 +444,6 @@ pub fn withdraw_margin(
         return Err(StdError::generic_err("Insufficient collateral"));
     }
 
-    store_position(deps.storage, &position)?;
-
     // withdraw margin
     let msgs = withdraw(
         deps.as_ref(),
@@ -456,6 +454,9 @@ pub fn withdraw_margin(
         amount,
     )
     .unwrap();
+
+    store_position(deps.storage, &position)?;
+    store_state(deps.storage, &state)?;
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "withdraw_margin"),
