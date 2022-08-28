@@ -474,6 +474,71 @@ fn test_zero_when_everyone_closes_positions_one_position_is_bankrupt() {
 }
 
 #[test]
+fn test_open_interest_logged_without_cap() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(250u64),
+            to_decimals(1u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let open_interest_notional = engine.state(&router).unwrap().open_interest_notional;
+    assert_eq!(open_interest_notional, Uint128::from(250_000_000_000u64));
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(250u64),
+            to_decimals(1u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    let open_interest_notional = engine.state(&router).unwrap().open_interest_notional;
+    assert_eq!(open_interest_notional, Uint128::from(500_000_000_000u64));
+
+    let msg = engine
+        .liquidate(
+            vamm.addr().to_string(),
+            alice.to_string(),
+            to_decimals(0u64),
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
+
+    let msg = engine
+        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    let open_interest_notional = engine.state(&router).unwrap().open_interest_notional;
+    // this is near zero due to some rounding errors
+    assert!(open_interest_notional < to_decimals(10u64));
+}
+
+#[test]
 fn test_stop_trading_if_over_open_interest_notional_cap() {
     let SimpleScenario {
         mut router,
@@ -543,7 +608,7 @@ fn test_stop_trading_if_over_open_interest_notional_cap() {
     let err = router.execute(bob.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "over limit".to_string(),
+            msg: "open interest exceeds cap".to_string(),
         },
         err.downcast().unwrap()
     );
