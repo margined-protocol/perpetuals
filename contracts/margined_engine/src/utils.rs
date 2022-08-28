@@ -112,6 +112,19 @@ pub fn update_open_interest_notional(
     Ok(Response::new())
 }
 
+// this blocks trades if user's position exceeds max base asset holding cap
+pub fn check_base_asset_holding_cap(deps: &Deps, vamm: Addr, size: Uint128) -> StdResult<Response> {
+    let cap = query_vamm_config(deps, vamm.to_string())?.base_asset_holding_cap;
+
+    // check if the cap has been exceeded
+    // TODO add concept of whitelist
+    if !cap.is_zero() && size > cap {
+        return Err(StdError::generic_err("base asset holding exceeds cap"));
+    }
+
+    Ok(Response::new())
+}
+
 pub fn get_margin_ratio_calc_option(
     deps: Deps,
     vamm: String,
