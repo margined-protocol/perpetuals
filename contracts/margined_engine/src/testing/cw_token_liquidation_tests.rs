@@ -1358,7 +1358,6 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
         )
         .unwrap();
 
-    println!("[][][][][][]");
     // when bob create a 20 margin * 5x long position when 9.0909090909 quoteAsset = 100
     // AMM after: 1100 : 90.9090909091
     env.open_small_position(
@@ -1368,8 +1367,6 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
         to_decimals(5u64),
         5u64,
     );
-
-    println!("hehrere");
 
     // when alice create a 20 margin * 5x long position when 7.5757575758 quoteAsset = 100
     // AMM after: 1200 : 83.3333333333
@@ -1725,9 +1722,6 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         5u64,
     );
 
-    println!("michael");
-    println!("is this the real life");
-
     // when david create a 2 margin * 5x long position
     // AMM after: quote = 1210 : 82.6446281
     // alice + carol + david get: 90.9090909091 - 82.6446281 = 8.2644628091
@@ -1738,8 +1732,6 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         to_decimals(5u64),
         5u64,
     );
-
-    println!("------------------");
 
     // AMM after: 1110 : 90.09009009, price: 12.321
     env.open_small_position(

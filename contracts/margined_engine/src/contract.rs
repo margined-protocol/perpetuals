@@ -83,9 +83,6 @@ pub fn instantiate(
         liquidation_fee: msg.liquidation_fee,
     };
 
-    println!("{}", msg.maintenance_margin_ratio);
-    println!("{}", config.maintenance_margin_ratio);
-    println!("{:?}", config);
     store_config(deps.storage, &config)?;
 
     // store default state

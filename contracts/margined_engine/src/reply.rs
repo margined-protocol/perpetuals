@@ -34,7 +34,6 @@ pub fn increase_position_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    println!("increase position reply");
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
 
@@ -180,7 +179,6 @@ pub fn decrease_position_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    println!("decrease position reply");
     let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
     let swap: TmpSwapInfo = read_tmp_swap(deps.storage)?;
@@ -272,7 +270,6 @@ pub fn reverse_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    println!("reverse position reply");
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
     let mut swap = read_tmp_swap(deps.storage)?;

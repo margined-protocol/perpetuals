@@ -139,7 +139,6 @@ pub fn open_position(
     leverage: Uint128,
     base_asset_limit: Uint128,
 ) -> StdResult<Response> {
-    println!("open position");
     let config: Config = read_config(deps.storage)?;
     let state: State = read_state(deps.storage)?;
 
@@ -472,7 +471,6 @@ pub fn internal_increase_position(
     open_notional: Uint128,
     base_asset_limit: Uint128,
 ) -> StdResult<SubMsg> {
-    println!("internal increase position");
     swap_input(
         &vamm,
         side,
@@ -526,7 +524,6 @@ fn open_reverse_position(
     base_asset_limit: Uint128,
     can_go_over_fluctuation: bool,
 ) -> StdResult<SubMsg> {
-    println!("open reverse position");
     let config: Config = read_config(deps.storage).unwrap();
     let position: Position = get_position(env, deps.storage, &vamm, &trader, side.clone());
 
