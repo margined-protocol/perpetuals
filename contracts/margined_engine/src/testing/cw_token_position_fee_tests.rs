@@ -1668,6 +1668,7 @@ fn test_ten_percent_fee_open_short_price_down_close_manually() {
     assert_eq!(position.notional, Uint128::zero());
     assert_eq!(position.margin, Uint128::zero());
 }
+
 #[test]
 fn test_ten_percent_fee_open_long_price_remains_close_opening_larger_short() {
     let SimpleScenario {
