@@ -68,8 +68,6 @@ pub fn increase_position_reply(
         .checked_mul(config.decimals)?
         .checked_div(swap.leverage)?;
 
-    println!("swpa margin: {}", swap_margin);
-
     swap.margin_to_vault = swap
         .margin_to_vault
         .checked_add(Integer::new_positive(swap_margin))?;
@@ -156,19 +154,12 @@ pub fn increase_position_reply(
     if let AssetInfo::NativeToken { .. } = config.eligible_collateral {
         funds.are_sufficient()?;
     }
-    println!("here");
     // check that the maintenance margin is correct
     let margin_ratio = query_margin_ratio(
         deps.as_ref(),
         position.vamm.to_string(),
         position.trader.to_string(),
     )?;
-
-    println!("margin ration: {}", margin_ratio);
-    println!(
-        "maintenance margin ration: {}",
-        config.maintenance_margin_ratio
-    );
 
     require_additional_margin(margin_ratio, config.maintenance_margin_ratio)?;
 
@@ -260,11 +251,6 @@ pub fn decrease_position_reply(
         position.trader.to_string(),
     )?;
 
-    println!("margin ration: {}", margin_ratio);
-    println!(
-        "maintenance margin ration: {}",
-        config.maintenance_margin_ratio
-    );
     require_additional_margin(margin_ratio, config.maintenance_margin_ratio)?;
 
     // remove the tmp position
@@ -340,10 +326,11 @@ pub fn reverse_position_reply(
 
     // reduce position if old position is larger
     if swap.open_notional.checked_div(swap.leverage)? == Uint128::zero() {
+        // determine new position
+        let margin = previous_margin.checked_sub(swap.unrealized_pnl)?;
+
         // create transfer message
-        msgs.push(
-            execute_transfer(deps.storage, &swap.trader.clone(), previous_margin.value).unwrap(),
-        );
+        msgs.push(execute_transfer(deps.storage, &swap.trader.clone(), margin.value).unwrap());
 
         // check if native tokens are sufficient
         if let AssetInfo::NativeToken { .. } = config.eligible_collateral {

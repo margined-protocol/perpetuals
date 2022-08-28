@@ -139,7 +139,7 @@ pub fn open_position(
     leverage: Uint128,
     base_asset_limit: Uint128,
 ) -> StdResult<Response> {
-    println!("open poisition");
+    println!("open position");
     let config: Config = read_config(deps.storage)?;
     let state: State = read_state(deps.storage)?;
 
@@ -162,9 +162,6 @@ pub fn open_position(
         .checked_mul(config.decimals)?
         .checked_div(leverage)?;
     require_additional_margin(Integer::from(margin_ratio), config.initial_margin_ratio)?;
-    println!("margin ratio: {}", margin_ratio);
-    println!("init margin: {}", config.initial_margin_ratio);
-    println!("hello2");
 
     // retrieves existing position or creates a new one
     let position: Position = get_position(env.clone(), deps.storage, &vamm, &trader, side.clone());
@@ -475,6 +472,7 @@ pub fn internal_increase_position(
     open_notional: Uint128,
     base_asset_limit: Uint128,
 ) -> StdResult<SubMsg> {
+    println!("internal increase position");
     swap_input(
         &vamm,
         side,
@@ -528,6 +526,7 @@ fn open_reverse_position(
     base_asset_limit: Uint128,
     can_go_over_fluctuation: bool,
 ) -> StdResult<SubMsg> {
+    println!("open reverse position");
     let config: Config = read_config(deps.storage).unwrap();
     let position: Position = get_position(env, deps.storage, &vamm, &trader, side.clone());
 
