@@ -323,7 +323,7 @@ pub fn reverse_position_reply(
 
     // reduce position if old position is larger
     if swap.open_notional.checked_div(swap.leverage)? == Uint128::zero() {
-        // determine new position
+        // latest margin requirements
         let margin = previous_margin.checked_sub(swap.unrealized_pnl)?;
 
         // create transfer message
