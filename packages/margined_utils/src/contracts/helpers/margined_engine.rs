@@ -88,6 +88,20 @@ impl EngineController {
         self.call(msg, vec![])
     }
 
+    pub fn set_margin_ratios(&self, margin_ratio: Uint128) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::UpdateConfig {
+            owner: None,
+            insurance_fund: None,
+            fee_pool: None,
+            eligible_collateral: None,
+            initial_margin_ratio: Some(margin_ratio),
+            maintenance_margin_ratio: Some(margin_ratio),
+            partial_liquidation_ratio: None,
+            liquidation_fee: None,
+        };
+        self.call(msg, vec![])
+    }
+
     pub fn set_partial_liquidation_ratio(
         &self,
         partial_liquidation_ratio: Uint128,
