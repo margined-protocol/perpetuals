@@ -283,7 +283,6 @@ pub fn liquidate(
     // retrieve the existing margin ratio of the position
     let mut margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
 
-    // let over_spread_limit = ;
     if query_vamm_over_spread_limit(&deps.as_ref(), vamm.to_string())? {
         let oracle_margin_ratio = get_margin_ratio_calc_option(
             deps.as_ref(),
