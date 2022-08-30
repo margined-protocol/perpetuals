@@ -4,7 +4,7 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use margined_common::validate::{
-    validate_decimal_places, validate_eligible_collateral, validate_ratio,
+    validate_decimal_places, validate_eligible_collateral, validate_margin_ratios, validate_ratio,
 };
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
@@ -69,6 +69,9 @@ pub fn instantiate(
     validate_ratio(msg.initial_margin_ratio, decimals)?;
     validate_ratio(msg.maintenance_margin_ratio, decimals)?;
     validate_ratio(msg.liquidation_fee, decimals)?;
+
+    // validate that the maintenance margin is not greater than the initial
+    validate_margin_ratios(msg.initial_margin_ratio, msg.maintenance_margin_ratio)?;
 
     // config parameters
     let config = Config {
