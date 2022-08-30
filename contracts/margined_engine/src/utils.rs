@@ -454,3 +454,11 @@ pub fn direction_to_side(direction: Direction) -> Side {
         Direction::RemoveFromAmm => Side::Sell,
     }
 }
+
+pub fn position_to_side(size: Integer) -> Side {
+    if size > Integer::zero() {
+        Side::Sell
+    } else {
+        Side::Buy
+    }
+}

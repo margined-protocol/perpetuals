@@ -79,7 +79,7 @@ pub fn instantiate(
         decimals,
         initial_margin_ratio: msg.initial_margin_ratio,
         maintenance_margin_ratio: msg.maintenance_margin_ratio,
-        partial_liquidation_margin_ratio: Uint128::zero(), // set as zero by default
+        partial_liquidation_margin_ratio: msg.initial_margin_ratio,
         liquidation_fee: msg.liquidation_fee,
     };
 

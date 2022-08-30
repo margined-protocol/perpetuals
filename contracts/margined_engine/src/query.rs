@@ -161,6 +161,7 @@ pub fn query_trader_position_with_funding_payment(
 
 /// Queries the margin ratio of a trader
 pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult<Integer> {
+    println!("query_margin_ratio");
     let config: Config = read_config(deps.storage)?;
 
     // retrieve the latest position
