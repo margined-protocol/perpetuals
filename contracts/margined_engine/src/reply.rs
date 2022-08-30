@@ -16,8 +16,9 @@ use crate::{
         store_tmp_swap, Config, State, TmpSwapInfo,
     },
     utils::{
-        calc_remain_margin_with_funding_payment, clear_position, get_position, realize_bad_debt,
-        require_additional_margin, side_to_direction, update_open_interest_notional,
+        calc_remain_margin_with_funding_payment, check_base_asset_holding_cap, clear_position,
+        get_position, realize_bad_debt, require_additional_margin, side_to_direction,
+        update_open_interest_notional,
     },
 };
 
@@ -92,6 +93,9 @@ pub fn increase_position_reply(
 
     store_position(deps.storage, &position)?;
     store_state(deps.storage, &state)?;
+
+    // check the new position doesn't exceed any caps
+    check_base_asset_holding_cap(&deps.as_ref(), swap.vamm.clone(), position.size.value)?;
 
     let mut msgs: Vec<SubMsg> = vec![];
 

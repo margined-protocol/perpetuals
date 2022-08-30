@@ -94,19 +94,32 @@ pub fn update_open_interest_notional(
 ) -> StdResult<Response> {
     let cap = query_vamm_config(deps, vamm.to_string())?.open_interest_notional_cap;
 
-    if !cap.is_zero() {
-        let mut updated_open_interest =
-            amount.checked_add(Integer::new_positive(state.open_interest_notional))?;
+    let mut updated_open_interest =
+        amount.checked_add(Integer::new_positive(state.open_interest_notional))?;
 
-        if updated_open_interest.is_negative() {
-            updated_open_interest = Integer::zero();
-        }
+    if updated_open_interest.is_negative() {
+        updated_open_interest = Integer::zero();
+    }
 
-        if amount.is_positive() && updated_open_interest > Integer::new_positive(cap) {
-            return Err(StdError::generic_err("over limit"));
-        }
+    // check if the cap has been exceeded
+    if !cap.is_zero() && amount.is_positive() && updated_open_interest > Integer::new_positive(cap)
+    {
+        return Err(StdError::generic_err("open interest exceeds cap"));
+    }
 
-        state.open_interest_notional = updated_open_interest.value;
+    state.open_interest_notional = updated_open_interest.value;
+
+    Ok(Response::new())
+}
+
+// this blocks trades if user's position exceeds max base asset holding cap
+pub fn check_base_asset_holding_cap(deps: &Deps, vamm: Addr, size: Uint128) -> StdResult<Response> {
+    let cap = query_vamm_config(deps, vamm.to_string())?.base_asset_holding_cap;
+
+    // check if the cap has been exceeded
+    // TODO add concept of whitelist
+    if !cap.is_zero() && size > cap {
+        return Err(StdError::generic_err("base asset holding exceeds cap"));
     }
 
     Ok(Response::new())

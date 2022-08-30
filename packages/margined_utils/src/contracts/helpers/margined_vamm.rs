@@ -104,6 +104,24 @@ impl VammController {
         self.call(msg, vec![])
     }
 
+    pub fn set_base_asset_holding_cap(
+        &self,
+        base_asset_holding_cap: Uint128,
+    ) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::UpdateConfig {
+            owner: None,
+            base_asset_holding_cap: Some(base_asset_holding_cap),
+            open_interest_notional_cap: None,
+            toll_ratio: None,
+            spread_ratio: None,
+            fluctuation_limit_ratio: None,
+            margin_engine: None,
+            pricefeed: None,
+            spot_price_twap_interval: None,
+        };
+        self.call(msg, vec![])
+    }
+
     pub fn set_fluctuation_limit_ratio(
         &self,
         fluctuation_limit_ratio: Uint128,
