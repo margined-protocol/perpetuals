@@ -38,7 +38,7 @@ fn test_instantiation() {
             decimals: Uint128::from(10u128.pow(6u32)),
             initial_margin_ratio: Uint128::from(50_000u128),
             maintenance_margin_ratio: Uint128::from(50_000u128),
-            partial_liquidation_margin_ratio: Uint128::zero(),
+            partial_liquidation_ratio: Uint128::zero(),
             liquidation_fee: Uint128::from(100u128),
         }
     );
@@ -66,7 +66,7 @@ fn test_update_config() {
         eligible_collateral: None,
         initial_margin_ratio: None,
         maintenance_margin_ratio: None,
-        partial_liquidation_margin_ratio: None,
+        partial_liquidation_ratio: None,
         liquidation_fee: None,
     };
 
@@ -87,7 +87,7 @@ fn test_update_config() {
             decimals: Uint128::from(10u128.pow(6u32)),
             initial_margin_ratio: Uint128::from(50_000u128),
             maintenance_margin_ratio: Uint128::from(50_000u128),
-            partial_liquidation_margin_ratio: Uint128::zero(),
+            partial_liquidation_ratio: Uint128::zero(),
             liquidation_fee: Uint128::from(100u128),
         }
     );
@@ -100,7 +100,7 @@ fn test_update_config() {
         eligible_collateral: None,
         initial_margin_ratio: None,
         maintenance_margin_ratio: None,
-        partial_liquidation_margin_ratio: None,
+        partial_liquidation_ratio: None,
         liquidation_fee: None,
     };
 
@@ -116,7 +116,7 @@ fn test_update_config() {
         eligible_collateral: None,
         initial_margin_ratio: Some(Uint128::MAX),
         maintenance_margin_ratio: None,
-        partial_liquidation_margin_ratio: None,
+        partial_liquidation_ratio: None,
         liquidation_fee: None,
     };
 

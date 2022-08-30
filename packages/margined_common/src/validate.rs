@@ -21,6 +21,20 @@ pub fn validate_ratio(value: Uint128, decimals: Uint128) -> StdResult<Response> 
     Ok(Response::new())
 }
 
+/// Validates that maintenance margin is less than the initial margin
+pub fn validate_margin_ratios(
+    initial_margin: Uint128,
+    maintenance_margin: Uint128,
+) -> StdResult<Response> {
+    if maintenance_margin > initial_margin {
+        return Err(StdError::generic_err(
+            "Incorrect initialisation of margin ratios, initial >= maintenance",
+        ));
+    }
+
+    Ok(Response::new())
+}
+
 /// Validates that the address used for collateral is native token or cw token and returns as type AssetInfo
 pub fn validate_eligible_collateral(deps: Deps, input: String) -> StdResult<AssetInfo> {
     // verify if the string is any of the native tokens for the deployed network
