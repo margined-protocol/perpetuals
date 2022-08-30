@@ -93,6 +93,10 @@ pub enum QueryMsg {
     TwapPrice {
         interval: u64,
     },
+    UnderlyingPrice {},
+    UnderlyingTwapPrice {
+        interval: u64,
+    },
     CalcFee {
         quote_asset_amount: Uint128,
     },

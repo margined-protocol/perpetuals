@@ -1156,7 +1156,7 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
 
     let msg = env
         .engine
-        .set_maintenance_margin_ratio(Uint128::from(199_999u128))
+        .set_maintenance_margin_ratio(Uint128::from(199_996u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -1278,7 +1278,7 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
 
     let msg = env
         .engine
-        .set_maintenance_margin_ratio(Uint128::from(199_999u128))
+        .set_maintenance_margin_ratio(Uint128::from(199_995u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 

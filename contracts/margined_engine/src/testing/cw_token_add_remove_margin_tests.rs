@@ -57,6 +57,44 @@ fn test_add_margin() {
 }
 
 #[test]
+fn test_add_margin_insufficent_balance() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        engine,
+        vamm,
+        usdc,
+        ..
+    } = SimpleScenario::new();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(60u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
+    assert_eq!(engine_balance, to_decimals(60u64));
+
+    let msg = engine
+        .deposit_margin(vamm.addr().to_string(), to_decimals(5001u64), vec![])
+        .unwrap();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: transfer failure - reply (id 8)"
+    );
+}
+
+#[test]
 fn test_add_margin_no_open_position() {
     let SimpleScenario {
         mut router,
@@ -645,6 +683,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() 
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 }
+
 #[test]
 fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price() {
     let SimpleScenario {

@@ -18,7 +18,7 @@ use crate::{
     messages::execute_insurance_fund_withdrawal,
     querier::{
         query_insurance_is_vamm, query_vamm_config, query_vamm_output_amount,
-        query_vamm_output_twap, query_vamm_state,
+        query_vamm_output_twap, query_vamm_state, query_vamm_underlying_price,
     },
     query::query_cumulative_premium_fraction,
     state::{read_config, read_position, read_vamm_map, State},
@@ -112,6 +112,41 @@ pub fn update_open_interest_notional(
     Ok(Response::new())
 }
 
+pub fn get_margin_ratio_calc_option(
+    deps: Deps,
+    vamm: String,
+    trader: String,
+    calc_option: PnlCalcOption,
+) -> StdResult<Integer> {
+    let config = read_config(deps.storage)?;
+
+    // retrieve the latest position
+    let position = read_position(
+        deps.storage,
+        &deps.api.addr_validate(&vamm)?,
+        &deps.api.addr_validate(&trader)?,
+    )
+    .unwrap();
+
+    if position.size.is_zero() {
+        return Ok(Integer::zero());
+    }
+
+    let PositionUnrealizedPnlResponse {
+        position_notional,
+        unrealized_pnl,
+    } = get_position_notional_unrealized_pnl(deps, &position, calc_option)?;
+
+    let remain_margin = calc_remain_margin_with_funding_payment(deps, position, unrealized_pnl)?;
+
+    let margin_ratio = ((Integer::new_positive(remain_margin.margin)
+        - Integer::new_positive(remain_margin.bad_debt))
+        * Integer::new_positive(config.decimals))
+        / Integer::new_positive(position_notional);
+
+    Ok(margin_ratio)
+}
+
 pub fn get_position_notional_unrealized_pnl(
     deps: Deps,
     position: &Position,
@@ -138,7 +173,15 @@ pub fn get_position_notional_unrealized_pnl(
                     position.size.value,
                 )?;
             }
-            PnlCalcOption::Oracle => {}
+            PnlCalcOption::Oracle => {
+                let config = read_config(deps.storage)?;
+                let oracle_price: Uint128 =
+                    query_vamm_underlying_price(&deps, position.vamm.to_string())?;
+
+                output_notional = oracle_price
+                    .checked_mul(position.size.value)?
+                    .checked_div(config.decimals)?;
+            }
         }
 
         // we are short if the size of the position is less than 0
@@ -249,11 +292,10 @@ pub fn require_position_not_zero(size: Uint128) -> StdResult<Response> {
 
 // Checks that margin ratio is greater than base margin
 pub fn require_additional_margin(
-    margin_ratio: Uint128,
+    margin_ratio: Integer,
     base_margin: Uint128,
 ) -> StdResult<Response> {
-    let remaining_margin_ratio =
-        Integer::new_positive(margin_ratio) - Integer::new_positive(base_margin);
+    let remaining_margin_ratio = margin_ratio - Integer::new_positive(base_margin);
     if remaining_margin_ratio < Integer::zero() {
         return Err(StdError::generic_err("Position is undercollateralized"));
     }
@@ -297,7 +339,6 @@ pub fn require_not_paused(paused: bool) -> StdResult<Response> {
 
     Ok(Response::new())
 }
-
 // check an input is non-zero
 pub fn require_non_zero_input(input: Uint128) -> StdResult<Response> {
     if input.is_zero() {

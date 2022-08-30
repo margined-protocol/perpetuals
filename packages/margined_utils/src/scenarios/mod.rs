@@ -10,7 +10,9 @@ use margined_perp::margined_fee_pool::InstantiateMsg as FeePoolInstantiateMsg;
 use margined_perp::margined_insurance_fund::{
     ExecuteMsg as InsuranceFundExecuteMsg, InstantiateMsg as InsuranceFundInstantiateMsg,
 };
-use margined_perp::margined_pricefeed::InstantiateMsg as PricefeedInstantiateMsg;
+use margined_perp::margined_pricefeed::{
+    ExecuteMsg as PricefeedExecuteMsg, InstantiateMsg as PricefeedInstantiateMsg,
+};
 use margined_perp::margined_vamm::{
     ExecuteMsg as VammExecuteMsg, InstantiateMsg as VammInstantiateMsg,
 };
@@ -202,6 +204,20 @@ impl NativeTokenScenario {
                 &InsuranceFundExecuteMsg::UpdateConfig {
                     owner: None,
                     beneficiary: Some(engine_addr.to_string()),
+                },
+                &[],
+            )
+            .unwrap();
+
+        // append a price to the mock pricefeed
+        router
+            .execute_contract(
+                owner.clone(),
+                pricefeed_addr,
+                &PricefeedExecuteMsg::AppendPrice {
+                    key: "ETH".to_string(),
+                    price: Uint128::from(10_000_000u128),
+                    timestamp: 1_000_000_000u64,
                 },
                 &[],
             )
@@ -491,6 +507,20 @@ impl SimpleScenario {
                     spender: engine_addr.to_string(),
                     amount: to_decimals(100),
                     expires: None,
+                },
+                &[],
+            )
+            .unwrap();
+
+        // append a price to the mock pricefeed
+        router
+            .execute_contract(
+                owner.clone(),
+                pricefeed_addr,
+                &PricefeedExecuteMsg::AppendPrice {
+                    key: "ETH".to_string(),
+                    price: Uint128::from(10_000_000_000u128),
+                    timestamp: 1_000_000_000u64,
                 },
                 &[],
             )
