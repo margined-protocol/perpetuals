@@ -13,8 +13,8 @@ use crate::{
     handle::{set_open, settle_funding, swap_input, swap_output, update_config},
     query::{
         query_calc_fee, query_config, query_input_amount, query_input_price, query_input_twap,
-        query_is_over_spread_limit, query_output_amount, query_output_price, query_output_twap,
-        query_spot_price, query_state, query_twap_price,
+        query_is_over_fluctuation_limit, query_is_over_spread_limit, query_output_amount,
+        query_output_price, query_output_twap, query_spot_price, query_state, query_twap_price,
     },
     state::{store_config, store_reserve_snapshot, store_state, Config, ReserveSnapshot, State},
 };
@@ -181,5 +181,14 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::SpotPrice {} => to_binary(&query_spot_price(deps)?),
         QueryMsg::TwapPrice { interval } => to_binary(&query_twap_price(deps, env, interval)?),
         QueryMsg::IsOverSpreadLimit {} => to_binary(&query_is_over_spread_limit(deps)?),
+        QueryMsg::IsOverFluctuationLimit {
+            direction,
+            base_asset_amount,
+        } => to_binary(&query_is_over_fluctuation_limit(
+            deps,
+            env,
+            direction,
+            base_asset_amount,
+        )?),
     }
 }

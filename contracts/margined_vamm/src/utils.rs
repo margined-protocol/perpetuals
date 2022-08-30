@@ -100,7 +100,7 @@ pub fn check_is_over_block_fluctuation_limit(
 }
 
 pub fn price_boundaries_of_last_block(
-    storage: &mut dyn Storage,
+    storage: &dyn Storage,
     env: Env,
 ) -> StdResult<(Uint128, Uint128)> {
     let config = read_config(storage)?;

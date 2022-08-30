@@ -7,7 +7,10 @@ use crate::{
     handle::{get_input_price_with_reserves, get_output_price_with_reserves},
     querier::query_underlying_price,
     state::{read_config, read_reserve_snapshot_counter, read_state, Config, State},
-    utils::{calc_twap, TwapCalcOption, TwapInputAsset, TwapPriceCalcParams},
+    utils::{
+        calc_twap, price_boundaries_of_last_block, TwapCalcOption, TwapInputAsset,
+        TwapPriceCalcParams,
+    },
 };
 
 const FIFTEEN_MINUTES: u64 = 15 * 60;
@@ -230,27 +233,41 @@ pub fn query_is_over_spread_limit(deps: Deps) -> StdResult<bool> {
     Ok(current_spread_ratio.abs() >= Integer::new_positive(MAX_ORACLE_SPREAD_RATIO))
 }
 
-/// Returns bool to show is spread limit has been exceeded
-pub fn query_is_over_fluctuation_limit(deps: Deps) -> StdResult<bool> {
+/// Returns bool to show is fluctuation limit has been exceeded
+pub fn query_is_over_fluctuation_limit(
+    deps: Deps,
+    env: Env,
+    direction: Direction,
+    base_asset_amount: Uint128,
+) -> StdResult<bool> {
     let config: Config = read_config(deps.storage)?;
+    let state: State = read_state(deps.storage)?;
 
     if config.fluctuation_limit_ratio.is_zero() {
         return Ok(false);
     };
 
-    // // get price from the oracle
-    // let oracle_price = query_underlying_price(&deps)?;
-    // if oracle_price.is_zero() {
-    //     return Err(StdError::generic_err("underlying price is 0"));
-    // }
+    let (upper_limit, lower_limit) = price_boundaries_of_last_block(deps.storage, env)?;
 
-    // // get the local market price of the vamm
-    // let market_price = query_spot_price(deps)?;
+    let quote_asset_amount = query_output_price(deps, direction.clone(), base_asset_amount)?;
 
-    // let current_spread_ratio = (Integer::new_positive(market_price)
-    //     - Integer::new_positive(oracle_price))
-    //     * Integer::new_positive(config.decimals)
-    //     / Integer::new_positive(oracle_price);
+    let price = if direction == Direction::AddToAmm {
+        state
+            .quote_asset_reserve
+            .checked_add(quote_asset_amount)?
+            .checked_mul(config.decimals)?
+            .checked_div(state.base_asset_reserve.checked_sub(base_asset_amount)?)
+    } else {
+        state
+            .quote_asset_reserve
+            .checked_sub(quote_asset_amount)?
+            .checked_mul(config.decimals)?
+            .checked_div(state.base_asset_reserve.checked_add(base_asset_amount)?)
+    }?;
+
+    if price > upper_limit || price < lower_limit {
+        return Ok(false);
+    }
 
     Ok(true)
 }
