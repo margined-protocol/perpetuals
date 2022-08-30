@@ -34,7 +34,7 @@ Enables owner to update key contract parameters.
         "eligible_collateral": "juno...",
         "initial_margin_ratio": "10000",
         "maintenance_margin_ratio": "10000",
-        "partial_liquidation_margin_ratio": "10000",
+        "partial_liquidation_ratio": "10000",
         "liquidation_fee": "1000",
     }
 }

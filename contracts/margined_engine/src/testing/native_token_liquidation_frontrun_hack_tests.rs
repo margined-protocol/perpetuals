@@ -31,7 +31,7 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
 
     let msg = env
         .engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -165,7 +165,7 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
 
     let msg = env
         .engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -304,7 +304,7 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
 
     let msg = env
         .engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -436,7 +436,7 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
 
     let msg = env
         .engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -575,7 +575,7 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
 
     let msg = env
         .engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 

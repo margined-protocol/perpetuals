@@ -79,7 +79,7 @@ pub fn instantiate(
         decimals,
         initial_margin_ratio: msg.initial_margin_ratio,
         maintenance_margin_ratio: msg.maintenance_margin_ratio,
-        partial_liquidation_margin_ratio: Uint128::zero(), // set as zero by default
+        partial_liquidation_ratio: Uint128::zero(), // set as zero by default
         liquidation_fee: msg.liquidation_fee,
     };
 
@@ -108,7 +108,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             eligible_collateral,
             initial_margin_ratio,
             maintenance_margin_ratio,
-            partial_liquidation_margin_ratio,
+            partial_liquidation_ratio,
             liquidation_fee,
         } => update_config(
             deps,
@@ -119,7 +119,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             eligible_collateral,
             initial_margin_ratio,
             maintenance_margin_ratio,
-            partial_liquidation_margin_ratio,
+            partial_liquidation_ratio,
             liquidation_fee,
         ),
         ExecuteMsg::OpenPosition {

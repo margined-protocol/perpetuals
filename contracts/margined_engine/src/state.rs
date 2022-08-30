@@ -32,7 +32,7 @@ pub struct Config {
     pub decimals: Uint128,
     pub initial_margin_ratio: Uint128,
     pub maintenance_margin_ratio: Uint128,
-    pub partial_liquidation_margin_ratio: Uint128,
+    pub partial_liquidation_ratio: Uint128,
     pub liquidation_fee: Uint128,
 }
 

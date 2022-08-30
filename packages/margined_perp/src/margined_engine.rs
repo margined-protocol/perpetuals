@@ -39,7 +39,7 @@ pub enum ExecuteMsg {
         eligible_collateral: Option<String>,
         initial_margin_ratio: Option<Uint128>,
         maintenance_margin_ratio: Option<Uint128>,
-        partial_liquidation_margin_ratio: Option<Uint128>,
+        partial_liquidation_ratio: Option<Uint128>,
         liquidation_fee: Option<Uint128>,
     },
     OpenPosition {
@@ -120,7 +120,7 @@ pub struct ConfigResponse {
     pub decimals: Uint128,
     pub initial_margin_ratio: Uint128,
     pub maintenance_margin_ratio: Uint128,
-    pub partial_liquidation_margin_ratio: Uint128,
+    pub partial_liquidation_ratio: Uint128,
     pub liquidation_fee: Uint128,
 }
 

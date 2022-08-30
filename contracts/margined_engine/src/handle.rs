@@ -44,7 +44,7 @@ pub fn update_config(
     eligible_collateral: Option<String>,
     initial_margin_ratio: Option<Uint128>,
     maintenance_margin_ratio: Option<Uint128>,
-    partial_liquidation_margin_ratio: Option<Uint128>,
+    partial_liquidation_ratio: Option<Uint128>,
     liquidation_fee: Option<Uint128>,
 ) -> StdResult<Response> {
     let mut config = read_config(deps.storage)?;
@@ -95,9 +95,9 @@ pub fn update_config(
     }
 
     // update partial liquidation ratio
-    if let Some(partial_liquidation_margin_ratio) = partial_liquidation_margin_ratio {
-        validate_ratio(partial_liquidation_margin_ratio, config.decimals)?;
-        config.partial_liquidation_margin_ratio = partial_liquidation_margin_ratio;
+    if let Some(partial_liquidation_ratio) = partial_liquidation_ratio {
+        validate_ratio(partial_liquidation_ratio, config.decimals)?;
+        config.partial_liquidation_ratio = partial_liquidation_ratio;
     }
 
     // update liquidation fee
@@ -307,7 +307,7 @@ pub fn liquidate(
 
     // first see if this is a partial liquidation, else get rekt
     let msg = if margin_ratio.value > config.liquidation_fee
-        && !config.partial_liquidation_margin_ratio.is_zero()
+        && !config.partial_liquidation_ratio.is_zero()
     {
         partial_liquidation(deps, env, vamm.clone(), trader.clone(), quote_asset_limit)?
     } else {
@@ -581,13 +581,13 @@ fn partial_liquidation(
     let partial_position_size = position
         .size
         .value
-        .checked_mul(config.partial_liquidation_margin_ratio)
+        .checked_mul(config.partial_liquidation_ratio)
         .unwrap()
         .checked_div(config.decimals)
         .unwrap();
 
     let partial_asset_limit = quote_asset_limit
-        .checked_mul(config.partial_liquidation_margin_ratio)
+        .checked_mul(config.partial_liquidation_ratio)
         .unwrap()
         .checked_div(config.decimals)
         .unwrap();

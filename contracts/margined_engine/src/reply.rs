@@ -585,7 +585,7 @@ pub fn partial_liquidation_reply(
 
     // calculate delta from trade and whether it was profitable or a loss
     let realized_pnl = (swap.unrealized_pnl
-        * Integer::new_positive(config.partial_liquidation_margin_ratio))
+        * Integer::new_positive(config.partial_liquidation_ratio))
         / Integer::new_positive(config.decimals);
 
     let liquidation_penalty: Uint128 = output
