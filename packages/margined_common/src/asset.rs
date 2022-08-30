@@ -10,7 +10,7 @@ use cw20::{Cw20ExecuteMsg, Cw20QueryMsg, TokenInfoResponse};
 use cw_utils::must_pay;
 
 /// ## Description
-/// This enum describes a Terra asset (native or CW20).
+/// This enum describes a Cosmos asset (native or CW20).
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct Asset {
     /// Information about an asset stored in a [`AssetInfo`] struct
@@ -77,11 +77,12 @@ impl Asset {
 
         // grab the denom from self so we can test
         if let AssetInfo::NativeToken { denom } = &self.info {
-            // call `must_pay` to ensure its the right denom
+            // call `must_pay` to ensure its the right denom + funds are sent
             msg_amount = must_pay(message_info, denom)
                 .map_err(|error| StdError::generic_err(format!("{}", error)))?
         } else {
-            return Err(StdError::generic_err("You did not send Native Token"));
+            // this error occurs if self is of type `AssetInfo::Token`
+            return Err(StdError::generic_err("self is not native token"));
         };
 
         if self.amount == msg_amount {

@@ -848,3 +848,165 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_twap_price()
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 }
+
+#[test]
+fn test_native_token_sent() {
+    // cw20 token
+    let required = Asset {
+        info: AssetInfo::Token {
+            contract_addr: Addr::unchecked("usdc"),
+        },
+        amount: Uint128::from(100_000_000u32),
+    };
+
+    // message payload
+    let coin = Coin {
+        denom: "uwasm".to_string(),
+        amount: Uint128::from(100_000_000u32),
+    };
+    let msg_info = MessageInfo {
+        sender: Addr::unchecked("alice"),
+        funds: vec![coin],
+    };
+
+    // try to send cw20 and call assert_sent_native_token_balance
+    let err = required
+        .assert_sent_native_token_balance(&msg_info)
+        .unwrap_err();
+
+    // check error
+    assert_eq!(err.to_string(), "Generic error: self is not native token");
+}
+
+#[test]
+fn test_native_token_missing_denom() {
+    // required token
+    let required = Asset {
+        info: AssetInfo::NativeToken {
+            denom: "uwasm".to_string(),
+        },
+        amount: Uint128::from(100_000_000u32),
+    };
+
+    // message payload
+    let coin = Coin {
+        denom: "ujuno".to_string(),
+        amount: Uint128::from(100_000_000u32),
+    };
+    let msg_info = MessageInfo {
+        sender: Addr::unchecked("alice"),
+        funds: vec![coin],
+    };
+
+    // send a denom that isnt requested in the function
+    let err = required
+        .assert_sent_native_token_balance(&msg_info)
+        .unwrap_err();
+
+    // check error
+    assert_eq!(
+        err.to_string(),
+        "Generic error: Must send reserve token 'uwasm'"
+    );
+}
+
+#[test]
+fn test_native_token_multiple_denoms() {
+    //
+    // Note that the error tested for here occurs if multiple denoms are sent, regardless of whether the correct one is included
+    //
+
+    // required token
+    let required = Asset {
+        info: AssetInfo::NativeToken {
+            denom: "uwasm".to_string(),
+        },
+        amount: Uint128::from(100_000_000u32),
+    };
+
+    // message payload
+    let coin1 = Coin {
+        denom: "ujuno".to_string(),
+        amount: Uint128::from(100_000_000u32),
+    };
+    let coin2 = Coin {
+        denom: "uosmo".to_string(),
+        amount: Uint128::from(100_000_000u32),
+    };
+    let msg_info = MessageInfo {
+        sender: Addr::unchecked("alice"),
+        funds: vec![coin1, coin2],
+    };
+
+    // send a denom that isnt requested in the function
+    let err = required
+        .assert_sent_native_token_balance(&msg_info)
+        .unwrap_err();
+
+    // check error
+    assert_eq!(
+        err.to_string(),
+        "Generic error: Sent more than one denomination"
+    );
+}
+
+#[test]
+fn test_native_token_no_funds() {
+    // required token
+    let required = Asset {
+        info: AssetInfo::NativeToken {
+            denom: "uwasm".to_string(),
+        },
+        amount: Uint128::from(100_000_000u32),
+    };
+
+    // message payload
+    let coin = Coin {
+        denom: "ujuno".to_string(),
+        amount: Uint128::from(0u32),
+    };
+    let msg_info = MessageInfo {
+        sender: Addr::unchecked("alice"),
+        funds: vec![coin],
+    };
+
+    // send a denom that isnt requested in the function
+    let err = required
+        .assert_sent_native_token_balance(&msg_info)
+        .unwrap_err();
+
+    // check error
+    assert_eq!(err.to_string(), "Generic error: No funds sent");
+}
+
+#[test]
+fn test_native_token_different_amounts() {
+    // required token
+    let required = Asset {
+        info: AssetInfo::NativeToken {
+            denom: "uwasm".to_string(),
+        },
+        amount: Uint128::from(100_000_000u32),
+    };
+
+    // message payload
+    let coin = Coin {
+        denom: "uwasm".to_string(),
+        amount: Uint128::from(100_000u32),
+    };
+    let msg_info = MessageInfo {
+        sender: Addr::unchecked("alice"),
+        funds: vec![coin],
+    };
+
+    // send a denom that isnt requested in the function
+    let err = required
+        .assert_sent_native_token_balance(&msg_info)
+        .unwrap_err();
+
+    // check error
+    assert_eq!(
+        err.to_string(),
+        "Generic error: Native token balance mismatch between the argument and the transferred"
+    );
+}

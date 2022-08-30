@@ -19,7 +19,7 @@ use crate::{
 };
 
 /// Contract name that is used for migration.
-const CONTRACT_NAME: &str = "crates.io:margined-virtual-amm";
+const CONTRACT_NAME: &str = "crates.io:margined-vamm";
 /// Contract version that is used for migration.
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
