@@ -1,4 +1,4 @@
-use cosmwasm_std::{DepsMut, Env, Response, StdResult, SubMsg, Uint128};
+use cosmwasm_std::{DepsMut, Env, Response, StdError, StdResult, SubMsg, Uint128};
 use std::cmp::Ordering;
 
 use crate::{
@@ -417,8 +417,10 @@ pub fn close_position_reply(
 
     let mut msgs: Vec<SubMsg> = vec![];
 
+    // to prevent attacker to leverage the bad debt to withdraw extra token from insurance fund
     if !bad_debt.is_zero() {
-        realize_bad_debt(deps.as_ref(), bad_debt, &mut msgs, &mut state)?;
+        return Err(StdError::generic_err("Cannot close position - bad debt"));
+        // realize_bad_debt(deps.as_ref(), bad_debt, &mut msgs, &mut state)?;
     }
 
     if !margin.is_zero() {

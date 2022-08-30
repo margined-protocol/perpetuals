@@ -229,3 +229,28 @@ pub fn query_is_over_spread_limit(deps: Deps) -> StdResult<bool> {
 
     Ok(current_spread_ratio.abs() >= Integer::new_positive(MAX_ORACLE_SPREAD_RATIO))
 }
+
+/// Returns bool to show is spread limit has been exceeded
+pub fn query_is_over_fluctuation_limit(deps: Deps) -> StdResult<bool> {
+    let config: Config = read_config(deps.storage)?;
+
+    if config.fluctuation_limit_ratio.is_zero() {
+        return Ok(false);
+    };
+
+    // // get price from the oracle
+    // let oracle_price = query_underlying_price(&deps)?;
+    // if oracle_price.is_zero() {
+    //     return Err(StdError::generic_err("underlying price is 0"));
+    // }
+
+    // // get the local market price of the vamm
+    // let market_price = query_spot_price(deps)?;
+
+    // let current_spread_ratio = (Integer::new_positive(market_price)
+    //     - Integer::new_positive(oracle_price))
+    //     * Integer::new_positive(config.decimals)
+    //     / Integer::new_positive(oracle_price);
+
+    Ok(true)
+}

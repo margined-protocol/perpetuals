@@ -239,6 +239,7 @@ pub fn close_position(
     vamm: String,
     quote_amount_limit: Uint128,
 ) -> StdResult<Response> {
+    let config: Config = read_config(deps.storage)?;
     let state: State = read_state(deps.storage)?;
 
     // validate address inputs
@@ -252,6 +253,23 @@ pub fn close_position(
     require_not_paused(state.pause)?;
     require_position_not_zero(position.size.value)?;
     require_not_restriction_mode(deps.storage, &vamm, &trader, env.block.height)?;
+
+    // let msg: SubMsg = if xxxx {
+    //     open_reverse_position(
+    //         &deps,
+    //         env,
+    //         vamm.clone(),
+    //         trader.clone(),
+    //         side.clone(),
+    //         quote_asset_amount,
+    //         leverage,
+    //         base_asset_limit,
+    //         false,
+    //     )
+    //     .unwrap()
+    // } else {
+    //     internal_close_position(deps, &position, quote_amount_limit, CLOSE_POSITION_REPLY_ID)?
+    // };
 
     let msg =
         internal_close_position(deps, &position, quote_amount_limit, CLOSE_POSITION_REPLY_ID)?;

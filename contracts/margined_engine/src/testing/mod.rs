@@ -1,4 +1,5 @@
 #[cfg(test)]
+mod bad_debt_tests;
 mod cw_token_add_remove_margin_tests;
 mod cw_token_liquidation_frontrun_hack_tests;
 mod cw_token_liquidation_tests;
