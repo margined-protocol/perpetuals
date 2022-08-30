@@ -1,6 +1,9 @@
-use cosmwasm_std::{BankMsg, Coin, CosmosMsg, StdError, Uint128};
+use cosmwasm_std::{Addr, BankMsg, Coin, CosmosMsg, MessageInfo, StdError, Uint128};
 use cw_multi_test::Executor;
-use margined_common::integer::Integer;
+use margined_common::{
+    asset::{Asset, AssetInfo},
+    integer::Integer,
+};
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::NativeTokenScenario;
 
