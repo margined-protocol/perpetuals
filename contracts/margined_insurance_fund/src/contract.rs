@@ -14,7 +14,7 @@ use cw2::set_contract_version;
 use margined_perp::margined_insurance_fund::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 /// Contract name that is used for migration.
-const CONTRACT_NAME: &str = "insurance-fund";
+const CONTRACT_NAME: &str = "crates.io:margined-insurance-fund";
 /// Contract version that is used for migration.
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 

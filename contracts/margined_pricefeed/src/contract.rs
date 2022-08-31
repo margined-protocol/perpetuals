@@ -12,7 +12,7 @@ use cosmwasm_std::{
 use margined_perp::margined_pricefeed::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 /// Contract name that is used for migration.
-const CONTRACT_NAME: &str = "pricefeed";
+const CONTRACT_NAME: &str = "crates.io:margined-pricefeed";
 /// Contract version that is used for migration.
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
