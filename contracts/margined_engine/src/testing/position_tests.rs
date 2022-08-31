@@ -1019,7 +1019,7 @@ fn test_error_open_position_insufficient_balance() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "transfer failure - reply (id 8)".to_string()
+            msg: "transfer failure - reply (id 9)".to_string()
         },
         err.downcast().unwrap()
     );

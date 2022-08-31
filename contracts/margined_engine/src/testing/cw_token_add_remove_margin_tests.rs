@@ -90,7 +90,7 @@ fn test_add_margin_insufficent_balance() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         err.source().unwrap().to_string(),
-        "Generic error: transfer failure - reply (id 8)"
+        "Generic error: transfer failure - reply (id 9)"
     );
 }
 
