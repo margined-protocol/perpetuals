@@ -162,6 +162,7 @@ impl NativeTokenScenario {
                 engine_id,
                 owner.clone(),
                 &InstantiateMsg {
+                    pauser: owner.to_string(),
                     insurance_fund: insurance_fund.addr().to_string(),
                     fee_pool: fee_pool.addr().to_string(),
                     eligible_collateral: native_denom.to_string(),
@@ -423,6 +424,7 @@ impl SimpleScenario {
                 engine_id,
                 owner.clone(),
                 &InstantiateMsg {
+                    pauser: owner.to_string(),
                     insurance_fund: insurance_fund.addr().to_string(),
                     fee_pool: fee_pool.addr().to_string(),
                     eligible_collateral: usdc_addr.to_string(),

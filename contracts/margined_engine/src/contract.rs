@@ -53,6 +53,7 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     // validate message addresses
+    let pauser = deps.api.addr_validate(&msg.pauser)?;
     let insurance_fund = deps.api.addr_validate(&msg.insurance_fund)?;
     let fee_pool = deps.api.addr_validate(&msg.fee_pool)?;
 
@@ -76,6 +77,7 @@ pub fn instantiate(
     // config parameters
     let config = Config {
         owner: info.sender,
+        pauser,
         insurance_fund,
         fee_pool,
         eligible_collateral,
@@ -106,6 +108,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
     match msg {
         ExecuteMsg::UpdateConfig {
             owner,
+            pauser,
             insurance_fund,
             fee_pool,
             eligible_collateral,
@@ -117,6 +120,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             deps,
             info,
             owner,
+            pauser,
             insurance_fund,
             fee_pool,
             eligible_collateral,

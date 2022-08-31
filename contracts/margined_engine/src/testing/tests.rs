@@ -13,6 +13,7 @@ const FEE_POOL: &str = "fee_pool";
 fn test_instantiation() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
+        pauser: OWNER.to_string(),
         insurance_fund: INSURANCE_FUND.to_string(),
         fee_pool: FEE_POOL.to_string(),
         eligible_collateral: TOKEN.to_string(),
@@ -48,6 +49,7 @@ fn test_instantiation() {
 fn test_update_config() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
+        pauser: OWNER.to_string(),
         insurance_fund: INSURANCE_FUND.to_string(),
         fee_pool: FEE_POOL.to_string(),
         eligible_collateral: TOKEN.to_string(),
@@ -61,6 +63,7 @@ fn test_update_config() {
     // Update the config
     let msg = ExecuteMsg::UpdateConfig {
         owner: Some("addr0001".to_string()),
+        pauser: None,
         insurance_fund: None,
         fee_pool: None,
         eligible_collateral: None,
@@ -95,6 +98,7 @@ fn test_update_config() {
     // Update should fail
     let msg = ExecuteMsg::UpdateConfig {
         owner: Some(OWNER.to_string()),
+        pauser: None,
         insurance_fund: None,
         fee_pool: None,
         eligible_collateral: None,
@@ -111,6 +115,7 @@ fn test_update_config() {
     // Update should fail
     let msg = ExecuteMsg::UpdateConfig {
         owner: None,
+        pauser: None,
         insurance_fund: None,
         fee_pool: None,
         eligible_collateral: None,
