@@ -1128,6 +1128,12 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     router.execute(bob.clone(), msg).unwrap();
 
     println!("{}", vamm.spot_price(&router).unwrap());
+    println!("{:?}", vamm.state(&router).unwrap());
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(900);
+        block.height += 1;
+    });
 
     // alice close position, pnl = 200 -105.88 ~= 94.12
     // receive pnl + margin = 114.12
@@ -1138,6 +1144,8 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     router.execute(alice.clone(), msg).unwrap();
 
     println!("{}", vamm.spot_price(&router).unwrap());
+    println!("{:?}", vamm.state(&router).unwrap());
+
     let alice_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
     assert_eq!(alice_balance, Uint128::from(5_094_117_647_059u128));
 
@@ -1145,6 +1153,11 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
         .balance::<_, _, Empty>(&router, engine.addr().clone())
         .unwrap();
     assert_eq!(engine_balance, Uint128::zero());
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(900);
+        block.height += 1;
+    });
 
     // bob close his under collateral position, positionValue is -294.11
     // bob's pnl = 200 - 294.11 ~= -94.12

@@ -6,8 +6,8 @@ use cosmwasm_std::{
 use crate::{
     contract::{
         CLOSE_POSITION_REPLY_ID, DECREASE_POSITION_REPLY_ID, INCREASE_POSITION_REPLY_ID,
-        LIQUIDATION_REPLY_ID, PARTIAL_LIQUIDATION_REPLY_ID, PAY_FUNDING_REPLY_ID,
-        REVERSE_POSITION_REPLY_ID,
+        LIQUIDATION_REPLY_ID, PARTIAL_CLOSE_POSITION_REPLY_ID, PARTIAL_LIQUIDATION_REPLY_ID,
+        PAY_FUNDING_REPLY_ID, REVERSE_POSITION_REPLY_ID,
     },
     messages::{execute_transfer_from, withdraw},
     querier::{
@@ -260,9 +260,9 @@ pub fn close_position(
 
     // if it is long position, close a position means short it(which means base dir is ADD_TO_AMM) and vice versa
     let base_direction = if position.size > Integer::zero() {
-        Direction::RemoveFromAmm
-    } else {
         Direction::AddToAmm
+    } else {
+        Direction::RemoveFromAmm
     };
 
     let is_over_fluctuation_limit = query_is_over_fluctuation_limit(
@@ -271,15 +271,15 @@ pub fn close_position(
         base_direction.clone(),
         position.size.value,
     )?;
-    println!("fluctuation limit: {}", is_over_fluctuation_limit);
 
     // check if this position exceed fluctuation limit
     // if over fluctuation limit, then close partial position. Otherwise close all.
     // if partialLiquidationRatio is 1, then close whole position
     let msg: SubMsg =
         if is_over_fluctuation_limit && config.partial_liquidation_margin_ratio < config.decimals {
+            println!("partial close position");
             let side = position_to_side(position.size);
-            println!("here??");
+            println!("side: {:?}", side);
 
             let partial_close_amount = position
                 .size
@@ -290,20 +290,12 @@ pub fn close_position(
             let partial_close_notional = query_vamm_output_amount(
                 &deps.as_ref(),
                 vamm.to_string(),
-                base_direction,
+                base_direction.clone(),
                 partial_close_amount,
             )?;
 
-            println!(
-                "partial_liquidation_margin_ratio {}",
-                config.partial_liquidation_margin_ratio
-            );
-            println!("partial_close_amount {}", partial_close_amount);
-            println!("partial_close_notional {}", partial_close_notional);
-
-            println!("do we even get here?");
             let PositionUnrealizedPnlResponse {
-                position_notional: _,
+                position_notional,
                 unrealized_pnl,
             } = get_position_notional_unrealized_pnl(
                 deps.as_ref(),
@@ -312,19 +304,23 @@ pub fn close_position(
             )
             .unwrap();
 
-            println!("unrealized_pnl {}", unrealized_pnl);
-            println!("partial_close_notional {}", partial_close_notional);
+            println!("position size: {}", position.size);
+            println!("partial close amount: {}", partial_close_amount);
+            println!("partial close notional: {}", partial_close_notional);
+            println!("unrealized_pnl: {}", unrealized_pnl);
+            println!("position_notional: {}", position_notional);
+            println!("side: {:?}", direction_to_side(base_direction.clone()));
 
             store_tmp_swap(
                 deps.storage,
                 &TmpSwapInfo {
                     vamm: position.vamm.clone(),
                     trader: position.trader.clone(),
-                    side: direction_to_side(position.direction.clone()),
+                    side: side.clone(),
                     quote_asset_amount: position.size.value,
                     leverage: config.decimals,
-                    open_notional: Uint128::zero(),
-                    position_notional: position.notional,
+                    open_notional: partial_close_notional,
+                    position_notional,
                     unrealized_pnl,
                     margin_to_vault: Integer::zero(),
                     fees_paid: false,
@@ -341,13 +337,12 @@ pub fn close_position(
                 config.decimals,
                 Uint128::zero(),
                 true,
-                Some(CLOSE_POSITION_REPLY_ID),
+                Some(PARTIAL_CLOSE_POSITION_REPLY_ID),
             )?
         } else {
             internal_close_position(deps, &position, quote_amount_limit, CLOSE_POSITION_REPLY_ID)?
         };
 
-    println!("close position finished");
     Ok(Response::new().add_submessage(msg).add_attributes(vec![
         ("action", "close_position"),
         ("vamm", vamm.as_ref()),
@@ -634,6 +629,10 @@ fn open_reverse_position(
     } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)
         .unwrap();
 
+    println!("position notional: {}", position_notional);
+    println!("open_notionall: {}", open_notional);
+    println!("quote_asset_amount: {}", quote_asset_amount);
+
     // reduce position if old position is larger
     let msg: SubMsg = if position_notional > open_notional {
         let reply_id = match reply_id {
@@ -641,8 +640,7 @@ fn open_reverse_position(
             None => DECREASE_POSITION_REPLY_ID,
         };
 
-        println!("open notional: {}", open_notional);
-
+        println!("input");
         // then we are opening a new position or adding to an existing
         swap_input(
             &vamm,
@@ -659,6 +657,7 @@ fn open_reverse_position(
             Some(id) => id,
             None => REVERSE_POSITION_REPLY_ID,
         };
+        println!("output");
 
         swap_output(
             &vamm,

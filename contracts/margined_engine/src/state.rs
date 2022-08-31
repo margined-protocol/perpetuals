@@ -47,7 +47,7 @@ pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct State {
     pub open_interest_notional: Uint128,
-    pub bad_debt: Uint128,
+    pub prepaid_bad_debt: Uint128,
     pub pause: bool,
 }
 

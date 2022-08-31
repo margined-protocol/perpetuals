@@ -177,13 +177,13 @@ pub fn withdraw(
     if token_balance < amount {
         shortfall = amount.checked_sub(token_balance)?;
 
+        // add any shortfall to bad_debt
+        state.prepaid_bad_debt = state.prepaid_bad_debt.checked_add(shortfall)?;
+
         messages.push(execute_insurance_fund_withdrawal(deps, shortfall).unwrap());
     }
 
     messages.push(execute_transfer(deps.storage, receiver, amount).unwrap());
-
-    // add any shortfall to bad_debt
-    state.bad_debt += shortfall;
 
     Ok(messages)
 }

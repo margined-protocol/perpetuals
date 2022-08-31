@@ -39,7 +39,7 @@ fn test_partially_liquidate_long_position() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -142,7 +142,7 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -248,7 +248,7 @@ fn test_partially_liquidate_short_position() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -351,7 +351,7 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -459,7 +459,7 @@ fn test_long_position_complete_liquidation() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -562,7 +562,7 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -664,7 +664,7 @@ fn test_short_position_complete_liquidation() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -766,7 +766,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -912,7 +912,7 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -1006,7 +1006,7 @@ fn test_force_error_empty_position() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -1053,7 +1053,7 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
 
     let msg = env
         .engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -1162,7 +1162,7 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
 
     let msg = env
         .engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -1284,7 +1284,7 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
 
     let msg = env
         .engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -1434,7 +1434,7 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
 
     let msg = env
         .engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -1584,7 +1584,7 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
 
     let msg = env
         .engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -1687,7 +1687,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
 
     let msg = env
         .engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(250_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -1827,7 +1827,7 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
 
     let msg = env
         .engine
-        .set_partial_liquidation_margin_ratio(Uint128::from(500_000u128))
+        .set_partial_liquidation_ratio(Uint128::from(500_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 

@@ -184,15 +184,10 @@ pub fn decrease_position_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    println!("decrease position reply");
     let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
 
-    println!("-1");
-
     let swap: TmpSwapInfo = read_tmp_swap(deps.storage)?;
-
-    println!("0");
 
     let mut position: Position = get_position(
         env.clone(),
@@ -202,15 +197,12 @@ pub fn decrease_position_reply(
         swap.side.clone(),
     );
 
-    println!("1");
-
     update_open_interest_notional(
         &deps.as_ref(),
         &mut state,
         swap.vamm.clone(),
         Integer::new_negative(input),
     )?;
-    println!("2");
 
     // depending on the direction the output is positive or negative
     let signed_output: Integer = match &swap.side {
@@ -218,7 +210,6 @@ pub fn decrease_position_reply(
         Side::Sell => Integer::new_negative(output),
     };
 
-    println!("3");
     // realized_pnl = unrealized_pnl * close_ratio
     let realized_pnl = if !position.size.is_zero() {
         swap.unrealized_pnl.checked_mul(signed_output.abs())? / position.size.abs()
@@ -226,15 +217,12 @@ pub fn decrease_position_reply(
         Integer::zero()
     };
 
-    println!("4");
     let RemainMarginResponse {
         funding_payment: _,
         margin,
         bad_debt: _,
         latest_premium_fraction,
     } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), realized_pnl)?;
-    println!("5");
-    println!("6");
 
     let unrealized_pnl_after = swap.unrealized_pnl - realized_pnl;
 
@@ -288,7 +276,6 @@ pub fn reverse_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    println!("reverse position reply");
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
     let mut swap = read_tmp_swap(deps.storage)?;
@@ -406,8 +393,6 @@ pub fn close_position_reply(
     let mut state = read_state(deps.storage)?;
     let swap = read_tmp_swap(deps.storage)?;
 
-    println!("not here yet");
-
     let position = get_position(
         env.clone(),
         deps.storage,
@@ -416,8 +401,9 @@ pub fn close_position_reply(
         swap.side.clone(),
     );
 
-    println!("Output {:?}", output);
-    println!("Swap:/n{:?}", swap);
+    // println!("position: {:?}", position);
+    println!("output: {}", output);
+    println!("swap.open_ntional: {}", swap.open_notional);
 
     let margin_delta: Integer = match &position.direction {
         Direction::AddToAmm => {
@@ -428,7 +414,7 @@ pub fn close_position_reply(
         }
     };
 
-    println!("margin {:?}", margin_delta);
+    println!("margin delta: {}", margin_delta);
 
     let RemainMarginResponse {
         funding_payment,
@@ -437,12 +423,7 @@ pub fn close_position_reply(
         latest_premium_fraction: _,
     } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), margin_delta)?;
 
-    println!("margin {:?}", margin);
-    println!("unrealized pnl {:?}", swap.unrealized_pnl);
-
     let withdraw_amount = Integer::new_positive(margin).checked_add(swap.unrealized_pnl)?;
-
-    println!("withdraw amount: {}", withdraw_amount);
 
     let mut msgs: Vec<SubMsg> = vec![];
 
@@ -487,8 +468,6 @@ pub fn close_position_reply(
     let value =
         margin_delta + Integer::new_positive(bad_debt) + Integer::new_positive(position.notional);
 
-    println!("value: {}", value);
-
     update_open_interest_notional(&deps.as_ref(), &mut state, swap.vamm, value.invert_sign())?;
 
     remove_position(deps.storage, &position);
@@ -504,6 +483,101 @@ pub fn close_position_reply(
         ("funding_payment", &funding_payment.to_string()),
         ("bad_debt", &bad_debt.to_string()),
     ]))
+}
+
+// Partially closes position
+pub fn partial_close_position_reply(
+    deps: DepsMut,
+    env: Env,
+    input: Uint128,
+    output: Uint128,
+) -> StdResult<Response> {
+    println!("partial close position reply");
+    let config: Config = read_config(deps.storage)?;
+    let mut state: State = read_state(deps.storage)?;
+
+    println!("input: {}", input);
+    println!("output: {}", output);
+
+    let swap: TmpSwapInfo = read_tmp_swap(deps.storage)?;
+
+    let mut position: Position = get_position(
+        env.clone(),
+        deps.storage,
+        &swap.vamm,
+        &swap.trader,
+        swap.side.clone(),
+    );
+
+    update_open_interest_notional(
+        &deps.as_ref(),
+        &mut state,
+        swap.vamm.clone(),
+        Integer::new_negative(input),
+    )?;
+
+    // depending on the direction the output is positive or negative
+    let signed_output: Integer = match &swap.side {
+        Side::Buy => Integer::new_positive(output),
+        Side::Sell => Integer::new_negative(output),
+    };
+
+    println!("signed output: {}", signed_output);
+
+    // realized_pnl = unrealized_pnl * close_ratio
+    let realized_pnl = if !position.size.is_zero() {
+        swap.unrealized_pnl.checked_mul(signed_output.abs())? / position.size.abs()
+    } else {
+        Integer::zero()
+    };
+
+    let RemainMarginResponse {
+        funding_payment: _,
+        margin,
+        bad_debt,
+        latest_premium_fraction,
+    } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), realized_pnl)?;
+
+    let unrealized_pnl_after = swap.unrealized_pnl - realized_pnl;
+
+    let remaining_notional = if position.size > Integer::zero() {
+        Integer::new_positive(swap.position_notional)
+            - Integer::new_positive(swap.open_notional)
+            - unrealized_pnl_after
+    } else {
+        unrealized_pnl_after + Integer::new_positive(swap.position_notional)
+            - Integer::new_positive(swap.open_notional)
+    };
+
+    // calculate the fees
+    let fees = transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional).unwrap();
+
+    // set the new position
+    position.size += signed_output;
+    position.margin = margin;
+    position.notional = remaining_notional.value;
+    position.last_updated_premium_fraction = latest_premium_fraction;
+    position.block_number = env.block.height;
+
+    store_position(deps.storage, &position)?;
+    store_state(deps.storage, &state)?;
+
+    // to prevent attacker to leverage the bad debt to withdraw extra token from insurance fund
+    if !bad_debt.is_zero() {
+        return Err(StdError::generic_err("Cannot close position - bad debt"));
+        // realize_bad_debt(deps.as_ref(), bad_debt, &mut msgs, &mut state)?;
+    }
+
+    // remove the tmp position
+    remove_tmp_swap(deps.storage);
+
+    Ok(Response::new()
+        .add_submessages(fees.messages)
+        .add_attributes(vec![
+            ("action", "partial_close_position_reply"),
+            ("spread_fee", &fees.spread_fee.to_string()),
+            ("toll_fee", &fees.toll_fee.to_string()),
+        ]))
 }
 
 // Liquidates position after successful execution of the swap

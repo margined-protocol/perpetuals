@@ -251,7 +251,7 @@ pub fn query_is_over_fluctuation_limit(
 
     let quote_asset_amount = query_output_price(deps, direction.clone(), base_asset_amount)?;
 
-    let price = if direction == Direction::AddToAmm {
+    let price = if direction == Direction::RemoveFromAmm {
         state
             .quote_asset_reserve
             .checked_add(quote_asset_amount)?
