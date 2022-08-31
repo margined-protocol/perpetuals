@@ -184,9 +184,15 @@ pub fn decrease_position_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    println!("decrease position reply");
     let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
+
+    println!("-1");
+
     let swap: TmpSwapInfo = read_tmp_swap(deps.storage)?;
+
+    println!("0");
 
     let mut position: Position = get_position(
         env.clone(),
@@ -196,12 +202,15 @@ pub fn decrease_position_reply(
         swap.side.clone(),
     );
 
+    println!("1");
+
     update_open_interest_notional(
         &deps.as_ref(),
         &mut state,
         swap.vamm.clone(),
         Integer::new_negative(input),
     )?;
+    println!("2");
 
     // depending on the direction the output is positive or negative
     let signed_output: Integer = match &swap.side {
@@ -209,6 +218,7 @@ pub fn decrease_position_reply(
         Side::Sell => Integer::new_negative(output),
     };
 
+    println!("3");
     // realized_pnl = unrealized_pnl * close_ratio
     let realized_pnl = if !position.size.is_zero() {
         swap.unrealized_pnl.checked_mul(signed_output.abs())? / position.size.abs()
@@ -216,12 +226,15 @@ pub fn decrease_position_reply(
         Integer::zero()
     };
 
+    println!("4");
     let RemainMarginResponse {
         funding_payment: _,
         margin,
         bad_debt: _,
         latest_premium_fraction,
     } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), realized_pnl)?;
+    println!("5");
+    println!("6");
 
     let unrealized_pnl_after = swap.unrealized_pnl - realized_pnl;
 
@@ -275,6 +288,7 @@ pub fn reverse_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    println!("reverse position reply");
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
     let mut swap = read_tmp_swap(deps.storage)?;
@@ -387,9 +401,12 @@ pub fn close_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    println!("close position reply");
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
     let swap = read_tmp_swap(deps.storage)?;
+
+    println!("not here yet");
 
     let position = get_position(
         env.clone(),
@@ -398,6 +415,9 @@ pub fn close_position_reply(
         &swap.trader,
         swap.side.clone(),
     );
+
+    println!("Output {:?}", output);
+    println!("Swap:/n{:?}", swap);
 
     let margin_delta: Integer = match &position.direction {
         Direction::AddToAmm => {
@@ -408,12 +428,21 @@ pub fn close_position_reply(
         }
     };
 
+    println!("margin {:?}", margin_delta);
+
     let RemainMarginResponse {
         funding_payment,
         margin,
         bad_debt,
         latest_premium_fraction: _,
     } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), margin_delta)?;
+
+    println!("margin {:?}", margin);
+    println!("unrealized pnl {:?}", swap.unrealized_pnl);
+
+    let withdraw_amount = Integer::new_positive(margin).checked_add(swap.unrealized_pnl)?;
+
+    println!("withdraw amount: {}", withdraw_amount);
 
     let mut msgs: Vec<SubMsg> = vec![];
 
@@ -423,7 +452,7 @@ pub fn close_position_reply(
         // realize_bad_debt(deps.as_ref(), bad_debt, &mut msgs, &mut state)?;
     }
 
-    if !margin.is_zero() {
+    if !withdraw_amount.is_zero() {
         msgs.append(
             &mut withdraw(
                 deps.as_ref(),
@@ -431,7 +460,7 @@ pub fn close_position_reply(
                 &mut state,
                 &swap.trader,
                 config.eligible_collateral,
-                margin,
+                withdraw_amount.value,
             )
             .unwrap(),
         );
@@ -457,6 +486,8 @@ pub fn close_position_reply(
 
     let value =
         margin_delta + Integer::new_positive(bad_debt) + Integer::new_positive(position.notional);
+
+    println!("value: {}", value);
 
     update_open_interest_notional(&deps.as_ref(), &mut state, swap.vamm, value.invert_sign())?;
 

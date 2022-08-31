@@ -265,7 +265,7 @@ pub fn query_is_over_fluctuation_limit(
             .checked_div(state.base_asset_reserve.checked_add(base_asset_amount)?)
     }?;
 
-    if price > upper_limit || price < lower_limit {
+    if price <= upper_limit && price >= lower_limit {
         return Ok(false);
     }
 
