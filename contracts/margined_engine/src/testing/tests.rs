@@ -31,6 +31,7 @@ fn test_instantiation() {
         config,
         ConfigResponse {
             owner: info.sender,
+            pauser: Addr::unchecked(OWNER.to_string()),
             insurance_fund: Addr::unchecked(INSURANCE_FUND.to_string()),
             fee_pool: Addr::unchecked(FEE_POOL.to_string()),
             eligible_collateral: AssetInfo::NativeToken {
@@ -82,6 +83,7 @@ fn test_update_config() {
         config,
         ConfigResponse {
             owner: Addr::unchecked("addr0001".to_string()),
+            pauser: Addr::unchecked(OWNER.to_string()),
             insurance_fund: Addr::unchecked(INSURANCE_FUND.to_string()),
             fee_pool: Addr::unchecked(FEE_POOL.to_string()),
             eligible_collateral: AssetInfo::NativeToken {
