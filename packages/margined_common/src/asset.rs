@@ -169,7 +169,7 @@ impl AssetInfo {
     pub fn check(&self, api: &dyn Api) -> StdResult<()> {
         match self {
             AssetInfo::Token { contract_addr } => {
-                addr_validate_to_lower(api, contract_addr.as_str())?;
+                api.addr_validate(contract_addr.as_ref())?;
             }
             AssetInfo::NativeToken { denom } => {
                 if !denom.starts_with("ibc/") && denom != &denom.to_lowercase() {
@@ -203,21 +203,6 @@ impl AssetInfo {
             }
         }
     }
-}
-
-/// Returns a lowercased, validated address upon success. Otherwise returns [`Err`]
-/// ## Params
-/// * **api** is an object of type [`Api`]
-///
-/// * **addr** is an object of type [`Addr`]
-pub fn addr_validate_to_lower(api: &dyn Api, addr: &str) -> StdResult<Addr> {
-    if addr.to_lowercase() != addr {
-        return Err(StdError::generic_err(format!(
-            "Address {} should be lowercase",
-            addr
-        )));
-    }
-    api.addr_validate(addr)
 }
 
 /// Returns an [`Asset`] object representing a native token and an amount of tokens.

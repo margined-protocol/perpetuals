@@ -308,8 +308,7 @@ pub fn require_additional_margin(
     margin_ratio: Integer,
     base_margin: Uint128,
 ) -> StdResult<Response> {
-    let remaining_margin_ratio = margin_ratio - Integer::new_positive(base_margin);
-    if remaining_margin_ratio < Integer::zero() {
+    if margin_ratio < Integer::new_positive(base_margin) {
         return Err(StdError::generic_err("Position is undercollateralized"));
     }
 
@@ -320,8 +319,7 @@ pub fn require_insufficient_margin(
     margin_ratio: Integer,
     base_margin: Uint128,
 ) -> StdResult<Response> {
-    let remaining_margin_ratio = margin_ratio - Integer::new_positive(base_margin);
-    if remaining_margin_ratio > Integer::zero() {
+    if margin_ratio > Integer::new_positive(base_margin) {
         return Err(StdError::generic_err("Position is overcollateralized"));
     }
 
