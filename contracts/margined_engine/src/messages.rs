@@ -23,7 +23,6 @@ pub fn execute_transfer_from(
     amount: Uint128,
 ) -> StdResult<SubMsg> {
     println!("execute_transfer_from");
-    println!("amount: {}", amount);
     let config = read_config(storage)?;
 
     let msg: CosmosMsg = match config.eligible_collateral {
@@ -58,7 +57,6 @@ pub fn execute_transfer(
     amount: Uint128,
 ) -> StdResult<SubMsg> {
     println!("execute_transfer");
-    println!("amount: {}", amount);
     let config = read_config(storage)?;
 
     let msg: CosmosMsg = match config.eligible_collateral {
@@ -107,14 +105,11 @@ pub fn execute_transfer_to_insurance_fund(
         amount
     };
 
-    println!("amount: {}", amount_to_send);
-
     execute_transfer(deps.storage, &config.insurance_fund, amount_to_send)
 }
 
 pub fn execute_insurance_fund_withdrawal(deps: Deps, amount: Uint128) -> StdResult<SubMsg> {
     println!("execute_insurance_fund_withdrawal");
-    println!("amount: {}", amount);
     let config = read_config(deps.storage)?;
 
     let msg = WasmMsg::Execute {
@@ -164,9 +159,6 @@ pub fn transfer_fees(
         messages.push(msg);
     };
 
-    println!("spread_fee: {}", spread_fee);
-    println!("toll_fee: {}", toll_fee);
-
     Ok(TransferResponse {
         messages,
         spread_fee,
@@ -195,11 +187,8 @@ pub fn withdraw(
         // add any shortfall to bad_debt
         state.prepaid_bad_debt = state.prepaid_bad_debt.checked_add(shortfall)?;
 
-        println!("shortfall: {}", shortfall);
-
         messages.push(execute_insurance_fund_withdrawal(deps, shortfall).unwrap());
     }
-    println!("amount: {}", amount);
     messages.push(execute_transfer(deps.storage, receiver, amount).unwrap());
 
     Ok(messages)
@@ -227,11 +216,8 @@ pub fn withdraw2(
         // add any shortfall to bad_debt
         state.prepaid_bad_debt = state.prepaid_bad_debt.checked_add(shortfall)?;
 
-        println!("shortfall: {}", shortfall);
-
         messages.push(execute_insurance_fund_withdrawal(deps, shortfall).unwrap());
     }
-    println!("amount: {}", amount);
     messages.push(execute_transfer(deps.storage, receiver, amount).unwrap());
 
     Ok(messages)

@@ -401,10 +401,6 @@ pub fn close_position_reply(
         swap.side.clone(),
     );
 
-    // println!("position: {:?}", position);
-    println!("output: {}", output);
-    println!("swap.open_ntional: {}", swap.open_notional);
-
     let margin_delta: Integer = match &position.direction {
         Direction::AddToAmm => {
             Integer::new_positive(output) - Integer::new_positive(swap.open_notional)
@@ -413,8 +409,6 @@ pub fn close_position_reply(
             Integer::new_positive(swap.open_notional) - Integer::new_positive(output)
         }
     };
-
-    println!("margin delta: {}", margin_delta);
 
     let RemainMarginResponse {
         funding_payment,
@@ -496,9 +490,6 @@ pub fn partial_close_position_reply(
     let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
 
-    println!("input: {}", input);
-    println!("output: {}", output);
-
     let swap: TmpSwapInfo = read_tmp_swap(deps.storage)?;
 
     let mut position: Position = get_position(
@@ -521,8 +512,6 @@ pub fn partial_close_position_reply(
         Side::Buy => Integer::new_positive(output),
         Side::Sell => Integer::new_negative(output),
     };
-
-    println!("signed output: {}", signed_output);
 
     // realized_pnl = unrealized_pnl * close_ratio
     let realized_pnl = if !position.size.is_zero() {

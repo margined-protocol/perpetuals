@@ -178,6 +178,7 @@ pub fn swap_output(
     base_asset_amount: Uint128,
     quote_asset_limit: Uint128,
 ) -> StdResult<Response> {
+    println!("swap output");
     let state: State = read_state(deps.storage)?;
     let config: Config = read_config(deps.storage)?;
 

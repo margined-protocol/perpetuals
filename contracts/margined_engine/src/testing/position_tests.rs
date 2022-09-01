@@ -1066,7 +1066,6 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
         ..
     } = SimpleScenario::new();
 
-    println!("This test is here - test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_closes");
     // avoid actions from exceeding the fluctuation limit
     let msg = vamm
         .set_fluctuation_limit_ratio(Uint128::from(800_000_000u128))
@@ -1125,9 +1124,6 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    println!("{}", vamm.spot_price(&router).unwrap());
-    println!("{:?}", vamm.state(&router).unwrap());
-
     router.update_block(|block| {
         block.time = block.time.plus_seconds(900);
         block.height += 1;
@@ -1135,14 +1131,10 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
 
     // alice close position, pnl = 200 -105.88 ~= 94.12
     // receive pnl + margin = 114.12
-    println!("alice closes");
     let msg = engine
         .close_position(vamm.addr().to_string(), to_decimals(0u64))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
-
-    println!("{}", vamm.spot_price(&router).unwrap());
-    println!("{:?}", vamm.state(&router).unwrap());
 
     let alice_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
     assert_eq!(alice_balance, Uint128::from(5_094_117_647_059u128));
@@ -1162,11 +1154,10 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     // bob loss all his margin (20) with additional 74.12 badDebt
     // which is already prepaid by insurance fund when alice close the position before
     // clearing house doesn't need to ask insurance fund for covering the bad debt
-    println!("--------------");
-    // let margin_ratio = engine
-    //     .get_margin_ratio(&router, vamm.addr().to_string(), bob.to_string())
-    //     .unwrap();
-    // assert_eq!(margin_ratio, Integer::new_negative(4_980_000_000_000u128));
+    let margin_ratio = engine
+        .get_margin_ratio(&router, vamm.addr().to_string(), bob.to_string())
+        .unwrap();
+    assert_eq!(margin_ratio, Integer::new_negative(252_000_000u128));
 
     let msg = engine
         .close_position(vamm.addr().to_string(), to_decimals(0u64))

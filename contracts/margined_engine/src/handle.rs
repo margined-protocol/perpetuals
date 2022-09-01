@@ -272,15 +272,6 @@ pub fn close_position(
         position.size.value,
     )?;
 
-    println!("over fluctuation limit: {}", is_over_fluctuation_limit);
-    let is_over_fluctuation_limit2 = query_is_over_fluctuation_limit(
-        &deps.as_ref(),
-        vamm.to_string(),
-        Direction::AddToAmm,
-        position.size.value,
-    )?;
-    println!("over fluctuation limit: {}", is_over_fluctuation_limit2);
-
     // check if this position exceed fluctuation limit
     // if over fluctuation limit, then close partial position. Otherwise close all.
     // if partialLiquidationRatio is 1, then close whole position
@@ -288,7 +279,6 @@ pub fn close_position(
         if is_over_fluctuation_limit && config.partial_liquidation_ratio < config.decimals {
             println!("partial close position");
             let side = position_to_side(position.size);
-            println!("side: {:?}", side);
 
             let partial_close_amount = position
                 .size
@@ -631,10 +621,6 @@ fn open_reverse_position(
     } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)
         .unwrap();
 
-    println!("position notional: {}", position_notional);
-    println!("open_notionall: {}", open_notional);
-    println!("quote_asset_amount: {}", quote_asset_amount);
-
     // reduce position if old position is larger
     let msg: SubMsg = if position_notional > open_notional {
         let reply_id = match reply_id {
@@ -642,7 +628,6 @@ fn open_reverse_position(
             None => DECREASE_POSITION_REPLY_ID,
         };
 
-        println!("input");
         // then we are opening a new position or adding to an existing
         swap_input(
             &vamm,
@@ -659,7 +644,6 @@ fn open_reverse_position(
             Some(id) => id,
             None => REVERSE_POSITION_REPLY_ID,
         };
-        println!("output");
 
         swap_output(
             &vamm,
