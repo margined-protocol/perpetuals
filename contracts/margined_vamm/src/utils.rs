@@ -117,6 +117,8 @@ pub fn price_boundaries_of_last_block(
         .quote_asset_reserve
         .checked_mul(config.decimals)?
         .checked_div(latest_snapshot.base_asset_reserve)?;
+    println!("last price: {}", last_price);
+
     let upper_limit = last_price
         .checked_mul(config.decimals + config.fluctuation_limit_ratio)?
         .checked_div(config.decimals)?;

@@ -268,9 +268,18 @@ pub fn close_position(
     let is_over_fluctuation_limit = query_is_over_fluctuation_limit(
         &deps.as_ref(),
         vamm.to_string(),
-        base_direction.clone(),
+        Direction::RemoveFromAmm,
         position.size.value,
     )?;
+
+    println!("over fluctuation limit: {}", is_over_fluctuation_limit);
+    let is_over_fluctuation_limit2 = query_is_over_fluctuation_limit(
+        &deps.as_ref(),
+        vamm.to_string(),
+        Direction::AddToAmm,
+        position.size.value,
+    )?;
+    println!("over fluctuation limit: {}", is_over_fluctuation_limit2);
 
     // check if this position exceed fluctuation limit
     // if over fluctuation limit, then close partial position. Otherwise close all.
@@ -303,13 +312,6 @@ pub fn close_position(
                 PnlCalcOption::SpotPrice,
             )
             .unwrap();
-
-            println!("position size: {}", position.size);
-            println!("partial close amount: {}", partial_close_amount);
-            println!("partial close notional: {}", partial_close_notional);
-            println!("unrealized_pnl: {}", unrealized_pnl);
-            println!("position_notional: {}", position_notional);
-            println!("side: {:?}", direction_to_side(base_direction.clone()));
 
             store_tmp_swap(
                 deps.storage,

@@ -22,6 +22,8 @@ pub fn execute_transfer_from(
     receiver: &Addr,
     amount: Uint128,
 ) -> StdResult<SubMsg> {
+    println!("execute_transfer_from");
+    println!("amount: {}", amount);
     let config = read_config(storage)?;
 
     let msg: CosmosMsg = match config.eligible_collateral {
@@ -55,6 +57,8 @@ pub fn execute_transfer(
     receiver: &Addr,
     amount: Uint128,
 ) -> StdResult<SubMsg> {
+    println!("execute_transfer");
+    println!("amount: {}", amount);
     let config = read_config(storage)?;
 
     let msg: CosmosMsg = match config.eligible_collateral {
@@ -87,6 +91,8 @@ pub fn execute_transfer_to_insurance_fund(
     env: Env,
     amount: Uint128,
 ) -> StdResult<SubMsg> {
+    println!("execute_transfer_to_insurance_fund");
+
     let config = read_config(deps.storage)?;
 
     let token_balance = query_token_balance(
@@ -101,10 +107,14 @@ pub fn execute_transfer_to_insurance_fund(
         amount
     };
 
+    println!("amount: {}", amount_to_send);
+
     execute_transfer(deps.storage, &config.insurance_fund, amount_to_send)
 }
 
 pub fn execute_insurance_fund_withdrawal(deps: Deps, amount: Uint128) -> StdResult<SubMsg> {
+    println!("execute_insurance_fund_withdrawal");
+    println!("amount: {}", amount);
     let config = read_config(deps.storage)?;
 
     let msg = WasmMsg::Execute {
@@ -133,6 +143,7 @@ pub fn transfer_fees(
     vamm: Addr,
     notional: Uint128,
 ) -> StdResult<TransferResponse> {
+    println!("transfer_fees");
     let config = read_config(deps.storage)?;
 
     let CalcFeeResponse {
@@ -153,6 +164,9 @@ pub fn transfer_fees(
         messages.push(msg);
     };
 
+    println!("spread_fee: {}", spread_fee);
+    println!("toll_fee: {}", toll_fee);
+
     Ok(TransferResponse {
         messages,
         spread_fee,
@@ -168,6 +182,7 @@ pub fn withdraw(
     eligible_collateral: AssetInfo,
     amount: Uint128,
 ) -> StdResult<Vec<SubMsg>> {
+    println!("withdraw");
     let token_balance = query_token_balance(deps, eligible_collateral, env.contract.address)?;
 
     let mut messages: Vec<SubMsg> = vec![];
@@ -180,9 +195,43 @@ pub fn withdraw(
         // add any shortfall to bad_debt
         state.prepaid_bad_debt = state.prepaid_bad_debt.checked_add(shortfall)?;
 
+        println!("shortfall: {}", shortfall);
+
         messages.push(execute_insurance_fund_withdrawal(deps, shortfall).unwrap());
     }
+    println!("amount: {}", amount);
+    messages.push(execute_transfer(deps.storage, receiver, amount).unwrap());
 
+    Ok(messages)
+}
+
+pub fn withdraw2(
+    deps: Deps,
+    env: Env,
+    state: &mut State,
+    receiver: &Addr,
+    eligible_collateral: AssetInfo,
+    amount: Uint128,
+    pre_paid_shortfall: Uint128,
+) -> StdResult<Vec<SubMsg>> {
+    println!("withdraw");
+    let token_balance = query_token_balance(deps, eligible_collateral, env.contract.address)?;
+
+    let mut messages: Vec<SubMsg> = vec![];
+
+    let mut shortfall = Uint128::zero();
+
+    if token_balance.checked_add(pre_paid_shortfall)? < amount {
+        shortfall = amount.checked_sub(token_balance)?;
+
+        // add any shortfall to bad_debt
+        state.prepaid_bad_debt = state.prepaid_bad_debt.checked_add(shortfall)?;
+
+        println!("shortfall: {}", shortfall);
+
+        messages.push(execute_insurance_fund_withdrawal(deps, shortfall).unwrap());
+    }
+    println!("amount: {}", amount);
     messages.push(execute_transfer(deps.storage, receiver, amount).unwrap());
 
     Ok(messages)

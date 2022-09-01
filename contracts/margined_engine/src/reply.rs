@@ -5,7 +5,7 @@ use crate::{
     handle::internal_increase_position,
     messages::{
         execute_insurance_fund_withdrawal, execute_transfer, execute_transfer_from,
-        execute_transfer_to_insurance_fund, transfer_fees, withdraw,
+        execute_transfer_to_insurance_fund, transfer_fees, withdraw, withdraw2,
     },
     querier::query_vamm_state,
     query::query_margin_ratio,
@@ -587,6 +587,7 @@ pub fn liquidate_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    println!("liquidate reply");
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
 
@@ -630,9 +631,14 @@ pub fn liquidate_reply(
 
     let mut msgs: Vec<SubMsg> = vec![];
 
-    if !remain_margin.bad_debt.is_zero() {
-        realize_bad_debt(deps.as_ref(), remain_margin.bad_debt, &mut msgs, &mut state)?;
-    }
+    let pre_paid_shortfall: Uint128 = if !remain_margin.bad_debt.is_zero() {
+        println!("realize badsu debtsu");
+        realize_bad_debt(deps.as_ref(), remain_margin.bad_debt, &mut msgs, &mut state)
+    } else {
+        Uint128::zero()
+    };
+
+    println!("pre paid shortfall: {}", pre_paid_shortfall);
 
     // any remaining margin goes to the insurance contract
     if !remain_margin.margin.is_zero() {
@@ -642,13 +648,14 @@ pub fn liquidate_reply(
     }
 
     msgs.append(
-        &mut withdraw(
+        &mut withdraw2(
             deps.as_ref(),
             env.clone(),
             &mut state,
             &liquidator,
             config.eligible_collateral,
             liquidation_fee,
+            pre_paid_shortfall,
         )
         .unwrap(),
     );

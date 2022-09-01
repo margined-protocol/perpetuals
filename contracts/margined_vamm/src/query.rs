@@ -249,7 +249,11 @@ pub fn query_is_over_fluctuation_limit(
 
     let (upper_limit, lower_limit) = price_boundaries_of_last_block(deps.storage, env)?;
 
-    let quote_asset_amount = query_output_price(deps, direction.clone(), base_asset_amount)?;
+    let quote_asset_amount = query_output_amount(deps, direction.clone(), base_asset_amount)?;
+
+    println!("Direction: {}", direction);
+    println!("Input: {}", base_asset_amount);
+    println!("Output: {}", quote_asset_amount);
 
     let price = if direction == Direction::RemoveFromAmm {
         state
@@ -264,6 +268,10 @@ pub fn query_is_over_fluctuation_limit(
             .checked_mul(config.decimals)?
             .checked_div(state.base_asset_reserve.checked_add(base_asset_amount)?)
     }?;
+
+    println!("price: {}", price);
+    println!("upper_limit: {}", upper_limit);
+    println!("lower_limit: {}", lower_limit);
 
     if price <= upper_limit && price >= lower_limit {
         return Ok(false);

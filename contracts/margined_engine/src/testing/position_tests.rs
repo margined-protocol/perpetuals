@@ -754,10 +754,8 @@ fn test_cannot_close_position_with_bad_debt() {
         mut router,
         alice,
         bob,
-        insurance_fund,
         engine,
         vamm,
-        usdc,
         ..
     } = SimpleScenario::new();
 
