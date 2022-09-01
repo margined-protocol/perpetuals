@@ -388,7 +388,6 @@ pub fn close_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    println!("close position reply");
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
     let swap = read_tmp_swap(deps.storage)?;
@@ -486,7 +485,6 @@ pub fn partial_close_position_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    println!("partial close position reply");
     let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
 
@@ -578,7 +576,6 @@ pub fn liquidate_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    println!("liquidate reply");
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
 
@@ -623,13 +620,10 @@ pub fn liquidate_reply(
     let mut msgs: Vec<SubMsg> = vec![];
 
     let pre_paid_shortfall: Uint128 = if !remain_margin.bad_debt.is_zero() {
-        println!("realize badsu debtsu");
         realize_bad_debt(deps.as_ref(), remain_margin.bad_debt, &mut msgs, &mut state)
     } else {
         Uint128::zero()
     };
-
-    println!("pre paid shortfall: {}", pre_paid_shortfall);
 
     // any remaining margin goes to the insurance contract
     if !remain_margin.margin.is_zero() {

@@ -74,15 +74,12 @@ pub fn realize_bad_debt(
     messages: &mut Vec<SubMsg>,
     state: &mut State,
 ) -> Uint128 {
-    println!("pre paid bad debt: {}", state.prepaid_bad_debt);
-    println!("bad debt: {}", bad_debt);
     if state.prepaid_bad_debt > bad_debt {
         // no need to move extra tokens because vault already prepay bad debt, only need to update the numbers
         state.prepaid_bad_debt = state.prepaid_bad_debt.checked_sub(bad_debt).unwrap();
     } else {
         // in order to realize all the bad debt vault need extra tokens from insuranceFund
         let bad_debt_delta = bad_debt.checked_sub(state.prepaid_bad_debt).unwrap();
-        println!("bad debt delta: {}", bad_debt_delta);
 
         messages.push(execute_insurance_fund_withdrawal(deps, bad_debt_delta).unwrap());
 

@@ -208,9 +208,6 @@ fn test_close_position_limit_force_error_exceeding_fluctuation_limit_twice_in_sa
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let state = vamm.state(&router).unwrap();
-    println!("state: {:?}", state);
-
     // after alice closes her position partially, price: 13.767109
     // price fluctuation: (14.4000000058 - 13.767109) / 14.4000000058 = 0.0524
     let msg = engine
