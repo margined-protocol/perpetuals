@@ -242,7 +242,6 @@ pub fn close_position(
     vamm: String,
     quote_amount_limit: Uint128,
 ) -> StdResult<Response> {
-    println!("close position");
     let config: Config = read_config(deps.storage)?;
     let state: State = read_state(deps.storage)?;
 
@@ -277,7 +276,6 @@ pub fn close_position(
     // if partialLiquidationRatio is 1, then close whole position
     let msg: SubMsg =
         if is_over_fluctuation_limit && config.partial_liquidation_ratio < config.decimals {
-            println!("partial close position");
             let side = position_to_side(position.size);
 
             let partial_close_amount = position
@@ -289,7 +287,7 @@ pub fn close_position(
             let partial_close_notional = query_vamm_output_amount(
                 &deps.as_ref(),
                 vamm.to_string(),
-                base_direction.clone(),
+                base_direction,
                 partial_close_amount,
             )?;
 
@@ -531,6 +529,7 @@ pub fn withdraw_margin(
         &trader,
         config.eligible_collateral,
         amount,
+        Uint128::zero(),
     )
     .unwrap();
 

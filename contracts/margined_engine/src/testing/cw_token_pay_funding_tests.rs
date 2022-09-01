@@ -397,7 +397,6 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
         mut router,
         alice,
         bob,
-        carol,
         owner,
         engine,
         vamm,

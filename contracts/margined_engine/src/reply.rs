@@ -5,7 +5,7 @@ use crate::{
     handle::internal_increase_position,
     messages::{
         execute_insurance_fund_withdrawal, execute_transfer, execute_transfer_from,
-        execute_transfer_to_insurance_fund, transfer_fees, withdraw, withdraw2,
+        execute_transfer_to_insurance_fund, transfer_fees, withdraw,
     },
     querier::query_vamm_state,
     query::query_margin_ratio,
@@ -109,6 +109,7 @@ pub fn increase_position_reply(
                     &swap.trader,
                     config.eligible_collateral.clone(),
                     swap.margin_to_vault.value,
+                    Uint128::zero(),
                 )
                 .unwrap(),
             );
@@ -423,7 +424,6 @@ pub fn close_position_reply(
     // to prevent attacker to leverage the bad debt to withdraw extra token from insurance fund
     if !bad_debt.is_zero() {
         return Err(StdError::generic_err("Cannot close position - bad debt"));
-        // realize_bad_debt(deps.as_ref(), bad_debt, &mut msgs, &mut state)?;
     }
 
     if !withdraw_amount.is_zero() {
@@ -435,6 +435,7 @@ pub fn close_position_reply(
                 &swap.trader,
                 config.eligible_collateral,
                 withdraw_amount.value,
+                Uint128::zero(),
             )
             .unwrap(),
         );
@@ -485,7 +486,6 @@ pub fn partial_close_position_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
 
     let swap: TmpSwapInfo = read_tmp_swap(deps.storage)?;
@@ -633,7 +633,7 @@ pub fn liquidate_reply(
     }
 
     msgs.append(
-        &mut withdraw2(
+        &mut withdraw(
             deps.as_ref(),
             env.clone(),
             &mut state,
@@ -744,6 +744,7 @@ pub fn partial_liquidation_reply(
             &liquidator,
             config.eligible_collateral,
             liquidation_fee,
+            Uint128::zero(),
         )
         .unwrap(),
     );

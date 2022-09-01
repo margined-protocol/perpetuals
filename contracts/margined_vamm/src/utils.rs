@@ -125,7 +125,7 @@ pub fn price_boundaries_of_last_block(
         .checked_mul(config.decimals - config.fluctuation_limit_ratio)?
         .checked_div(config.decimals)?;
 
-    return Ok((upper_limit, lower_limit));
+    Ok((upper_limit, lower_limit))
 }
 
 pub fn add_reserve_snapshot(
