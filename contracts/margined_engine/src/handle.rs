@@ -264,7 +264,7 @@ pub fn close_position(
     require_position_not_zero(position.size.value)?;
     require_not_restriction_mode(deps.storage, &vamm, &trader, env.block.height)?;
 
-    // if it is long position, close a position means short it(which means base dir is ADD_TO_AMM) and vice versa
+    // if it is long position, close a position means short it (which means base dir is AddToAmm) and vice versa
     let base_direction = if position.size > Integer::zero() {
         Direction::AddToAmm
     } else {

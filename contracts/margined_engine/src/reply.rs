@@ -552,7 +552,6 @@ pub fn partial_close_position_reply(
     // to prevent attacker to leverage the bad debt to withdraw extra token from insurance fund
     if !bad_debt.is_zero() {
         return Err(StdError::generic_err("Cannot close position - bad debt"));
-        // realize_bad_debt(deps.as_ref(), bad_debt, &mut msgs, &mut state)?;
     }
 
     // remove the tmp position
@@ -613,6 +612,9 @@ pub fn liquidate_reply(
     if liquidation_fee > remain_margin.margin {
         let bad_debt = liquidation_fee.checked_sub(remain_margin.margin)?;
         remain_margin.bad_debt = remain_margin.bad_debt.checked_add(bad_debt)?;
+
+        // any margin is going to be taken as part of liquidation fee
+        remain_margin.margin = Uint128::zero();
     } else {
         remain_margin.margin = remain_margin.margin.checked_sub(liquidation_fee)?;
     }

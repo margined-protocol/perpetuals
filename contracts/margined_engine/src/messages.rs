@@ -181,6 +181,7 @@ pub fn withdraw(
 
         messages.push(execute_insurance_fund_withdrawal(deps, shortfall).unwrap());
     }
+
     messages.push(execute_transfer(deps.storage, receiver, amount).unwrap());
 
     Ok(messages)

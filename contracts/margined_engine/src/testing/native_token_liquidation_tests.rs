@@ -403,8 +403,6 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
             Uint128::from(177_000_000u64),
         )
         .unwrap();
-    // let result = router.execute(carol.clone(), msg).unwrap_err();
-    // assert_eq!(result.to_string(), "Generic error: reply (id 7) error \"Generic error: Greater than maximum quote asset amount limit\"");
     let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
