@@ -26,6 +26,7 @@ pub static KEY_VAMM_MAP: &[u8] = b"vamm-map";
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
+    pub pauser: Addr,
     pub insurance_fund: Addr,
     pub fee_pool: Addr,
     pub eligible_collateral: AssetInfo,

@@ -42,6 +42,7 @@ pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,
     owner: Option<String>,
+    pauser: Option<String>,
     insurance_fund: Option<String>,
     fee_pool: Option<String>,
     eligible_collateral: Option<String>,
@@ -60,6 +61,11 @@ pub fn update_config(
     // change owner of engine
     if let Some(owner) = owner {
         config.owner = deps.api.addr_validate(owner.as_str())?;
+    }
+
+    // change pauser role
+    if let Some(pauser) = pauser {
+        config.pauser = deps.api.addr_validate(pauser.as_str())?;
     }
 
     // update insurance fund - note altering insurance fund could lead to vAMMs being unusable maybe make this a migration
@@ -123,7 +129,7 @@ pub fn set_pause(deps: DepsMut, _env: Env, info: MessageInfo, pause: bool) -> St
     let mut state: State = read_state(deps.storage)?;
 
     // check permission and if state matches
-    if info.sender != config.owner || state.pause == pause {
+    if info.sender != config.pauser || state.pause == pause {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -151,7 +157,7 @@ pub fn open_position(
 
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
-    let trader = deps.api.addr_validate(info.sender.as_ref())?;
+    let trader = info.sender.clone();
 
     require_not_paused(state.pause)?;
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
@@ -250,7 +256,7 @@ pub fn close_position(
 
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
-    let trader = deps.api.addr_validate(info.sender.as_ref())?;
+    let trader = info.sender;
 
     // read the position for the trader from vamm
     let position = read_position(deps.storage, &vamm, &trader).unwrap();
