@@ -4,8 +4,10 @@ use cosmwasm_std::{Deps, Response, StdError, StdResult, Uint128};
 /// Validates that the decimals aren't zero and returns the decimal placeholder accordinglys
 pub fn validate_decimal_places(decimal_places: u8) -> StdResult<Uint128> {
     // check that the value is not zero
-    if decimal_places == 0u8 {
-        return Err(StdError::generic_err("Decimal places cannot be zero"));
+    if decimal_places < 6u8 {
+        return Err(StdError::generic_err(
+            "Decimal places cannot be less than six",
+        ));
     }
 
     Ok(Uint128::from(10u128.pow(decimal_places as u32)))
