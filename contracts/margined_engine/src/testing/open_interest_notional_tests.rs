@@ -613,3 +613,82 @@ fn test_stop_trading_if_over_open_interest_notional_cap() {
         err.downcast().unwrap()
     );
 }
+
+#[test]
+fn test_wont_stop_trading_if_reducing_position_even_if_over_open_interest_notional_cap() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        owner,
+        engine,
+        vamm,
+        usdc,
+        ..
+    } = SimpleScenario::new();
+
+    let msg = vamm
+        .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // reduce the allowance
+    router
+        .execute_contract(
+            alice.clone(),
+            usdc.addr().clone(),
+            &Cw20ExecuteMsg::DecreaseAllowance {
+                spender: engine.addr().to_string(),
+                amount: to_decimals(1400),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
+
+    router
+        .execute_contract(
+            bob.clone(),
+            usdc.addr().clone(),
+            &Cw20ExecuteMsg::DecreaseAllowance {
+                spender: engine.addr().to_string(),
+                amount: to_decimals(1400),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(600u64),
+            to_decimals(1u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = vamm
+        .set_open_interest_notional_cap(Uint128::from(300_000_000_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(300u64),
+            to_decimals(1u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let open_interest_notional = engine.state(&router).unwrap().open_interest_notional;
+    // this is near zero due to some rounding errors
+    assert_eq!(open_interest_notional, to_decimals(300u64));
+}
