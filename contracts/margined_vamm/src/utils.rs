@@ -47,7 +47,7 @@ pub fn require_open(open: bool) -> StdResult<Response> {
     Ok(Response::new())
 }
 
-pub(crate) fn check_is_over_block_fluctuation_limit(
+pub fn check_is_over_block_fluctuation_limit(
     storage: &mut dyn Storage,
     env: Env,
     direction: Direction,
@@ -62,24 +62,7 @@ pub(crate) fn check_is_over_block_fluctuation_limit(
         return Ok(Response::new());
     }
 
-    // calculate the price boundary of the previous block
-    let height = read_reserve_snapshot_counter(storage)?;
-    let mut latest_snapshot = read_reserve_snapshot(storage, height)?;
-
-    if latest_snapshot.block_height == env.block.height && height > 1 {
-        latest_snapshot = read_reserve_snapshot(storage, height - 1u64)?;
-    }
-
-    let last_price = latest_snapshot
-        .quote_asset_reserve
-        .checked_mul(config.decimals)?
-        .checked_div(latest_snapshot.base_asset_reserve)?;
-    let upper_limit = last_price
-        .checked_mul(config.decimals + config.fluctuation_limit_ratio)?
-        .checked_div(config.decimals)?;
-    let lower_limit = last_price
-        .checked_mul(config.decimals - config.fluctuation_limit_ratio)?
-        .checked_div(config.decimals)?;
+    let (upper_limit, lower_limit) = price_boundaries_of_last_block(storage, env)?;
 
     let current_price = state
         .quote_asset_reserve
@@ -114,6 +97,35 @@ pub(crate) fn check_is_over_block_fluctuation_limit(
     }
 
     Ok(Response::new())
+}
+
+pub fn price_boundaries_of_last_block(
+    storage: &dyn Storage,
+    env: Env,
+) -> StdResult<(Uint128, Uint128)> {
+    let config = read_config(storage)?;
+
+    // calculate the price boundary of the previous block
+    let height = read_reserve_snapshot_counter(storage)?;
+    let mut latest_snapshot = read_reserve_snapshot(storage, height)?;
+
+    if latest_snapshot.block_height == env.block.height && height > 1 {
+        latest_snapshot = read_reserve_snapshot(storage, height - 1u64)?;
+    }
+
+    let last_price = latest_snapshot
+        .quote_asset_reserve
+        .checked_mul(config.decimals)?
+        .checked_div(latest_snapshot.base_asset_reserve)?;
+
+    let upper_limit = last_price
+        .checked_mul(config.decimals + config.fluctuation_limit_ratio)?
+        .checked_div(config.decimals)?;
+    let lower_limit = last_price
+        .checked_mul(config.decimals - config.fluctuation_limit_ratio)?
+        .checked_div(config.decimals)?;
+
+    Ok((upper_limit, lower_limit))
 }
 
 pub fn add_reserve_snapshot(

@@ -749,15 +749,13 @@ fn test_close_position_over_maintenance_margin_ration() {
 }
 
 #[test]
-fn test_close_under_collateral_position() {
+fn test_cannot_close_position_with_bad_debt() {
     let SimpleScenario {
         mut router,
         alice,
         bob,
-        insurance_fund,
         engine,
         vamm,
-        usdc,
         ..
     } = SimpleScenario::new();
 
@@ -796,35 +794,13 @@ fn test_close_under_collateral_position() {
     let msg = engine
         .close_position(vamm.addr().to_string(), to_decimals(0u64))
         .unwrap();
-    router.execute(alice.clone(), msg).unwrap();
-
-    // Alice's realizedPnl = 166.66 - 250 = -83.33, she lost all her margin(25)
-    // alice.balance = all(5000) - margin(25) = 4975
-    // insuranceFund.balance = 5000 + realizedPnl(-58.33) = 4941.66...
-    // clearingHouse.balance = 250 + +25 + 58.33(pnl from insuranceFund) = 333.33
-    let err = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
-        .unwrap_err();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "Querier contract error: Generic error: No position found".to_string()
+            msg: "Cannot close position - bad debt".to_string()
         },
-        err
+        err.downcast().unwrap()
     );
-
-    // alice balance should be 4975
-    let alice_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
-    assert_eq!(alice_balance, Uint128::from(4_975_000_000_000u128));
-
-    let insurance_balance = usdc
-        .balance::<_, _, Empty>(&router, insurance_fund.addr().clone())
-        .unwrap();
-    assert_eq!(insurance_balance, Uint128::from(4_941_666_666_666u128));
-
-    let engine_balance = usdc
-        .balance::<_, _, Empty>(&router, engine.addr().clone())
-        .unwrap();
-    assert_eq!(engine_balance, Uint128::from(333_333_333_334u128));
 }
 
 #[test]
@@ -1041,7 +1017,7 @@ fn test_error_open_position_insufficient_balance() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "transfer failure - reply (id 8)".to_string()
+            msg: "transfer failure - reply (id 9)".to_string()
         },
         err.downcast().unwrap()
     );
@@ -1082,12 +1058,19 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
         mut router,
         alice,
         bob,
+        owner,
         insurance_fund,
         engine,
         usdc,
         vamm,
         ..
     } = SimpleScenario::new();
+
+    // avoid actions from exceeding the fluctuation limit
+    let msg = vamm
+        .set_fluctuation_limit_ratio(Uint128::from(800_000_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
     // reduce the allowance
     router
@@ -1141,6 +1124,11 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(900);
+        block.height += 1;
+    });
+
     // alice close position, pnl = 200 -105.88 ~= 94.12
     // receive pnl + margin = 114.12
     let msg = engine
@@ -1151,11 +1139,26 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     let alice_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
     assert_eq!(alice_balance, Uint128::from(5_094_117_647_059u128));
 
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
+    assert_eq!(engine_balance, Uint128::zero());
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(900);
+        block.height += 1;
+    });
+
     // bob close his under collateral position, positionValue is -294.11
     // bob's pnl = 200 - 294.11 ~= -94.12
     // bob loss all his margin (20) with additional 74.12 badDebt
     // which is already prepaid by insurance fund when alice close the position before
     // clearing house doesn't need to ask insurance fund for covering the bad debt
+    let margin_ratio = engine
+        .get_margin_ratio(&router, vamm.addr().to_string(), bob.to_string())
+        .unwrap();
+    assert_eq!(margin_ratio, Integer::new_negative(252_000_000u128));
+
     let msg = engine
         .close_position(vamm.addr().to_string(), to_decimals(0u64))
         .unwrap();
@@ -1191,26 +1194,13 @@ fn test_query_no_user_positions() {
         .open_position(
             vamm.addr().to_string(),
             Side::Sell,
-            to_decimals(20u64),
+            to_decimals(2u64),
             to_decimals(10u64),
             to_decimals(0u64),
             vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
-
-    // bob opens a position
-    let msg = engine
-        .open_position(
-            vamm.addr().to_string(),
-            Side::Sell,
-            to_decimals(20u64),
-            to_decimals(10u64),
-            to_decimals(0u64),
-            vec![],
-        )
-        .unwrap();
-    router.execute(bob.clone(), msg).unwrap();
 
     // alice closes her position
     let msg = engine
@@ -1218,7 +1208,7 @@ fn test_query_no_user_positions() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    // we query alice' position to ensure it was closed
+    // we query alices' position to ensure it was closed
     let err = engine
         .position(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap_err();
@@ -1228,12 +1218,6 @@ fn test_query_no_user_positions() {
         },
         err
     );
-
-    // bob closes his position
-    let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
-        .unwrap();
-    router.execute(bob.clone(), msg).unwrap();
 
     // we query all of bob's positions (should return an empty array)
     let positions: Vec<Position> = engine.get_all_positions(&router, bob.to_string()).unwrap();

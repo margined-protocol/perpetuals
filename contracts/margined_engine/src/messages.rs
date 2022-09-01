@@ -167,23 +167,22 @@ pub fn withdraw(
     receiver: &Addr,
     eligible_collateral: AssetInfo,
     amount: Uint128,
+    pre_paid_shortfall: Uint128,
 ) -> StdResult<Vec<SubMsg>> {
     let token_balance = query_token_balance(deps, eligible_collateral, env.contract.address)?;
 
     let mut messages: Vec<SubMsg> = vec![];
 
-    let mut shortfall = Uint128::zero();
+    if token_balance.checked_add(pre_paid_shortfall)? < amount {
+        let shortfall = amount.checked_sub(token_balance)?;
 
-    if token_balance < amount {
-        shortfall = amount.checked_sub(token_balance)?;
+        // add any shortfall to bad_debt
+        state.prepaid_bad_debt = state.prepaid_bad_debt.checked_add(shortfall)?;
 
         messages.push(execute_insurance_fund_withdrawal(deps, shortfall).unwrap());
     }
 
     messages.push(execute_transfer(deps.storage, receiver, amount).unwrap());
-
-    // add any shortfall to bad_debt
-    state.bad_debt += shortfall;
 
     Ok(messages)
 }

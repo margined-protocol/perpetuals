@@ -101,6 +101,10 @@ pub enum QueryMsg {
         quote_asset_amount: Uint128,
     },
     IsOverSpreadLimit {},
+    IsOverFluctuationLimit {
+        direction: Direction,
+        base_asset_amount: Uint128,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]

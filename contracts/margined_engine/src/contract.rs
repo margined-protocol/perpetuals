@@ -22,7 +22,8 @@ use crate::{
     },
     reply::{
         close_position_reply, decrease_position_reply, increase_position_reply, liquidate_reply,
-        partial_liquidation_reply, pay_funding_reply, reverse_position_reply,
+        partial_close_position_reply, partial_liquidation_reply, pay_funding_reply,
+        reverse_position_reply,
     },
     state::{store_config, store_state, Config, State},
     utils::{parse_pay_funding, parse_swap},
@@ -37,11 +38,12 @@ pub const INCREASE_POSITION_REPLY_ID: u64 = 1;
 pub const DECREASE_POSITION_REPLY_ID: u64 = 2;
 pub const REVERSE_POSITION_REPLY_ID: u64 = 3;
 pub const CLOSE_POSITION_REPLY_ID: u64 = 4;
-pub const LIQUIDATION_REPLY_ID: u64 = 5;
-pub const PARTIAL_LIQUIDATION_REPLY_ID: u64 = 6;
-pub const PAY_FUNDING_REPLY_ID: u64 = 7;
+pub const PARTIAL_CLOSE_POSITION_REPLY_ID: u64 = 5;
+pub const LIQUIDATION_REPLY_ID: u64 = 6;
+pub const PARTIAL_LIQUIDATION_REPLY_ID: u64 = 7;
+pub const PAY_FUNDING_REPLY_ID: u64 = 8;
 
-pub const TRANSFER_FAILURE_REPLY_ID: u64 = 8;
+pub const TRANSFER_FAILURE_REPLY_ID: u64 = 9;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -95,7 +97,7 @@ pub fn instantiate(
         deps.storage,
         &State {
             open_interest_notional: Uint128::zero(),
-            bad_debt: Uint128::zero(),
+            prepaid_bad_debt: Uint128::zero(),
             pause: false,
         },
     )?;
@@ -222,6 +224,11 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
                 let response = close_position_reply(deps, env, input, output)?;
                 Ok(response)
             }
+            PARTIAL_CLOSE_POSITION_REPLY_ID => {
+                let (input, output) = parse_swap(response).unwrap();
+                let response = partial_close_position_reply(deps, env, input, output)?;
+                Ok(response)
+            }
             LIQUIDATION_REPLY_ID => {
                 let (input, output) = parse_swap(response).unwrap();
                 let response = liquidate_reply(deps, env, input, output)?;
@@ -261,6 +268,10 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
             ))),
             CLOSE_POSITION_REPLY_ID => Err(StdError::generic_err(format!(
                 "close position failure - reply (id {:?})",
+                msg.id
+            ))),
+            PARTIAL_CLOSE_POSITION_REPLY_ID => Err(StdError::generic_err(format!(
+                "partial close position failure - reply (id {:?})",
                 msg.id
             ))),
             LIQUIDATION_REPLY_ID => Err(StdError::generic_err(format!(

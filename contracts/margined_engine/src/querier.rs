@@ -102,3 +102,19 @@ pub fn query_insurance_all_vamm(
         msg: to_binary(&InsuranceFundQueryMsg::GetAllVamm { limit })?,
     }))
 }
+
+// returns bool if swap is over fluctuation limit
+pub fn query_is_over_fluctuation_limit(
+    deps: &Deps,
+    vamm: String,
+    direction: Direction,
+    base_asset_amount: Uint128,
+) -> StdResult<bool> {
+    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: vamm,
+        msg: to_binary(&QueryMsg::IsOverFluctuationLimit {
+            direction,
+            base_asset_amount,
+        })?,
+    }))
+}

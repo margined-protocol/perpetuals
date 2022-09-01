@@ -37,7 +37,7 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
 
     Ok(StateResponse {
         open_interest_notional: state.open_interest_notional,
-        bad_debt: state.bad_debt,
+        bad_debt: state.prepaid_bad_debt,
     })
 }
 

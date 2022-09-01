@@ -1,4 +1,4 @@
-use cosmwasm_std::{DepsMut, Env, Response, StdResult, SubMsg, Uint128};
+use cosmwasm_std::{DepsMut, Env, Response, StdError, StdResult, SubMsg, Uint128};
 use std::cmp::Ordering;
 
 use crate::{
@@ -109,6 +109,7 @@ pub fn increase_position_reply(
                     &swap.trader,
                     config.eligible_collateral.clone(),
                     swap.margin_to_vault.value,
+                    Uint128::zero(),
                 )
                 .unwrap(),
             );
@@ -186,6 +187,7 @@ pub fn decrease_position_reply(
 ) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
+
     let swap: TmpSwapInfo = read_tmp_swap(deps.storage)?;
 
     let mut position: Position = get_position(
@@ -415,13 +417,16 @@ pub fn close_position_reply(
         latest_premium_fraction: _,
     } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), margin_delta)?;
 
+    let withdraw_amount = Integer::new_positive(margin).checked_add(swap.unrealized_pnl)?;
+
     let mut msgs: Vec<SubMsg> = vec![];
 
+    // to prevent attacker to leverage the bad debt to withdraw extra token from insurance fund
     if !bad_debt.is_zero() {
-        realize_bad_debt(deps.as_ref(), bad_debt, &mut msgs, &mut state)?;
+        return Err(StdError::generic_err("Cannot close position - bad debt"));
     }
 
-    if !margin.is_zero() {
+    if !withdraw_amount.is_zero() {
         msgs.append(
             &mut withdraw(
                 deps.as_ref(),
@@ -429,7 +434,8 @@ pub fn close_position_reply(
                 &mut state,
                 &swap.trader,
                 config.eligible_collateral,
-                margin,
+                withdraw_amount.value,
+                Uint128::zero(),
             )
             .unwrap(),
         );
@@ -471,6 +477,95 @@ pub fn close_position_reply(
         ("funding_payment", &funding_payment.to_string()),
         ("bad_debt", &bad_debt.to_string()),
     ]))
+}
+
+// Partially closes position
+pub fn partial_close_position_reply(
+    deps: DepsMut,
+    env: Env,
+    input: Uint128,
+    output: Uint128,
+) -> StdResult<Response> {
+    let mut state: State = read_state(deps.storage)?;
+
+    let swap: TmpSwapInfo = read_tmp_swap(deps.storage)?;
+
+    let mut position: Position = get_position(
+        env.clone(),
+        deps.storage,
+        &swap.vamm,
+        &swap.trader,
+        swap.side.clone(),
+    );
+
+    update_open_interest_notional(
+        &deps.as_ref(),
+        &mut state,
+        swap.vamm.clone(),
+        Integer::new_negative(input),
+    )?;
+
+    // depending on the direction the output is positive or negative
+    let signed_output: Integer = match &swap.side {
+        Side::Buy => Integer::new_positive(output),
+        Side::Sell => Integer::new_negative(output),
+    };
+
+    // realized_pnl = unrealized_pnl * close_ratio
+    let realized_pnl = if !position.size.is_zero() {
+        swap.unrealized_pnl.checked_mul(signed_output.abs())? / position.size.abs()
+    } else {
+        Integer::zero()
+    };
+
+    let RemainMarginResponse {
+        funding_payment,
+        margin,
+        bad_debt,
+        latest_premium_fraction,
+    } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), realized_pnl)?;
+
+    let unrealized_pnl_after = swap.unrealized_pnl - realized_pnl;
+
+    let remaining_notional = if position.size > Integer::zero() {
+        Integer::new_positive(swap.position_notional)
+            - Integer::new_positive(swap.open_notional)
+            - unrealized_pnl_after
+    } else {
+        unrealized_pnl_after + Integer::new_positive(swap.position_notional)
+            - Integer::new_positive(swap.open_notional)
+    };
+
+    // calculate the fees
+    let fees = transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional).unwrap();
+
+    // set the new position
+    position.size += signed_output;
+    position.margin = margin;
+    position.notional = remaining_notional.value;
+    position.last_updated_premium_fraction = latest_premium_fraction;
+    position.block_number = env.block.height;
+
+    store_position(deps.storage, &position)?;
+    store_state(deps.storage, &state)?;
+
+    // to prevent attacker to leverage the bad debt to withdraw extra token from insurance fund
+    if !bad_debt.is_zero() {
+        return Err(StdError::generic_err("Cannot close position - bad debt"));
+    }
+
+    // remove the tmp position
+    remove_tmp_swap(deps.storage);
+
+    Ok(Response::new()
+        .add_submessages(fees.messages)
+        .add_attributes(vec![
+            ("action", "partial_close_position_reply"),
+            ("spread_fee", &fees.spread_fee.to_string()),
+            ("toll_fee", &fees.toll_fee.to_string()),
+            ("funding_payment", &funding_payment.to_string()),
+            ("bad_debt", &bad_debt.to_string()),
+        ]))
 }
 
 // Liquidates position after successful execution of the swap
@@ -517,15 +612,20 @@ pub fn liquidate_reply(
     if liquidation_fee > remain_margin.margin {
         let bad_debt = liquidation_fee.checked_sub(remain_margin.margin)?;
         remain_margin.bad_debt = remain_margin.bad_debt.checked_add(bad_debt)?;
+
+        // any margin is going to be taken as part of liquidation fee
+        remain_margin.margin = Uint128::zero();
     } else {
         remain_margin.margin = remain_margin.margin.checked_sub(liquidation_fee)?;
     }
 
     let mut msgs: Vec<SubMsg> = vec![];
 
-    if !remain_margin.bad_debt.is_zero() {
-        realize_bad_debt(deps.as_ref(), remain_margin.bad_debt, &mut msgs, &mut state)?;
-    }
+    let pre_paid_shortfall: Uint128 = if !remain_margin.bad_debt.is_zero() {
+        realize_bad_debt(deps.as_ref(), remain_margin.bad_debt, &mut msgs, &mut state)
+    } else {
+        Uint128::zero()
+    };
 
     // any remaining margin goes to the insurance contract
     if !remain_margin.margin.is_zero() {
@@ -542,6 +642,7 @@ pub fn liquidate_reply(
             &liquidator,
             config.eligible_collateral,
             liquidation_fee,
+            pre_paid_shortfall,
         )
         .unwrap(),
     );
@@ -558,6 +659,11 @@ pub fn liquidate_reply(
         ("action", "liquidation_reply"),
         ("liquidation_fee", &liquidation_fee.to_string()),
         ("pnl", &margin_delta.to_string()),
+        (
+            "funding_payment",
+            &remain_margin.funding_payment.to_string(),
+        ),
+        ("bad_debt", &remain_margin.bad_debt.to_string()),
     ]))
 }
 
@@ -640,6 +746,7 @@ pub fn partial_liquidation_reply(
             &liquidator,
             config.eligible_collateral,
             liquidation_fee,
+            Uint128::zero(),
         )
         .unwrap(),
     );

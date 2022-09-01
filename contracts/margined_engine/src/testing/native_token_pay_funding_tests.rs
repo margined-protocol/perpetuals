@@ -455,7 +455,7 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
     assert_eq!(bob_position.margin, Uint128::zero());
 
     let msg = engine
-        .close_position(vamm.addr().to_string(), Uint128::zero())
+        .liquidate(vamm.addr().to_string(), bob.to_string(), Uint128::zero())
         .unwrap();
     let response = router.execute(bob.clone(), msg).unwrap();
     assert_eq!(
@@ -464,7 +464,7 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
     ); // funding payment
     assert_eq!(
         response.events[5].attributes[5].value,
-        Uint128::from(2_550_000_000u128).to_string()
+        Uint128::from(2_580_000_000u128).to_string()
     ); // bad debt
 }
 
@@ -704,7 +704,7 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
 
     // badDebt 2550 - 10 margin = 2540
     let msg = engine
-        .close_position(vamm.addr().to_string(), Uint128::zero())
+        .liquidate(vamm.addr().to_string(), bob.to_string(), Uint128::zero())
         .unwrap();
     let response = router.execute(bob.clone(), msg).unwrap();
     assert_eq!(
@@ -713,7 +713,7 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
     ); // funding payment
     assert_eq!(
         response.events[5].attributes[5].value,
-        Uint128::from(2_540_000_000u128).to_string()
+        Uint128::from(2_570_000_000u128).to_string()
     ); // bad debt
 }
 

@@ -1,9 +1,9 @@
-use crate::contract::{execute, instantiate};
+use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{
     mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage,
 };
-use cosmwasm_std::{Env, OwnedDeps, Uint128};
-use margined_perp::margined_vamm::{Direction, ExecuteMsg, InstantiateMsg};
+use cosmwasm_std::{from_binary, Env, OwnedDeps, Uint128};
+use margined_perp::margined_vamm::{Direction, ExecuteMsg, InstantiateMsg, QueryMsg};
 use margined_utils::scenarios::{parse_event, to_decimals};
 
 pub struct TestingEnv {
@@ -502,4 +502,37 @@ fn test_force_error_value_of_fluctuation_is_same_even_no_trading_for_multiple_bl
         result.to_string(),
         "Generic error: price is over fluctuation limit"
     );
+}
+
+#[test]
+fn test_force_error_value_of_fluctuation_is_same_even_no_trading_for_multiple_blocks__() {
+    let mut app = setup();
+
+    // BUY 10, reserve will be 1010 : 99.01, price is 1010 / 99.01 = 10.2
+    // fluctuation is 5%, price is between 9.69 ~ 10.71
+    let swap_msg = ExecuteMsg::SwapInput {
+        direction: Direction::AddToAmm,
+        quote_asset_amount: to_decimals(10),
+        base_asset_limit: to_decimals(0u64),
+        can_go_over_fluctuation: false,
+    };
+
+    let info = mock_info("addr0000", &[]);
+    let _res = execute(app.deps.as_mut(), app.env.clone(), info, swap_msg).unwrap();
+
+    // move forward 3 blocks
+    app.env.block.time = app.env.block.time.plus_seconds(42);
+    app.env.block.height += 3;
+
+    // BUY 25, reserve will be 1035 : 96.62, price is 1035 / 96.62 = 10.712
+    let swap_msg = QueryMsg::IsOverFluctuationLimit {
+        direction: Direction::AddToAmm,
+        base_asset_amount: to_decimals(25),
+    };
+
+    let result = query(app.deps.as_ref(), app.env, swap_msg).unwrap();
+
+    let value: bool = from_binary(&result).unwrap();
+
+    assert_eq!(value, true);
 }
