@@ -124,7 +124,12 @@ fn test_add_margin_no_open_position() {
             vec![Coin::new(80_000_000u128, "uwasm")],
         )
         .unwrap();
-    router.execute(alice.clone(), msg).unwrap();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: No position found"
+    );
 }
 
 #[test]

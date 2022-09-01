@@ -403,6 +403,11 @@ pub fn deposit_margin(
 
     // read the position for the trader from vamm
     let mut position = read_position(deps.storage, &vamm, &trader).unwrap();
+
+    if position.trader != trader {
+        return Err(StdError::generic_err("No position found"));
+    }
+
     position.margin = position.margin.checked_add(amount)?;
 
     store_position(deps.storage, &position)?;

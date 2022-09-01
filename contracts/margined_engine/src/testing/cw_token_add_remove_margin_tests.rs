@@ -107,7 +107,12 @@ fn test_add_margin_no_open_position() {
     let msg = engine
         .deposit_margin(vamm.addr().to_string(), to_decimals(80u64), vec![])
         .unwrap();
-    router.execute(alice.clone(), msg).unwrap();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: No position found"
+    );
 }
 
 #[test]
