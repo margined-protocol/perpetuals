@@ -161,6 +161,11 @@ fn test_close_position_limit_force_error_exceeding_fluctuation_limit_twice_in_sa
         )
         .unwrap();
 
+    let msg = engine
+        .set_partial_liquidation_ratio(Uint128::from(1_000_000_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
     // when bob create a 20 margin * 5x long position when 9.0909091 quoteAsset = 100
     // AMM after: 1100 : 90.9090909, price: 12.1000000012
     let msg = engine
@@ -202,6 +207,9 @@ fn test_close_position_limit_force_error_exceeding_fluctuation_limit_twice_in_sa
         .set_fluctuation_limit_ratio(Uint128::from(43_000_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
+
+    let state = vamm.state(&router).unwrap();
+    println!("state: {:?}", state);
 
     // after alice closes her position partially, price: 13.767109
     // price fluctuation: (14.4000000058 - 13.767109) / 14.4000000058 = 0.0524

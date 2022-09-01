@@ -55,6 +55,7 @@ pub fn check_is_over_block_fluctuation_limit(
     base_asset_amount: Uint128,
     can_go_over_limit: bool,
 ) -> StdResult<Response> {
+    println!("check_is_over_block_fluctuation_limit");
     let config = read_config(storage)?;
     let state = read_state(storage)?;
 
@@ -68,6 +69,13 @@ pub fn check_is_over_block_fluctuation_limit(
         .quote_asset_reserve
         .checked_mul(config.decimals)?
         .checked_div(state.base_asset_reserve)?;
+
+    println!("quote: {}", state.quote_asset_reserve);
+    println!("base: {}", state.base_asset_reserve);
+
+    println!("current price: {}", current_price);
+    println!("upper price: {}", upper_limit);
+    println!("lower price: {}", lower_limit);
 
     // ensure that the latest price isn't over the limit which would restrict any further
     // swaps from occurring in this block
@@ -109,9 +117,13 @@ pub fn price_boundaries_of_last_block(
     let height = read_reserve_snapshot_counter(storage)?;
     let mut latest_snapshot = read_reserve_snapshot(storage, height)?;
 
+    println!("{:?}", latest_snapshot);
+
     if latest_snapshot.block_height == env.block.height && height > 1 {
         latest_snapshot = read_reserve_snapshot(storage, height - 1u64)?;
     }
+    println!("{:?}", latest_snapshot);
+    println!("{}", env.block.height);
 
     let last_price = latest_snapshot
         .quote_asset_reserve
