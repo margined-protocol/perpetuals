@@ -1,11 +1,13 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
-    Uint128,
+    to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
 use cw2::set_contract_version;
-use margined_common::{integer::Integer, validate::validate_ratio};
+use margined_common::{
+    integer::Integer,
+    validate::{validate_decimal_places, validate_ratio},
+};
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
@@ -38,15 +40,8 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    // validate the ratios, note this assumes the decimals is correct
-
-    let decimals = if 6u8 <= msg.decimals {
-        Uint128::from(10u128.pow(msg.decimals as u32))
-    } else {
-        return Err(ContractError::Std(StdError::generic_err(
-            "the decimals chosen were too small",
-        )));
-    };
+    // check the decimal places supplied and ensure it is at least 6
+    let decimals = validate_decimal_places(msg.decimals)?;
 
     validate_ratio(msg.toll_ratio, decimals)?;
     validate_ratio(msg.spread_ratio, decimals)?;

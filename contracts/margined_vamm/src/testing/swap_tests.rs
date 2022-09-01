@@ -84,7 +84,7 @@ fn test_bad_decimals() {
 
     assert_eq!(
         res.to_string(),
-        "Generic error: the decimals chosen were too small"
+        "Generic error: Decimal places cannot be less than six"
     );
 }
 
