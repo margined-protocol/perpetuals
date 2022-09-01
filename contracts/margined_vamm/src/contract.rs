@@ -1,7 +1,8 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
+    to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
+    Uint128,
 };
 use cw2::set_contract_version;
 use margined_common::{integer::Integer, validate::validate_ratio};
@@ -38,7 +39,15 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     // validate the ratios, note this assumes the decimals is correct
-    let decimals = Uint128::from(10u128.pow(msg.decimals as u32));
+
+    let decimals = if 6u8 <= msg.decimals && msg.decimals <= 9u8 {
+        Uint128::from(10u128.pow(msg.decimals as u32))
+    } else {
+        return Err(ContractError::Std(StdError::generic_err(
+            "the decimals chosen were either too small or too large",
+        )));
+    };
+
     validate_ratio(msg.toll_ratio, decimals)?;
     validate_ratio(msg.spread_ratio, decimals)?;
     validate_ratio(msg.fluctuation_limit_ratio, decimals)?;
