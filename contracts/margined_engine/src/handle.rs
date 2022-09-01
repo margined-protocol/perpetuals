@@ -63,7 +63,7 @@ pub fn update_config(
         config.owner = deps.api.addr_validate(owner.as_str())?;
     }
 
-    // change owner of engine
+    // change pauser role
     if let Some(pauser) = pauser {
         config.pauser = deps.api.addr_validate(pauser.as_str())?;
     }
