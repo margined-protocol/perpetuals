@@ -103,7 +103,7 @@ pub fn query_insurance_all_vamm(
     }))
 }
 
-// returns bool is swap is over fluctuation limit
+// returns bool if swap is over fluctuation limit
 pub fn query_is_over_fluctuation_limit(
     deps: &Deps,
     vamm: String,
