@@ -29,7 +29,10 @@ use crate::{
 use margined_common::{
     asset::{Asset, AssetInfo},
     integer::Integer,
-    validate::{validate_decimal_places, validate_eligible_collateral, validate_ratio},
+    validate::{
+        validate_decimal_places, validate_eligible_collateral, validate_margin_ratios,
+        validate_ratio,
+    },
 };
 use margined_perp::margined_engine::{
     PnlCalcOption, Position, PositionUnrealizedPnlResponse, Side,
@@ -87,12 +90,16 @@ pub fn update_config(
     // update initial margin ratio
     if let Some(initial_margin_ratio) = initial_margin_ratio {
         validate_ratio(initial_margin_ratio, config.decimals)?;
+        validate_margin_ratios(initial_margin_ratio, config.maintenance_margin_ratio)?;
+
         config.initial_margin_ratio = initial_margin_ratio;
     }
 
     // update maintenance margin ratio
     if let Some(maintenance_margin_ratio) = maintenance_margin_ratio {
         validate_ratio(maintenance_margin_ratio, config.decimals)?;
+        validate_margin_ratios(config.initial_margin_ratio, maintenance_margin_ratio)?;
+
         config.maintenance_margin_ratio = maintenance_margin_ratio;
     }
 
@@ -360,7 +367,6 @@ pub fn liquidate(
     // retrieve the existing margin ratio of the position
     let mut margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
 
-    // let over_spread_limit = ;
     if query_vamm_over_spread_limit(&deps.as_ref(), vamm.to_string())? {
         let oracle_margin_ratio = get_margin_ratio_calc_option(
             deps.as_ref(),

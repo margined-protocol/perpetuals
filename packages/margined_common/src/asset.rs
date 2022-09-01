@@ -7,9 +7,10 @@ use cosmwasm_std::{
     QueryRequest, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Cw20ExecuteMsg, Cw20QueryMsg, TokenInfoResponse};
+use cw_utils::must_pay;
 
 /// ## Description
-/// This enum describes a Terra asset (native or CW20).
+/// This enum describes a Cosmos asset (native or CW20).
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct Asset {
     /// Information about an asset stored in a [`AssetInfo`] struct
@@ -72,25 +73,24 @@ impl Asset {
     ///
     /// * **message_info** is an object of type [`MessageInfo`]
     pub fn assert_sent_native_token_balance(&self, message_info: &MessageInfo) -> StdResult<()> {
+        let msg_amount: Uint128;
+
+        // grab the denom from self so we can test
         if let AssetInfo::NativeToken { denom } = &self.info {
-            match message_info.funds.iter().find(|x| x.denom == *denom) {
-                Some(coin) => {
-                    if self.amount == coin.amount {
-                        Ok(())
-                    } else {
-                        Err(StdError::generic_err("Native token balance mismatch between the argument and the transferred"))
-                    }
-                }
-                None => {
-                    if self.amount.is_zero() {
-                        Ok(())
-                    } else {
-                        Err(StdError::generic_err("Native token balance mismatch between the argument and the transferred"))
-                    }
-                }
-            }
+            // call `must_pay` to ensure its the right denom + funds are sent
+            msg_amount = must_pay(message_info, denom)
+                .map_err(|error| StdError::generic_err(format!("{}", error)))?
         } else {
+            // this error occurs if self is of type `AssetInfo::Token`
+            return Err(StdError::generic_err("self is not native token"));
+        };
+
+        if self.amount == msg_amount {
             Ok(())
+        } else {
+            Err(StdError::generic_err(
+                "Native token balance mismatch between the argument and the transferred",
+            ))
         }
     }
 }
@@ -169,7 +169,7 @@ impl AssetInfo {
     pub fn check(&self, api: &dyn Api) -> StdResult<()> {
         match self {
             AssetInfo::Token { contract_addr } => {
-                addr_validate_to_lower(api, contract_addr.as_str())?;
+                api.addr_validate(contract_addr.as_ref())?;
             }
             AssetInfo::NativeToken { denom } => {
                 if !denom.starts_with("ibc/") && denom != &denom.to_lowercase() {
@@ -203,21 +203,6 @@ impl AssetInfo {
             }
         }
     }
-}
-
-/// Returns a lowercased, validated address upon success. Otherwise returns [`Err`]
-/// ## Params
-/// * **api** is an object of type [`Api`]
-///
-/// * **addr** is an object of type [`Addr`]
-pub fn addr_validate_to_lower(api: &dyn Api, addr: &str) -> StdResult<Addr> {
-    if addr.to_lowercase() != addr {
-        return Err(StdError::generic_err(format!(
-            "Address {} should be lowercase",
-            addr
-        )));
-    }
-    api.addr_validate(addr)
 }
 
 /// Returns an [`Asset`] object representing a native token and an amount of tokens.
