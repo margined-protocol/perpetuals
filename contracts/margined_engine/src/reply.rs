@@ -521,7 +521,7 @@ pub fn partial_close_position_reply(
     };
 
     let RemainMarginResponse {
-        funding_payment: _,
+        funding_payment,
         margin,
         bad_debt,
         latest_premium_fraction,
@@ -566,6 +566,8 @@ pub fn partial_close_position_reply(
             ("action", "partial_close_position_reply"),
             ("spread_fee", &fees.spread_fee.to_string()),
             ("toll_fee", &fees.toll_fee.to_string()),
+            ("funding_payment", &funding_payment.to_string()),
+            ("bad_debt", &bad_debt.to_string()),
         ]))
 }
 
@@ -661,6 +663,11 @@ pub fn liquidate_reply(
         ("action", "liquidation_reply"),
         ("liquidation_fee", &liquidation_fee.to_string()),
         ("pnl", &margin_delta.to_string()),
+        (
+            "funding_payment",
+            &remain_margin.funding_payment.to_string(),
+        ),
+        ("bad_debt", &remain_margin.bad_debt.to_string()),
     ]))
 }
 

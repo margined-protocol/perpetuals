@@ -397,6 +397,7 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
         mut router,
         alice,
         bob,
+        carol,
         owner,
         engine,
         vamm,
@@ -453,7 +454,7 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
     assert_eq!(bob_position.margin, to_decimals(0u64));
 
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .liquidate(vamm.addr().to_string(), bob.to_string(), to_decimals(0u64))
         .unwrap();
     let response = router.execute(bob.clone(), msg).unwrap();
     assert_eq!(
@@ -462,7 +463,7 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
     ); // funding payment
     assert_eq!(
         response.events[5].attributes[5].value,
-        Uint128::from(2_550_000_000_000u128).to_string()
+        Uint128::from(2_580_000_000_000u128).to_string()
     ); // bad debt
 }
 
@@ -546,7 +547,7 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
 }
 
 #[test]
-fn test_have_huge_funding_payment_margin_zero_cannot_remove_margin() {
+fn test_have_huge_funding_payment_loss_margin_zero_cannot_remove_margin() {
     let SimpleScenario {
         mut router,
         alice,
@@ -689,7 +690,7 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
 
     // badDebt 2550 - 10 margin = 2540
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .liquidate(vamm.addr().to_string(), bob.to_string(), Uint128::zero())
         .unwrap();
     let response = router.execute(bob.clone(), msg).unwrap();
     assert_eq!(
@@ -698,7 +699,7 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
     ); // funding payment
     assert_eq!(
         response.events[5].attributes[5].value,
-        Uint128::from(2_540_000_000_000u128).to_string()
+        Uint128::from(2_570_000_000_000u128).to_string()
     ); // bad debt
 }
 
