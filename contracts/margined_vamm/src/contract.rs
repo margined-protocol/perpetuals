@@ -40,11 +40,11 @@ pub fn instantiate(
 
     // validate the ratios, note this assumes the decimals is correct
 
-    let decimals = if 6u8 <= msg.decimals && msg.decimals <= 9u8 {
+    let decimals = if 6u8 <= msg.decimals {
         Uint128::from(10u128.pow(msg.decimals as u32))
     } else {
         return Err(ContractError::Std(StdError::generic_err(
-            "the decimals chosen were either too small or too large",
+            "the decimals chosen were too small",
         )));
     };
 
