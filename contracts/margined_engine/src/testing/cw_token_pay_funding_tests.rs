@@ -405,7 +405,7 @@ fn test_funding_rate_is_negative_1_percent_then_negative_1_percent() {
     let premium_fraction = engine
         .get_latest_cumulative_premium_fraction(&router, vamm.addr().to_string())
         .unwrap();
-    assert_eq!(premium_fraction, Integer::zero(),);
+    assert_eq!(premium_fraction, Integer::zero());
 
     let alice_position = engine
         .get_position_with_funding_payment(&router, vamm.addr().to_string(), alice.to_string())
