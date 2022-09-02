@@ -8,7 +8,7 @@ use margined_utils::scenarios::{to_decimals, SimpleScenario};
 pub const NEXT_FUNDING_PERIOD_DELTA: u64 = 86_400u64;
 
 #[test]
-fn test_get_personal_position_with_funding_payments() {
+fn test_return_zero_margin_when_alices_position_is_underwater() {
     let SimpleScenario {
         mut router,
         alice,

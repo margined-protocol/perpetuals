@@ -1,4 +1,4 @@
-use cosmwasm_std::{Empty, Uint128};
+use cosmwasm_std::{Empty, StdError, Uint128};
 use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
 use margined_common::integer::Integer;
@@ -6,7 +6,7 @@ use margined_perp::margined_engine::{PnlCalcOption, Side};
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
 
 #[test]
-fn test_liquidation() {
+fn test_liquidation_fee_100_percent() {
     let SimpleScenario {
         mut router,
         alice,
@@ -114,6 +114,114 @@ fn test_liquidation() {
     // liquidator (carol) balance should have 125 USDC
     let liquidator_balance = usdc.balance::<_, _, Empty>(&router, carol.clone()).unwrap();
     assert_eq!(liquidator_balance, to_decimals(125u64));
+}
+
+#[test]
+fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_close() {
+    let SimpleScenario {
+        mut router,
+        owner,
+        alice,
+        bob,
+        engine,
+        usdc,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    // reduce the allowance
+    router
+        .execute_contract(
+            alice.clone(),
+            usdc.addr().clone(),
+            &Cw20ExecuteMsg::DecreaseAllowance {
+                spender: engine.addr().to_string(),
+                amount: to_decimals(1980),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
+
+    // reduce the allowance
+    router
+        .execute_contract(
+            bob.clone(),
+            usdc.addr().clone(),
+            &Cw20ExecuteMsg::DecreaseAllowance {
+                spender: engine.addr().to_string(),
+                amount: to_decimals(1980),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
+
+    let msg = vamm
+        .set_fluctuation_limit_ratio(Uint128::from(800_000_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(20u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(20u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    // alice close position, pnl = 200 -105.88 ~= 94.12
+    // receive pnl + margin = 114.12
+    let msg = engine
+        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let alice_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    assert_eq!(alice_balance, Uint128::from(5_094_117_647_059u128));
+
+    let state = engine.state(&router).unwrap();
+    assert_eq!(state.bad_debt, Uint128::from(74_117_647_059u128));
+
+    // keeper liquidate bob's under collateral position, bob's positionValue is -294.11
+    // bob's pnl = 200 - 294.11 ~= -94.12
+    // bob loss all his margin (20) and there's 74.12 badDebt
+    // which is already prepaid by insurance fund when alice close the position
+    let margin_ratio = engine
+        .get_margin_ratio(&router, vamm.addr().to_string(), bob.to_string())
+        .unwrap();
+    assert_eq!(margin_ratio, Integer::new_negative(252_000_000u128));
+
+    // bob close his under collateral position, positionValue is -294.11
+    // bob's pnl = 200 - 294.11 ~= -94.12
+    // bob loss all his margin (20) with additional 74.12 badDebt
+    // which is already prepaid by insurance fund when alice close the position before
+    // clearing house doesn't need to ask insurance fund for covering the bad debt
+    let msg = engine
+        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    let engine_balance = usdc
+        .balance::<_, _, Empty>(&router, engine.addr().clone())
+        .unwrap();
+    assert_eq!(engine_balance, Uint128::zero());
 }
 
 #[test]
@@ -849,5 +957,202 @@ fn test_cannot_open_position_even_thought_short_is_underwater_if_still_under_aft
     assert_eq!(
         err.source().unwrap().to_string(),
         "Generic error: Position is undercollateralized"
+    );
+}
+
+#[test]
+fn test_close_partial_position_long_position_when_closing_whole_position_is_over_fluctuation_limit()
+{
+    let SimpleScenario {
+        mut router,
+        owner,
+        alice,
+        engine,
+        vamm,
+        usdc,
+        ..
+    } = SimpleScenario::new();
+
+    let msg = engine
+        .set_partial_liquidation_ratio(Uint128::from(250_000_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(25u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
+
+    let msg = vamm.set_spread_ratio(Uint128::from(1_000_000u128)).unwrap(); // 0.001
+    router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm
+        .set_fluctuation_limit_ratio(Uint128::from(359_000_000u128))
+        .unwrap(); // 0.359
+    router.execute(owner.clone(), msg).unwrap();
+
+    // the price will be dropped to 10 if we close whole position
+    // the price fluctuation will be (15.625 - 10) / 15.625 = 0.36
+    // only 25% position (20 * 0.25 = 5) will be closed,
+    // position notional is 73.53
+    // amm reserves after 1176.47 : 85
+    let msg = engine
+        .close_position(vamm.addr().to_string(), Uint128::zero())
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let position = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::new_positive(15_000_000_000u128));
+    assert_eq!(position.margin, Uint128::from(25_000_000_000u128));
+
+    // 5000 - open pos margin (25) + fee (-73.53 * 0.1%)
+    let alice_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    assert_eq!(alice_balance, Uint128::from(4_974_926_470_589u128));
+}
+
+#[test]
+fn test_close_partial_position_short_position_when_closing_whole_position_is_over_fluctuation_limit(
+) {
+    let SimpleScenario {
+        mut router,
+        owner,
+        alice,
+        engine,
+        vamm,
+        usdc,
+        ..
+    } = SimpleScenario::new();
+
+    let msg = engine
+        .set_partial_liquidation_ratio(Uint128::from(250_000_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(20u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
+
+    let msg = vamm.set_spread_ratio(Uint128::from(1_000_000u128)).unwrap(); // 0.001
+    router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm
+        .set_fluctuation_limit_ratio(Uint128::from(562_400_000u128))
+        .unwrap(); // 0.5624
+    router.execute(owner.clone(), msg).unwrap();
+
+    // the price will be dropped to 10 if we close whole position
+    // the price fluctuation will be (10 - 6.4) / 6.4 = 0.5625
+    // only 25% position (25 * 0.25 = 6.25) will be closed,
+    // position notional is 42.11
+    // amm reserves after 842.11 : 118.75
+    let msg = engine
+        .close_position(vamm.addr().to_string(), Uint128::zero())
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let position = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::new_negative(18_750_000_000u128));
+    assert_eq!(position.margin, Uint128::from(20_000_000_000u128));
+
+    // 5000 - open pos margin (25) + fee (-42.11 * 0.1%)
+    let alice_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    assert_eq!(alice_balance, Uint128::from(4_979_957_894_737u128));
+}
+
+#[test]
+fn test_close_whole_partial_position_when_partial_liquidation_ratio_is_one() {
+    let SimpleScenario {
+        mut router,
+        owner,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    let msg = engine
+        .set_partial_liquidation_ratio(Uint128::from(1_000_000_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(25u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
+
+    let msg = vamm.set_spread_ratio(Uint128::from(1_000_000u128)).unwrap(); // 0.001
+    router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm
+        .set_fluctuation_limit_ratio(Uint128::from(359_000_000u128))
+        .unwrap(); // 0.359
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .close_position(vamm.addr().to_string(), Uint128::zero())
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let err = engine
+        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "Querier contract error: Generic error: No position found".to_string()
+        },
+        err
     );
 }

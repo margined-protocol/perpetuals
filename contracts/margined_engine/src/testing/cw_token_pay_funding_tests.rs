@@ -313,6 +313,137 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
 }
 
 #[test]
+fn test_funding_rate_is_negative_1_percent_then_negative_1_percent() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        owner,
+        engine,
+        vamm,
+        pricefeed,
+        ..
+    } = SimpleScenario::new();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(300u64),
+            to_decimals(2u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(1200u64),
+            to_decimals(1u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    let price: Uint128 = Uint128::from(1_590_000_000u128);
+    let timestamp: u64 = 1_000_000_000;
+
+    let msg = pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // move to the next funding time
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(NEXT_FUNDING_PERIOD_DELTA);
+        block.height += 1;
+    });
+
+    let msg = engine.pay_funding(vamm.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let premium_fraction = engine
+        .get_latest_cumulative_premium_fraction(&router, vamm.addr().to_string())
+        .unwrap();
+    assert_eq!(
+        premium_fraction,
+        Integer::new_positive(10_000_000u128), // 0.01
+    );
+
+    // then alice need to pay 1% of her position size as fundingPayment
+    // {size: 37.5, margin: 300} => {size: 37.5, margin: 299.625}
+    let alice_position = engine
+        .get_position_with_funding_payment(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(alice_position.margin, Uint128::from(299_625_000_000u128));
+    let alice_balance = engine
+        .get_balance_with_funding_payment(&router, alice.to_string())
+        .unwrap();
+    assert_eq!(alice_balance, Uint128::from(299_625_000_000u128));
+
+    let price: Uint128 = Uint128::from(1_610_000_000u128);
+    let timestamp: u64 = 1_000_000_000;
+
+    let msg = pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // move to the next funding time
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(NEXT_FUNDING_PERIOD_DELTA);
+        block.height += 1;
+    });
+
+    let msg = engine.pay_funding(vamm.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let premium_fraction = engine
+        .get_latest_cumulative_premium_fraction(&router, vamm.addr().to_string())
+        .unwrap();
+    assert_eq!(premium_fraction, Integer::zero());
+
+    let alice_position = engine
+        .get_position_with_funding_payment(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(alice_position.margin, Uint128::from(300_000_000_000u128));
+    let alice_balance = engine
+        .get_balance_with_funding_payment(&router, alice.to_string())
+        .unwrap();
+    assert_eq!(alice_balance, Uint128::from(300_000_000_000u128));
+
+    // move to the next funding time
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(NEXT_FUNDING_PERIOD_DELTA);
+        block.height += 1;
+    });
+
+    let msg = engine.pay_funding(vamm.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let premium_fraction = engine
+        .get_latest_cumulative_premium_fraction(&router, vamm.addr().to_string())
+        .unwrap();
+    assert_eq!(
+        premium_fraction,
+        Integer::new_negative(10_000_000u128), // 0.01
+    );
+
+    let alice_position = engine
+        .get_position_with_funding_payment(&router, vamm.addr().to_string(), alice.to_string())
+        .unwrap();
+    assert_eq!(alice_position.margin, Uint128::from(300_375_000_000u128));
+    let alice_balance = engine
+        .get_balance_with_funding_payment(&router, alice.to_string())
+        .unwrap();
+    assert_eq!(alice_balance, Uint128::from(300_375_000_000u128));
+}
+
+#[test]
 fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
     let SimpleScenario {
         mut router,
