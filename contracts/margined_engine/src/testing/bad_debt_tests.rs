@@ -352,13 +352,11 @@ fn test_cannot_partial_close_position_when_bad_debt() {
         block.height += 1;
     });
 
-    // avoid actions from exceeding the fluctuation limit
     let msg = vamm
         .set_fluctuation_limit_ratio(Uint128::from(100u128)) // 0.000001
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    // avoid actions from exceeding the fluctuation limit
     let msg = engine
         .set_partial_liquidation_ratio(Uint128::from(250_000_000u128)) // 0.25
         .unwrap();

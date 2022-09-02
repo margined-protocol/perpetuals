@@ -375,7 +375,7 @@ fn test_funding_rate_is_negative_1_percent_then_negative_1_percent() {
     );
 
     // then alice need to pay 1% of her position size as fundingPayment
-    // {balance: 37.5, margin: 300} => {balance: 37.5, margin: 299.625}
+    // {size: 37.5, margin: 300} => {size: 37.5, margin: 299.625}
     let alice_position = engine
         .get_position_with_funding_payment(&router, vamm.addr().to_string(), alice.to_string())
         .unwrap();

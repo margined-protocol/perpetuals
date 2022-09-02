@@ -1091,7 +1091,7 @@ fn test_close_partial_position_short_position_when_closing_whole_position_is_ove
     assert_eq!(position.size, Integer::new_negative(18_750_000_000u128));
     assert_eq!(position.margin, Uint128::from(20_000_000_000u128));
 
-    // 5000 - open pos margin (25) + fee (-73.53 * 0.1%)
+    // 5000 - open pos margin (25) + fee (-42.11 * 0.1%)
     let alice_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
     assert_eq!(alice_balance, Uint128::from(4_979_957_894_737u128));
 }
@@ -1138,14 +1138,9 @@ fn test_close_whole_partial_position_when_partial_liquidation_ratio_is_one() {
     router.execute(owner.clone(), msg).unwrap();
     let msg = vamm
         .set_fluctuation_limit_ratio(Uint128::from(359_000_000u128))
-        .unwrap(); // 0.5624
+        .unwrap(); // 0.359
     router.execute(owner.clone(), msg).unwrap();
 
-    // the price will be dropped to 10 if we close whole position
-    // the price fluctuation will be (10 - 6.4) / 6.4 = 0.5625
-    // only 25% position (25 * 0.25 = 6.25) will be closed,
-    // position notional is 42.11
-    // amm reserves after 842.11 : 118.75
     let msg = engine
         .close_position(vamm.addr().to_string(), Uint128::zero())
         .unwrap();

@@ -689,6 +689,5 @@ fn test_wont_stop_trading_if_reducing_position_even_if_over_open_interest_notion
     router.execute(alice.clone(), msg).unwrap();
 
     let open_interest_notional = engine.state(&router).unwrap().open_interest_notional;
-    // this is near zero due to some rounding errors
     assert_eq!(open_interest_notional, to_decimals(300u64));
 }
