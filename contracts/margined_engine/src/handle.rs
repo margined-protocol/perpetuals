@@ -249,6 +249,7 @@ pub fn close_position(
     vamm: String,
     quote_amount_limit: Uint128,
 ) -> StdResult<Response> {
+    println!("close position");
     let config: Config = read_config(deps.storage)?;
     let state: State = read_state(deps.storage)?;
 

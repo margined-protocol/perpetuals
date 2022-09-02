@@ -893,6 +893,82 @@ fn test_openclose_position_to_check_fee_is_charged() {
 }
 
 #[test]
+fn test_openclose_position_to_check_fee_is_charged_toll_ratio_5_percent() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        owner,
+        fee_pool,
+        engine,
+        vamm,
+        usdc,
+        ..
+    } = SimpleScenario::new();
+
+    let msg = vamm
+        .update_config(
+            None,
+            None,
+            None,
+            Some(Uint128::from(10_000_000u128)), // 0.01
+            Some(Uint128::from(20_000_000u128)), // 0.01
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(60u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let fee_pool_balance = usdc
+        .balance::<_, _, Empty>(&router, fee_pool.addr().clone())
+        .unwrap();
+    assert_eq!(fee_pool_balance, to_decimals(6u64));
+
+    let msg = vamm.set_toll_ratio(Uint128::from(50_000_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(20u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let fee_pool_balance = usdc
+        .balance::<_, _, Empty>(&router, fee_pool.addr().clone())
+        .unwrap();
+    assert_eq!(fee_pool_balance, to_decimals(16u64));
+
+    let msg = engine
+        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let fee_pool_balance = usdc
+        .balance::<_, _, Empty>(&router, fee_pool.addr().clone())
+        .unwrap();
+    assert_eq!(fee_pool_balance, to_decimals(56u64));
+}
+
+#[test]
 fn test_pnl_unrealized() {
     let SimpleScenario {
         mut router,

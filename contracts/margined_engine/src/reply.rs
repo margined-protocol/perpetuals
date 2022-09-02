@@ -389,6 +389,7 @@ pub fn close_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    println!("close position reply");
     let config = read_config(deps.storage)?;
     let mut state = read_state(deps.storage)?;
     let swap = read_tmp_swap(deps.storage)?;
@@ -486,6 +487,7 @@ pub fn partial_close_position_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
+    println!("partial close position reply");
     let mut state: State = read_state(deps.storage)?;
 
     let swap: TmpSwapInfo = read_tmp_swap(deps.storage)?;
