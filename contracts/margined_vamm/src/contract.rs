@@ -6,7 +6,7 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 use margined_common::{
     integer::Integer,
-    validate::{validate_decimal_places, validate_ratio},
+    validate::{validate_decimal_places, validate_non_ratio, validate_ratio},
 };
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
@@ -71,6 +71,10 @@ pub fn instantiate(
     }
 
     store_config(deps.storage, &config)?;
+
+    // validate base and quote reserves here
+    validate_non_ratio(base_asset_reserve, decimals)?;
+    validate_non_ratio(quote_asset_reserve, decimals)?;
 
     let state = State {
         open: false,
