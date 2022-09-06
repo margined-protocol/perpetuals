@@ -923,18 +923,3 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
         "Generic error: Only one action allowed".to_string()
     );
 }
-
-#[test]
-fn test_check_config() {
-    let env = SimpleScenario::new();
-
-    // query the beneficiary in insurance fund
-    let config = env.insurance_fund.config(&env.router).unwrap();
-
-    assert_eq!(config.beneficiary, env.engine.addr());
-
-    // query the insurance fund in margine engine
-    let config = env.engine.config(&env.router).unwrap();
-
-    assert_eq!(config.insurance_fund, env.insurance_fund.addr());
-}
