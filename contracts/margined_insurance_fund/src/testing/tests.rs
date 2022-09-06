@@ -24,7 +24,7 @@ fn test_instantiation() {
     assert_eq!(
         config,
         ConfigResponse {
-            beneficiary: Addr::unchecked("".to_string()),
+            beneficiary: Addr::unchecked(BENEFICIARY.to_string()),
             owner: info.sender
         }
     );
