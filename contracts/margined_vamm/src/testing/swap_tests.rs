@@ -89,6 +89,54 @@ fn test_bad_decimals() {
 }
 
 #[test]
+fn test_bad_reserves() {
+    let mut deps = mock_dependencies();
+    let msg = InstantiateMsg {
+        decimals: 6u8,
+        quote_asset: "ETH".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: Uint128::from(100u128),
+        base_asset_reserve: to_decimals(10_000),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        margin_engine: Some("addr0000".to_string()),
+        pricefeed: "oracle".to_string(),
+    };
+    let info = mock_info("addr0000", &[]);
+
+    let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+
+    assert_eq!(
+        res.to_string(),
+        "Generic error: Value must be bigger than 1"
+    );
+
+    let msg = InstantiateMsg {
+        decimals: 6u8,
+        quote_asset: "ETH".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: to_decimals(100),
+        base_asset_reserve: Uint128::from(10_000u128),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        margin_engine: Some("addr0000".to_string()),
+        pricefeed: "oracle".to_string(),
+    };
+    let info = mock_info("addr0000", &[]);
+
+    let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+
+    assert_eq!(
+        res.to_string(),
+        "Generic error: Value must be bigger than 1"
+    );
+}
+
+#[test]
 fn test_update_config() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
