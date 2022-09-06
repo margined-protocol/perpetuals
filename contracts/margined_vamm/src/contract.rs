@@ -73,8 +73,8 @@ pub fn instantiate(
     store_config(deps.storage, &config)?;
 
     // validate base and quote reserves here
-    validate_non_ratio(base_asset_reserve, decimals)?;
-    validate_non_ratio(quote_asset_reserve, decimals)?;
+    validate_non_ratio(msg.base_asset_reserve, decimals)?;
+    validate_non_ratio(msg.quote_asset_reserve, decimals)?;
 
     let state = State {
         open: false,
