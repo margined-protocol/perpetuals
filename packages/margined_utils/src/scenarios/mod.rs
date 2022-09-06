@@ -123,7 +123,7 @@ impl NativeTokenScenario {
                 None,
             )
             .unwrap();
-        let insurance_fund = InsuranceFundController(insurance_fund_addr.clone());
+        let insurance_fund = InsuranceFundController(insurance_fund_addr);
 
         // send insurance fund funds
         let msg = CosmosMsg::Bank(BankMsg::Send {
@@ -403,7 +403,7 @@ impl SimpleScenario {
         router
             .execute_contract(
                 owner.clone(),
-                engine.addr().clone(),
+                engine.addr(),
                 &ExecuteMsg::UpdateConfig {
                     owner: None,
                     pauser: None,
