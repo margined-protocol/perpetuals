@@ -120,7 +120,7 @@ fn test_update_config() {
         spread_ratio: None,
         fluctuation_limit_ratio: None,
         margin_engine: Some("addr0001".to_string()),
-        insurance_fund: None,
+        insurance_fund: Some("new_insurance_fund".to_string()),
         pricefeed: None,
         spot_price_twap_interval: None,
     };
@@ -143,7 +143,7 @@ fn test_update_config() {
             fluctuation_limit_ratio: Uint128::zero(),
             decimals: DECIMAL_MULTIPLIER,
             margin_engine: Addr::unchecked("addr0001".to_string()),
-            insurance_fund: Addr::unchecked("insurance_fund".to_string()),
+            insurance_fund: Addr::unchecked("new_insurance_fund".to_string()),
             pricefeed: Addr::unchecked("oracle".to_string()),
             funding_period: 3_600u64,
         }
