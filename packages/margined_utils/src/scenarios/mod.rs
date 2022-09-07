@@ -141,7 +141,7 @@ impl NativeTokenScenario {
                     fluctuation_limit_ratio: Uint128::zero(),
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: None,
-                    insurance_fund: Some(insurance_fund_addr.to_string()),
+                    insurance_fund: Some(insurance_fund.addr().to_string()),
                 },
                 &[],
                 "vamm",
