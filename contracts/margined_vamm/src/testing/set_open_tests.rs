@@ -20,6 +20,7 @@ fn test_set_open_admin_open_amm() {
         spread_ratio: Uint128::zero(),
         fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
+        insurance_fund: Some("insurance_fund".to_string()),
         pricefeed: "oracle".to_string(),
     };
     let info = mock_info("addr0000", &[]);
@@ -49,6 +50,7 @@ fn test_set_open_init_next_funding_time_zero() {
         spread_ratio: Uint128::zero(),
         fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
+        insurance_fund: Some("insurance_fund".to_string()),
         pricefeed: "oracle".to_string(),
     };
     let info = mock_info("addr0000", &[]);
@@ -73,6 +75,7 @@ fn test_set_open_admin_open_updates_next_funding_time() {
         spread_ratio: Uint128::zero(),
         fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
+        insurance_fund: Some("insurance_fund".to_string()),
         pricefeed: "oracle".to_string(),
     };
     let info = mock_info("addr0000", &[]);
@@ -105,6 +108,7 @@ fn test_set_open_admin_closes_amm() {
         spread_ratio: Uint128::zero(),
         fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
+        insurance_fund: Some("insurance_fund".to_string()),
         pricefeed: "oracle".to_string(),
     };
     let info = mock_info("addr0000", &[]);
@@ -138,6 +142,7 @@ fn test_set_open_cant_do_anything_when_its_beginning() {
         spread_ratio: Uint128::zero(),
         fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
+        insurance_fund: Some("insurance_fund".to_string()),
         pricefeed: "oracle".to_string(),
     };
     let info = mock_info("addr0000", &[]);
@@ -191,6 +196,7 @@ fn test_set_open_cant_do_anything_when_closed() {
         spread_ratio: Uint128::zero(),
         fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
+        insurance_fund: Some("insurance_fund".to_string()),
         pricefeed: "oracle".to_string(),
     };
     let info = mock_info("addr0000", &[]);
