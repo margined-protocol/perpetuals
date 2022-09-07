@@ -38,12 +38,7 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn execute(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    msg: ExecuteMsg,
-) -> StdResult<Response> {
+pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
         ExecuteMsg::UpdateConfig { owner, beneficiary } => {
             update_config(deps, info, owner, beneficiary)
@@ -51,7 +46,7 @@ pub fn execute(
         ExecuteMsg::AddVamm { vamm } => add_vamm(deps, info, vamm),
         ExecuteMsg::RemoveVamm { vamm } => remove_vamm(deps, info, vamm),
         ExecuteMsg::Withdraw { token, amount } => withdraw(deps, info, token, amount),
-        ExecuteMsg::ShutdownVamms {} => shutdown_all_vamm(deps, info),
+        ExecuteMsg::ShutdownVamms {} => shutdown_all_vamm(deps, env, info),
     }
 }
 

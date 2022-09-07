@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    to_binary, BankMsg, Coin, CosmosMsg, DepsMut, MessageInfo, ReplyOn, Response, StdError,
+    to_binary, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError,
     StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
@@ -75,11 +75,11 @@ pub fn remove_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<
     Ok(Response::default())
 }
 
-pub fn shutdown_all_vamm(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
+pub fn shutdown_all_vamm(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
 
     // check permission
-    if info.sender != config.owner {
+    if info.sender != config.owner && info.sender != env.contract.address {
         return Err(StdError::generic_err("unauthorized"));
     }
 

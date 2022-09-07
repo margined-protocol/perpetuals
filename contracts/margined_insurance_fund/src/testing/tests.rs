@@ -386,6 +386,61 @@ fn test_vamm_shutdown() {
 }
 
 #[test]
+fn test_vamm_shutdown_from_insurance() {
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        vamm2,
+        vamm3,
+        ..
+    } = ShutdownScenario::new();
+
+    // add vamm
+    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // add second vamm
+    let msg = insurance_fund.add_vamm(vamm2.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // add third vamm
+    let msg = insurance_fund.add_vamm(vamm3.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // query all vamms' status
+    let res = insurance_fund.all_vamm_status(None, &router).unwrap();
+    let vamms_status = res.vamm_list_status;
+
+    assert_eq!(
+        vamms_status,
+        vec![
+            (vamm1.addr(), true),
+            (vamm2.addr(), true),
+            (vamm3.addr(), true)
+        ]
+    );
+
+    // shutdown all vamms
+    let msg = insurance_fund.shutdown_vamms().unwrap();
+    router.execute(insurance_fund.addr(), msg).unwrap();
+
+    // query all vamms' status
+    let res = insurance_fund.all_vamm_status(None, &router).unwrap();
+    let vamms_status = res.vamm_list_status;
+
+    assert_eq!(
+        vamms_status,
+        vec![
+            (vamm1.addr(), false),
+            (vamm2.addr(), false),
+            (vamm3.addr(), false)
+        ]
+    );
+}
+
+#[test]
 fn test_query_vamm_status() {
     let ShutdownScenario {
         mut router,
