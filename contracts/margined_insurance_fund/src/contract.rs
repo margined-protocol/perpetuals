@@ -8,7 +8,7 @@ use crate::{
     state::{store_config, Config},
 };
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
 use cw2::set_contract_version;
 use margined_perp::margined_insurance_fund::{ExecuteMsg, InstantiateMsg, QueryMsg};
@@ -23,13 +23,13 @@ pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    _msg: InstantiateMsg,
+    msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let config = Config {
         owner: info.sender,
-        beneficiary: Addr::unchecked(""),
+        beneficiary: deps.api.addr_validate(&msg.beneficiary)?,
     };
 
     store_config(deps.storage, &config)?;
@@ -40,9 +40,7 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::UpdateConfig { owner, beneficiary } => {
-            update_config(deps, info, owner, beneficiary)
-        }
+        ExecuteMsg::UpdateConfig { owner } => update_config(deps, info, owner),
         ExecuteMsg::AddVamm { vamm } => add_vamm(deps, info, vamm),
         ExecuteMsg::RemoveVamm { vamm } => remove_vamm(deps, info, vamm),
         ExecuteMsg::Withdraw { token, amount } => withdraw(deps, info, token, amount),
