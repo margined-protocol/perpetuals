@@ -14,7 +14,7 @@ pub fn validate_decimal_places(decimal_places: u8) -> StdResult<Uint128> {
 }
 
 /// Validates that the value supplied is greater than 1
-pub fn validate_non_ratio(value: Uint128, decimals: Uint128) -> StdResult<Response> {
+pub fn validate_non_fraction(value: Uint128, decimals: Uint128) -> StdResult<Response> {
     if value < decimals {
         return Err(StdError::generic_err("Value must be bigger than 1"));
     }
