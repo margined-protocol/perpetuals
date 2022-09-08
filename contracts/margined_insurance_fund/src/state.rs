@@ -89,7 +89,6 @@ pub fn remove_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
-    pub beneficiary: Addr,
     pub engine: Addr,
 }
 
