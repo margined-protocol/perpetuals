@@ -706,6 +706,7 @@ pub struct ShutdownScenario {
     pub vamm2: VammController,
     pub vamm3: VammController,
     pub vamm4: VammController,
+    pub vamm5: VammController,
     pub insurance_fund: InsuranceFundController,
     pub pricefeed: PricefeedController,
 }
@@ -888,7 +889,31 @@ impl ShutdownScenario {
         let vamm4 = VammController(vamm4_addr);
 
         let msg = vamm4.set_open(true).unwrap();
-        router.execute(insurance_fund_addr, msg).unwrap();
+        router.execute(insurance_fund_addr.clone(), msg).unwrap();
+
+        let vamm5_addr = router
+            .instantiate_contract(
+                vamm_id,
+                insurance_fund_addr,
+                &VammInstantiateMsg {
+                    decimals: 7u8, //see here
+                    quote_asset: "ETH".to_string(),
+                    base_asset: "USD".to_string(),
+                    quote_asset_reserve: Uint128::from(1_000_000_000u128),
+                    base_asset_reserve: Uint128::from(100_000_000u128),
+                    funding_period: 3_600_u64, // funding period is 1 day to make calcs easier
+                    toll_ratio: Uint128::from(10_000u128), // 0.01
+                    spread_ratio: Uint128::from(10_000u128), // 0.01
+                    fluctuation_limit_ratio: Uint128::from(10_000u128), // 0.01
+                    pricefeed: pricefeed_addr.to_string(),
+                    margin_engine: Some(owner.to_string()),
+                },
+                &[],
+                "vamm4",
+                None,
+            )
+            .unwrap();
+        let vamm5 = VammController(vamm5_addr);
 
         Self {
             router,
@@ -898,6 +923,7 @@ impl ShutdownScenario {
             vamm2,
             vamm3,
             vamm4,
+            vamm5,
             pricefeed,
         }
     }

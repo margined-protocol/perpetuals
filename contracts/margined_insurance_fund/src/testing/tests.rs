@@ -681,3 +681,23 @@ fn test_not_owner() {
 
     assert_eq!(res.to_string(), "Generic error: unauthorized");
 }
+
+#[test]
+fn test_incompatible_decimals() {
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm5,
+        ..
+    } = ShutdownScenario::new();
+
+    let msg = insurance_fund.add_vamm(vamm5.addr().to_string()).unwrap();
+    let err = router.execute(owner, msg).unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "vAMM decimals incompatible with margin engine".to_string(),
+        },
+        err.downcast().unwrap()
+    );
+}
