@@ -216,7 +216,7 @@ impl NativeTokenScenario {
         router
             .execute_contract(
                 owner.clone(),
-                insurance_fund.addr().clone(),
+                insurance_fund.addr(),
                 &InsuranceFundExecuteMsg::UpdateConfig {
                     owner: None,
                     engine: Some(engine_addr.to_string()),
