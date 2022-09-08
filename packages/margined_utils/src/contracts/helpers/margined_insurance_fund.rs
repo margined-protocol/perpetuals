@@ -37,14 +37,9 @@ impl InsuranceFundController {
     pub fn update_config(
         &self,
         owner: Option<String>,
-        beneficiary: Option<String>,
         engine: Option<String>,
     ) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::UpdateConfig {
-            owner,
-            beneficiary,
-            engine,
-        };
+        let msg = ExecuteMsg::UpdateConfig { owner, engine };
         self.call(msg, vec![])
     }
 

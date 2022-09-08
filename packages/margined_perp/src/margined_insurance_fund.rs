@@ -4,14 +4,15 @@ use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, Uint128};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-pub struct InstantiateMsg {}
+pub struct InstantiateMsg {
+    pub beneficiary: String,
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     UpdateConfig {
         owner: Option<String>,
-        beneficiary: Option<String>,
         engine: Option<String>,
     },
     AddVamm {

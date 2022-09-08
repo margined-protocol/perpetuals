@@ -5,7 +5,7 @@ use crate::contracts::helpers::{
 };
 use cosmwasm_std::{Addr, BankMsg, Coin, CosmosMsg, Empty, Response, Uint128};
 use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg, MinterResponse};
-use margined_perp::margined_engine::{InstantiateMsg, Side};
+use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, Side};
 use margined_perp::margined_fee_pool::InstantiateMsg as FeePoolInstantiateMsg;
 use margined_perp::margined_insurance_fund::{
     ExecuteMsg as InsuranceFundExecuteMsg, InstantiateMsg as InsuranceFundInstantiateMsg,
@@ -92,17 +92,40 @@ impl NativeTokenScenario {
             .unwrap();
         let fee_pool = FeePoolController(fee_pool_addr);
 
+        // set up margined engine contract
+        let engine_addr = router
+            .instantiate_contract(
+                engine_id,
+                owner.clone(),
+                &InstantiateMsg {
+                    pauser: owner.to_string(),
+                    insurance_fund: "insurance_fund".to_string(),
+                    fee_pool: fee_pool.addr().to_string(),
+                    eligible_collateral: native_denom.to_string(),
+                    initial_margin_ratio: Uint128::from(50_000u128), // 0.05
+                    maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
+                    liquidation_fee: Uint128::from(50_000u128),      // 0.05
+                },
+                &[],
+                "engine",
+                None,
+            )
+            .unwrap();
+        let engine = EngineController(engine_addr.clone());
+
         let insurance_fund_addr = router
             .instantiate_contract(
                 insurance_fund_id,
                 owner.clone(),
-                &InsuranceFundInstantiateMsg {},
+                &InsuranceFundInstantiateMsg {
+                    beneficiary: engine_addr.to_string(),
+                },
                 &[],
                 "insurance_fund",
                 None,
             )
             .unwrap();
-        let insurance_fund = InsuranceFundController(insurance_fund_addr.clone());
+        let insurance_fund = InsuranceFundController(insurance_fund_addr);
 
         // send insurance fund funds
         let msg = CosmosMsg::Bank(BankMsg::Send {
@@ -110,6 +133,26 @@ impl NativeTokenScenario {
             amount: init_funds,
         });
         router.execute(bank.clone(), msg).unwrap();
+
+        // set insurance fund in margin engine
+        router
+            .execute_contract(
+                owner.clone(),
+                engine_addr.clone(),
+                &ExecuteMsg::UpdateConfig {
+                    owner: None,
+                    pauser: None,
+                    insurance_fund: Some(insurance_fund.addr().to_string()),
+                    fee_pool: None,
+                    eligible_collateral: None,
+                    initial_margin_ratio: None,
+                    maintenance_margin_ratio: None,
+                    partial_liquidation_ratio: None,
+                    liquidation_fee: None,
+                },
+                &[],
+            )
+            .unwrap();
 
         let pricefeed_addr = router
             .instantiate_contract(
@@ -149,27 +192,6 @@ impl NativeTokenScenario {
             .unwrap();
         let vamm = VammController(vamm_addr.clone());
 
-        // set up margined engine contract
-        let engine_addr = router
-            .instantiate_contract(
-                engine_id,
-                owner.clone(),
-                &InstantiateMsg {
-                    pauser: owner.to_string(),
-                    insurance_fund: insurance_fund.addr().to_string(),
-                    fee_pool: fee_pool.addr().to_string(),
-                    eligible_collateral: native_denom.to_string(),
-                    initial_margin_ratio: Uint128::from(50_000u128), // 0.05
-                    maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
-                    liquidation_fee: Uint128::from(50_000u128),      // 0.05
-                },
-                &[],
-                "engine",
-                None,
-            )
-            .unwrap();
-        let engine = EngineController(engine_addr.clone());
-
         // set margin engine in vamm
         router
             .execute_contract(
@@ -190,14 +212,13 @@ impl NativeTokenScenario {
             )
             .unwrap();
 
-        // set margin engine as insurance fund beneficiary
+        // set margin engine in insurance fund
         router
             .execute_contract(
                 owner.clone(),
-                insurance_fund_addr,
+                insurance_fund.addr().clone(),
                 &InsuranceFundExecuteMsg::UpdateConfig {
                     owner: None,
-                    beneficiary: Some(engine_addr.to_string()),
                     engine: Some(engine_addr.to_string()),
                 },
                 &[],
@@ -310,18 +331,6 @@ impl SimpleScenario {
         let insurance_fund_id = router.store_code(contract_insurance_fund());
         let pricefeed_id = router.store_code(contract_mock_pricefeed());
 
-        let insurance_fund_addr = router
-            .instantiate_contract(
-                insurance_fund_id,
-                owner.clone(),
-                &InsuranceFundInstantiateMsg {},
-                &[],
-                "insurance_fund",
-                None,
-            )
-            .unwrap();
-        let insurance_fund = InsuranceFundController(insurance_fund_addr.clone());
-
         let fee_pool_addr = router
             .instantiate_contract(
                 fee_pool_id,
@@ -355,10 +364,6 @@ impl SimpleScenario {
                             address: david.to_string(),
                             amount: to_decimals(5000),
                         },
-                        Cw20Coin {
-                            address: insurance_fund.addr().to_string(),
-                            amount: to_decimals(5000),
-                        },
                     ],
                     mint: Some(MinterResponse {
                         minter: owner.to_string(),
@@ -373,6 +378,73 @@ impl SimpleScenario {
             .unwrap();
 
         let usdc = Cw20Contract(usdc_addr.clone());
+
+        // set up margined engine contract
+        let engine_addr = router
+            .instantiate_contract(
+                engine_id,
+                owner.clone(),
+                &InstantiateMsg {
+                    pauser: owner.to_string(),
+                    insurance_fund: "insurance_fund".to_string(),
+                    fee_pool: fee_pool.addr().to_string(),
+                    eligible_collateral: usdc.addr().to_string(),
+                    initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
+                    maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
+                    liquidation_fee: Uint128::from(50_000_000u128),      // 0.05
+                },
+                &[],
+                "engine",
+                None,
+            )
+            .unwrap();
+        let engine = EngineController(engine_addr.clone());
+
+        let insurance_fund_addr = router
+            .instantiate_contract(
+                insurance_fund_id,
+                owner.clone(),
+                &InsuranceFundInstantiateMsg {
+                    beneficiary: engine.addr().to_string(),
+                },
+                &[],
+                "insurance_fund",
+                None,
+            )
+            .unwrap();
+        let insurance_fund = InsuranceFundController(insurance_fund_addr.clone());
+
+        // set insurance fund in margin engine
+        router
+            .execute_contract(
+                owner.clone(),
+                engine.addr(),
+                &ExecuteMsg::UpdateConfig {
+                    owner: None,
+                    pauser: None,
+                    insurance_fund: Some(insurance_fund.addr().to_string()),
+                    fee_pool: None,
+                    eligible_collateral: None,
+                    initial_margin_ratio: None,
+                    maintenance_margin_ratio: None,
+                    partial_liquidation_ratio: None,
+                    liquidation_fee: None,
+                },
+                &[],
+            )
+            .unwrap();
+
+        router
+            .execute_contract(
+                owner.clone(),
+                usdc_addr.clone(),
+                &Cw20ExecuteMsg::Mint {
+                    recipient: insurance_fund_addr.to_string(),
+                    amount: to_decimals(5000),
+                },
+                &[],
+            )
+            .unwrap();
 
         let pricefeed_addr = router
             .instantiate_contract(
@@ -412,27 +484,6 @@ impl SimpleScenario {
             .unwrap();
         let vamm = VammController(vamm_addr.clone());
 
-        // set up margined engine contract
-        let engine_addr = router
-            .instantiate_contract(
-                engine_id,
-                owner.clone(),
-                &InstantiateMsg {
-                    pauser: owner.to_string(),
-                    insurance_fund: insurance_fund.addr().to_string(),
-                    fee_pool: fee_pool.addr().to_string(),
-                    eligible_collateral: usdc_addr.to_string(),
-                    initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
-                    maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
-                    liquidation_fee: Uint128::from(50_000_000u128),      // 0.05
-                },
-                &[],
-                "engine",
-                None,
-            )
-            .unwrap();
-        let engine = EngineController(engine_addr.clone());
-
         // set margin engine as beneficiary in insurance fund
         router
             .execute_contract(
@@ -440,7 +491,6 @@ impl SimpleScenario {
                 insurance_fund_addr,
                 &InsuranceFundExecuteMsg::UpdateConfig {
                     owner: None,
-                    beneficiary: Some(engine_addr.to_string()),
                     engine: Some(engine_addr.to_string()),
                 },
                 &[],
@@ -726,7 +776,9 @@ impl ShutdownScenario {
             .instantiate_contract(
                 insurance_fund_id,
                 owner.clone(),
-                &InsuranceFundInstantiateMsg {},
+                &InsuranceFundInstantiateMsg {
+                    beneficiary: "owner".to_string(),
+                },
                 &[],
                 "insurance_fund",
                 None,
@@ -762,7 +814,6 @@ impl ShutdownScenario {
                 insurance_fund_addr.clone(),
                 &InsuranceFundExecuteMsg::UpdateConfig {
                     owner: None,
-                    beneficiary: Some(engine.addr().to_string()),
                     engine: Some(engine.addr().to_string()),
                 },
                 &[],

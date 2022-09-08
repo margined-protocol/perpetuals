@@ -18,7 +18,6 @@ pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,
     owner: Option<String>,
-    beneficiary: Option<String>,
     engine: Option<String>,
 ) -> StdResult<Response> {
     let mut config: Config = read_config(deps.storage)?;
@@ -31,11 +30,6 @@ pub fn update_config(
     // change owner of insurance fund contract
     if let Some(owner) = owner {
         config.owner = deps.api.addr_validate(owner.as_str())?;
-    }
-
-    // change beneficiary of insurance fund contract
-    if let Some(beneficiary) = beneficiary {
-        config.beneficiary = deps.api.addr_validate(beneficiary.as_str())?;
     }
 
     // change engine associated with insurance fund contract

@@ -686,7 +686,7 @@ fn test_close_safe_position() {
 }
 
 #[test]
-fn test_close_position_over_maintenance_margin_ration() {
+fn test_close_position_over_maintenance_margin_ratio() {
     let SimpleScenario {
         mut router,
         alice,
