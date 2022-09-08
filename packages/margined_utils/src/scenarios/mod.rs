@@ -763,8 +763,8 @@ impl ShutdownScenario {
                 owner.clone(),
                 &InstantiateMsg {
                     pauser: owner.to_string(),
-                    insurance_fund: "owner".to_string(),
-                    fee_pool: "owner".to_string(),
+                    insurance_fund: "insurance_fund".to_string(),
+                    fee_pool: "fee_pool".to_string(),
                     eligible_collateral: "uwasm".to_string(),
                     initial_margin_ratio: Uint128::from(50_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
