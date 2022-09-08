@@ -23,6 +23,7 @@ fn test_instantiation() {
         config,
         ConfigResponse {
             beneficiary: Addr::unchecked("".to_string()),
+            engine: Addr::unchecked("".to_string()),
             owner: info.sender
         }
     );
@@ -39,6 +40,7 @@ fn test_update_config() {
     let msg = ExecuteMsg::UpdateConfig {
         owner: Some("addr0001".to_string()),
         beneficiary: Some(BENEFICIARY.to_string()),
+        engine: Some(BENEFICIARY.to_string()),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -50,7 +52,7 @@ fn test_update_config() {
         config,
         ConfigResponse {
             beneficiary: Addr::unchecked(BENEFICIARY.to_string()),
-
+            engine: Addr::unchecked(BENEFICIARY.to_string()),
             owner: Addr::unchecked("addr0001".to_string()),
         }
     );
@@ -628,6 +630,7 @@ fn test_vamm_capacity() {
         router.execute(owner.clone(), msg).unwrap();
     }
 }
+
 #[test]
 fn test_not_owner() {
     //instantiate contract here
@@ -641,6 +644,7 @@ fn test_not_owner() {
     let msg = ExecuteMsg::UpdateConfig {
         owner: Some("addr0001".to_string()),
         beneficiary: None,
+        engine: None,
     };
 
     let info = mock_info("not_the_owner", &[]);

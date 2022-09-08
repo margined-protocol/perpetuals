@@ -7,6 +7,7 @@ use margined_common::asset::AssetInfo;
 
 use crate::{
     messages::execute_vamm_shutdown,
+    querier::{query_engine_decimals, query_vamm_decimals},
     state::{
         read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, store_config, Config,
         VAMM_LIMIT,
@@ -18,6 +19,7 @@ pub fn update_config(
     info: MessageInfo,
     owner: Option<String>,
     beneficiary: Option<String>,
+    engine: Option<String>,
 ) -> StdResult<Response> {
     let mut config: Config = read_config(deps.storage)?;
 
@@ -36,6 +38,11 @@ pub fn update_config(
         config.beneficiary = deps.api.addr_validate(beneficiary.as_str())?;
     }
 
+    // change engine associated with insurance fund contract
+    if let Some(engine) = engine {
+        config.engine = deps.api.addr_validate(engine.as_str())?;
+    }
+
     store_config(deps.storage, &config)?;
 
     Ok(Response::default().add_attribute("action", "update_config"))
@@ -51,6 +58,17 @@ pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Res
 
     // validate address
     let vamm_valid = deps.api.addr_validate(&vamm)?;
+
+    // check decimals are consistent
+    let engine_decimals: Uint128 =
+        query_engine_decimals(&deps.as_ref(), config.engine.to_string())?;
+    let vamm_decimals: Uint128 = query_vamm_decimals(&deps.as_ref(), vamm)?;
+
+    if engine_decimals != vamm_decimals {
+        return Err(StdError::generic_err(
+            "vAMM decimals incompatible with margin engine",
+        ));
+    }
 
     // add the amm
     save_vamm(deps, vamm_valid)?;

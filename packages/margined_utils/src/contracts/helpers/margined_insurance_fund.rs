@@ -38,8 +38,13 @@ impl InsuranceFundController {
         &self,
         owner: Option<String>,
         beneficiary: Option<String>,
+        engine: Option<String>,
     ) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::UpdateConfig { owner, beneficiary };
+        let msg = ExecuteMsg::UpdateConfig {
+            owner,
+            beneficiary,
+            engine,
+        };
         self.call(msg, vec![])
     }
 

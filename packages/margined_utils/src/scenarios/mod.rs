@@ -149,13 +149,6 @@ impl NativeTokenScenario {
             .unwrap();
         let vamm = VammController(vamm_addr.clone());
 
-        // set open and register
-        let msg = vamm.set_open(true).unwrap();
-        router.execute(owner.clone(), msg).unwrap();
-
-        let msg = insurance_fund.add_vamm(vamm.addr().to_string()).unwrap();
-        router.execute(owner.clone(), msg).unwrap();
-
         // set up margined engine contract
         let engine_addr = router
             .instantiate_contract(
@@ -205,10 +198,18 @@ impl NativeTokenScenario {
                 &InsuranceFundExecuteMsg::UpdateConfig {
                     owner: None,
                     beneficiary: Some(engine_addr.to_string()),
+                    engine: Some(engine_addr.to_string()),
                 },
                 &[],
             )
             .unwrap();
+
+        // set open and register
+        let msg = vamm.set_open(true).unwrap();
+        router.execute(owner.clone(), msg).unwrap();
+
+        let msg = insurance_fund.add_vamm(vamm.addr().to_string()).unwrap();
+        router.execute(owner.clone(), msg).unwrap();
 
         // append a price to the mock pricefeed
         router
@@ -411,13 +412,6 @@ impl SimpleScenario {
             .unwrap();
         let vamm = VammController(vamm_addr.clone());
 
-        // set open and register
-        let msg = vamm.set_open(true).unwrap();
-        router.execute(owner.clone(), msg).unwrap();
-
-        let msg = insurance_fund.add_vamm(vamm.addr().to_string()).unwrap();
-        router.execute(owner.clone(), msg).unwrap();
-
         // set up margined engine contract
         let engine_addr = router
             .instantiate_contract(
@@ -447,6 +441,7 @@ impl SimpleScenario {
                 &InsuranceFundExecuteMsg::UpdateConfig {
                     owner: None,
                     beneficiary: Some(engine_addr.to_string()),
+                    engine: Some(engine_addr.to_string()),
                 },
                 &[],
             )
@@ -471,6 +466,13 @@ impl SimpleScenario {
                 &[],
             )
             .unwrap();
+
+        // set open and register
+        let msg = vamm.set_open(true).unwrap();
+        router.execute(owner.clone(), msg).unwrap();
+
+        let msg = insurance_fund.add_vamm(vamm.addr().to_string()).unwrap();
+        router.execute(owner.clone(), msg).unwrap();
 
         // create allowance for alice
         router
@@ -716,6 +718,7 @@ impl ShutdownScenario {
 
         let insurance_fund_id = router.store_code(contract_insurance_fund());
         let vamm_id = router.store_code(contract_vamm());
+        let engine_id = router.store_code(contract_engine());
         let pricefeed_id = router.store_code(contract_mock_pricefeed());
 
         let insurance_fund_addr = router
@@ -729,6 +732,41 @@ impl ShutdownScenario {
             )
             .unwrap();
         let insurance_fund = InsuranceFundController(insurance_fund_addr.clone());
+
+        // set up margined engine contract
+        let engine_addr = router
+            .instantiate_contract(
+                engine_id,
+                owner.clone(),
+                &InstantiateMsg {
+                    pauser: owner.to_string(),
+                    insurance_fund: insurance_fund.addr().to_string(),
+                    fee_pool: insurance_fund.addr().to_string(),
+                    eligible_collateral: "uwasm".to_string(),
+                    initial_margin_ratio: Uint128::from(50_000u128), // 0.05
+                    maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
+                    liquidation_fee: Uint128::from(50_000u128),      // 0.05
+                },
+                &[],
+                "engine",
+                None,
+            )
+            .unwrap();
+        let engine = EngineController(engine_addr);
+
+        // set margin engine as beneficiary in insurance fund
+        router
+            .execute_contract(
+                owner.clone(),
+                insurance_fund_addr.clone(),
+                &InsuranceFundExecuteMsg::UpdateConfig {
+                    owner: None,
+                    beneficiary: Some(engine.addr().to_string()),
+                    engine: Some(engine.addr().to_string()),
+                },
+                &[],
+            )
+            .unwrap();
 
         let pricefeed_addr = router
             .instantiate_contract(
@@ -749,15 +787,15 @@ impl ShutdownScenario {
                 vamm_id,
                 insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
-                    decimals: 9u8, //see here
+                    decimals: 6u8, //see here
                     quote_asset: "ETH".to_string(),
                     base_asset: "USD".to_string(),
-                    quote_asset_reserve: to_decimals(1_000),
-                    base_asset_reserve: to_decimals(100),
+                    quote_asset_reserve: Uint128::from(1_000_000_000u128),
+                    base_asset_reserve: Uint128::from(100_000_000u128),
                     funding_period: 3_600_u64, // funding period is 1 day to make calcs easier
-                    toll_ratio: Uint128::from(10_000_000u128), // 0.01
-                    spread_ratio: Uint128::from(10_000_000u128), // 0.01
-                    fluctuation_limit_ratio: Uint128::from(10_000_000u128), // 0.01
+                    toll_ratio: Uint128::from(10_000u128), // 0.01
+                    spread_ratio: Uint128::from(10_000u128), // 0.01
+                    fluctuation_limit_ratio: Uint128::from(10_000u128), // 0.01
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
                 },
@@ -776,15 +814,15 @@ impl ShutdownScenario {
                 vamm_id,
                 insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
-                    decimals: 9u8, //see here
+                    decimals: 6u8, //see here
                     quote_asset: "ETH".to_string(),
                     base_asset: "USD".to_string(),
-                    quote_asset_reserve: to_decimals(1_000),
-                    base_asset_reserve: to_decimals(100),
+                    quote_asset_reserve: Uint128::from(1_000_000_000u128),
+                    base_asset_reserve: Uint128::from(100_000_000u128),
                     funding_period: 3_600_u64, // funding period is 1 day to make calcs easier
-                    toll_ratio: Uint128::from(10_000_000u128), // 0.01
-                    spread_ratio: Uint128::from(10_000_000u128), // 0.01
-                    fluctuation_limit_ratio: Uint128::from(10_000_000u128), // 0.01
+                    toll_ratio: Uint128::from(10_000u128), // 0.01
+                    spread_ratio: Uint128::from(10_000u128), // 0.01
+                    fluctuation_limit_ratio: Uint128::from(10_000u128), // 0.01
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
                 },
@@ -803,15 +841,15 @@ impl ShutdownScenario {
                 vamm_id,
                 insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
-                    decimals: 9u8, //see here
+                    decimals: 6u8, //see here
                     quote_asset: "ETH".to_string(),
                     base_asset: "USD".to_string(),
-                    quote_asset_reserve: to_decimals(1_000),
-                    base_asset_reserve: to_decimals(100),
+                    quote_asset_reserve: Uint128::from(1_000_000_000u128),
+                    base_asset_reserve: Uint128::from(100_000_000u128),
                     funding_period: 3_600_u64, // funding period is 1 day to make calcs easier
-                    toll_ratio: Uint128::from(10_000_000u128), // 0.01
-                    spread_ratio: Uint128::from(10_000_000u128), // 0.01
-                    fluctuation_limit_ratio: Uint128::from(10_000_000u128), // 0.01
+                    toll_ratio: Uint128::from(10_000u128), // 0.01
+                    spread_ratio: Uint128::from(10_000u128), // 0.01
+                    fluctuation_limit_ratio: Uint128::from(10_000u128), // 0.01
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
                 },
@@ -830,15 +868,15 @@ impl ShutdownScenario {
                 vamm_id,
                 insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
-                    decimals: 9u8, //see here
+                    decimals: 6u8, //see here
                     quote_asset: "ETH".to_string(),
                     base_asset: "USD".to_string(),
-                    quote_asset_reserve: to_decimals(1_000),
-                    base_asset_reserve: to_decimals(100),
+                    quote_asset_reserve: Uint128::from(1_000_000_000u128),
+                    base_asset_reserve: Uint128::from(100_000_000u128),
                     funding_period: 3_600_u64, // funding period is 1 day to make calcs easier
-                    toll_ratio: Uint128::from(10_000_000u128), // 0.01
-                    spread_ratio: Uint128::from(10_000_000u128), // 0.01
-                    fluctuation_limit_ratio: Uint128::from(10_000_000u128), // 0.01
+                    toll_ratio: Uint128::from(10_000u128), // 0.01
+                    spread_ratio: Uint128::from(10_000u128), // 0.01
+                    fluctuation_limit_ratio: Uint128::from(10_000u128), // 0.01
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
                 },

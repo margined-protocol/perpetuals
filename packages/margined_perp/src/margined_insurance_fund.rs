@@ -12,6 +12,7 @@ pub enum ExecuteMsg {
     UpdateConfig {
         owner: Option<String>,
         beneficiary: Option<String>,
+        engine: Option<String>,
     },
     AddVamm {
         vamm: String,
@@ -40,6 +41,7 @@ pub enum QueryMsg {
 pub struct ConfigResponse {
     pub owner: Addr,
     pub beneficiary: Addr,
+    pub engine: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
