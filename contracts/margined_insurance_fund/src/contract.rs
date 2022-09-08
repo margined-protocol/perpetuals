@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use crate::error::ContractError;
 use crate::{
-    handle::{add_vamm, remove_vamm, shutdown_all_vamm, withdraw},
+    handle::{add_vamm, remove_vamm, shutdown_all_vamm, update_owner, withdraw},
     query::{
         query_all_vamm, query_config, query_is_vamm, query_status_all_vamm, query_vamm_status,
     },
@@ -10,7 +10,6 @@ use crate::{
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
-use cw0::maybe_addr;
 use cw2::set_contract_version;
 use cw_controllers::Admin;
 use margined_perp::margined_insurance_fund::{ExecuteMsg, InstantiateMsg, QueryMsg};
@@ -31,13 +30,13 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    OWNER.set(deps, Some(info.sender))?;
-
     let config = Config {
         beneficiary: deps.api.addr_validate(&msg.beneficiary)?,
     };
 
     store_config(deps.storage, &config)?;
+
+    OWNER.set(deps.branch(), Some(info.sender))?;
 
     Ok(Response::default())
 }
@@ -50,9 +49,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::UpdateOwner { owner } => {
-            OWNER.execute_update_admin(deps, info, maybe_addr(deps.api, owner)?)
-        }
+        ExecuteMsg::UpdateOwner { owner } => update_owner(deps, info, owner),
         ExecuteMsg::AddVamm { vamm } => add_vamm(deps, info, vamm),
         ExecuteMsg::RemoveVamm { vamm } => remove_vamm(deps, info, vamm),
         ExecuteMsg::Withdraw { token, amount } => withdraw(deps, info, token, amount),

@@ -34,6 +34,8 @@ use crate::{
 const CONTRACT_NAME: &str = "crates.io:margined-engine";
 /// Contract version that is used for migration.
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+/// Admin controller for the pauser role
+pub const PAUSER: Admin = Admin::new("pauser");
 
 pub const INCREASE_POSITION_REPLY_ID: u64 = 1;
 pub const DECREASE_POSITION_REPLY_ID: u64 = 2;
@@ -46,8 +48,6 @@ pub const PAY_FUNDING_REPLY_ID: u64 = 8;
 
 pub const TRANSFER_FAILURE_REPLY_ID: u64 = 9;
 
-pub const PAUSER: Admin = Admin::new("pauser");
-
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
@@ -57,9 +57,8 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    PAUSER.set(deps, Some(deps.api.addr_validate(&msg.pauser)?))?;
-
     // validate message addresses
+    let valid_pauser = deps.api.addr_validate(&msg.pauser)?;
     let insurance_fund = deps.api.addr_validate(&msg.insurance_fund)?;
     let fee_pool = deps.api.addr_validate(&msg.fee_pool)?;
 
@@ -104,6 +103,8 @@ pub fn instantiate(
             pause: false,
         },
     )?;
+
+    PAUSER.set(deps, Some(valid_pauser))?;
 
     Ok(Response::default())
 }

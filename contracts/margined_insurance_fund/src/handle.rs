@@ -3,6 +3,7 @@ use cosmwasm_std::{
     StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
+use cw_utils::maybe_addr;
 use margined_common::asset::AssetInfo;
 
 use crate::{
@@ -33,9 +34,22 @@ use crate::{
 //     Ok(Response::default().add_attribute("action", "update_config"))
 // }
 
-pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
+pub fn update_owner(
+    deps: DepsMut,
+    info: MessageInfo,
+    owner: Option<String>,
+) -> StdResult<Response> {
+    // validate the address
+    let valid_owner = maybe_addr(deps.api, owner)?;
 
+    OWNER
+        .execute_update_admin(deps, info, valid_owner)
+        .map_err(|error| StdError::generic_err(format!("{}", error)))?;
+
+    Ok(Response::default().add_attribute("action", "update_config"))
+}
+
+pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Response> {
     // check permission
     if !OWNER.is_admin(deps.as_ref().clone(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
@@ -51,8 +65,6 @@ pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Res
 }
 
 pub fn remove_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-
     // check permission
     if !OWNER.is_admin(deps.as_ref().clone(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
@@ -68,8 +80,6 @@ pub fn remove_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<
 }
 
 pub fn shutdown_all_vamm(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-
     // check permission
     if !OWNER.is_admin(deps.as_ref().clone(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
