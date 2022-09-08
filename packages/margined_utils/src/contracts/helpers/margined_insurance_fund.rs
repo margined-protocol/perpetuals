@@ -34,12 +34,8 @@ impl InsuranceFundController {
     /////////////////////////
 
     #[allow(clippy::too_many_arguments)]
-    pub fn update_config(
-        &self,
-        owner: Option<String>,
-        engine: Option<String>,
-    ) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::UpdateConfig { owner, engine };
+    pub fn update_config(&self, owner: Option<String>) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::UpdateConfig { owner };
         self.call(msg, vec![])
     }
 
