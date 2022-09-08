@@ -35,7 +35,6 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     UpdateConfig {
         owner: Option<String>,
-        pauser: Option<String>,
         insurance_fund: Option<String>,
         fee_pool: Option<String>,
         eligible_collateral: Option<String>,
@@ -116,7 +115,6 @@ pub enum QueryMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: Addr,
-    pub pauser: Addr,
     pub insurance_fund: Addr,
     pub fee_pool: Addr,
     pub eligible_collateral: AssetInfo,

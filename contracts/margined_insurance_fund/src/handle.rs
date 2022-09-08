@@ -6,40 +6,38 @@ use cw20::Cw20ExecuteMsg;
 use margined_common::asset::AssetInfo;
 
 use crate::{
+    contract::OWNER,
     messages::execute_vamm_shutdown,
-    state::{
-        read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, store_config, Config,
-        VAMM_LIMIT,
-    },
+    state::{read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, Config, VAMM_LIMIT},
 };
 
-pub fn update_config(
-    deps: DepsMut,
-    info: MessageInfo,
-    owner: Option<String>,
-) -> StdResult<Response> {
-    let mut config: Config = read_config(deps.storage)?;
+// pub fn update_config(
+//     deps: DepsMut,
+//     info: MessageInfo,
+//     owner: Option<String>,
+// ) -> StdResult<Response> {
+//     let mut config: Config = read_config(deps.storage)?;
 
-    // check permission
-    if info.sender != config.owner {
-        return Err(StdError::generic_err("unauthorized"));
-    }
+//     // check permission
+//     if info.sender != config.owner {
+//         return Err(StdError::generic_err("unauthorized"));
+//     }
 
-    // change owner of insurance fund contract
-    if let Some(owner) = owner {
-        config.owner = deps.api.addr_validate(owner.as_str())?;
-    }
+//     // change owner of insurance fund contract
+//     if let Some(owner) = owner {
+//         config.owner = deps.api.addr_validate(owner.as_str())?;
+//     }
 
-    store_config(deps.storage, &config)?;
+//     store_config(deps.storage, &config)?;
 
-    Ok(Response::default().add_attribute("action", "update_config"))
-}
+//     Ok(Response::default().add_attribute("action", "update_config"))
+// }
 
 pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
 
     // check permission
-    if info.sender != config.owner {
+    if !OWNER.is_admin(deps.as_ref().clone(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -56,7 +54,7 @@ pub fn remove_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<
     let config: Config = read_config(deps.storage)?;
 
     // check permission
-    if info.sender != config.owner {
+    if !OWNER.is_admin(deps.as_ref().clone(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -73,7 +71,7 @@ pub fn shutdown_all_vamm(deps: DepsMut, info: MessageInfo) -> StdResult<Response
     let config: Config = read_config(deps.storage)?;
 
     // check permission
-    if info.sender != config.owner {
+    if !OWNER.is_admin(deps.as_ref().clone(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
     }
 

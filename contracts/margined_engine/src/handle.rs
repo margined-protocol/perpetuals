@@ -7,7 +7,7 @@ use crate::{
     contract::{
         CLOSE_POSITION_REPLY_ID, DECREASE_POSITION_REPLY_ID, INCREASE_POSITION_REPLY_ID,
         LIQUIDATION_REPLY_ID, PARTIAL_CLOSE_POSITION_REPLY_ID, PARTIAL_LIQUIDATION_REPLY_ID,
-        PAY_FUNDING_REPLY_ID, REVERSE_POSITION_REPLY_ID,
+        PAUSER, PAY_FUNDING_REPLY_ID, REVERSE_POSITION_REPLY_ID,
     },
     messages::{execute_transfer_from, withdraw},
     querier::{
@@ -44,7 +44,6 @@ pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,
     owner: Option<String>,
-    pauser: Option<String>,
     insurance_fund: Option<String>,
     fee_pool: Option<String>,
     eligible_collateral: Option<String>,
@@ -63,11 +62,6 @@ pub fn update_config(
     // change owner of engine
     if let Some(owner) = owner {
         config.owner = deps.api.addr_validate(owner.as_str())?;
-    }
-
-    // change pauser role
-    if let Some(pauser) = pauser {
-        config.pauser = deps.api.addr_validate(pauser.as_str())?;
     }
 
     // update insurance fund - note altering insurance fund could lead to vAMMs being unusable maybe make this a migration
@@ -127,11 +121,11 @@ pub fn update_config(
 }
 
 pub fn set_pause(deps: DepsMut, _env: Env, info: MessageInfo, pause: bool) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
 
     // check permission and if state matches
-    if info.sender != config.pauser || state.pause == pause {
+    // note: we could use `assert_admin` instead of `is_admin` except this would throw an `AdminError` and we would have to change the function sig
+    if !PAUSER.is_admin(deps.as_ref().clone(), &info.sender)? || state.pause == pause {
         return Err(StdError::generic_err("unauthorized"));
     }
 

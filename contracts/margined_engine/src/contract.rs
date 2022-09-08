@@ -3,6 +3,7 @@ use cosmwasm_std::{
     StdResult, SubMsgResult, Uint128,
 };
 use cw2::set_contract_version;
+use cw_controllers::Admin;
 use margined_common::validate::{
     validate_decimal_places, validate_eligible_collateral, validate_margin_ratios, validate_ratio,
 };
@@ -45,6 +46,8 @@ pub const PAY_FUNDING_REPLY_ID: u64 = 8;
 
 pub const TRANSFER_FAILURE_REPLY_ID: u64 = 9;
 
+pub const PAUSER: Admin = Admin::new("pauser");
+
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
@@ -54,8 +57,9 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
+    PAUSER.set(deps, Some(deps.api.addr_validate(&msg.pauser)?))?;
+
     // validate message addresses
-    let pauser = deps.api.addr_validate(&msg.pauser)?;
     let insurance_fund = deps.api.addr_validate(&msg.insurance_fund)?;
     let fee_pool = deps.api.addr_validate(&msg.fee_pool)?;
 
@@ -79,7 +83,6 @@ pub fn instantiate(
     // config parameters
     let config = Config {
         owner: info.sender,
-        pauser,
         insurance_fund,
         fee_pool,
         eligible_collateral,
@@ -110,7 +113,6 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
     match msg {
         ExecuteMsg::UpdateConfig {
             owner,
-            pauser,
             insurance_fund,
             fee_pool,
             eligible_collateral,
@@ -122,7 +124,6 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             deps,
             info,
             owner,
-            pauser,
             insurance_fund,
             fee_pool,
             eligible_collateral,

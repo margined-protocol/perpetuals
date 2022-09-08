@@ -19,7 +19,6 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 
     Ok(ConfigResponse {
         owner: config.owner,
-        pauser: config.pauser,
         insurance_fund: config.insurance_fund,
         fee_pool: config.fee_pool,
         eligible_collateral: config.eligible_collateral,

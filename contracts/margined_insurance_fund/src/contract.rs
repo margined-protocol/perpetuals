@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use crate::error::ContractError;
 use crate::{
-    handle::{add_vamm, remove_vamm, shutdown_all_vamm, update_config, withdraw},
+    handle::{add_vamm, remove_vamm, shutdown_all_vamm, withdraw},
     query::{
         query_all_vamm, query_config, query_is_vamm, query_status_all_vamm, query_vamm_status,
     },
@@ -10,13 +10,17 @@ use crate::{
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
+use cw0::maybe_addr;
 use cw2::set_contract_version;
+use cw_controllers::Admin;
 use margined_perp::margined_insurance_fund::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 /// Contract name that is used for migration.
 const CONTRACT_NAME: &str = "crates.io:margined-insurance-fund";
 /// Contract version that is used for migration.
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+/// Owner admin name
+pub const OWNER: Admin = Admin::new("owner");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -27,8 +31,9 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
+    OWNER.set(deps, Some(info.sender))?;
+
     let config = Config {
-        owner: info.sender,
         beneficiary: deps.api.addr_validate(&msg.beneficiary)?,
     };
 
@@ -45,7 +50,9 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::UpdateConfig { owner } => update_config(deps, info, owner),
+        ExecuteMsg::UpdateOwner { owner } => {
+            OWNER.execute_update_admin(deps, info, maybe_addr(deps.api, owner)?)
+        }
         ExecuteMsg::AddVamm { vamm } => add_vamm(deps, info, vamm),
         ExecuteMsg::RemoveVamm { vamm } => remove_vamm(deps, info, vamm),
         ExecuteMsg::Withdraw { token, amount } => withdraw(deps, info, token, amount),
