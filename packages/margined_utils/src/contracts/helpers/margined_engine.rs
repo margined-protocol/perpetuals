@@ -39,7 +39,6 @@ impl EngineController {
         pauser: Option<String>,
         insurance_fund: Option<String>,
         fee_pool: Option<String>,
-        eligible_collateral: Option<String>,
         initial_margin_ratio: Option<Uint128>,
         maintenance_margin_ratio: Option<Uint128>,
         partial_liquidation_ratio: Option<Uint128>,
