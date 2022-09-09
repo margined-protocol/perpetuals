@@ -118,7 +118,7 @@ impl NativeTokenScenario {
                 insurance_fund_id,
                 owner.clone(),
                 &InsuranceFundInstantiateMsg {
-                    beneficiary: engine_addr.to_string(),
+                    engine: engine_addr.to_string(),
                 },
                 &[],
                 "insurance_fund",
@@ -217,10 +217,7 @@ impl NativeTokenScenario {
             .execute_contract(
                 owner.clone(),
                 insurance_fund.addr(),
-                &InsuranceFundExecuteMsg::UpdateConfig {
-                    owner: None,
-                    engine: Some(engine_addr.to_string()),
-                },
+                &InsuranceFundExecuteMsg::UpdateConfig { owner: None },
                 &[],
             )
             .unwrap();
@@ -405,7 +402,7 @@ impl SimpleScenario {
                 insurance_fund_id,
                 owner.clone(),
                 &InsuranceFundInstantiateMsg {
-                    beneficiary: engine.addr().to_string(),
+                    engine: engine.addr().to_string(),
                 },
                 &[],
                 "insurance_fund",
@@ -483,19 +480,6 @@ impl SimpleScenario {
             )
             .unwrap();
         let vamm = VammController(vamm_addr.clone());
-
-        // set margin engine as beneficiary in insurance fund
-        router
-            .execute_contract(
-                owner.clone(),
-                insurance_fund_addr,
-                &InsuranceFundExecuteMsg::UpdateConfig {
-                    owner: None,
-                    engine: Some(engine_addr.to_string()),
-                },
-                &[],
-            )
-            .unwrap();
 
         // set margin engine in vamm
         router
@@ -772,20 +756,6 @@ impl ShutdownScenario {
         let engine_id = router.store_code(contract_engine());
         let pricefeed_id = router.store_code(contract_mock_pricefeed());
 
-        let insurance_fund_addr = router
-            .instantiate_contract(
-                insurance_fund_id,
-                owner.clone(),
-                &InsuranceFundInstantiateMsg {
-                    beneficiary: "owner".to_string(),
-                },
-                &[],
-                "insurance_fund",
-                None,
-            )
-            .unwrap();
-        let insurance_fund = InsuranceFundController(insurance_fund_addr.clone());
-
         // set up margined engine contract
         let engine_addr = router
             .instantiate_contract(
@@ -793,8 +763,8 @@ impl ShutdownScenario {
                 owner.clone(),
                 &InstantiateMsg {
                     pauser: owner.to_string(),
-                    insurance_fund: insurance_fund.addr().to_string(),
-                    fee_pool: insurance_fund.addr().to_string(),
+                    insurance_fund: "insurance_fund".to_string(),
+                    fee_pool: "fee_pool".to_string(),
                     eligible_collateral: "uwasm".to_string(),
                     initial_margin_ratio: Uint128::from(50_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
@@ -807,18 +777,19 @@ impl ShutdownScenario {
             .unwrap();
         let engine = EngineController(engine_addr);
 
-        // set margin engine as beneficiary in insurance fund
-        router
-            .execute_contract(
+        let insurance_fund_addr = router
+            .instantiate_contract(
+                insurance_fund_id,
                 owner.clone(),
-                insurance_fund_addr.clone(),
-                &InsuranceFundExecuteMsg::UpdateConfig {
-                    owner: None,
-                    engine: Some(engine.addr().to_string()),
+                &InsuranceFundInstantiateMsg {
+                    engine: engine.addr().to_string(),
                 },
                 &[],
+                "insurance_fund",
+                None,
             )
             .unwrap();
+        let insurance_fund = InsuranceFundController(insurance_fund_addr.clone());
 
         let pricefeed_addr = router
             .instantiate_contract(

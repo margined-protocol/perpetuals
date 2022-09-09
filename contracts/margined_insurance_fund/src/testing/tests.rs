@@ -7,13 +7,13 @@ use margined_perp::margined_insurance_fund::{
 };
 use margined_utils::scenarios::ShutdownScenario;
 
-const BENEFICIARY: &str = "beneficiary";
+const ENGINE: &str = "engine";
 
 #[test]
 fn test_instantiation() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
-        beneficiary: BENEFICIARY.to_string(),
+        engine: ENGINE.to_string(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -24,8 +24,7 @@ fn test_instantiation() {
     assert_eq!(
         config,
         ConfigResponse {
-            engine: Addr::unchecked("".to_string()),
-            beneficiary: Addr::unchecked(BENEFICIARY.to_string()),
+            engine: Addr::unchecked(ENGINE.to_string()),
             owner: info.sender
         }
     );
@@ -35,7 +34,7 @@ fn test_instantiation() {
 fn test_update_config() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
-        beneficiary: BENEFICIARY.to_string(),
+        engine: ENGINE.to_string(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -43,7 +42,6 @@ fn test_update_config() {
     // Update the config
     let msg = ExecuteMsg::UpdateConfig {
         owner: Some("addr0001".to_string()),
-        engine: Some(BENEFICIARY.to_string()),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -54,8 +52,7 @@ fn test_update_config() {
     assert_eq!(
         config,
         ConfigResponse {
-            beneficiary: Addr::unchecked(BENEFICIARY.to_string()),
-            engine: Addr::unchecked(BENEFICIARY.to_string()),
+            engine: Addr::unchecked(ENGINE.to_string()),
             owner: Addr::unchecked("addr0001".to_string()),
         }
     );
@@ -639,7 +636,7 @@ fn test_not_owner() {
     //instantiate contract here
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
-        beneficiary: BENEFICIARY.to_string(),
+        engine: ENGINE.to_string(),
     };
     let info = mock_info("owner", &[]);
 
@@ -648,7 +645,6 @@ fn test_not_owner() {
     // try to update the config
     let msg = ExecuteMsg::UpdateConfig {
         owner: Some("addr0001".to_string()),
-        engine: None,
     };
 
     let info = mock_info("not_the_owner", &[]);

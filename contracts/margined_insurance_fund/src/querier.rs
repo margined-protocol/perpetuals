@@ -18,11 +18,11 @@ pub fn query_vamm_open(deps: &Deps, vamm_addr: String) -> StdResult<bool> {
 }
 
 // this function queries the vamm with given address and returns the decimals from the config
-pub fn query_vamm_decimals(deps: &Deps, vamm_addr: String) -> StdResult<Uint128> {
+pub fn query_vamm_decimals(deps: &Deps, contract: String) -> StdResult<Uint128> {
     let result = deps
         .querier
         .query::<VammConfigResponse>(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: vamm_addr,
+            contract_addr: contract,
             msg: to_binary(&VammQueryMsg::Config {})?,
         }))?
         .decimals;
@@ -30,11 +30,11 @@ pub fn query_vamm_decimals(deps: &Deps, vamm_addr: String) -> StdResult<Uint128>
 }
 
 // this function queries the engine with given address and returns the decimals from the config
-pub fn query_engine_decimals(deps: &Deps, vamm_addr: String) -> StdResult<Uint128> {
+pub fn query_engine_decimals(deps: &Deps, contract: String) -> StdResult<Uint128> {
     let result = deps
         .querier
         .query::<ConfigResponse>(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: vamm_addr,
+            contract_addr: contract,
             msg: to_binary(&EngineQueryMsg::Config {})?,
         }))?
         .decimals;

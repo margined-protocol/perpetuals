@@ -27,7 +27,6 @@ const CONTRACT_NAME: &str = "crates.io:margined-vamm";
 /// Contract version that is used for migration.
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub const MAX_ORACLE_SPREAD_RATIO: u64 = 100_000_000; // 0.1 i.e. 10%
 pub const ONE_HOUR_IN_SECONDS: u64 = 60 * 60;
 pub const ONE_DAY_IN_SECONDS: u64 = 24 * 60 * 60;
 

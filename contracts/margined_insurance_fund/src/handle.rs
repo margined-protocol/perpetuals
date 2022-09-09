@@ -18,7 +18,6 @@ pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,
     owner: Option<String>,
-    engine: Option<String>,
 ) -> StdResult<Response> {
     let mut config: Config = read_config(deps.storage)?;
 
@@ -30,11 +29,6 @@ pub fn update_config(
     // change owner of insurance fund contract
     if let Some(owner) = owner {
         config.owner = deps.api.addr_validate(owner.as_str())?;
-    }
-
-    // change engine associated with insurance fund contract
-    if let Some(engine) = engine {
-        config.engine = deps.api.addr_validate(engine.as_str())?;
     }
 
     store_config(deps.storage, &config)?;
@@ -117,21 +111,21 @@ pub fn withdraw(
     let config: Config = read_config(deps.storage)?;
 
     // check permission
-    if info.sender != config.beneficiary {
+    if info.sender != config.engine {
         return Err(StdError::generic_err("unauthorized"));
     }
 
     // send tokens if native or cw20
     let msg: CosmosMsg = match token {
         AssetInfo::NativeToken { denom } => CosmosMsg::Bank(BankMsg::Send {
-            to_address: config.beneficiary.to_string(),
+            to_address: config.engine.to_string(),
             amount: vec![Coin { denom, amount }],
         }),
         AssetInfo::Token { contract_addr } => CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: contract_addr.to_string(),
             funds: vec![],
             msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                recipient: config.beneficiary.to_string(),
+                recipient: config.engine.to_string(),
                 amount,
             })?,
         }),
