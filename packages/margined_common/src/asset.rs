@@ -251,3 +251,42 @@ pub fn native_asset_info(denom: String) -> AssetInfo {
 pub fn token_asset_info(contract_addr: Addr) -> AssetInfo {
     AssetInfo::Token { contract_addr }
 }
+
+#[cfg(test)]
+mod test {
+    use super::AssetInfo;
+    use cosmwasm_std::testing::mock_dependencies;
+    use cosmwasm_std::StdError;
+
+    #[test]
+    fn decimal_checks() {
+        let deps = mock_dependencies();
+
+        let utoken = AssetInfo::NativeToken {
+            denom: "uwasm".to_string(),
+        };
+        assert_eq!(utoken.get_decimals(deps.as_ref()).unwrap(), 6u8);
+
+        let ntoken = AssetInfo::NativeToken {
+            denom: "nwasm".to_string(),
+        };
+        assert_eq!(ntoken.get_decimals(deps.as_ref()).unwrap(), 9u8);
+
+        let ptoken = AssetInfo::NativeToken {
+            denom: "pwasm".to_string(),
+        };
+        assert_eq!(ptoken.get_decimals(deps.as_ref()).unwrap(), 12u8);
+
+        let token = AssetInfo::NativeToken {
+            denom: "wasm".to_string(),
+        };
+
+        let err = token.get_decimals(deps.as_ref()).unwrap_err();
+        assert_eq!(
+            StdError::GenericErr {
+                msg: "Native token does not follow prefix standards".to_string()
+            },
+            err
+        );
+    }
+}
