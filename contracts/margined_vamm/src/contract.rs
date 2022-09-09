@@ -4,6 +4,7 @@ use cosmwasm_std::{
     to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
 use cw2::set_contract_version;
+use cw_controllers::Admin;
 use margined_common::{
     integer::Integer,
     validate::{validate_decimal_places, validate_non_fraction, validate_ratio},
@@ -13,11 +14,12 @@ use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::error::ContractError;
 use crate::querier::{query_underlying_price, query_underlying_twap_price};
 use crate::{
-    handle::{set_open, settle_funding, swap_input, swap_output, update_config},
+    handle::{set_open, settle_funding, swap_input, swap_output, update_config, update_owner},
     query::{
         query_calc_fee, query_config, query_input_amount, query_input_price, query_input_twap,
         query_is_over_fluctuation_limit, query_is_over_spread_limit, query_output_amount,
-        query_output_price, query_output_twap, query_spot_price, query_state, query_twap_price,
+        query_output_price, query_output_twap, query_owner, query_spot_price, query_state,
+        query_twap_price,
     },
     state::{store_config, store_reserve_snapshot, store_state, Config, ReserveSnapshot, State},
 };
@@ -26,6 +28,8 @@ use crate::{
 const CONTRACT_NAME: &str = "crates.io:margined-vamm";
 /// Contract version that is used for migration.
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+/// Owner admin
+pub const OWNER: Admin = Admin::new("owner");
 
 pub const MAX_ORACLE_SPREAD_RATIO: u64 = 100_000_000; // 0.1 i.e. 10%
 pub const ONE_HOUR_IN_SECONDS: u64 = 60 * 60;
@@ -48,7 +52,6 @@ pub fn instantiate(
     validate_ratio(msg.fluctuation_limit_ratio, decimals)?;
 
     let mut config = Config {
-        owner: info.sender,
         margin_engine: Addr::unchecked("".to_string()), // default to nothing, must be set
         quote_asset: msg.quote_asset,
         base_asset: msg.base_asset,
@@ -96,6 +99,8 @@ pub fn instantiate(
 
     store_reserve_snapshot(deps.storage, &reserve)?;
 
+    OWNER.set(deps, Some(info.sender))?;
+
     Ok(Response::default())
 }
 
@@ -103,7 +108,6 @@ pub fn instantiate(
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
         ExecuteMsg::UpdateConfig {
-            owner,
             base_asset_holding_cap,
             open_interest_notional_cap,
             toll_ratio,
@@ -115,7 +119,6 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         } => update_config(
             deps,
             info,
-            owner,
             base_asset_holding_cap,
             open_interest_notional_cap,
             toll_ratio,
@@ -125,6 +128,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             pricefeed,
             spot_price_twap_interval,
         ),
+        ExecuteMsg::UpdateOwner { owner } => update_owner(deps, info, owner),
         ExecuteMsg::SwapInput {
             direction,
             quote_asset_amount,
@@ -161,6 +165,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
+        QueryMsg::GetOwner {} => to_binary(&query_owner(deps)?),
         QueryMsg::InputPrice { direction, amount } => {
             to_binary(&query_input_price(deps, direction, amount)?)
         }

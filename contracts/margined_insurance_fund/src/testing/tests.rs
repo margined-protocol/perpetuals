@@ -54,6 +54,34 @@ fn test_update_config() {
         }
     );
 }
+
+#[test]
+fn test_update_owner() {
+    let mut deps = mock_dependencies();
+    let msg = InstantiateMsg {
+        beneficiary: BENEFICIARY.to_string(),
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // Update the config
+    let msg = ExecuteMsg::UpdateOwner {
+        owner: Some("addr0001".to_string()),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+    let config: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        config,
+        ConfigResponse {
+            beneficiary: Addr::unchecked(BENEFICIARY.to_string()),
+        }
+    );
+}
+
 #[test]
 fn test_query_vamm() {
     let ShutdownScenario {

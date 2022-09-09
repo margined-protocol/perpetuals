@@ -2,11 +2,12 @@ use cosmwasm_std::{
     Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, Uint128,
 };
 
+use cw_utils::maybe_addr;
 use margined_common::{integer::Integer, validate::validate_ratio};
 use margined_perp::margined_vamm::Direction;
 
 use crate::{
-    contract::{ONE_DAY_IN_SECONDS, ONE_HOUR_IN_SECONDS},
+    contract::{ONE_DAY_IN_SECONDS, ONE_HOUR_IN_SECONDS, OWNER},
     querier::query_underlying_twap_price,
     query::query_twap_price,
     state::{read_config, read_state, store_config, store_state, Config, State},
@@ -20,7 +21,6 @@ use crate::{
 pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,
-    owner: Option<String>,
     base_asset_holding_cap: Option<Uint128>,
     open_interest_notional_cap: Option<Uint128>,
     toll_ratio: Option<Uint128>,
@@ -33,13 +33,8 @@ pub fn update_config(
     let mut config: Config = read_config(deps.storage)?;
 
     // check permission
-    if info.sender != config.owner {
+    if !OWNER.is_admin(deps.as_ref().clone(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
-    }
-
-    // change owner of amm
-    if let Some(owner) = owner {
-        config.owner = deps.api.addr_validate(owner.as_str())?;
     }
 
     // change base asset holding cap
@@ -90,12 +85,27 @@ pub fn update_config(
     Ok(Response::default().add_attribute("action", "update_config"))
 }
 
+pub fn update_owner(
+    deps: DepsMut,
+    info: MessageInfo,
+    owner: Option<String>,
+) -> StdResult<Response> {
+    // validate the address
+    let valid_owner = maybe_addr(deps.api, owner)?;
+
+    OWNER
+        .execute_update_admin::<Response, _>(deps, info, valid_owner)
+        .map_err(|error| StdError::generic_err(format!("{}", error)))?;
+
+    Ok(Response::default().add_attribute("action", "update_owner"))
+}
+
 pub fn set_open(deps: DepsMut, env: Env, info: MessageInfo, open: bool) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
 
     // check permission and if state matches
-    if info.sender != config.owner || state.open == open {
+    if !OWNER.is_admin(deps.as_ref().clone(), &info.sender)? || state.open == open {
         return Err(StdError::generic_err("unauthorized"));
     }
 

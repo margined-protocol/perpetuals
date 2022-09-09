@@ -13,11 +13,11 @@ use crate::error::ContractError;
 use crate::{
     handle::{
         close_position, deposit_margin, liquidate, open_position, pay_funding, set_pause,
-        update_config, withdraw_margin,
+        update_config, update_pauser, withdraw_margin,
     },
     query::{
         query_all_positions, query_config, query_cumulative_premium_fraction,
-        query_free_collateral, query_margin_ratio, query_position,
+        query_free_collateral, query_margin_ratio, query_pauser, query_position,
         query_position_notional_unrealized_pnl, query_state,
         query_trader_balance_with_funding_payment, query_trader_position_with_funding_payment,
     },
@@ -133,6 +133,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             partial_liquidation_ratio,
             liquidation_fee,
         ),
+        ExecuteMsg::UpdatePauser { pauser } => update_pauser(deps, info, pauser),
         ExecuteMsg::OpenPosition {
             vamm,
             side,
@@ -172,6 +173,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
+        QueryMsg::GetPauser {} => to_binary(&query_pauser(deps)?),
         QueryMsg::AllPositions { trader } => to_binary(&query_all_positions(deps, trader)?),
         QueryMsg::Position { vamm, trader } => to_binary(&query_position(deps, vamm, trader)?),
         QueryMsg::MarginRatio { vamm, trader } => {

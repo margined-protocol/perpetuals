@@ -19,7 +19,7 @@ use margined_perp::margined_insurance_fund::{ExecuteMsg, InstantiateMsg, QueryMs
 const CONTRACT_NAME: &str = "crates.io:margined-insurance-fund";
 /// Contract version that is used for migration.
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-/// Owner admin name
+/// Owner admin
 pub const OWNER: Admin = Admin::new("owner");
 
 #[cfg_attr(not(feature = "library"), entry_point)]

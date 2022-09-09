@@ -28,11 +28,9 @@ fn test_instantiation() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
-    let info = mock_info("addr0000", &[]);
     assert_eq!(
         config,
         ConfigResponse {
-            owner: info.sender,
             base_asset_holding_cap: Uint128::zero(),
             open_interest_notional_cap: Uint128::zero(),
             quote_asset: "ETH".to_string(),
@@ -157,7 +155,6 @@ fn test_update_config() {
 
     // Update the config
     let msg = ExecuteMsg::UpdateConfig {
-        owner: None,
         base_asset_holding_cap: None,
         open_interest_notional_cap: None,
         toll_ratio: None,
@@ -176,7 +173,6 @@ fn test_update_config() {
     assert_eq!(
         config,
         ConfigResponse {
-            owner: Addr::unchecked("addr0000".to_string()),
             base_asset_holding_cap: Uint128::zero(),
             open_interest_notional_cap: Uint128::zero(),
             quote_asset: "ETH".to_string(),
@@ -213,7 +209,6 @@ fn test_update_config_fail() {
 
     // Update the config
     let msg = ExecuteMsg::UpdateConfig {
-        owner: None,
         base_asset_holding_cap: None,
         open_interest_notional_cap: None,
         toll_ratio: None,

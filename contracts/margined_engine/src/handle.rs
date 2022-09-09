@@ -2,6 +2,7 @@ use cosmwasm_std::{
     to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError, StdResult,
     SubMsg, Uint128, WasmMsg,
 };
+use cw_utils::maybe_addr;
 
 use crate::{
     contract::{
@@ -118,6 +119,21 @@ pub fn update_config(
     store_config(deps.storage, &config)?;
 
     Ok(Response::default().add_attribute("action", "update_config"))
+}
+
+pub fn update_pauser(
+    deps: DepsMut,
+    info: MessageInfo,
+    pauser: Option<String>,
+) -> StdResult<Response> {
+    // validate the address
+    let valid_pauser = maybe_addr(deps.api, pauser)?;
+
+    PAUSER
+        .execute_update_admin::<Response, _>(deps, info, valid_pauser)
+        .map_err(|error| StdError::generic_err(format!("{}", error)))?;
+
+    Ok(Response::default().add_attribute("action", "update_pauser"))
 }
 
 pub fn set_pause(deps: DepsMut, _env: Env, info: MessageInfo, pause: bool) -> StdResult<Response> {

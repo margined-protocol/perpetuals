@@ -43,6 +43,9 @@ pub enum ExecuteMsg {
         partial_liquidation_ratio: Option<Uint128>,
         liquidation_fee: Option<Uint128>,
     },
+    UpdatePauser {
+        pauser: Option<String>,
+    },
     OpenPosition {
         vamm: String,
         side: Side,
@@ -80,6 +83,7 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     Config {},
     State {},
+    GetPauser {},
     Position {
         vamm: String,
         trader: String,
@@ -129,6 +133,11 @@ pub struct ConfigResponse {
 pub struct StateResponse {
     pub open_interest_notional: Uint128,
     pub bad_debt: Uint128,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+pub struct PauserResponse {
+    pub pauser: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
