@@ -187,8 +187,17 @@ impl AssetInfo {
     /// use the `utoken` convention, will fail if native token does not follow this
     pub fn get_decimals(&self, deps: Deps) -> StdResult<u8> {
         match &self {
-            // Note: we are assuming all natives use the `utoken` convention this may not be true
-            AssetInfo::NativeToken { .. } => Ok(6u8),
+            AssetInfo::NativeToken { denom } => {
+                // prefix must follow -> https://github.com/osmosis-labs/osmosis/pull/2223
+                match denom.chars().next().unwrap() {
+                    'u' => Ok(6u8),  // micro
+                    'n' => Ok(9u8),  // nano
+                    'p' => Ok(12u8), // pico
+                    _ => Err(StdError::generic_err(
+                        "Native token does not follow prefix standards",
+                    )),
+                }
+            }
             AssetInfo::Token { contract_addr } => {
                 // query the CW20 contract for its decimals
                 let response: TokenInfoResponse = deps
