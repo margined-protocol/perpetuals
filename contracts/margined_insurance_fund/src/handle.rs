@@ -29,7 +29,7 @@ pub fn update_owner(
 
 pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Response> {
     // check permission
-    if !OWNER.is_admin(deps.as_ref().clone(), &info.sender)? {
+    if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -44,7 +44,7 @@ pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Res
 
 pub fn remove_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Response> {
     // check permission
-    if !OWNER.is_admin(deps.as_ref().clone(), &info.sender)? {
+    if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -59,7 +59,7 @@ pub fn remove_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<
 
 pub fn shutdown_all_vamm(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
     // check permission
-    if !OWNER.is_admin(deps.as_ref().clone(), &info.sender)? {
+    if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
     }
 

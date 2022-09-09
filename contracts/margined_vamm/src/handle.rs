@@ -33,7 +33,7 @@ pub fn update_config(
     let mut config: Config = read_config(deps.storage)?;
 
     // check permission
-    if !OWNER.is_admin(deps.as_ref().clone(), &info.sender)? {
+    if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -105,7 +105,7 @@ pub fn set_open(deps: DepsMut, env: Env, info: MessageInfo, open: bool) -> StdRe
     let mut state: State = read_state(deps.storage)?;
 
     // check permission and if state matches
-    if !OWNER.is_admin(deps.as_ref().clone(), &info.sender)? || state.open == open {
+    if !OWNER.is_admin(deps.as_ref(), &info.sender)? || state.open == open {
         return Err(StdError::generic_err("unauthorized"));
     }
 

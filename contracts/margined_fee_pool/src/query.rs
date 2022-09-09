@@ -22,7 +22,7 @@ pub fn query_owner(deps: Deps) -> StdResult<OwnerResponse> {
     if let Some(owner) = OWNER.get(deps)? {
         Ok(OwnerResponse { owner })
     } else {
-        return Err(StdError::generic_err("No owner set"));
+        Err(StdError::generic_err("No owner set"))
     }
 }
 

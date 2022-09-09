@@ -27,7 +27,7 @@ pub fn append_price(
     timestamp: u64,
 ) -> Result<Response, ContractError> {
     // check permission
-    OWNER.assert_admin(deps.as_ref().clone(), &info.sender)?;
+    OWNER.assert_admin(deps.as_ref(), &info.sender)?;
 
     store_price_data(deps.storage, key, price, timestamp)?;
 
@@ -45,7 +45,7 @@ pub fn append_multiple_price(
     timestamps: Vec<u64>,
 ) -> Result<Response, ContractError> {
     // check permission
-    OWNER.assert_admin(deps.as_ref().clone(), &info.sender)?;
+    OWNER.assert_admin(deps.as_ref(), &info.sender)?;
 
     // This throws if the prices and timestamps are not the same length
     if prices.len() != timestamps.len() {

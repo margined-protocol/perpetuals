@@ -26,7 +26,7 @@ pub fn update_owner(
 
 pub fn add_token(deps: DepsMut, info: MessageInfo, token: String) -> StdResult<Response> {
     // check permission
-    if !OWNER.is_admin(deps.as_ref().clone(), &info.sender)? {
+    if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -41,7 +41,7 @@ pub fn add_token(deps: DepsMut, info: MessageInfo, token: String) -> StdResult<R
 
 pub fn remove_token(deps: DepsMut, info: MessageInfo, token: String) -> StdResult<Response> {
     // check permission
-    if !OWNER.is_admin(deps.as_ref().clone(), &info.sender)? {
+    if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -63,7 +63,7 @@ pub fn send_token(
     recipient: String,
 ) -> StdResult<Response> {
     // check permissions to send the message
-    if !OWNER.is_admin(deps.clone(), &info.sender)? {
+    if !OWNER.is_admin(deps, &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
     }
 

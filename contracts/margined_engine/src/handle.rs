@@ -141,7 +141,7 @@ pub fn set_pause(deps: DepsMut, _env: Env, info: MessageInfo, pause: bool) -> St
 
     // check permission and if state matches
     // note: we could use `assert_admin` instead of `is_admin` except this would throw an `AdminError` and we would have to change the function sig
-    if !PAUSER.is_admin(deps.as_ref().clone(), &info.sender)? || state.pause == pause {
+    if !PAUSER.is_admin(deps.as_ref(), &info.sender)? || state.pause == pause {
         return Err(StdError::generic_err("unauthorized"));
     }
 

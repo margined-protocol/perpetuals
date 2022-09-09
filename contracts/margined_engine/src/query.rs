@@ -47,7 +47,7 @@ pub fn query_pauser(deps: Deps) -> StdResult<PauserResponse> {
     if let Some(pauser) = PAUSER.get(deps)? {
         Ok(PauserResponse { pauser })
     } else {
-        return Err(StdError::generic_err("No pauser set"));
+        Err(StdError::generic_err("No pauser set"))
     }
 }
 
