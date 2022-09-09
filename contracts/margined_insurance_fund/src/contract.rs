@@ -29,7 +29,7 @@ pub fn instantiate(
 
     let config = Config {
         owner: info.sender,
-        beneficiary: deps.api.addr_validate(&msg.beneficiary)?,
+        engine: deps.api.addr_validate(&msg.engine)?,
     };
 
     store_config(deps.storage, &config)?;

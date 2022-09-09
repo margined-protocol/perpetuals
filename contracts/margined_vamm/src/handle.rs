@@ -109,7 +109,7 @@ pub fn set_open(deps: DepsMut, env: Env, info: MessageInfo, open: bool) -> StdRe
 
     store_state(deps.storage, &state)?;
 
-    Ok(Response::default().add_attribute("action", "set_open"))
+    Ok(Response::new().add_attribute("action", "set_open"))
 }
 
 // Function should only be called by the margin engine

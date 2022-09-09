@@ -17,7 +17,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 
     Ok(ConfigResponse {
         owner: config.owner,
-        beneficiary: config.beneficiary,
+        engine: config.engine,
     })
 }
 
