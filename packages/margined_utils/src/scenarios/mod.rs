@@ -933,7 +933,7 @@ impl ShutdownScenario {
                     margin_engine: Some(owner.to_string()),
                 },
                 &[],
-                "vamm4",
+                "vamm5",
                 None,
             )
             .unwrap();
