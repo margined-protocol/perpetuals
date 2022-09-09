@@ -98,6 +98,7 @@ pub fn increase_position_reply(
     let mut msgs: Vec<SubMsg> = vec![];
 
     // create transfer messages depending on PnL
+    #[allow(clippy::comparison_chain)]
     if swap.margin_to_vault < Integer::zero() {
         msgs.append(
             &mut withdraw(
