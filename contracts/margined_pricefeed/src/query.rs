@@ -1,15 +1,23 @@
 use cosmwasm_std::{Deps, Env, StdError, StdResult, Uint128};
-use margined_perp::margined_pricefeed::ConfigResponse;
+use margined_perp::margined_pricefeed::{ConfigResponse, OwnerResponse};
 
-use crate::state::{read_config, read_price_data, Config, PriceData};
+use crate::{
+    contract::OWNER,
+    state::{read_price_data, PriceData},
+};
 
 /// Queries contract Config
-pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
-    let config: Config = read_config(deps.storage)?;
+pub fn query_config(_deps: Deps) -> StdResult<ConfigResponse> {
+    Ok(ConfigResponse {})
+}
 
-    Ok(ConfigResponse {
-        owner: config.owner,
-    })
+/// Queries contract owner from the admin
+pub fn query_owner(deps: Deps) -> StdResult<OwnerResponse> {
+    if let Some(owner) = OWNER.get(deps)? {
+        Ok(OwnerResponse { owner })
+    } else {
+        return Err(StdError::generic_err("No owner set"));
+    }
 }
 
 /// Queries latest price for pair stored with key
