@@ -29,6 +29,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         fluctuation_limit_ratio: config.fluctuation_limit_ratio,
         decimals: config.decimals,
         margin_engine: config.margin_engine,
+        insurance_fund: config.insurance_fund,
         pricefeed: config.pricefeed,
         funding_period: config.funding_period,
     })

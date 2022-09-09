@@ -184,6 +184,7 @@ impl NativeTokenScenario {
                     fluctuation_limit_ratio: Uint128::zero(),
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: None,
+                    insurance_fund: Some(insurance_fund.addr().to_string()),
                 },
                 &[],
                 "vamm",
@@ -205,6 +206,7 @@ impl NativeTokenScenario {
                     spread_ratio: None,
                     fluctuation_limit_ratio: None,
                     margin_engine: Some(engine_addr.to_string()),
+                    insurance_fund: None,
                     pricefeed: None,
                     spot_price_twap_interval: None,
                 },
@@ -473,6 +475,7 @@ impl SimpleScenario {
                     fluctuation_limit_ratio: Uint128::zero(),
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: None,
+                    insurance_fund: Some(insurance_fund_addr.to_string()),
                 },
                 &[],
                 "vamm",
@@ -494,6 +497,7 @@ impl SimpleScenario {
                     spread_ratio: None,
                     fluctuation_limit_ratio: None,
                     margin_engine: Some(engine_addr.to_string()),
+                    insurance_fund: None,
                     pricefeed: None,
                     spot_price_twap_interval: None,
                 },
@@ -703,6 +707,7 @@ impl VammScenario {
                     fluctuation_limit_ratio: Uint128::from(10_000_000u128), // 0.01
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
+                    insurance_fund: Some("insurance_fund".to_string()),
                 },
                 &[],
                 "vamm",
@@ -821,6 +826,7 @@ impl ShutdownScenario {
                     fluctuation_limit_ratio: Uint128::from(10_000u128), // 0.01
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
+                    insurance_fund: Some(insurance_fund_addr.to_string()),
                 },
                 &[],
                 "vamm1",
@@ -848,6 +854,7 @@ impl ShutdownScenario {
                     fluctuation_limit_ratio: Uint128::from(10_000u128), // 0.01
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
+                    insurance_fund: Some(insurance_fund_addr.to_string()),
                 },
                 &[],
                 "vamm2",
@@ -875,6 +882,7 @@ impl ShutdownScenario {
                     fluctuation_limit_ratio: Uint128::from(10_000u128), // 0.01
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
+                    insurance_fund: Some(insurance_fund_addr.to_string()),
                 },
                 &[],
                 "vamm3",
@@ -929,6 +937,7 @@ impl ShutdownScenario {
                     fluctuation_limit_ratio: Uint128::from(10_000u128), // 0.01
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
+                    insurance_fund: Some(insurance_fund_addr.to_string()),
                 },
                 &[],
                 "vamm4",

@@ -27,6 +27,7 @@ pub fn update_config(
     spread_ratio: Option<Uint128>,
     fluctuation_limit_ratio: Option<Uint128>,
     margin_engine: Option<String>,
+    insurance_fund: Option<String>,
     pricefeed: Option<String>,
     spot_price_twap_interval: Option<u64>,
 ) -> StdResult<Response> {
@@ -57,6 +58,10 @@ pub fn update_config(
         config.margin_engine = deps.api.addr_validate(margin_engine.as_str())?;
     }
 
+    // set and update insurance fund
+    if let Some(insurance_fund) = insurance_fund {
+        config.insurance_fund = deps.api.addr_validate(insurance_fund.as_str())?;
+    }
     // change toll ratio
     if let Some(toll_ratio) = toll_ratio {
         validate_ratio(toll_ratio, config.decimals)?;
@@ -95,7 +100,7 @@ pub fn set_open(deps: DepsMut, env: Env, info: MessageInfo, open: bool) -> StdRe
     let mut state: State = read_state(deps.storage)?;
 
     // check permission and if state matches
-    if info.sender != config.owner || state.open == open {
+    if (info.sender != config.owner && info.sender != config.insurance_fund) || state.open == open {
         return Err(StdError::generic_err("unauthorized"));
     }
 
