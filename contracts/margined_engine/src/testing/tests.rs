@@ -31,7 +31,6 @@ fn test_instantiation() {
         config,
         ConfigResponse {
             owner: info.sender,
-            pauser: Addr::unchecked(OWNER.to_string()),
             insurance_fund: Addr::unchecked(INSURANCE_FUND.to_string()),
             fee_pool: Addr::unchecked(FEE_POOL.to_string()),
             eligible_collateral: AssetInfo::NativeToken {
@@ -64,7 +63,6 @@ fn test_update_config() {
     // Update the config
     let msg = ExecuteMsg::UpdateConfig {
         owner: Some("addr0001".to_string()),
-        pauser: None,
         insurance_fund: None,
         fee_pool: None,
         eligible_collateral: None,
@@ -83,7 +81,6 @@ fn test_update_config() {
         config,
         ConfigResponse {
             owner: Addr::unchecked("addr0001".to_string()),
-            pauser: Addr::unchecked(OWNER.to_string()),
             insurance_fund: Addr::unchecked(INSURANCE_FUND.to_string()),
             fee_pool: Addr::unchecked(FEE_POOL.to_string()),
             eligible_collateral: AssetInfo::NativeToken {
@@ -100,7 +97,6 @@ fn test_update_config() {
     // Update should fail
     let msg = ExecuteMsg::UpdateConfig {
         owner: Some(OWNER.to_string()),
-        pauser: None,
         insurance_fund: None,
         fee_pool: None,
         eligible_collateral: None,
@@ -117,7 +113,6 @@ fn test_update_config() {
     // Update should fail
     let msg = ExecuteMsg::UpdateConfig {
         owner: None,
-        pauser: None,
         insurance_fund: None,
         fee_pool: None,
         eligible_collateral: None,
@@ -131,3 +126,5 @@ fn test_update_config() {
     let result = execute(deps.as_mut(), mock_env(), info, msg);
     assert!(result.is_err());
 }
+
+//TODO add test to update owner

@@ -20,12 +20,10 @@ fn test_instantiation() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
-    let info = mock_info("addr0000", &[]);
     assert_eq!(
         config,
         ConfigResponse {
             beneficiary: Addr::unchecked(BENEFICIARY.to_string()),
-            owner: info.sender
         }
     );
 }
@@ -40,7 +38,7 @@ fn test_update_config() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     // Update the config
-    let msg = ExecuteMsg::UpdateConfig {
+    let msg = ExecuteMsg::UpdateOwner {
         owner: Some("addr0001".to_string()),
     };
 
@@ -53,8 +51,6 @@ fn test_update_config() {
         config,
         ConfigResponse {
             beneficiary: Addr::unchecked(BENEFICIARY.to_string()),
-
-            owner: Addr::unchecked("addr0001".to_string()),
         }
     );
 }
@@ -643,7 +639,7 @@ fn test_not_owner() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     // try to update the config
-    let msg = ExecuteMsg::UpdateConfig {
+    let msg = ExecuteMsg::UpdateOwner {
         owner: Some("addr0001".to_string()),
     };
 
@@ -651,7 +647,7 @@ fn test_not_owner() {
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
-    assert_eq!(res.to_string(), "Generic error: unauthorized");
+    assert_eq!(res.to_string(), "Generic error: Caller is not admin");
 
     // try to add a vAMM
     let addr1 = "addr0001".to_string();

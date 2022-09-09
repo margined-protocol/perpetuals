@@ -139,7 +139,6 @@ impl NativeTokenScenario {
                 engine_addr.clone(),
                 &ExecuteMsg::UpdateConfig {
                     owner: None,
-                    pauser: None,
                     insurance_fund: Some(insurance_fund.addr().to_string()),
                     fee_pool: None,
                     eligible_collateral: None,
@@ -406,7 +405,6 @@ impl SimpleScenario {
                 engine.addr(),
                 &ExecuteMsg::UpdateConfig {
                     owner: None,
-                    pauser: None,
                     insurance_fund: Some(insurance_fund.addr().to_string()),
                     fee_pool: None,
                     eligible_collateral: None,

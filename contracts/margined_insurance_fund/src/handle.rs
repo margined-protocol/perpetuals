@@ -21,10 +21,10 @@ pub fn update_owner(
     let valid_owner = maybe_addr(deps.api, owner)?;
 
     OWNER
-        .execute_update_admin(deps, info, valid_owner)
+        .execute_update_admin::<Response, _>(deps, info, valid_owner)
         .map_err(|error| StdError::generic_err(format!("{}", error)))?;
 
-    Ok(Response::default().add_attribute("action", "update_config"))
+    Ok(Response::default().add_attribute("action", "update_owner"))
 }
 
 pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Response> {

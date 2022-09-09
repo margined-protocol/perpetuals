@@ -3,7 +3,8 @@ use crate::error::ContractError;
 use crate::{
     handle::{add_vamm, remove_vamm, shutdown_all_vamm, update_owner, withdraw},
     query::{
-        query_all_vamm, query_config, query_is_vamm, query_status_all_vamm, query_vamm_status,
+        query_all_vamm, query_config, query_is_vamm, query_owner, query_status_all_vamm,
+        query_vamm_status,
     },
     state::{store_config, Config},
 };
@@ -36,7 +37,7 @@ pub fn instantiate(
 
     store_config(deps.storage, &config)?;
 
-    OWNER.set(deps.branch(), Some(info.sender))?;
+    OWNER.set(deps, Some(info.sender))?;
 
     Ok(Response::default())
 }
@@ -61,6 +62,7 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
+        QueryMsg::GetOwner {} => to_binary(&query_owner(deps)?),
         QueryMsg::IsVamm { vamm } => to_binary(&query_is_vamm(deps, vamm)?),
         QueryMsg::GetAllVamm { limit } => to_binary(&query_all_vamm(deps, limit)?),
         QueryMsg::GetVammStatus { vamm } => to_binary(&query_vamm_status(deps, vamm)?),
