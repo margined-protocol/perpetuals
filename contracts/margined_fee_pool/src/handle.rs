@@ -1,42 +1,32 @@
 use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128};
+use cw_utils::maybe_addr;
 use margined_common::validate::validate_eligible_collateral as validate_funds;
 use margined_perp::querier::query_token_balance;
 
 use crate::{
+    contract::OWNER,
     messages::execute_transfer,
-    state::{
-        is_token, read_config, remove_token as remove_token_from_list, save_token, store_config,
-        Config,
-    },
+    state::{is_token, remove_token as remove_token_from_list, save_token},
 };
 
-pub fn update_config(
+pub fn update_owner(
     deps: DepsMut,
     info: MessageInfo,
     owner: Option<String>,
 ) -> StdResult<Response> {
-    let mut config: Config = read_config(deps.storage)?;
+    // validate the address
+    let valid_owner = maybe_addr(deps.api, owner)?;
 
-    // check permission
-    if info.sender != config.owner {
-        return Err(StdError::generic_err("unauthorized"));
-    }
+    OWNER
+        .execute_update_admin::<Response, _>(deps, info, valid_owner)
+        .map_err(|error| StdError::generic_err(format!("{}", error)))?;
 
-    // change owner of fee pool contract
-    if let Some(owner) = owner {
-        config.owner = deps.api.addr_validate(owner.as_str())?;
-    }
-
-    store_config(deps.storage, &config)?;
-
-    Ok(Response::default())
+    Ok(Response::default().add_attribute("action", "update_owner"))
 }
 
 pub fn add_token(deps: DepsMut, info: MessageInfo, token: String) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-
     // check permission
-    if info.sender != config.owner {
+    if !OWNER.is_admin(deps.as_ref().clone(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -50,10 +40,8 @@ pub fn add_token(deps: DepsMut, info: MessageInfo, token: String) -> StdResult<R
 }
 
 pub fn remove_token(deps: DepsMut, info: MessageInfo, token: String) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-
     // check permission
-    if info.sender != config.owner {
+    if !OWNER.is_admin(deps.as_ref().clone(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -74,10 +62,8 @@ pub fn send_token(
     amount: Uint128,
     recipient: String,
 ) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-
     // check permissions to send the message
-    if info.sender != config.owner {
+    if !OWNER.is_admin(deps.clone(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
     }
 

@@ -7,8 +7,8 @@ use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
 use margined_common::asset::AssetInfo;
 use margined_perp::margined_fee_pool::{
-    AllTokenResponse, ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, TokenLengthResponse,
-    TokenResponse,
+    AllTokenResponse, ConfigResponse, ExecuteMsg, InstantiateMsg, OwnerResponse, QueryMsg,
+    TokenLengthResponse, TokenResponse,
 };
 use margined_utils::scenarios::{NativeTokenScenario, SimpleScenario};
 
@@ -22,12 +22,11 @@ fn test_instantiation() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
-    let info = mock_info("addr0000", &[]);
-    assert_eq!(config, ConfigResponse { owner: info.sender });
+    assert_eq!(config, ConfigResponse {});
 }
 
 #[test]
-fn test_update_config() {
+fn test_update_owner() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {};
     let info = mock_info("addr0000", &[]);
@@ -35,16 +34,16 @@ fn test_update_config() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     // Update the config
-    let msg = ExecuteMsg::UpdateConfig {
+    let msg = ExecuteMsg::UpdateOwner {
         owner: Some("addr0001".to_string()),
     };
 
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config: ConfigResponse = from_binary(&res).unwrap();
-    let owner = config.owner;
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetOwner {}).unwrap();
+    let resp: OwnerResponse = from_binary(&res).unwrap();
+    let owner = resp.owner;
 
     assert_eq!(owner, Addr::unchecked("addr0001".to_string()),);
 }
@@ -854,14 +853,14 @@ fn test_not_owner() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     // try to update the config
-    let msg = ExecuteMsg::UpdateConfig {
+    let msg = ExecuteMsg::UpdateOwner {
         owner: Some("addr0001".to_string()),
     };
     let info = mock_info("not_the_owner", &[]);
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
-    assert_eq!(res.to_string(), "Generic error: unauthorized");
+    assert_eq!(res.to_string(), "Generic error: Caller is not admin");
 
     // try to add a token
     let info = mock_info("not_the_owner", &[]);
