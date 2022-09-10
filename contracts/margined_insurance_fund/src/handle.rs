@@ -3,9 +3,11 @@ use cosmwasm_std::{
     StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
+use cw_utils::maybe_addr;
 use margined_common::asset::AssetInfo;
 
 use crate::{
+    contract::OWNER,
     messages::execute_vamm_shutdown,
     querier::{query_engine_decimals, query_vamm_decimals},
     state::{
@@ -14,33 +16,24 @@ use crate::{
     },
 };
 
-pub fn update_config(
+pub fn update_owner(
     deps: DepsMut,
     info: MessageInfo,
     owner: Option<String>,
 ) -> StdResult<Response> {
-    let mut config: Config = read_config(deps.storage)?;
+    // validate the address
+    let valid_owner = maybe_addr(deps.api, owner)?;
 
-    // check permission
-    if info.sender != config.owner {
-        return Err(StdError::generic_err("unauthorized"));
-    }
+    OWNER
+        .execute_update_admin::<Response, _>(deps, info, valid_owner)
+        .map_err(|error| StdError::generic_err(format!("{}", error)))?;
 
-    // change owner of insurance fund contract
-    if let Some(owner) = owner {
-        config.owner = deps.api.addr_validate(owner.as_str())?;
-    }
-
-    store_config(deps.storage, &config)?;
-
-    Ok(Response::default().add_attribute("action", "update_config"))
+    Ok(Response::default().add_attribute("action", "update_owner"))
 }
 
 pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-
     // check permission
-    if info.sender != config.owner {
+    if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -65,10 +58,8 @@ pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Res
 }
 
 pub fn remove_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-
     // check permission
-    if info.sender != config.owner {
+    if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -81,11 +72,10 @@ pub fn remove_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<
     Ok(Response::default())
 }
 
-pub fn shutdown_all_vamm(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-
+pub fn shutdown_all_vamm(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
     // check permission
-    if info.sender != config.owner && info.sender != env.contract.address {
+    if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
+
         return Err(StdError::generic_err("unauthorized"));
     }
 

@@ -141,7 +141,6 @@ impl NativeTokenScenario {
                 engine_addr.clone(),
                 &ExecuteMsg::UpdateConfig {
                     owner: None,
-                    pauser: None,
                     insurance_fund: Some(insurance_fund.addr().to_string()),
                     fee_pool: None,
                     initial_margin_ratio: None,
@@ -198,7 +197,6 @@ impl NativeTokenScenario {
                 owner.clone(),
                 vamm_addr,
                 &VammExecuteMsg::UpdateConfig {
-                    owner: None,
                     base_asset_holding_cap: None,
                     open_interest_notional_cap: None,
                     toll_ratio: None,
@@ -419,7 +417,6 @@ impl SimpleScenario {
                 engine.addr(),
                 &ExecuteMsg::UpdateConfig {
                     owner: None,
-                    pauser: None,
                     insurance_fund: Some(insurance_fund.addr().to_string()),
                     fee_pool: None,
                     initial_margin_ratio: None,
@@ -488,7 +485,6 @@ impl SimpleScenario {
                 owner.clone(),
                 vamm_addr,
                 &VammExecuteMsg::UpdateConfig {
-                    owner: None,
                     base_asset_holding_cap: None,
                     open_interest_notional_cap: None,
                     toll_ratio: None,

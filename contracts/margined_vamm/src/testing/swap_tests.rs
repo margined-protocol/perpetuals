@@ -3,7 +3,7 @@ use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_vamm::{
-    ConfigResponse, Direction, ExecuteMsg, InstantiateMsg, QueryMsg, StateResponse,
+    ConfigResponse, Direction, ExecuteMsg, InstantiateMsg, OwnerResponse, QueryMsg, StateResponse,
 };
 use margined_utils::scenarios::{parse_event, to_decimals, DECIMAL_MULTIPLIER};
 
@@ -29,11 +29,9 @@ fn test_instantiation() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
-    let info = mock_info("addr0000", &[]);
     assert_eq!(
         config,
         ConfigResponse {
-            owner: info.sender,
             base_asset_holding_cap: Uint128::zero(),
             open_interest_notional_cap: Uint128::zero(),
             quote_asset: "ETH".to_string(),
@@ -62,6 +60,50 @@ fn test_instantiation() {
             next_funding_time: 0u64,
         }
     );
+}
+
+#[test]
+fn test_update_owner() {
+    let mut deps = mock_dependencies();
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        quote_asset: "ETH".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: to_decimals(100),
+        base_asset_reserve: to_decimals(10_000),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        margin_engine: Some("addr0000".to_string()),
+        pricefeed: "oracle".to_string(),
+    };
+    let info = mock_info("addr0000", &[]);
+
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // Update the config
+    let msg = ExecuteMsg::UpdateOwner {
+        owner: Some("addr0001".to_string()),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetOwner {}).unwrap();
+    let resp: OwnerResponse = from_binary(&res).unwrap();
+    let owner = resp.owner;
+
+    assert_eq!(owner, Addr::unchecked("addr0001".to_string()),);
+
+    // Update the Owner
+    let msg = ExecuteMsg::UpdateOwner { owner: None };
+
+    let info = mock_info("addr0001", &[]);
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    let result = query(deps.as_ref(), mock_env(), QueryMsg::GetOwner {});
+    assert!(result.is_err());
 }
 
 #[test]
@@ -163,7 +205,6 @@ fn test_update_config() {
 
     // Update the config
     let msg = ExecuteMsg::UpdateConfig {
-        owner: None,
         base_asset_holding_cap: None,
         open_interest_notional_cap: None,
         toll_ratio: None,
@@ -183,7 +224,6 @@ fn test_update_config() {
     assert_eq!(
         config,
         ConfigResponse {
-            owner: Addr::unchecked("addr0000".to_string()),
             base_asset_holding_cap: Uint128::zero(),
             open_interest_notional_cap: Uint128::zero(),
             quote_asset: "ETH".to_string(),
@@ -222,7 +262,6 @@ fn test_update_config_fail() {
 
     // Update the config
     let msg = ExecuteMsg::UpdateConfig {
-        owner: None,
         base_asset_holding_cap: None,
         open_interest_notional_cap: None,
         toll_ratio: None,

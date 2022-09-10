@@ -32,7 +32,6 @@ impl VammController {
     #[allow(clippy::too_many_arguments)]
     pub fn update_config(
         &self,
-        owner: Option<String>,
         base_asset_holding_cap: Option<Uint128>,
         open_interest_notional_cap: Option<Uint128>,
         toll_ratio: Option<Uint128>,
@@ -44,7 +43,6 @@ impl VammController {
         spot_price_twap_interval: Option<u64>,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
-            owner,
             base_asset_holding_cap,
             open_interest_notional_cap,
             toll_ratio,
@@ -58,9 +56,13 @@ impl VammController {
         self.call(msg, vec![])
     }
 
+    pub fn update_owner(&self, owner: Option<String>) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::UpdateOwner { owner };
+        self.call(msg, vec![])
+    }
+
     pub fn set_toll_ratio(&self, toll_ratio: Uint128) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
-            owner: None,
             base_asset_holding_cap: None,
             open_interest_notional_cap: None,
             toll_ratio: Some(toll_ratio),
@@ -76,7 +78,6 @@ impl VammController {
 
     pub fn set_spread_ratio(&self, spread_ratio: Uint128) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
-            owner: None,
             base_asset_holding_cap: None,
             open_interest_notional_cap: None,
             toll_ratio: None,
@@ -95,7 +96,6 @@ impl VammController {
         open_interest_notional_cap: Uint128,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
-            owner: None,
             base_asset_holding_cap: None,
             open_interest_notional_cap: Some(open_interest_notional_cap),
             toll_ratio: None,
@@ -114,7 +114,6 @@ impl VammController {
         base_asset_holding_cap: Uint128,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
-            owner: None,
             base_asset_holding_cap: Some(base_asset_holding_cap),
             open_interest_notional_cap: None,
             toll_ratio: None,
@@ -133,7 +132,6 @@ impl VammController {
         fluctuation_limit_ratio: Uint128,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
-            owner: None,
             base_asset_holding_cap: None,
             open_interest_notional_cap: None,
             toll_ratio: None,

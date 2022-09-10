@@ -3,7 +3,7 @@ use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr, StdError};
 use cw_multi_test::Executor;
 use margined_perp::margined_insurance_fund::{
-    ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg,
+    ConfigResponse, ExecuteMsg, InstantiateMsg, OwnerResponse, QueryMsg,
 };
 use margined_utils::scenarios::ShutdownScenario;
 
@@ -20,7 +20,6 @@ fn test_instantiation() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
-    let info = mock_info("addr0000", &[]);
     assert_eq!(
         config,
         ConfigResponse {
@@ -40,7 +39,7 @@ fn test_update_config() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     // Update the config
-    let msg = ExecuteMsg::UpdateConfig {
+    let msg = ExecuteMsg::UpdateOwner {
         owner: Some("addr0001".to_string()),
     };
 
@@ -57,6 +56,41 @@ fn test_update_config() {
         }
     );
 }
+
+#[test]
+fn test_update_owner() {
+    let mut deps = mock_dependencies();
+    let msg = InstantiateMsg {
+        beneficiary: BENEFICIARY.to_string(),
+    };
+    let info = mock_info("addr0000", &[]);
+
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // Update the config
+    let msg = ExecuteMsg::UpdateOwner {
+        owner: Some("addr0001".to_string()),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetOwner {}).unwrap();
+    let resp: OwnerResponse = from_binary(&res).unwrap();
+    let owner = resp.owner;
+
+    assert_eq!(owner, Addr::unchecked("addr0001".to_string()),);
+
+    // Update the Owner
+    let msg = ExecuteMsg::UpdateOwner { owner: None };
+
+    let info = mock_info("addr0001", &[]);
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    let result = query(deps.as_ref(), mock_env(), QueryMsg::GetOwner {});
+    assert!(result.is_err());
+}
+
 #[test]
 fn test_query_vamm() {
     let ShutdownScenario {
@@ -698,7 +732,7 @@ fn test_not_owner() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     // try to update the config
-    let msg = ExecuteMsg::UpdateConfig {
+    let msg = ExecuteMsg::UpdateOwner {
         owner: Some("addr0001".to_string()),
     };
 
@@ -706,7 +740,7 @@ fn test_not_owner() {
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
-    assert_eq!(res.to_string(), "Generic error: unauthorized");
+    assert_eq!(res.to_string(), "Generic error: Caller is not admin");
 
     // try to add a vAMM
     let addr1 = "addr0001".to_string();
