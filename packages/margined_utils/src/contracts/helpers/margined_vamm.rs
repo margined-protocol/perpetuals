@@ -38,6 +38,7 @@ impl VammController {
         spread_ratio: Option<Uint128>,
         fluctuation_limit_ratio: Option<Uint128>,
         margin_engine: Option<String>,
+        insurance_fund: Option<String>,
         pricefeed: Option<String>,
         spot_price_twap_interval: Option<u64>,
     ) -> StdResult<CosmosMsg> {
@@ -48,6 +49,7 @@ impl VammController {
             spread_ratio,
             fluctuation_limit_ratio,
             margin_engine,
+            insurance_fund,
             pricefeed,
             spot_price_twap_interval,
         };
@@ -67,6 +69,7 @@ impl VammController {
             spread_ratio: None,
             fluctuation_limit_ratio: None,
             margin_engine: None,
+            insurance_fund: None,
             pricefeed: None,
             spot_price_twap_interval: None,
         };
@@ -81,6 +84,7 @@ impl VammController {
             spread_ratio: Some(spread_ratio),
             fluctuation_limit_ratio: None,
             margin_engine: None,
+            insurance_fund: None,
             pricefeed: None,
             spot_price_twap_interval: None,
         };
@@ -98,6 +102,7 @@ impl VammController {
             spread_ratio: None,
             fluctuation_limit_ratio: None,
             margin_engine: None,
+            insurance_fund: None,
             pricefeed: None,
             spot_price_twap_interval: None,
         };
@@ -115,6 +120,7 @@ impl VammController {
             spread_ratio: None,
             fluctuation_limit_ratio: None,
             margin_engine: None,
+            insurance_fund: None,
             pricefeed: None,
             spot_price_twap_interval: None,
         };
@@ -132,6 +138,7 @@ impl VammController {
             spread_ratio: None,
             fluctuation_limit_ratio: Some(fluctuation_limit_ratio),
             margin_engine: None,
+            insurance_fund: None,
             pricefeed: None,
             spot_price_twap_interval: None,
         };

@@ -32,7 +32,8 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let config = Config {
-        beneficiary: deps.api.addr_validate(&msg.beneficiary)?,
+        owner: info.sender,
+        engine: deps.api.addr_validate(&msg.engine)?,
     };
 
     store_config(deps.storage, &config)?;
@@ -43,18 +44,13 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn execute(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    msg: ExecuteMsg,
-) -> StdResult<Response> {
+pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
         ExecuteMsg::UpdateOwner { owner } => update_owner(deps, info, owner),
         ExecuteMsg::AddVamm { vamm } => add_vamm(deps, info, vamm),
         ExecuteMsg::RemoveVamm { vamm } => remove_vamm(deps, info, vamm),
         ExecuteMsg::Withdraw { token, amount } => withdraw(deps, info, token, amount),
-        ExecuteMsg::ShutdownVamms {} => shutdown_all_vamm(deps, info),
+        ExecuteMsg::ShutdownVamms {} => shutdown_all_vamm(deps, env, info),
     }
 }
 

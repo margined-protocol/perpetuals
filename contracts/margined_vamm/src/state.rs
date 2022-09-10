@@ -14,6 +14,7 @@ pub static KEY_RESERVE_SNAPSHOT_COUNTER: &[u8] = b"reserve_snapshot_counter";
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct Config {
     pub margin_engine: Addr,
+    pub insurance_fund: Addr,
     pub pricefeed: Addr,
     pub quote_asset: String,
     pub base_asset: String,

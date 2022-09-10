@@ -5,7 +5,7 @@ use margined_perp::margined_vamm::{
 };
 
 use crate::{
-    contract::{MAX_ORACLE_SPREAD_RATIO, OWNER},
+    contract::OWNER,
     handle::{get_input_price_with_reserves, get_output_price_with_reserves},
     querier::query_underlying_price,
     state::{read_config, read_reserve_snapshot_counter, read_state, Config, State},
@@ -31,6 +31,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         fluctuation_limit_ratio: config.fluctuation_limit_ratio,
         decimals: config.decimals,
         margin_engine: config.margin_engine,
+        insurance_fund: config.insurance_fund,
         pricefeed: config.pricefeed,
         funding_period: config.funding_period,
     })
@@ -240,7 +241,10 @@ pub fn query_is_over_spread_limit(deps: Deps) -> StdResult<bool> {
         * Integer::new_positive(config.decimals)
         / Integer::new_positive(oracle_price);
 
-    Ok(current_spread_ratio.abs() >= Integer::new_positive(MAX_ORACLE_SPREAD_RATIO))
+    let max_oracle_spread_ratio: Integer =
+        Integer::new_positive(config.decimals).checked_div(Integer::from(10u128))?; // 0.1 i.e. 10%
+
+    Ok(current_spread_ratio.abs() >= max_oracle_spread_ratio)
 }
 
 /// Returns bool to show is fluctuation limit has been exceeded

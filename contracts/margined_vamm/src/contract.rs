@@ -31,7 +31,6 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Owner admin
 pub const OWNER: Admin = Admin::new("owner");
 
-pub const MAX_ORACLE_SPREAD_RATIO: u64 = 100_000_000; // 0.1 i.e. 10%
 pub const ONE_HOUR_IN_SECONDS: u64 = 60 * 60;
 pub const ONE_DAY_IN_SECONDS: u64 = 24 * 60 * 60;
 
@@ -53,6 +52,7 @@ pub fn instantiate(
 
     let mut config = Config {
         margin_engine: Addr::unchecked("".to_string()), // default to nothing, must be set
+        insurance_fund: Addr::unchecked("".to_string()), // default to nothing, must be set like the engine
         quote_asset: msg.quote_asset,
         base_asset: msg.base_asset,
         base_asset_holding_cap: Uint128::zero(),
@@ -71,6 +71,12 @@ pub fn instantiate(
     let margin_engine = msg.margin_engine;
     if let Some(margin_engine) = margin_engine {
         config.margin_engine = deps.api.addr_validate(margin_engine.as_str())?;
+    }
+
+    // set and update insurance fund
+    let insurance_fund = msg.insurance_fund;
+    if let Some(insurance_fund) = insurance_fund {
+        config.insurance_fund = deps.api.addr_validate(insurance_fund.as_str())?;
     }
 
     store_config(deps.storage, &config)?;
@@ -114,6 +120,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             spread_ratio,
             fluctuation_limit_ratio,
             margin_engine,
+            insurance_fund,
             pricefeed,
             spot_price_twap_interval,
         } => update_config(
@@ -125,6 +132,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             spread_ratio,
             fluctuation_limit_ratio,
             margin_engine,
+            insurance_fund,
             pricefeed,
             spot_price_twap_interval,
         ),

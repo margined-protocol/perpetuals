@@ -849,6 +849,7 @@ fn test_openclose_position_to_check_fee_is_charged() {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
@@ -910,6 +911,7 @@ fn test_openclose_position_to_check_fee_is_charged_toll_ratio_5_percent() {
             None,
             Some(Uint128::from(10_000_000u128)), // 0.01
             Some(Uint128::from(20_000_000u128)), // 0.01
+            None,
             None,
             None,
             None,

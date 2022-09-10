@@ -7,13 +7,13 @@ use margined_perp::margined_insurance_fund::{
 };
 use margined_utils::scenarios::ShutdownScenario;
 
-const BENEFICIARY: &str = "beneficiary";
+const ENGINE: &str = "engine";
 
 #[test]
 fn test_instantiation() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
-        beneficiary: BENEFICIARY.to_string(),
+        engine: ENGINE.to_string(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -23,7 +23,8 @@ fn test_instantiation() {
     assert_eq!(
         config,
         ConfigResponse {
-            beneficiary: Addr::unchecked(BENEFICIARY.to_string()),
+            engine: Addr::unchecked(ENGINE.to_string()),
+            owner: info.sender
         }
     );
 }
@@ -32,7 +33,7 @@ fn test_instantiation() {
 fn test_update_config() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
-        beneficiary: BENEFICIARY.to_string(),
+        engine: ENGINE.to_string(),
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -50,7 +51,8 @@ fn test_update_config() {
     assert_eq!(
         config,
         ConfigResponse {
-            beneficiary: Addr::unchecked(BENEFICIARY.to_string()),
+            engine: Addr::unchecked(ENGINE.to_string()),
+            owner: Addr::unchecked("addr0001".to_string()),
         }
     );
 }
@@ -420,6 +422,61 @@ fn test_vamm_shutdown() {
 }
 
 #[test]
+fn test_vamm_shutdown_from_insurance() {
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm1,
+        vamm2,
+        vamm3,
+        ..
+    } = ShutdownScenario::new();
+
+    // add vamm
+    let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // add second vamm
+    let msg = insurance_fund.add_vamm(vamm2.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // add third vamm
+    let msg = insurance_fund.add_vamm(vamm3.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    // query all vamms' status
+    let res = insurance_fund.all_vamm_status(None, &router).unwrap();
+    let vamms_status = res.vamm_list_status;
+
+    assert_eq!(
+        vamms_status,
+        vec![
+            (vamm1.addr(), true),
+            (vamm2.addr(), true),
+            (vamm3.addr(), true)
+        ]
+    );
+
+    // shutdown all vamms
+    let msg = insurance_fund.shutdown_vamms().unwrap();
+    router.execute(insurance_fund.addr(), msg).unwrap();
+
+    // query all vamms' status
+    let res = insurance_fund.all_vamm_status(None, &router).unwrap();
+    let vamms_status = res.vamm_list_status;
+
+    assert_eq!(
+        vamms_status,
+        vec![
+            (vamm1.addr(), false),
+            (vamm2.addr(), false),
+            (vamm3.addr(), false)
+        ]
+    );
+}
+
+#[test]
 fn test_query_vamm_status() {
     let ShutdownScenario {
         mut router,
@@ -662,12 +719,13 @@ fn test_vamm_capacity() {
         router.execute(owner.clone(), msg).unwrap();
     }
 }
+
 #[test]
 fn test_not_owner() {
     //instantiate contract here
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
-        beneficiary: BENEFICIARY.to_string(),
+        engine: ENGINE.to_string(),
     };
     let info = mock_info("owner", &[]);
 
@@ -711,4 +769,24 @@ fn test_not_owner() {
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
     assert_eq!(res.to_string(), "Generic error: unauthorized");
+}
+
+#[test]
+fn test_incompatible_decimals() {
+    let ShutdownScenario {
+        mut router,
+        owner,
+        insurance_fund,
+        vamm5,
+        ..
+    } = ShutdownScenario::new();
+
+    let msg = insurance_fund.add_vamm(vamm5.addr().to_string()).unwrap();
+    let err = router.execute(owner, msg).unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "vAMM decimals incompatible with margin engine".to_string(),
+        },
+        err.downcast().unwrap()
+    );
 }

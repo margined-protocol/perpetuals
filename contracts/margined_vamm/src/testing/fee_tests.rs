@@ -50,6 +50,7 @@ fn test_set_diff_fee_ratio() {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
@@ -79,6 +80,7 @@ fn test_set_fee_ratio_zero() {
             None,
             Some(Uint128::zero()),
             Some(Uint128::from(50_000_000u128)),
+            None,
             None,
             None,
             None,
@@ -126,6 +128,7 @@ fn test_update_not_owner() {
             None,
             Some(Uint128::zero()),
             Some(Uint128::from(50_000_000u128)),
+            None,
             None,
             None,
             None,

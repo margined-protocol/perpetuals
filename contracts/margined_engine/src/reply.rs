@@ -1,5 +1,4 @@
 use cosmwasm_std::{DepsMut, Env, Response, StdError, StdResult, SubMsg, Uint128};
-use std::cmp::Ordering;
 
 use crate::{
     handle::internal_increase_position,
@@ -99,25 +98,26 @@ pub fn increase_position_reply(
     let mut msgs: Vec<SubMsg> = vec![];
 
     // create transfer messages depending on PnL
-    match swap.margin_to_vault.cmp(&Integer::zero()) {
-        Ordering::Less => {
-            msgs.append(
-                &mut withdraw(
-                    deps.as_ref(),
-                    env,
-                    &mut state,
-                    &swap.trader,
-                    config.eligible_collateral.clone(),
-                    swap.margin_to_vault.value,
-                    Uint128::zero(),
-                )
-                .unwrap(),
-            );
-        }
-        Ordering::Greater => {
-            if let AssetInfo::NativeToken { .. } = config.eligible_collateral {
+    #[allow(clippy::comparison_chain)]
+    if swap.margin_to_vault < Integer::zero() {
+        msgs.append(
+            &mut withdraw(
+                deps.as_ref(),
+                env,
+                &mut state,
+                &swap.trader,
+                config.eligible_collateral.clone(),
+                swap.margin_to_vault.value,
+                Uint128::zero(),
+            )
+            .unwrap(),
+        );
+    } else if swap.margin_to_vault > Integer::zero() {
+        match config.eligible_collateral {
+            AssetInfo::NativeToken { .. } => {
                 funds.required = funds.required.checked_add(swap_margin)?;
-            } else if let AssetInfo::Token { .. } = config.eligible_collateral {
+            }
+            AssetInfo::Token { .. } => {
                 msgs.push(
                     execute_transfer_from(
                         deps.storage,
@@ -129,8 +129,7 @@ pub fn increase_position_reply(
                 );
             }
         }
-        _ => {}
-    }
+    };
 
     // create array for fee amounts
     let mut fees_amount: [Uint128; 2] = [Uint128::zero(), Uint128::zero()];
