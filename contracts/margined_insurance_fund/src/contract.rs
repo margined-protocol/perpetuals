@@ -32,7 +32,6 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let config = Config {
-        owner: info.sender,
         engine: deps.api.addr_validate(&msg.engine)?,
     };
 

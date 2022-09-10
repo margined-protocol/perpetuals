@@ -27,7 +27,6 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config: Config = read_config(deps.storage)?;
 
     Ok(ConfigResponse {
-        owner: config.owner,
         engine: config.engine,
     })
 }

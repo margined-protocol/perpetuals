@@ -110,7 +110,9 @@ pub fn set_open(deps: DepsMut, env: Env, info: MessageInfo, open: bool) -> StdRe
     let mut state: State = read_state(deps.storage)?;
 
     // check permission and if state matches
-    if (!OWNER.is_admin(deps.as_ref(), &info.sender)? && info.sender != config.insurance_fund) || state.open == open {
+    if (!OWNER.is_admin(deps.as_ref(), &info.sender)? && info.sender != config.insurance_fund)
+        || state.open == open
+    {
         return Err(StdError::generic_err("unauthorized"));
     }
 

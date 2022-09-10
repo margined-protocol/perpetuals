@@ -10,10 +10,7 @@ use crate::{
     contract::OWNER,
     messages::execute_vamm_shutdown,
     querier::{query_engine_decimals, query_vamm_decimals},
-    state::{
-        read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, store_config, Config,
-        VAMM_LIMIT,
-    },
+    state::{read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, Config, VAMM_LIMIT},
 };
 
 pub fn update_owner(
@@ -32,6 +29,8 @@ pub fn update_owner(
 }
 
 pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Response> {
+    let config: Config = read_config(deps.storage)?;
+
     // check permission
     if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
@@ -72,10 +71,9 @@ pub fn remove_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<
     Ok(Response::default())
 }
 
-pub fn shutdown_all_vamm(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
+pub fn shutdown_all_vamm(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<Response> {
     // check permission
-    if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
-
+    if !OWNER.is_admin(deps.as_ref(), &info.sender)? && info.sender != env.contract.address {
         return Err(StdError::generic_err("unauthorized"));
     }
 

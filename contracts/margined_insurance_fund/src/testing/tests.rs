@@ -24,7 +24,6 @@ fn test_instantiation() {
         config,
         ConfigResponse {
             engine: Addr::unchecked(ENGINE.to_string()),
-            owner: info.sender
         }
     );
 }
@@ -52,7 +51,6 @@ fn test_update_config() {
         config,
         ConfigResponse {
             engine: Addr::unchecked(ENGINE.to_string()),
-            owner: Addr::unchecked("addr0001".to_string()),
         }
     );
 }
@@ -61,7 +59,7 @@ fn test_update_config() {
 fn test_update_owner() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
-        beneficiary: BENEFICIARY.to_string(),
+        engine: ENGINE.to_string(),
     };
     let info = mock_info("addr0000", &[]);
 

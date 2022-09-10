@@ -76,6 +76,7 @@ fn test_update_owner() {
         spread_ratio: Uint128::zero(),
         fluctuation_limit_ratio: Uint128::zero(),
         margin_engine: Some("addr0000".to_string()),
+        insurance_fund: Some("insurance_fund".to_string()),
         pricefeed: "oracle".to_string(),
     };
     let info = mock_info("addr0000", &[]);
