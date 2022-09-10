@@ -7,7 +7,9 @@ use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
     Timestamp,
 };
-use margined_perp::margined_pricefeed::{ExecuteMsg, InstantiateMsg, OwnerResponse, QueryMsg};
+use margined_perp::margined_pricefeed::{
+    ConfigResponse, ExecuteMsg, InstantiateMsg, OwnerResponse, QueryMsg,
+};
 
 #[test]
 fn test_instantiation() {
@@ -18,20 +20,20 @@ fn test_instantiation() {
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, _msg).unwrap();
 
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetOwner {}).unwrap();
-    let config: OwnerResponse = from_binary(&res).unwrap();
-    let info = mock_info("addr0000", &[]);
-    assert_eq!(config, OwnerResponse { owner: info.sender });
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+    let config: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(config, ConfigResponse {});
 }
 
 #[test]
 fn test_update_owner() {
     let mut deps = mock_dependencies();
-    let _msg = InstantiateMsg {
+    let msg = InstantiateMsg {
         oracle_hub_contract: "oracle_hub0000".to_string(),
     };
     let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), mock_env(), info, _msg).unwrap();
+
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     // Update the config
     let msg = ExecuteMsg::UpdateOwner {
@@ -43,12 +45,18 @@ fn test_update_owner() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::GetOwner {}).unwrap();
     let resp: OwnerResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        resp,
-        OwnerResponse {
-            owner: Addr::unchecked("addr0001".to_string()),
-        }
-    );
+    let owner = resp.owner;
+
+    assert_eq!(owner, Addr::unchecked("addr0001".to_string()),);
+
+    // Update the Owner
+    let msg = ExecuteMsg::UpdateOwner { owner: None };
+
+    let info = mock_info("addr0001", &[]);
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    let result = query(deps.as_ref(), mock_env(), QueryMsg::GetOwner {});
+    assert!(result.is_err());
 }
 
 #[test]

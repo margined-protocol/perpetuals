@@ -3,7 +3,7 @@ use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr, StdError};
 use cw_multi_test::Executor;
 use margined_perp::margined_insurance_fund::{
-    ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg,
+    ConfigResponse, ExecuteMsg, InstantiateMsg, OwnerResponse, QueryMsg,
 };
 use margined_utils::scenarios::ShutdownScenario;
 
@@ -62,6 +62,7 @@ fn test_update_owner() {
         beneficiary: BENEFICIARY.to_string(),
     };
     let info = mock_info("addr0000", &[]);
+
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     // Update the config
@@ -72,14 +73,20 @@ fn test_update_owner() {
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        config,
-        ConfigResponse {
-            beneficiary: Addr::unchecked(BENEFICIARY.to_string()),
-        }
-    );
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetOwner {}).unwrap();
+    let resp: OwnerResponse = from_binary(&res).unwrap();
+    let owner = resp.owner;
+
+    assert_eq!(owner, Addr::unchecked("addr0001".to_string()),);
+
+    // Update the Owner
+    let msg = ExecuteMsg::UpdateOwner { owner: None };
+
+    let info = mock_info("addr0001", &[]);
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    let result = query(deps.as_ref(), mock_env(), QueryMsg::GetOwner {});
+    assert!(result.is_err());
 }
 
 #[test]

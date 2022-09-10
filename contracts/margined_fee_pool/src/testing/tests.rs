@@ -46,7 +46,17 @@ fn test_update_owner() {
     let owner = resp.owner;
 
     assert_eq!(owner, Addr::unchecked("addr0001".to_string()),);
+
+    // Update the Owner
+    let msg = ExecuteMsg::UpdateOwner { owner: None };
+
+    let info = mock_info("addr0001", &[]);
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    let result = query(deps.as_ref(), mock_env(), QueryMsg::GetOwner {});
+    assert!(result.is_err());
 }
+
 #[test]
 fn test_query_token() {
     let mut deps = mock_dependencies();
