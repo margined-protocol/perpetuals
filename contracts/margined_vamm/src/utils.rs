@@ -47,6 +47,15 @@ pub fn require_open(open: bool) -> StdResult<Response> {
     Ok(Response::new())
 }
 
+// check an input is non-zero
+pub fn require_non_zero_input(input: Uint128) -> StdResult<Response> {
+    if input.is_zero() {
+        return Err(StdError::generic_err("Input must be non-zero"));
+    }
+
+    Ok(Response::new())
+}
+
 pub fn check_is_over_block_fluctuation_limit(
     storage: &mut dyn Storage,
     env: Env,

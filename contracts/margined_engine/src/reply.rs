@@ -734,22 +734,22 @@ pub fn partial_liquidation_reply(
     if !liquidation_fee.is_zero() {
         messages
             .push(execute_transfer(deps.storage, &config.insurance_fund, liquidation_fee).unwrap());
-    }
 
-    // calculate token balance that should be remaining once
-    // insurance fees have been paid
-    messages.append(
-        &mut withdraw(
-            deps.as_ref(),
-            env.clone(),
-            &mut state,
-            &liquidator,
-            config.eligible_collateral,
-            liquidation_fee,
-            Uint128::zero(),
-        )
-        .unwrap(),
-    );
+        // calculate token balance that should be remaining once
+        // insurance fees have been paid
+        messages.append(
+            &mut withdraw(
+                deps.as_ref(),
+                env.clone(),
+                &mut state,
+                &liquidator,
+                config.eligible_collateral,
+                liquidation_fee,
+                Uint128::zero(),
+            )
+            .unwrap(),
+        );
+    }
 
     store_position(deps.storage, &position)?;
     store_state(deps.storage, &state)?;
