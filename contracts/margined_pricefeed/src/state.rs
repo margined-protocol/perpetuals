@@ -16,10 +16,6 @@ pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()>
     singleton(storage, KEY_CONFIG).save(config)
 }
 
-// pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
-//     singleton_read(storage, KEY_CONFIG).load()
-// }
-
 #[derive(Serialize, Default, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct PriceData {
     pub round_id: Uint128,

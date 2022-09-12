@@ -17,10 +17,6 @@ pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()>
     singleton(storage, KEY_CONFIG).save(config)
 }
 
-// pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
-//     singleton_read(storage, KEY_CONFIG).load()
-// }
-
 // function checks if an addr is already added and adds it if not
 // We also check that we have not reached the limit of tokens here
 pub fn save_token(deps: DepsMut, input: AssetInfo) -> StdResult<()> {
