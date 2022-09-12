@@ -93,9 +93,9 @@ pub fn update_owner(deps: DepsMut, info: MessageInfo, owner: String) -> StdResul
     // validate the address
     let valid_owner = deps.api.addr_validate(&owner)?;
 
-    Ok(OWNER
+    OWNER
         .execute_update_admin(deps, info, Some(valid_owner))
-        .map_err(|error| StdError::generic_err(format!("{}", error)))?)
+        .map_err(|error| StdError::generic_err(format!("{}", error)))
 }
 
 pub fn set_open(deps: DepsMut, env: Env, info: MessageInfo, open: bool) -> StdResult<Response> {

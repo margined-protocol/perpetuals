@@ -107,9 +107,9 @@ pub fn update_pauser(deps: DepsMut, info: MessageInfo, pauser: String) -> StdRes
     // validate the address
     let valid_pauser = deps.api.addr_validate(&pauser)?;
 
-    Ok(PAUSER
+    PAUSER
         .execute_update_admin(deps, info, Some(valid_pauser))
-        .map_err(|error| StdError::generic_err(format!("{}", error)))?)
+        .map_err(|error| StdError::generic_err(format!("{}", error)))
 }
 
 pub fn set_pause(deps: DepsMut, _env: Env, info: MessageInfo, pause: bool) -> StdResult<Response> {
