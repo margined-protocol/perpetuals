@@ -34,7 +34,6 @@ pub struct InstantiateMsg {
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
     UpdateConfig {
-        owner: Option<String>,
         base_asset_holding_cap: Option<Uint128>,
         open_interest_notional_cap: Option<Uint128>,
         toll_ratio: Option<Uint128>,
@@ -44,6 +43,9 @@ pub enum ExecuteMsg {
         insurance_fund: Option<String>,
         pricefeed: Option<String>,
         spot_price_twap_interval: Option<u64>,
+    },
+    UpdateOwner {
+        owner: String,
     },
     SwapInput {
         direction: Direction,
@@ -67,6 +69,7 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     Config {},
     State {},
+    GetOwner {},
     InputPrice {
         direction: Direction,
         amount: Uint128,
@@ -111,7 +114,6 @@ pub enum QueryMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct ConfigResponse {
-    pub owner: Addr,
     pub base_asset_holding_cap: Uint128,
     pub open_interest_notional_cap: Uint128,
     pub margin_engine: Addr,
@@ -124,6 +126,11 @@ pub struct ConfigResponse {
     pub fluctuation_limit_ratio: Uint128,
     pub decimals: Uint128,
     pub funding_period: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+pub struct OwnerResponse {
+    pub owner: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]

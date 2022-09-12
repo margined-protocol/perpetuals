@@ -1,10 +1,12 @@
 use cosmwasm_std::{Deps, StdError, StdResult, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
-    ConfigResponse, PnlCalcOption, Position, PositionUnrealizedPnlResponse, StateResponse,
+    ConfigResponse, PauserResponse, PnlCalcOption, Position, PositionUnrealizedPnlResponse,
+    StateResponse,
 };
 
 use crate::{
+    contract::PAUSER,
     querier::query_insurance_all_vamm,
     state::{read_config, read_position, read_state, read_vamm_map, Config, State},
     utils::{
@@ -19,7 +21,6 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 
     Ok(ConfigResponse {
         owner: config.owner,
-        pauser: config.pauser,
         insurance_fund: config.insurance_fund,
         fee_pool: config.fee_pool,
         eligible_collateral: config.eligible_collateral,
@@ -39,6 +40,15 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
         open_interest_notional: state.open_interest_notional,
         bad_debt: state.prepaid_bad_debt,
     })
+}
+
+/// Queries pauser from the admin
+pub fn query_pauser(deps: Deps) -> StdResult<PauserResponse> {
+    if let Some(pauser) = PAUSER.get(deps)? {
+        Ok(PauserResponse { pauser })
+    } else {
+        Err(StdError::generic_err("No pauser set"))
+    }
 }
 
 /// Queries user position

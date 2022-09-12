@@ -11,7 +11,7 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    UpdateConfig { owner: Option<String> },
+    UpdateOwner { owner: String },
     AddVamm { vamm: String },
     RemoveVamm { vamm: String },
     Withdraw { token: AssetInfo, amount: Uint128 },
@@ -22,6 +22,7 @@ pub enum ExecuteMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
+    GetOwner {},
     IsVamm { vamm: String },
     GetAllVamm { limit: Option<u32> },
     GetAllVammStatus { limit: Option<u32> },
@@ -30,8 +31,12 @@ pub enum QueryMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct ConfigResponse {
-    pub owner: Addr,
     pub engine: Addr,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+pub struct OwnerResponse {
+    pub owner: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]

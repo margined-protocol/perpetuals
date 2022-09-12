@@ -1,9 +1,11 @@
-use cosmwasm_std::{Addr, Deps, StdResult};
+use cosmwasm_std::{Addr, Deps, StdError, StdResult};
 use margined_perp::margined_insurance_fund::{
-    AllVammResponse, AllVammStatusResponse, ConfigResponse, VammResponse, VammStatusResponse,
+    AllVammResponse, AllVammStatusResponse, ConfigResponse, OwnerResponse, VammResponse,
+    VammStatusResponse,
 };
 
 use crate::{
+    contract::OWNER,
     querier::query_vamm_open,
     state::{is_vamm, read_config, read_vammlist, Config, VAMM_LIMIT},
 };
@@ -11,12 +13,20 @@ use crate::{
 const DEFAULT_PAGINATION_LIMIT: u32 = 10u32;
 const MAX_PAGINATION_LIMIT: u32 = VAMM_LIMIT as u32;
 
+/// Queries contract owner from the admin
+pub fn query_owner(deps: Deps) -> StdResult<OwnerResponse> {
+    if let Some(owner) = OWNER.get(deps)? {
+        Ok(OwnerResponse { owner })
+    } else {
+        Err(StdError::generic_err("No owner set"))
+    }
+}
+
 /// Queries contract config
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config: Config = read_config(deps.storage)?;
 
     Ok(ConfigResponse {
-        owner: config.owner,
         engine: config.engine,
     })
 }

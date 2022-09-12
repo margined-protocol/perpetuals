@@ -1,8 +1,8 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, StdResult, Storage, Timestamp, Uint128};
-use cosmwasm_storage::{singleton, singleton_read};
+use cosmwasm_std::{StdResult, Storage, Timestamp, Uint128};
+use cosmwasm_storage::singleton;
 use cw_storage_plus::Map;
 
 pub static KEY_CONFIG: &[u8] = b"config";
@@ -10,16 +10,10 @@ pub static KEY_CONFIG: &[u8] = b"config";
 pub const PRICES: Map<String, Vec<PriceData>> = Map::new("prices");
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-pub struct Config {
-    pub owner: Addr,
-}
+pub struct Config {}
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
     singleton(storage, KEY_CONFIG).save(config)
-}
-
-pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
-    singleton_read(storage, KEY_CONFIG).load()
 }
 
 #[derive(Serialize, Default, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]

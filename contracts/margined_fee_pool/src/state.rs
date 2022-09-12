@@ -1,8 +1,8 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Deps, DepsMut, StdError::GenericErr, StdResult, Storage};
-use cosmwasm_storage::{singleton, singleton_read};
+use cosmwasm_std::{Deps, DepsMut, StdError::GenericErr, StdResult, Storage};
+use cosmwasm_storage::singleton;
 use cw_storage_plus::Item;
 use margined_common::asset::AssetInfo;
 
@@ -11,16 +11,10 @@ pub const TOKEN_LIST: Item<Vec<AssetInfo>> = Item::new("token-list");
 pub const TOKEN_LIMIT: usize = 3usize;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-pub struct Config {
-    pub owner: Addr,
-}
+pub struct Config {}
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
     singleton(storage, KEY_CONFIG).save(config)
-}
-
-pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
-    singleton_read(storage, KEY_CONFIG).load()
 }
 
 // function checks if an addr is already added and adds it if not

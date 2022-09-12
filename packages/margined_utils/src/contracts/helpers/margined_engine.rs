@@ -36,7 +36,6 @@ impl EngineController {
     pub fn update_config(
         &self,
         owner: Option<String>,
-        pauser: Option<String>,
         insurance_fund: Option<String>,
         fee_pool: Option<String>,
         initial_margin_ratio: Option<Uint128>,
@@ -46,7 +45,6 @@ impl EngineController {
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
             owner,
-            pauser,
             insurance_fund,
             fee_pool,
             initial_margin_ratio,
@@ -60,7 +58,6 @@ impl EngineController {
     pub fn set_initial_margin_ratio(&self, initial_margin_ratio: Uint128) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
             owner: None,
-            pauser: None,
             insurance_fund: None,
             fee_pool: None,
             initial_margin_ratio: Some(initial_margin_ratio),
@@ -77,7 +74,6 @@ impl EngineController {
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
             owner: None,
-            pauser: None,
             insurance_fund: None,
             fee_pool: None,
             initial_margin_ratio: None,
@@ -91,7 +87,6 @@ impl EngineController {
     pub fn set_margin_ratios(&self, margin_ratio: Uint128) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
             owner: None,
-            pauser: None,
             insurance_fund: None,
             fee_pool: None,
             initial_margin_ratio: Some(margin_ratio),
@@ -108,7 +103,6 @@ impl EngineController {
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
             owner: None,
-            pauser: None,
             insurance_fund: None,
             fee_pool: None,
             initial_margin_ratio: None,
@@ -122,7 +116,6 @@ impl EngineController {
     pub fn set_liquidation_fee(&self, liquidation_fee: Uint128) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
             owner: None,
-            pauser: None,
             insurance_fund: None,
             fee_pool: None,
             initial_margin_ratio: None,

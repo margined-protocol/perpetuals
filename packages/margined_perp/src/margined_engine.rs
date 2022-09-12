@@ -35,13 +35,15 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     UpdateConfig {
         owner: Option<String>,
-        pauser: Option<String>,
         insurance_fund: Option<String>,
         fee_pool: Option<String>,
         initial_margin_ratio: Option<Uint128>,
         maintenance_margin_ratio: Option<Uint128>,
         partial_liquidation_ratio: Option<Uint128>,
         liquidation_fee: Option<Uint128>,
+    },
+    UpdatePauser {
+        pauser: String,
     },
     OpenPosition {
         vamm: String,
@@ -80,6 +82,7 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     Config {},
     State {},
+    GetPauser {},
     Position {
         vamm: String,
         trader: String,
@@ -115,7 +118,6 @@ pub enum QueryMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: Addr,
-    pub pauser: Addr,
     pub insurance_fund: Addr,
     pub fee_pool: Addr,
     pub eligible_collateral: AssetInfo,
@@ -130,6 +132,11 @@ pub struct ConfigResponse {
 pub struct StateResponse {
     pub open_interest_notional: Uint128,
     pub bad_debt: Uint128,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+pub struct PauserResponse {
+    pub pauser: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]

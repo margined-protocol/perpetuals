@@ -7,9 +7,7 @@ use cosmwasm_std::{Addr, BankMsg, Coin, CosmosMsg, Empty, Response, Uint128};
 use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg, MinterResponse};
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, Side};
 use margined_perp::margined_fee_pool::InstantiateMsg as FeePoolInstantiateMsg;
-use margined_perp::margined_insurance_fund::{
-    ExecuteMsg as InsuranceFundExecuteMsg, InstantiateMsg as InsuranceFundInstantiateMsg,
-};
+use margined_perp::margined_insurance_fund::InstantiateMsg as InsuranceFundInstantiateMsg;
 use margined_perp::margined_pricefeed::{
     ExecuteMsg as PricefeedExecuteMsg, InstantiateMsg as PricefeedInstantiateMsg,
 };
@@ -141,7 +139,6 @@ impl NativeTokenScenario {
                 engine_addr.clone(),
                 &ExecuteMsg::UpdateConfig {
                     owner: None,
-                    pauser: None,
                     insurance_fund: Some(insurance_fund.addr().to_string()),
                     fee_pool: None,
                     initial_margin_ratio: None,
@@ -198,7 +195,6 @@ impl NativeTokenScenario {
                 owner.clone(),
                 vamm_addr,
                 &VammExecuteMsg::UpdateConfig {
-                    owner: None,
                     base_asset_holding_cap: None,
                     open_interest_notional_cap: None,
                     toll_ratio: None,
@@ -209,16 +205,6 @@ impl NativeTokenScenario {
                     pricefeed: None,
                     spot_price_twap_interval: None,
                 },
-                &[],
-            )
-            .unwrap();
-
-        // set margin engine in insurance fund
-        router
-            .execute_contract(
-                owner.clone(),
-                insurance_fund.addr(),
-                &InsuranceFundExecuteMsg::UpdateConfig { owner: None },
                 &[],
             )
             .unwrap();
@@ -419,7 +405,6 @@ impl SimpleScenario {
                 engine.addr(),
                 &ExecuteMsg::UpdateConfig {
                     owner: None,
-                    pauser: None,
                     insurance_fund: Some(insurance_fund.addr().to_string()),
                     fee_pool: None,
                     initial_margin_ratio: None,
@@ -488,7 +473,6 @@ impl SimpleScenario {
                 owner.clone(),
                 vamm_addr,
                 &VammExecuteMsg::UpdateConfig {
-                    owner: None,
                     base_asset_holding_cap: None,
                     open_interest_notional_cap: None,
                     toll_ratio: None,
@@ -908,6 +892,7 @@ impl ShutdownScenario {
                     fluctuation_limit_ratio: Uint128::from(10_000u128), // 0.01
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
+                    insurance_fund: Some(insurance_fund.addr().to_string()),
                 },
                 &[],
                 "vamm5",
@@ -917,12 +902,12 @@ impl ShutdownScenario {
         let vamm4 = VammController(vamm4_addr);
 
         let msg = vamm4.set_open(true).unwrap();
-        router.execute(insurance_fund_addr.clone(), msg).unwrap();
+        router.execute(insurance_fund_addr, msg).unwrap();
 
         let vamm5_addr = router
             .instantiate_contract(
                 vamm_id,
-                insurance_fund_addr,
+                insurance_fund.addr(),
                 &VammInstantiateMsg {
                     decimals: 7u8, //see here
                     quote_asset: "ETH".to_string(),
@@ -935,7 +920,7 @@ impl ShutdownScenario {
                     fluctuation_limit_ratio: Uint128::from(10_000u128), // 0.01
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
-                    insurance_fund: Some(insurance_fund_addr.to_string()),
+                    insurance_fund: Some(insurance_fund.addr().to_string()),
                 },
                 &[],
                 "vamm4",

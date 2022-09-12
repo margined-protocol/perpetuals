@@ -1,30 +1,16 @@
 use cosmwasm_std::{DepsMut, MessageInfo, Response, StdError, Uint128};
 
-use crate::{
-    error::ContractError,
-    state::{read_config, store_config, store_price_data, Config},
-};
+use crate::{contract::OWNER, error::ContractError, state::store_price_data};
 
-pub fn update_config(
+pub fn update_owner(
     deps: DepsMut,
     info: MessageInfo,
-    owner: Option<String>,
+    owner: String,
 ) -> Result<Response, ContractError> {
-    let mut config: Config = read_config(deps.storage)?;
+    // validate the address
+    let valid_owner = deps.api.addr_validate(&owner)?;
 
-    // check permission
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    // change owner of pricefeed
-    if let Some(owner) = owner {
-        config.owner = deps.api.addr_validate(owner.as_str())?;
-    }
-
-    store_config(deps.storage, &config)?;
-
-    Ok(Response::default().add_attribute("action", "update_config"))
+    Ok(OWNER.execute_update_admin(deps, info, Some(valid_owner))?)
 }
 
 /// this is a mock function that enables storage of data
@@ -37,12 +23,8 @@ pub fn append_price(
     price: Uint128,
     timestamp: u64,
 ) -> Result<Response, ContractError> {
-    let config: Config = read_config(deps.storage)?;
-
     // check permission
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
+    OWNER.assert_admin(deps.as_ref(), &info.sender)?;
 
     store_price_data(deps.storage, key, price, timestamp)?;
 
@@ -59,12 +41,8 @@ pub fn append_multiple_price(
     prices: Vec<Uint128>,
     timestamps: Vec<u64>,
 ) -> Result<Response, ContractError> {
-    let config: Config = read_config(deps.storage)?;
-
     // check permission
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
+    OWNER.assert_admin(deps.as_ref(), &info.sender)?;
 
     // This throws if the prices and timestamps are not the same length
     if prices.len() != timestamps.len() {
