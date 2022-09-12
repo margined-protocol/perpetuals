@@ -1,8 +1,11 @@
 use cosmwasm_std::{Deps, Env, StdError, StdResult, Uint128};
 use margined_common::integer::Integer;
-use margined_perp::margined_vamm::{CalcFeeResponse, ConfigResponse, Direction, StateResponse};
+use margined_perp::margined_vamm::{
+    CalcFeeResponse, ConfigResponse, Direction, OwnerResponse, StateResponse,
+};
 
 use crate::{
+    contract::OWNER,
     handle::{get_input_price_with_reserves, get_output_price_with_reserves},
     querier::query_underlying_price,
     state::{read_config, read_reserve_snapshot_counter, read_state, Config, State},
@@ -19,7 +22,6 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config: Config = read_config(deps.storage)?;
 
     Ok(ConfigResponse {
-        owner: config.owner,
         base_asset_holding_cap: config.base_asset_holding_cap,
         open_interest_notional_cap: config.open_interest_notional_cap,
         quote_asset: config.quote_asset,
@@ -47,6 +49,15 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
         funding_rate: state.funding_rate,
         next_funding_time: state.next_funding_time,
     })
+}
+
+/// Queries contract owner from the admin
+pub fn query_owner(deps: Deps) -> StdResult<OwnerResponse> {
+    if let Some(owner) = OWNER.get(deps)? {
+        Ok(OwnerResponse { owner })
+    } else {
+        Err(StdError::generic_err("No owner set"))
+    }
 }
 
 /// Queries input price

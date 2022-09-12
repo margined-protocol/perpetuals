@@ -870,7 +870,6 @@ fn test_openclose_position_to_check_fee_is_charged() {
         .update_config(
             None,
             None,
-            None,
             Some(Uint128::from(10_000_000u128)), // 0.01
             Some(Uint128::from(20_000_000u128)), // 0.01
             None,
@@ -935,7 +934,6 @@ fn test_openclose_position_to_check_fee_is_charged_toll_ratio_5_percent() {
 
     let msg = vamm
         .update_config(
-            None,
             None,
             None,
             Some(Uint128::from(10_000_000u128)), // 0.01

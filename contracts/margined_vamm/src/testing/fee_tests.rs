@@ -44,7 +44,6 @@ fn test_set_diff_fee_ratio() {
         .update_config(
             None,
             None,
-            None,
             Some(Uint128::from(100_000_000u128)),
             Some(Uint128::from(50_000_000u128)),
             None,
@@ -77,7 +76,6 @@ fn test_set_fee_ratio_zero() {
 
     let msg = vamm
         .update_config(
-            None,
             None,
             None,
             Some(Uint128::zero()),
@@ -126,7 +124,6 @@ fn test_update_not_owner() {
 
     let msg = vamm
         .update_config(
-            None,
             None,
             None,
             Some(Uint128::zero()),

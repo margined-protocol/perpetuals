@@ -1,10 +1,13 @@
 use crate::error::ContractError;
 use crate::{
-    handle::{append_multiple_price, append_price, update_config},
-    query::{query_config, query_get_previous_price, query_get_price, query_get_twap_price},
+    handle::{append_multiple_price, append_price, update_owner},
+    query::{
+        query_config, query_get_previous_price, query_get_price, query_get_twap_price, query_owner,
+    },
     state::{store_config, Config},
 };
 use cw2::set_contract_version;
+use cw_controllers::Admin;
 
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
@@ -15,6 +18,8 @@ use margined_perp::margined_pricefeed::{ExecuteMsg, InstantiateMsg, QueryMsg};
 const CONTRACT_NAME: &str = "crates.io:margined-pricefeed";
 /// Contract version that is used for migration.
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+/// Owner admin
+pub const OWNER: Admin = Admin::new("owner");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -25,9 +30,11 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    let config = Config { owner: info.sender };
+    let config = Config {};
 
     store_config(deps.storage, &config)?;
+
+    OWNER.set(deps, Some(info.sender))?;
 
     Ok(Response::default())
 }
@@ -50,7 +57,7 @@ pub fn execute(
             prices,
             timestamps,
         } => append_multiple_price(deps, info, key, prices, timestamps),
-        ExecuteMsg::UpdateConfig { owner } => update_config(deps, info, owner),
+        ExecuteMsg::UpdateOwner { owner } => update_owner(deps, info, owner),
     }
 }
 
@@ -58,6 +65,7 @@ pub fn execute(
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
+        QueryMsg::GetOwner {} => to_binary(&query_owner(deps)?),
         QueryMsg::GetPrice { key } => to_binary(&query_get_price(deps, key)?),
         QueryMsg::GetPreviousPrice {
             key,

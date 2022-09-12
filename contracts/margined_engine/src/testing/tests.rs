@@ -2,7 +2,9 @@ use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr, Uint128};
 use margined_common::asset::AssetInfo;
-use margined_perp::margined_engine::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use margined_perp::margined_engine::{
+    ConfigResponse, ExecuteMsg, InstantiateMsg, PauserResponse, QueryMsg,
+};
 
 const TOKEN: &str = "uwasm";
 const OWNER: &str = "owner";
@@ -31,7 +33,6 @@ fn test_instantiation() {
         config,
         ConfigResponse {
             owner: info.sender,
-            pauser: Addr::unchecked(OWNER.to_string()),
             insurance_fund: Addr::unchecked(INSURANCE_FUND.to_string()),
             fee_pool: Addr::unchecked(FEE_POOL.to_string()),
             eligible_collateral: AssetInfo::NativeToken {
@@ -64,7 +65,6 @@ fn test_update_config() {
     // Update the config
     let msg = ExecuteMsg::UpdateConfig {
         owner: Some("addr0001".to_string()),
-        pauser: None,
         insurance_fund: None,
         fee_pool: None,
         initial_margin_ratio: None,
@@ -82,7 +82,6 @@ fn test_update_config() {
         config,
         ConfigResponse {
             owner: Addr::unchecked("addr0001".to_string()),
-            pauser: Addr::unchecked(OWNER.to_string()),
             insurance_fund: Addr::unchecked(INSURANCE_FUND.to_string()),
             fee_pool: Addr::unchecked(FEE_POOL.to_string()),
             eligible_collateral: AssetInfo::NativeToken {
@@ -99,7 +98,6 @@ fn test_update_config() {
     // Update should fail
     let msg = ExecuteMsg::UpdateConfig {
         owner: Some(OWNER.to_string()),
-        pauser: None,
         insurance_fund: None,
         fee_pool: None,
         initial_margin_ratio: None,
@@ -115,7 +113,6 @@ fn test_update_config() {
     // Update should fail
     let msg = ExecuteMsg::UpdateConfig {
         owner: None,
-        pauser: None,
         insurance_fund: None,
         fee_pool: None,
         initial_margin_ratio: Some(Uint128::MAX),
@@ -125,6 +122,48 @@ fn test_update_config() {
     };
 
     let info = mock_info(OWNER, &[]);
+    let result = execute(deps.as_mut(), mock_env(), info, msg);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_update_pauser() {
+    let mut deps = mock_dependencies();
+    let msg = InstantiateMsg {
+        pauser: OWNER.to_string(),
+        insurance_fund: INSURANCE_FUND.to_string(),
+        fee_pool: FEE_POOL.to_string(),
+        eligible_collateral: TOKEN.to_string(),
+        initial_margin_ratio: Uint128::from(50_000u128), // 0.05
+        maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
+        liquidation_fee: Uint128::from(100u128),
+    };
+    let info = mock_info(OWNER, &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // Update the pauser
+    let msg = ExecuteMsg::UpdatePauser {
+        pauser: "addr0001".to_string(),
+    };
+
+    let info = mock_info(OWNER, &[]);
+    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetPauser {}).unwrap();
+    let pauser: PauserResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        pauser,
+        PauserResponse {
+            pauser: Addr::unchecked("addr0001".to_string()),
+        }
+    );
+
+    // Update should fail
+    let msg = ExecuteMsg::UpdatePauser {
+        pauser: "not_the_pauser".to_string(),
+    };
+
+    let info = mock_info("not_the_pauser", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, msg);
     assert!(result.is_err());
 }

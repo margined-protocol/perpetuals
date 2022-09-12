@@ -9,8 +9,8 @@ pub struct InstantiateMsg {}
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    UpdateConfig {
-        owner: Option<String>,
+    UpdateOwner {
+        owner: String,
     },
     AddToken {
         token: String,
@@ -29,13 +29,17 @@ pub enum ExecuteMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
+    GetOwner {},
     IsToken { token: String },
     GetTokenLength {},
     GetTokenList { limit: Option<u32> },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-pub struct ConfigResponse {
+pub struct ConfigResponse {}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+pub struct OwnerResponse {
     pub owner: Addr,
 }
 

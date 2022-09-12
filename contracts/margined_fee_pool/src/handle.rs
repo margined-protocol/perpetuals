@@ -3,40 +3,23 @@ use margined_common::validate::validate_eligible_collateral as validate_funds;
 use margined_perp::querier::query_token_balance;
 
 use crate::{
+    contract::OWNER,
     messages::execute_transfer,
-    state::{
-        is_token, read_config, remove_token as remove_token_from_list, save_token, store_config,
-        Config,
-    },
+    state::{is_token, remove_token as remove_token_from_list, save_token},
 };
 
-pub fn update_config(
-    deps: DepsMut,
-    info: MessageInfo,
-    owner: Option<String>,
-) -> StdResult<Response> {
-    let mut config: Config = read_config(deps.storage)?;
+pub fn update_owner(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {
+    // validate the address
+    let valid_owner = deps.api.addr_validate(&owner)?;
 
-    // check permission
-    if info.sender != config.owner {
-        return Err(StdError::generic_err("unauthorized"));
-    }
-
-    // change owner of fee pool contract
-    if let Some(owner) = owner {
-        config.owner = deps.api.addr_validate(owner.as_str())?;
-    }
-
-    store_config(deps.storage, &config)?;
-
-    Ok(Response::default())
+    OWNER
+        .execute_update_admin(deps, info, Some(valid_owner))
+        .map_err(|error| StdError::generic_err(format!("{}", error)))
 }
 
 pub fn add_token(deps: DepsMut, info: MessageInfo, token: String) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-
     // check permission
-    if info.sender != config.owner {
+    if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -50,10 +33,8 @@ pub fn add_token(deps: DepsMut, info: MessageInfo, token: String) -> StdResult<R
 }
 
 pub fn remove_token(deps: DepsMut, info: MessageInfo, token: String) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-
     // check permission
-    if info.sender != config.owner {
+    if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -74,10 +55,8 @@ pub fn send_token(
     amount: Uint128,
     recipient: String,
 ) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-
     // check permissions to send the message
-    if info.sender != config.owner {
+    if !OWNER.is_admin(deps, &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
     }
 

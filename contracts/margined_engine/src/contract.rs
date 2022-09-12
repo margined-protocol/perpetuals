@@ -3,6 +3,7 @@ use cosmwasm_std::{
     StdResult, SubMsgResult, Uint128,
 };
 use cw2::set_contract_version;
+use cw_controllers::Admin;
 use margined_common::validate::{
     validate_decimal_places, validate_eligible_collateral, validate_margin_ratios, validate_ratio,
 };
@@ -12,11 +13,11 @@ use crate::error::ContractError;
 use crate::{
     handle::{
         close_position, deposit_margin, liquidate, open_position, pay_funding, set_pause,
-        update_config, withdraw_margin,
+        update_config, update_pauser, withdraw_margin,
     },
     query::{
         query_all_positions, query_config, query_cumulative_premium_fraction,
-        query_free_collateral, query_margin_ratio, query_position,
+        query_free_collateral, query_margin_ratio, query_pauser, query_position,
         query_position_notional_unrealized_pnl, query_state,
         query_trader_balance_with_funding_payment, query_trader_position_with_funding_payment,
     },
@@ -33,6 +34,8 @@ use crate::{
 const CONTRACT_NAME: &str = "crates.io:margined-engine";
 /// Contract version that is used for migration.
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+/// Admin controller for the pauser role
+pub const PAUSER: Admin = Admin::new("pauser");
 
 pub const INCREASE_POSITION_REPLY_ID: u64 = 1;
 pub const DECREASE_POSITION_REPLY_ID: u64 = 2;
@@ -55,7 +58,7 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     // validate message addresses
-    let pauser = deps.api.addr_validate(&msg.pauser)?;
+    let valid_pauser = deps.api.addr_validate(&msg.pauser)?;
     let insurance_fund = deps.api.addr_validate(&msg.insurance_fund)?;
     let fee_pool = deps.api.addr_validate(&msg.fee_pool)?;
 
@@ -79,7 +82,6 @@ pub fn instantiate(
     // config parameters
     let config = Config {
         owner: info.sender,
-        pauser,
         insurance_fund,
         fee_pool,
         eligible_collateral,
@@ -102,6 +104,8 @@ pub fn instantiate(
         },
     )?;
 
+    PAUSER.set(deps, Some(valid_pauser))?;
+
     Ok(Response::default())
 }
 
@@ -110,7 +114,6 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
     match msg {
         ExecuteMsg::UpdateConfig {
             owner,
-            pauser,
             insurance_fund,
             fee_pool,
             initial_margin_ratio,
@@ -121,7 +124,6 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             deps,
             info,
             owner,
-            pauser,
             insurance_fund,
             fee_pool,
             initial_margin_ratio,
@@ -129,6 +131,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             partial_liquidation_ratio,
             liquidation_fee,
         ),
+        ExecuteMsg::UpdatePauser { pauser } => update_pauser(deps, info, pauser),
         ExecuteMsg::OpenPosition {
             vamm,
             side,
@@ -168,6 +171,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
+        QueryMsg::GetPauser {} => to_binary(&query_pauser(deps)?),
         QueryMsg::AllPositions { trader } => to_binary(&query_all_positions(deps, trader)?),
         QueryMsg::Position { vamm, trader } => to_binary(&query_position(deps, vamm, trader)?),
         QueryMsg::MarginRatio { vamm, trader } => {

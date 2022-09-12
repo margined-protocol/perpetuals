@@ -7,7 +7,9 @@ use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
     Timestamp,
 };
-use margined_perp::margined_pricefeed::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use margined_perp::margined_pricefeed::{
+    ConfigResponse, ExecuteMsg, InstantiateMsg, OwnerResponse, QueryMsg,
+};
 
 #[test]
 fn test_instantiation() {
@@ -20,35 +22,42 @@ fn test_instantiation() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
-    let info = mock_info("addr0000", &[]);
-    assert_eq!(config, ConfigResponse { owner: info.sender });
+    assert_eq!(config, ConfigResponse {});
 }
 
 #[test]
-fn test_update_config() {
+fn test_update_owner() {
     let mut deps = mock_dependencies();
-    let _msg = InstantiateMsg {
+    let msg = InstantiateMsg {
         oracle_hub_contract: "oracle_hub0000".to_string(),
     };
     let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), mock_env(), info, _msg).unwrap();
 
-    // Update the config
-    let msg = ExecuteMsg::UpdateConfig {
-        owner: Some("addr0001".to_string()),
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // Update the owner
+    let msg = ExecuteMsg::UpdateOwner {
+        owner: "addr0001".to_string(),
     };
 
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        config,
-        ConfigResponse {
-            owner: Addr::unchecked("addr0001".to_string()),
-        }
-    );
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetOwner {}).unwrap();
+    let resp: OwnerResponse = from_binary(&res).unwrap();
+    let owner = resp.owner;
+
+    assert_eq!(owner, Addr::unchecked("addr0001".to_string()),);
+
+    // Test sender is not owner
+    let msg = ExecuteMsg::UpdateOwner {
+        owner: "not_owner".to_string(),
+    };
+
+    let info = mock_info("not_owner", &[]);
+    let result = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+
+    assert_eq!(result.to_string(), "Caller is not admin");
 }
 
 #[test]
@@ -60,10 +69,10 @@ fn test_set_and_get_price() {
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, _msg).unwrap();
 
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config: ConfigResponse = from_binary(&res).unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetOwner {}).unwrap();
+    let config: OwnerResponse = from_binary(&res).unwrap();
     let info = mock_info("addr0000", &[]);
-    assert_eq!(config, ConfigResponse { owner: info.sender });
+    assert_eq!(config, OwnerResponse { owner: info.sender });
 
     // Set some market data
     let msg = ExecuteMsg::AppendPrice {
@@ -131,10 +140,10 @@ fn test_set_multiple_price() {
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, _msg).unwrap();
 
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config: ConfigResponse = from_binary(&res).unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetOwner {}).unwrap();
+    let config: OwnerResponse = from_binary(&res).unwrap();
     let info = mock_info("addr0000", &[]);
-    assert_eq!(config, ConfigResponse { owner: info.sender });
+    assert_eq!(config, OwnerResponse { owner: info.sender });
 
     let prices = vec![
         Uint128::from(500_000_000u128),
@@ -182,10 +191,10 @@ fn test_get_previous_price() {
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, _msg).unwrap();
 
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config: ConfigResponse = from_binary(&res).unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetOwner {}).unwrap();
+    let config: OwnerResponse = from_binary(&res).unwrap();
     let info = mock_info("addr0000", &[]);
-    assert_eq!(config, ConfigResponse { owner: info.sender });
+    assert_eq!(config, OwnerResponse { owner: info.sender });
 
     let prices = vec![
         Uint128::from(500_000_000u128),
@@ -251,10 +260,10 @@ fn test_get_twap_price() {
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), env.clone(), info, _msg).unwrap();
 
-    let res = query(deps.as_ref(), env.clone(), QueryMsg::Config {}).unwrap();
-    let config: ConfigResponse = from_binary(&res).unwrap();
+    let res = query(deps.as_ref(), env.clone(), QueryMsg::GetOwner {}).unwrap();
+    let config: OwnerResponse = from_binary(&res).unwrap();
     let info = mock_info("addr0000", &[]);
-    assert_eq!(config, ConfigResponse { owner: info.sender });
+    assert_eq!(config, OwnerResponse { owner: info.sender });
 
     let prices = vec![
         Uint128::from(400_000_000u128),
@@ -333,10 +342,10 @@ fn test_get_twap_variant_price_period() {
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), env.clone(), info, _msg).unwrap();
 
-    let res = query(deps.as_ref(), env.clone(), QueryMsg::Config {}).unwrap();
-    let config: ConfigResponse = from_binary(&res).unwrap();
+    let res = query(deps.as_ref(), env.clone(), QueryMsg::GetOwner {}).unwrap();
+    let config: OwnerResponse = from_binary(&res).unwrap();
     let info = mock_info("addr0000", &[]);
-    assert_eq!(config, ConfigResponse { owner: info.sender });
+    assert_eq!(config, OwnerResponse { owner: info.sender });
 
     let prices = vec![
         Uint128::from(400_000_000u128),
@@ -388,10 +397,10 @@ fn test_get_twap_latest_price_update_is_earlier_than_request() {
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), env.clone(), info, _msg).unwrap();
 
-    let res = query(deps.as_ref(), env.clone(), QueryMsg::Config {}).unwrap();
-    let config: ConfigResponse = from_binary(&res).unwrap();
+    let res = query(deps.as_ref(), env.clone(), QueryMsg::GetOwner {}).unwrap();
+    let config: OwnerResponse = from_binary(&res).unwrap();
     let info = mock_info("addr0000", &[]);
-    assert_eq!(config, ConfigResponse { owner: info.sender });
+    assert_eq!(config, OwnerResponse { owner: info.sender });
 
     let prices = vec![
         Uint128::from(400_000_000u128),
@@ -441,10 +450,10 @@ fn test_get_twap_no_rounds() {
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), env.clone(), info, _msg).unwrap();
 
-    let res = query(deps.as_ref(), env.clone(), QueryMsg::Config {}).unwrap();
-    let config: ConfigResponse = from_binary(&res).unwrap();
+    let res = query(deps.as_ref(), env.clone(), QueryMsg::GetOwner {}).unwrap();
+    let config: OwnerResponse = from_binary(&res).unwrap();
     let info = mock_info("addr0000", &[]);
-    assert_eq!(config, ConfigResponse { owner: info.sender });
+    assert_eq!(config, OwnerResponse { owner: info.sender });
 
     let res = query(
         deps.as_ref(),
@@ -468,10 +477,10 @@ fn test_get_twap_error_zero_interval() {
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), env.clone(), info, _msg).unwrap();
 
-    let res = query(deps.as_ref(), env.clone(), QueryMsg::Config {}).unwrap();
-    let config: ConfigResponse = from_binary(&res).unwrap();
+    let res = query(deps.as_ref(), env.clone(), QueryMsg::GetOwner {}).unwrap();
+    let config: OwnerResponse = from_binary(&res).unwrap();
     let info = mock_info("addr0000", &[]);
-    assert_eq!(config, ConfigResponse { owner: info.sender });
+    assert_eq!(config, OwnerResponse { owner: info.sender });
 
     let prices = vec![
         Uint128::from(400_000_000u128),

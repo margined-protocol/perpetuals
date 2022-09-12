@@ -1,21 +1,29 @@
-use cosmwasm_std::{Deps, StdResult};
+use cosmwasm_std::{Deps, StdError, StdResult};
 use margined_common::validate::validate_eligible_collateral as validate_funds;
 use margined_perp::margined_fee_pool::{
-    AllTokenResponse, ConfigResponse, TokenLengthResponse, TokenResponse,
+    AllTokenResponse, ConfigResponse, OwnerResponse, TokenLengthResponse, TokenResponse,
 };
 
-use crate::state::{is_token, read_config, read_token_list, Config, TOKEN_LIMIT};
+use crate::{
+    contract::OWNER,
+    state::{is_token, read_token_list, TOKEN_LIMIT},
+};
 
 const DEFAULT_PAGINATION_LIMIT: u32 = 10u32;
 const MAX_PAGINATION_LIMIT: u32 = TOKEN_LIMIT as u32;
 
 /// Queries contract config
-pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
-    let config: Config = read_config(deps.storage)?;
+pub fn query_config(_: Deps) -> StdResult<ConfigResponse> {
+    Ok(ConfigResponse {})
+}
 
-    Ok(ConfigResponse {
-        owner: config.owner,
-    })
+/// Queries contract owner from the admin
+pub fn query_owner(deps: Deps) -> StdResult<OwnerResponse> {
+    if let Some(owner) = OWNER.get(deps)? {
+        Ok(OwnerResponse { owner })
+    } else {
+        Err(StdError::generic_err("No owner set"))
+    }
 }
 
 /// Queries if the token with given address is already stored
