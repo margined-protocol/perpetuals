@@ -10,9 +10,7 @@ pub fn update_owner(
     // validate the address
     let valid_owner = deps.api.addr_validate(&owner)?;
 
-    OWNER.execute_update_admin::<Response, _>(deps, info, Some(valid_owner))?;
-
-    Ok(Response::default().add_attribute("action", "update_owner"))
+    Ok(OWNER.execute_update_admin(deps, info, Some(valid_owner))?)
 }
 
 /// this is a mock function that enables storage of data
