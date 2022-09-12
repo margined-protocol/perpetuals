@@ -143,7 +143,7 @@ fn test_update_pauser() {
 
     // Update the pauser
     let msg = ExecuteMsg::UpdatePauser {
-        pauser: Some("addr0001".to_string()),
+        pauser: "addr0001".to_string(),
     };
 
     let info = mock_info(OWNER, &[]);
@@ -158,21 +158,12 @@ fn test_update_pauser() {
         }
     );
 
-    // Update the pauser
-    let msg = ExecuteMsg::UpdatePauser { pauser: None };
-
-    let info = mock_info("addr0001", &[]);
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    let result = query(deps.as_ref(), mock_env(), QueryMsg::GetPauser {});
-    assert!(result.is_err());
-
     // Update should fail
     let msg = ExecuteMsg::UpdatePauser {
-        pauser: Some(OWNER.to_string()),
+        pauser: "not_the_pauser".to_string(),
     };
 
-    let info = mock_info(OWNER, &[]);
+    let info = mock_info("not_the_pauser", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, msg);
     assert!(result.is_err());
 }

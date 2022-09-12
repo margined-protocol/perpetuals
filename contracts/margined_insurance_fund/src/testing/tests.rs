@@ -29,33 +29,6 @@ fn test_instantiation() {
 }
 
 #[test]
-fn test_update_config() {
-    let mut deps = mock_dependencies();
-    let msg = InstantiateMsg {
-        engine: ENGINE.to_string(),
-    };
-    let info = mock_info("addr0000", &[]);
-    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    // Update the config
-    let msg = ExecuteMsg::UpdateOwner {
-        owner: Some("addr0001".to_string()),
-    };
-
-    let info = mock_info("addr0000", &[]);
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        config,
-        ConfigResponse {
-            engine: Addr::unchecked(ENGINE.to_string()),
-        }
-    );
-}
-
-#[test]
 fn test_update_owner() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
@@ -65,9 +38,9 @@ fn test_update_owner() {
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    // Update the config
+    // Update the owner
     let msg = ExecuteMsg::UpdateOwner {
-        owner: Some("addr0001".to_string()),
+        owner: "addr0001".to_string(),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -77,16 +50,7 @@ fn test_update_owner() {
     let resp: OwnerResponse = from_binary(&res).unwrap();
     let owner = resp.owner;
 
-    assert_eq!(owner, Addr::unchecked("addr0001".to_string()),);
-
-    // Update the Owner
-    let msg = ExecuteMsg::UpdateOwner { owner: None };
-
-    let info = mock_info("addr0001", &[]);
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    let result = query(deps.as_ref(), mock_env(), QueryMsg::GetOwner {});
-    assert!(result.is_err());
+    assert_eq!(owner, Addr::unchecked("addr0001".to_string()));
 }
 
 #[test]
@@ -731,7 +695,7 @@ fn test_not_owner() {
 
     // try to update the config
     let msg = ExecuteMsg::UpdateOwner {
-        owner: Some("addr0001".to_string()),
+        owner: "addr0001".to_string(),
     };
 
     let info = mock_info("not_the_owner", &[]);

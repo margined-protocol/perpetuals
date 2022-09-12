@@ -2,7 +2,6 @@ use cosmwasm_std::{
     Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, Uint128,
 };
 
-use cw_utils::maybe_addr;
 use margined_common::{integer::Integer, validate::validate_ratio};
 use margined_perp::margined_vamm::Direction;
 
@@ -90,16 +89,12 @@ pub fn update_config(
     Ok(Response::default().add_attribute("action", "update_config"))
 }
 
-pub fn update_owner(
-    deps: DepsMut,
-    info: MessageInfo,
-    owner: Option<String>,
-) -> StdResult<Response> {
+pub fn update_owner(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {
     // validate the address
-    let valid_owner = maybe_addr(deps.api, owner)?;
+    let valid_owner = deps.api.addr_validate(&owner)?;
 
     OWNER
-        .execute_update_admin::<Response, _>(deps, info, valid_owner)
+        .execute_update_admin::<Response, _>(deps, info, Some(valid_owner))
         .map_err(|error| StdError::generic_err(format!("{}", error)))?;
 
     Ok(Response::default().add_attribute("action", "update_owner"))

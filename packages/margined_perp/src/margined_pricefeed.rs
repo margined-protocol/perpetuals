@@ -29,7 +29,7 @@ pub enum ExecuteMsg {
         timestamps: Vec<u64>,
     },
     UpdateOwner {
-        owner: Option<String>,
+        owner: String,
     },
 }
 

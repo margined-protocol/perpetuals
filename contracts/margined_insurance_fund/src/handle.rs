@@ -3,7 +3,6 @@ use cosmwasm_std::{
     StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
-use cw_utils::maybe_addr;
 use margined_common::asset::AssetInfo;
 
 use crate::{
@@ -13,16 +12,12 @@ use crate::{
     state::{read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, Config, VAMM_LIMIT},
 };
 
-pub fn update_owner(
-    deps: DepsMut,
-    info: MessageInfo,
-    owner: Option<String>,
-) -> StdResult<Response> {
+pub fn update_owner(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {
     // validate the address
-    let valid_owner = maybe_addr(deps.api, owner)?;
+    let valid_owner = deps.api.addr_validate(&owner)?;
 
     OWNER
-        .execute_update_admin::<Response, _>(deps, info, valid_owner)
+        .execute_update_admin::<Response, _>(deps, info, Some(valid_owner))
         .map_err(|error| StdError::generic_err(format!("{}", error)))?;
 
     Ok(Response::default().add_attribute("action", "update_owner"))

@@ -56,7 +56,7 @@ impl VammController {
         self.call(msg, vec![])
     }
 
-    pub fn update_owner(&self, owner: Option<String>) -> StdResult<CosmosMsg> {
+    pub fn update_owner(&self, owner: String) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateOwner { owner };
         self.call(msg, vec![])
     }

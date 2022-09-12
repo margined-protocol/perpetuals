@@ -10,7 +10,7 @@ pub struct InstantiateMsg {}
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     UpdateOwner {
-        owner: Option<String>,
+        owner: String,
     },
     AddToken {
         token: String,

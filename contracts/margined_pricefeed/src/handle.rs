@@ -1,17 +1,16 @@
 use cosmwasm_std::{DepsMut, MessageInfo, Response, StdError, Uint128};
-use cw_utils::maybe_addr;
 
 use crate::{contract::OWNER, error::ContractError, state::store_price_data};
 
 pub fn update_owner(
     deps: DepsMut,
     info: MessageInfo,
-    owner: Option<String>,
+    owner: String,
 ) -> Result<Response, ContractError> {
     // validate the address
-    let valid_owner = maybe_addr(deps.api, owner)?;
+    let valid_owner = deps.api.addr_validate(&owner)?;
 
-    OWNER.execute_update_admin::<Response, _>(deps, info, valid_owner)?;
+    OWNER.execute_update_admin::<Response, _>(deps, info, Some(valid_owner))?;
 
     Ok(Response::default().add_attribute("action", "update_owner"))
 }

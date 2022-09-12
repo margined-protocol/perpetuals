@@ -37,7 +37,7 @@ fn test_update_owner() {
 
     // Update the owner
     let msg = ExecuteMsg::UpdateOwner {
-        owner: Some("addr0001".to_string()),
+        owner: "addr0001".to_string(),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -51,22 +51,13 @@ fn test_update_owner() {
 
     // Test sender is not owner
     let msg = ExecuteMsg::UpdateOwner {
-        owner: Some("not_owner".to_string()),
+        owner: "not_owner".to_string(),
     };
 
     let info = mock_info("not_owner", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
     assert_eq!(result.to_string(), "Caller is not admin");
-
-    // Update the Owner
-    let msg = ExecuteMsg::UpdateOwner { owner: None };
-
-    let info = mock_info("addr0001", &[]);
-    execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    let result = query(deps.as_ref(), mock_env(), QueryMsg::GetOwner {});
-    assert!(result.is_err());
 }
 
 #[test]

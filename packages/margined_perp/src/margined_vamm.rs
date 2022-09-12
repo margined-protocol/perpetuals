@@ -45,7 +45,7 @@ pub enum ExecuteMsg {
         spot_price_twap_interval: Option<u64>,
     },
     UpdateOwner {
-        owner: Option<String>,
+        owner: String,
     },
     SwapInput {
         direction: Direction,

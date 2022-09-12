@@ -1,5 +1,4 @@
 use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128};
-use cw_utils::maybe_addr;
 use margined_common::validate::validate_eligible_collateral as validate_funds;
 use margined_perp::querier::query_token_balance;
 
@@ -9,16 +8,12 @@ use crate::{
     state::{is_token, remove_token as remove_token_from_list, save_token},
 };
 
-pub fn update_owner(
-    deps: DepsMut,
-    info: MessageInfo,
-    owner: Option<String>,
-) -> StdResult<Response> {
+pub fn update_owner(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {
     // validate the address
-    let valid_owner = maybe_addr(deps.api, owner)?;
+    let valid_owner = deps.api.addr_validate(&owner)?;
 
     OWNER
-        .execute_update_admin::<Response, _>(deps, info, valid_owner)
+        .execute_update_admin::<(), _>(deps, info, Some(valid_owner))
         .map_err(|error| StdError::generic_err(format!("{}", error)))?;
 
     Ok(Response::default().add_attribute("action", "update_owner"))

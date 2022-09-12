@@ -43,7 +43,7 @@ pub enum ExecuteMsg {
         liquidation_fee: Option<Uint128>,
     },
     UpdatePauser {
-        pauser: Option<String>,
+        pauser: String,
     },
     OpenPosition {
         vamm: String,
