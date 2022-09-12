@@ -908,9 +908,10 @@ impl ShutdownScenario {
                     fluctuation_limit_ratio: Uint128::from(10_000u128), // 0.01
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
+                    insurance_fund: Some(insurance_fund_addr.to_string()),
                 },
                 &[],
-                "vamm5",
+                "vamm4",
                 None,
             )
             .unwrap();
@@ -922,7 +923,7 @@ impl ShutdownScenario {
         let vamm5_addr = router
             .instantiate_contract(
                 vamm_id,
-                insurance_fund_addr,
+                insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
                     decimals: 7u8, //see here
                     quote_asset: "ETH".to_string(),
@@ -938,7 +939,7 @@ impl ShutdownScenario {
                     insurance_fund: Some(insurance_fund_addr.to_string()),
                 },
                 &[],
-                "vamm4",
+                "vamm5",
                 None,
             )
             .unwrap();
