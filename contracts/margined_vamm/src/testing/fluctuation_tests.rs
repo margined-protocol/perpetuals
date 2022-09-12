@@ -26,6 +26,7 @@ fn setup() -> TestingEnv {
         spread_ratio: Uint128::from(10_000_000u128), // 0.01
         fluctuation_limit_ratio: Uint128::from(50_000_000u128), // 0.05
         margin_engine: Some("addr0000".to_string()),
+        insurance_fund: Some("insurance_fund".to_string()),
         pricefeed: "oracle".to_string(),
     };
 

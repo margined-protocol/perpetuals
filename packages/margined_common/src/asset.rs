@@ -187,8 +187,17 @@ impl AssetInfo {
     /// use the `utoken` convention, will fail if native token does not follow this
     pub fn get_decimals(&self, deps: Deps) -> StdResult<u8> {
         match &self {
-            // Note: we are assuming all natives use the `utoken` convention this may not be true
-            AssetInfo::NativeToken { .. } => Ok(6u8),
+            AssetInfo::NativeToken { denom } => {
+                // prefix must follow -> https://github.com/osmosis-labs/osmosis/pull/2223
+                match denom.chars().next().unwrap() {
+                    'u' => Ok(6u8),  // micro
+                    'n' => Ok(9u8),  // nano
+                    'p' => Ok(12u8), // pico
+                    _ => Err(StdError::generic_err(
+                        "Native token does not follow prefix standards",
+                    )),
+                }
+            }
             AssetInfo::Token { contract_addr } => {
                 // query the CW20 contract for its decimals
                 let response: TokenInfoResponse = deps
@@ -241,4 +250,43 @@ pub fn native_asset_info(denom: String) -> AssetInfo {
 /// * **contract_addr** is a [`Addr`] object representing the address of a token contract.
 pub fn token_asset_info(contract_addr: Addr) -> AssetInfo {
     AssetInfo::Token { contract_addr }
+}
+
+#[cfg(test)]
+mod test {
+    use super::AssetInfo;
+    use cosmwasm_std::testing::mock_dependencies;
+    use cosmwasm_std::StdError;
+
+    #[test]
+    fn decimal_checks() {
+        let deps = mock_dependencies();
+
+        let utoken = AssetInfo::NativeToken {
+            denom: "uwasm".to_string(),
+        };
+        assert_eq!(utoken.get_decimals(deps.as_ref()).unwrap(), 6u8);
+
+        let ntoken = AssetInfo::NativeToken {
+            denom: "nwasm".to_string(),
+        };
+        assert_eq!(ntoken.get_decimals(deps.as_ref()).unwrap(), 9u8);
+
+        let ptoken = AssetInfo::NativeToken {
+            denom: "pwasm".to_string(),
+        };
+        assert_eq!(ptoken.get_decimals(deps.as_ref()).unwrap(), 12u8);
+
+        let token = AssetInfo::NativeToken {
+            denom: "wasm".to_string(),
+        };
+
+        let err = token.get_decimals(deps.as_ref()).unwrap_err();
+        assert_eq!(
+            StdError::GenericErr {
+                msg: "Native token does not follow prefix standards".to_string()
+            },
+            err
+        );
+    }
 }

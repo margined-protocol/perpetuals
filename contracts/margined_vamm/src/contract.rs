@@ -49,6 +49,7 @@ pub fn instantiate(
     let mut config = Config {
         owner: info.sender,
         margin_engine: Addr::unchecked("".to_string()), // default to nothing, must be set
+        insurance_fund: Addr::unchecked("".to_string()), // default to nothing, must be set like the engine
         quote_asset: msg.quote_asset,
         base_asset: msg.base_asset,
         base_asset_holding_cap: Uint128::zero(),
@@ -67,6 +68,12 @@ pub fn instantiate(
     let margin_engine = msg.margin_engine;
     if let Some(margin_engine) = margin_engine {
         config.margin_engine = deps.api.addr_validate(margin_engine.as_str())?;
+    }
+
+    // set and update insurance fund
+    let insurance_fund = msg.insurance_fund;
+    if let Some(insurance_fund) = insurance_fund {
+        config.insurance_fund = deps.api.addr_validate(insurance_fund.as_str())?;
     }
 
     store_config(deps.storage, &config)?;
@@ -109,6 +116,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             spread_ratio,
             fluctuation_limit_ratio,
             margin_engine,
+            insurance_fund,
             pricefeed,
             spot_price_twap_interval,
         } => update_config(
@@ -121,6 +129,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             spread_ratio,
             fluctuation_limit_ratio,
             margin_engine,
+            insurance_fund,
             pricefeed,
             spot_price_twap_interval,
         ),
