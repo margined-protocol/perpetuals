@@ -895,7 +895,7 @@ impl ShutdownScenario {
                     insurance_fund: Some(insurance_fund.addr().to_string()),
                 },
                 &[],
-                "vamm5",
+                "vamm4",
                 None,
             )
             .unwrap();
@@ -923,7 +923,7 @@ impl ShutdownScenario {
                     insurance_fund: Some(insurance_fund.addr().to_string()),
                 },
                 &[],
-                "vamm4",
+                "vamm5",
                 None,
             )
             .unwrap();

@@ -1,6 +1,6 @@
 use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{from_binary, Addr, Uint128};
+use cosmwasm_std::{from_binary, Addr, StdError, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_vamm::{
     ConfigResponse, Direction, ExecuteMsg, InstantiateMsg, OwnerResponse, QueryMsg, StateResponse,
@@ -270,6 +270,101 @@ fn test_update_config_fail() {
     assert_eq!(
         result.to_string(),
         "Generic error: Invalid ratio".to_string()
+    );
+}
+
+#[test]
+fn test_force_error_swap_input_zero_amount() {
+    let mut deps = mock_dependencies();
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: to_decimals(1000),
+        base_asset_reserve: to_decimals(100),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
+        insurance_fund: Some("addr0000".to_string()),
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // open amm
+    let info = mock_info("addr0000", &[]);
+    execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SetOpen { open: true },
+    )
+    .unwrap();
+
+    // Swap in USD
+    let swap_msg = ExecuteMsg::SwapInput {
+        direction: Direction::RemoveFromAmm,
+        quote_asset_amount: Uint128::zero(),
+        base_asset_limit: Uint128::zero(),
+        can_go_over_fluctuation: false,
+    };
+
+    let info = mock_info("addr0000", &[]);
+    let err = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "Input must be non-zero".to_string(),
+        },
+        err
+    );
+}
+
+#[test]
+fn test_force_error_swap_output_zero_amount() {
+    let mut deps = mock_dependencies();
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        quote_asset: "ETH/USD".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: to_decimals(1000),
+        base_asset_reserve: to_decimals(100),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
+        insurance_fund: Some("addr0000".to_string()),
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // open amm
+    let info = mock_info("addr0000", &[]);
+    execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SetOpen { open: true },
+    )
+    .unwrap();
+
+    // Swap in USD
+    let swap_msg = ExecuteMsg::SwapOutput {
+        direction: Direction::RemoveFromAmm,
+        base_asset_amount: Uint128::zero(),
+        quote_asset_limit: Uint128::zero(),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    let err = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "Input must be non-zero".to_string(),
+        },
+        err
     );
 }
 

@@ -150,6 +150,7 @@ pub fn open_position(
     require_not_paused(state.pause)?;
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
     require_not_restriction_mode(deps.storage, &vamm, &trader, env.block.height)?;
+    require_non_zero_input(quote_asset_amount)?;
     require_non_zero_input(leverage)?;
 
     if leverage < config.decimals {

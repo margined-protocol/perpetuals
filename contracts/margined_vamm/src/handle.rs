@@ -12,7 +12,7 @@ use crate::{
     state::{read_config, read_state, store_config, store_state, Config, State},
     utils::{
         add_reserve_snapshot, check_is_over_block_fluctuation_limit, modulo, require_margin_engine,
-        require_open,
+        require_non_zero_input, require_open,
     },
 };
 
@@ -137,6 +137,7 @@ pub fn swap_input(
 
     require_open(state.open)?;
     require_margin_engine(info.sender, config.margin_engine)?;
+    require_non_zero_input(quote_asset_amount)?;
 
     let base_asset_amount = get_input_price_with_reserves(
         deps.as_ref(),
@@ -193,6 +194,7 @@ pub fn swap_output(
 
     require_open(state.open)?;
     require_margin_engine(info.sender, config.margin_engine)?;
+    require_non_zero_input(base_asset_amount)?;
 
     let quote_asset_amount = get_output_price_with_reserves(
         deps.as_ref(),
