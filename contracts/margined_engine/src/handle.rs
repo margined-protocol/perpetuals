@@ -230,7 +230,7 @@ pub fn open_position(
         ("action", "open_position"),
         ("vamm", vamm.as_ref()),
         ("trader", trader.as_ref()),
-        ("quote_asset_amount", &quote_asset_amount.to_string()),
+        ("open_position_amount", &quote_asset_amount.to_string()),
         ("leverage", &leverage.to_string()),
     ]))
 }
