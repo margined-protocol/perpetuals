@@ -45,6 +45,12 @@ pub enum ExecuteMsg {
     UpdatePauser {
         pauser: String,
     },
+    AddWhitelist {
+        address: String,
+    },
+    RemoveWhitelist {
+        address: String,
+    },
     OpenPosition {
         vamm: String,
         side: Side,
@@ -83,6 +89,10 @@ pub enum QueryMsg {
     Config {},
     State {},
     GetPauser {},
+    IsWhitelisted {
+        address: String,
+    },
+    GetWhitelist {},
     Position {
         vamm: String,
         trader: String,

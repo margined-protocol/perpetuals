@@ -3,7 +3,7 @@ use cosmwasm_std::{
     StdResult, SubMsgResult, Uint128,
 };
 use cw2::set_contract_version;
-use cw_controllers::Admin;
+use cw_controllers::{Admin, Hooks};
 use margined_common::validate::{
     validate_decimal_places, validate_eligible_collateral, validate_margin_ratios, validate_ratio,
 };
@@ -12,8 +12,8 @@ use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::error::ContractError;
 use crate::{
     handle::{
-        close_position, deposit_margin, liquidate, open_position, pay_funding, set_pause,
-        update_config, update_pauser, withdraw_margin,
+        add_whitelist, close_position, deposit_margin, liquidate, open_position, pay_funding,
+        remove_whitelist, set_pause, update_config, update_pauser, withdraw_margin,
     },
     query::{
         query_all_positions, query_config, query_cumulative_premium_fraction,
@@ -36,6 +36,8 @@ const CONTRACT_NAME: &str = "crates.io:margined-engine";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Admin controller for the pauser role
 pub const PAUSER: Admin = Admin::new("pauser");
+/// Hooks controller for the base asset holding whitelist
+pub const WHITELIST: Hooks = Hooks::new("whitelist");
 
 pub const INCREASE_POSITION_REPLY_ID: u64 = 1;
 pub const DECREASE_POSITION_REPLY_ID: u64 = 2;
@@ -132,6 +134,8 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             liquidation_fee,
         ),
         ExecuteMsg::UpdatePauser { pauser } => update_pauser(deps, info, pauser),
+        ExecuteMsg::AddWhitelist { address } => add_whitelist(deps, info, address),
+        ExecuteMsg::RemoveWhitelist { address } => remove_whitelist(deps, info, address),
         ExecuteMsg::OpenPosition {
             vamm,
             side,
@@ -172,6 +176,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
         QueryMsg::GetPauser {} => to_binary(&query_pauser(deps)?),
+        QueryMsg::IsWhitelisted { address } => to_binary(&WHITELIST.query_hook(deps, address)?),
+        QueryMsg::GetWhitelist {} => to_binary(&WHITELIST.query_hooks(deps)?),
         QueryMsg::AllPositions { trader } => to_binary(&query_all_positions(deps, trader)?),
         QueryMsg::Position { vamm, trader } => to_binary(&query_position(deps, vamm, trader)?),
         QueryMsg::MarginRatio { vamm, trader } => {

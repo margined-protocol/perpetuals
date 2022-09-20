@@ -15,6 +15,7 @@ use margined_perp::margined_engine::{
 use margined_perp::margined_vamm::Direction;
 
 use crate::{
+    contract::WHITELIST,
     messages::execute_insurance_fund_withdrawal,
     querier::{
         query_insurance_is_vamm, query_vamm_config, query_vamm_output_amount,
@@ -119,12 +120,18 @@ pub fn update_open_interest_notional(
 }
 
 // this blocks trades if user's position exceeds max base asset holding cap
-pub fn check_base_asset_holding_cap(deps: &Deps, vamm: Addr, size: Uint128) -> StdResult<Response> {
+pub fn check_base_asset_holding_cap(
+    deps: &Deps,
+    vamm: Addr,
+    size: Uint128,
+    trader: Addr,
+) -> StdResult<Response> {
     let cap = query_vamm_config(deps, vamm.to_string())?.base_asset_holding_cap;
 
-    // check if the cap has been exceeded
-    // TODO add concept of whitelist
-    if !cap.is_zero() && size > cap {
+    // check if the cap has been exceeded - if trader address is in whitelist this bypasses
+    if (!cap.is_zero() && size > cap)
+        && !WHITELIST.query_hook(deps.to_owned(), trader.to_string())?
+    {
         return Err(StdError::generic_err("base asset holding exceeds cap"));
     }
 

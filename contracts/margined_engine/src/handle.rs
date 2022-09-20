@@ -7,7 +7,7 @@ use crate::{
     contract::{
         CLOSE_POSITION_REPLY_ID, DECREASE_POSITION_REPLY_ID, INCREASE_POSITION_REPLY_ID,
         LIQUIDATION_REPLY_ID, PARTIAL_CLOSE_POSITION_REPLY_ID, PARTIAL_LIQUIDATION_REPLY_ID,
-        PAUSER, PAY_FUNDING_REPLY_ID, REVERSE_POSITION_REPLY_ID,
+        PAUSER, PAY_FUNDING_REPLY_ID, REVERSE_POSITION_REPLY_ID, WHITELIST,
     },
     messages::{execute_transfer_from, withdraw},
     querier::{
@@ -109,6 +109,26 @@ pub fn update_pauser(deps: DepsMut, info: MessageInfo, pauser: String) -> StdRes
 
     PAUSER
         .execute_update_admin(deps, info, Some(valid_pauser))
+        .map_err(|error| StdError::generic_err(format!("{}", error)))
+}
+
+// Adds an address to the whitelist for base asset holding cap
+pub fn add_whitelist(deps: DepsMut, info: MessageInfo, address: String) -> StdResult<Response> {
+    // validate the address
+    let valid_addr = deps.api.addr_validate(&address)?;
+
+    WHITELIST
+        .execute_add_hook(&PAUSER, deps, info, valid_addr)
+        .map_err(|error| StdError::generic_err(format!("{}", error)))
+}
+
+// Removes an address to the whitelist for base asset holding cap
+pub fn remove_whitelist(deps: DepsMut, info: MessageInfo, address: String) -> StdResult<Response> {
+    // validate the address
+    let valid_addr = deps.api.addr_validate(&address)?;
+
+    WHITELIST
+        .execute_remove_hook(&PAUSER, deps, info, valid_addr)
         .map_err(|error| StdError::generic_err(format!("{}", error)))
 }
 

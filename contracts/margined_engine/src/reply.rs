@@ -93,7 +93,12 @@ pub fn increase_position_reply(
     store_position(deps.storage, &position)?;
 
     // check the new position doesn't exceed any caps
-    check_base_asset_holding_cap(&deps.as_ref(), swap.vamm.clone(), position.size.value)?;
+    check_base_asset_holding_cap(
+        &deps.as_ref(),
+        swap.vamm.clone(),
+        position.size.value,
+        swap.trader.clone(),
+    )?;
 
     let mut msgs: Vec<SubMsg> = vec![];
 
