@@ -174,7 +174,7 @@ pub fn withdraw(
     let mut messages: Vec<SubMsg> = vec![];
 
     if token_balance.checked_add(pre_paid_shortfall)? < amount {
-        let shortfall = amount.checked_sub(token_balance)?;
+        let shortfall = amount.checked_sub(token_balance.checked_add(pre_paid_shortfall)?)?;
 
         // add any shortfall to bad_debt
         state.prepaid_bad_debt = state.prepaid_bad_debt.checked_add(shortfall)?;
