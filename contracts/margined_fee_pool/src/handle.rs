@@ -55,6 +55,11 @@ pub fn send_token(
     amount: Uint128,
     recipient: String,
 ) -> StdResult<Response> {
+    // check amount is not zero
+    if amount.is_zero() {
+        return Err(StdError::generic_err("Cannot transfer zero tokens"));
+    }
+
     // check permissions to send the message
     if !OWNER.is_admin(deps, &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));
