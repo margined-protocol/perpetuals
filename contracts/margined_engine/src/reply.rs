@@ -333,7 +333,7 @@ pub fn reverse_position_reply(
         let margin = previous_margin.checked_sub(swap.unrealized_pnl)?;
 
         // create transfer message
-        msgs.push(execute_transfer(deps.storage, &swap.trader.clone(), margin.value).unwrap());
+        msgs.push(execute_transfer(deps.storage, &swap.trader, margin.value).unwrap());
 
         // check if native tokens are sufficient
         if let AssetInfo::NativeToken { .. } = config.eligible_collateral {
