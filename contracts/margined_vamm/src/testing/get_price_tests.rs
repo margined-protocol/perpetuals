@@ -27,6 +27,21 @@ fn test_get_input_add_to_amm() {
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     // getInputPrice, add to amm
+    // amount = 0
+    // price = 0
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::OutputPrice {
+            direction: Direction::AddToAmm,
+            amount: Uint128::zero(),
+        },
+    )
+    .unwrap();
+    let result: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(result, Uint128::zero());
+
+    // getInputPrice, add to amm
     // amount = 100(quote asset reserved) - (100 * 1000) / (1000 + 50) = 4.7619...
     // price = 50 / 4.7619 = 10.499
     let res = query(
@@ -198,6 +213,30 @@ fn test_get_input_and_output_price_with_reserves() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&res).unwrap();
+
+    // amount = 0
+    // price = 0
+    let result = get_input_price_with_reserves(
+        deps.as_ref(),
+        &Direction::AddToAmm,
+        Uint128::zero(),
+        state.quote_asset_reserve,
+        state.base_asset_reserve,
+    )
+    .unwrap();
+    assert_eq!(result, Uint128::zero());
+
+    // amount = 0
+    // price = 0
+    let result = get_output_price_with_reserves(
+        deps.as_ref(),
+        &Direction::AddToAmm,
+        Uint128::zero(),
+        state.quote_asset_reserve,
+        state.base_asset_reserve,
+    )
+    .unwrap();
+    assert_eq!(result, Uint128::zero());
 
     // amount = 100(quote asset reserved) - (100 * 1000) / (1000 + 50) = 4.7619...
     // price = 50 / 4.7619 = 10.499

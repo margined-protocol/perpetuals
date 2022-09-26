@@ -1262,10 +1262,12 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_negative(252_000_000u128));
 
+    println!("close position called");
     let msg = engine
         .close_position(vamm.addr().to_string(), to_decimals(0u64))
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
+    println!("close position executed");
 
     let bob_balance = usdc.balance::<_, _, Empty>(&router, bob.clone()).unwrap();
     assert_eq!(bob_balance, Uint128::from(4_980_000_000_000u128));
