@@ -366,8 +366,6 @@ pub fn get_output_price_with_reserves(
     quote_asset_reserve: Uint128,
     base_asset_reserve: Uint128,
 ) -> StdResult<Uint128> {
-    println!("get_output_price_with_reserves");
-
     let config: Config = read_config(deps.storage)?;
 
     if base_asset_amount == Uint128::zero() {
