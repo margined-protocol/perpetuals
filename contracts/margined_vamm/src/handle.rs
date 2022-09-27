@@ -12,7 +12,7 @@ use crate::{
     state::{read_config, read_state, store_config, store_state, Config, State},
     utils::{
         add_reserve_snapshot, check_is_over_block_fluctuation_limit, modulo, require_margin_engine,
-        require_non_zero_input, require_open,
+        require_open,
     },
 };
 
@@ -137,30 +137,36 @@ pub fn swap_input(
 
     require_open(state.open)?;
     require_margin_engine(info.sender, config.margin_engine)?;
-    require_non_zero_input(quote_asset_amount)?;
 
-    let base_asset_amount = get_input_price_with_reserves(
-        deps.as_ref(),
-        &direction,
-        quote_asset_amount,
-        state.quote_asset_reserve,
-        state.base_asset_reserve,
-    )?;
+    let base_asset_amount: Uint128 = if !quote_asset_amount.is_zero() {
+        let base_asset_amount = get_input_price_with_reserves(
+            deps.as_ref(),
+            &direction,
+            quote_asset_amount,
+            state.quote_asset_reserve,
+            state.base_asset_reserve,
+        )?;
 
-    // If AddToAmm, exchanged base amount should be more than base_asset_limit,
-    // otherwise(RemoveFromAmm), exchanged base amount should be less than base_asset_limit.
-    // In RemoveFromAmm case, more position means more debt so should not be larger than base_asset_limit
-    if !base_asset_limit.is_zero() {
-        if direction == Direction::AddToAmm && base_asset_amount < base_asset_limit {
-            return Err(StdError::generic_err(
-                "Less than minimum base asset amount limit",
-            ));
-        } else if direction == Direction::RemoveFromAmm && base_asset_amount > base_asset_limit {
-            return Err(StdError::generic_err(
-                "Greater than maximum base asset amount limit",
-            ));
+        // If AddToAmm, exchanged base amount should be more than base_asset_limit,
+        // otherwise(RemoveFromAmm), exchanged base amount should be less than base_asset_limit.
+        // In RemoveFromAmm case, more position means more debt so should not be larger than base_asset_limit
+        if !base_asset_limit.is_zero() {
+            if direction == Direction::AddToAmm && base_asset_amount < base_asset_limit {
+                return Err(StdError::generic_err(
+                    "Less than minimum base asset amount limit",
+                ));
+            } else if direction == Direction::RemoveFromAmm && base_asset_amount > base_asset_limit
+            {
+                return Err(StdError::generic_err(
+                    "Greater than maximum base asset amount limit",
+                ));
+            }
         }
-    }
+
+        base_asset_amount
+    } else {
+        Uint128::zero()
+    };
 
     let response = update_reserve(
         deps.storage,
@@ -194,15 +200,6 @@ pub fn swap_output(
 
     require_open(state.open)?;
     require_margin_engine(info.sender, config.margin_engine)?;
-    require_non_zero_input(base_asset_amount)?;
-
-    let quote_asset_amount = get_output_price_with_reserves(
-        deps.as_ref(),
-        &direction,
-        base_asset_amount,
-        state.quote_asset_reserve,
-        state.base_asset_reserve,
-    )?;
 
     // flip direction when updating reserve
     let update_direction = match direction {
@@ -210,21 +207,38 @@ pub fn swap_output(
         Direction::RemoveFromAmm => Direction::AddToAmm,
     };
 
-    // If AddToAmm, exchanged base amount should be more than quote_asset_limit,
-    // otherwise(RemoveFromAmm), exchanged base amount should be less than quote_asset_limit.
-    // In RemoveFromAmm case, more position means more debt so should not be larger than quote_asset_limit
-    if !quote_asset_limit.is_zero() {
-        if update_direction == Direction::RemoveFromAmm && quote_asset_amount < quote_asset_limit {
-            return Err(StdError::generic_err(
-                "Less than minimum quote asset amount limit",
-            ));
-        } else if update_direction == Direction::AddToAmm && quote_asset_amount > quote_asset_limit
-        {
-            return Err(StdError::generic_err(
-                "Greater than maximum quote asset amount limit",
-            ));
+    let quote_asset_amount: Uint128 = if !base_asset_amount.is_zero() {
+        let quote_asset_amount = get_output_price_with_reserves(
+            deps.as_ref(),
+            &direction,
+            base_asset_amount,
+            state.quote_asset_reserve,
+            state.base_asset_reserve,
+        )?;
+
+        // If AddToAmm, exchanged base amount should be more than quote_asset_limit,
+        // otherwise(RemoveFromAmm), exchanged base amount should be less than quote_asset_limit.
+        // In RemoveFromAmm case, more position means more debt so should not be larger than quote_asset_limit
+        if !quote_asset_limit.is_zero() {
+            if update_direction == Direction::RemoveFromAmm
+                && quote_asset_amount < quote_asset_limit
+            {
+                return Err(StdError::generic_err(
+                    "Less than minimum quote asset amount limit",
+                ));
+            } else if update_direction == Direction::AddToAmm
+                && quote_asset_amount > quote_asset_limit
+            {
+                return Err(StdError::generic_err(
+                    "Greater than maximum quote asset amount limit",
+                ));
+            }
         }
-    }
+
+        quote_asset_amount
+    } else {
+        Uint128::zero()
+    };
 
     let response = update_reserve(
         deps.storage,
@@ -310,7 +324,7 @@ pub fn get_input_price_with_reserves(
     let config: Config = read_config(deps.storage)?;
 
     if quote_asset_amount == Uint128::zero() {
-        Uint128::zero();
+        return Ok(Uint128::zero());
     }
 
     // k = x * y (divided by decimal places)
@@ -355,8 +369,9 @@ pub fn get_output_price_with_reserves(
     let config: Config = read_config(deps.storage)?;
 
     if base_asset_amount == Uint128::zero() {
-        Uint128::zero();
+        return Ok(Uint128::zero());
     }
+
     let invariant_k = quote_asset_reserve
         .checked_mul(base_asset_reserve)?
         .checked_div(config.decimals)?;

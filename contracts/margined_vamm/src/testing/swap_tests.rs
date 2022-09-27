@@ -1,6 +1,6 @@
 use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{from_binary, Addr, StdError, Uint128};
+use cosmwasm_std::{from_binary, Addr, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_vamm::{
     ConfigResponse, Direction, ExecuteMsg, InstantiateMsg, OwnerResponse, QueryMsg, StateResponse,
@@ -274,7 +274,7 @@ fn test_update_config_fail() {
 }
 
 #[test]
-fn test_force_error_swap_input_zero_amount() {
+fn test_swap_input_zero_amount() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
@@ -310,19 +310,26 @@ fn test_force_error_swap_input_zero_amount() {
         base_asset_limit: Uint128::zero(),
         can_go_over_fluctuation: false,
     };
-
     let info = mock_info("addr0000", &[]);
-    let err = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap_err();
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
     assert_eq!(
-        StdError::GenericErr {
-            msg: "Input must be non-zero".to_string(),
-        },
-        err
+        state,
+        StateResponse {
+            open: true,
+            quote_asset_reserve: to_decimals(1_000),
+            base_asset_reserve: to_decimals(100),
+            total_position_size: Integer::zero(),
+            funding_rate: Integer::zero(),
+            next_funding_time: 1_571_801_019u64,
+        }
     );
 }
 
 #[test]
-fn test_force_error_swap_output_zero_amount() {
+fn test_swap_output_zero_amount() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
@@ -357,14 +364,21 @@ fn test_force_error_swap_output_zero_amount() {
         base_asset_amount: Uint128::zero(),
         quote_asset_limit: Uint128::zero(),
     };
-
     let info = mock_info("addr0000", &[]);
-    let err = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap_err();
+    execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
     assert_eq!(
-        StdError::GenericErr {
-            msg: "Input must be non-zero".to_string(),
-        },
-        err
+        state,
+        StateResponse {
+            open: true,
+            quote_asset_reserve: to_decimals(1_000),
+            base_asset_reserve: to_decimals(100),
+            total_position_size: Integer::zero(),
+            funding_rate: Integer::zero(),
+            next_funding_time: 1_571_801_019u64,
+        }
     );
 }
 

@@ -73,6 +73,10 @@ pub fn query_input_price(deps: Deps, direction: Direction, amount: Uint128) -> S
         state.base_asset_reserve,
     )?;
 
+    if output.is_zero() {
+        return Ok(Uint128::zero());
+    }
+
     let price = amount.checked_mul(config.decimals)?.checked_div(output)?;
 
     Ok(price)
@@ -90,6 +94,10 @@ pub fn query_output_price(deps: Deps, direction: Direction, amount: Uint128) -> 
         state.quote_asset_reserve,
         state.base_asset_reserve,
     )?;
+
+    if output.is_zero() {
+        return Ok(Uint128::zero());
+    }
 
     let price = amount.checked_mul(config.decimals)?.checked_div(output)?;
 
