@@ -1,4 +1,4 @@
-use cosmwasm_std::{StdError, Uint128};
+use cosmwasm_std::{Addr, StdError, Uint128};
 use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
 use margined_utils::scenarios::{to_decimals, SimpleScenario};
@@ -493,6 +493,17 @@ fn test_add_remove_whitelist() {
 
     assert_eq!(whitelist, vec![alice.to_string()]);
 
+    // add addr that is already in
+    let msg = engine.add_whitelist(alice.to_string()).unwrap();
+    let err = router.execute(owner.clone(), msg).unwrap_err();
+
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "Given address already registered as a hook".to_string(),
+        },
+        err.downcast().unwrap()
+    );
+
     // remove alice from whitelist
     let msg = engine.remove_whitelist(alice.to_string()).unwrap();
     router.execute(owner.clone(), msg).unwrap();
@@ -500,7 +511,42 @@ fn test_add_remove_whitelist() {
     let whitelist = engine.get_whitelist(&router).unwrap();
     let empty: Vec<String> = Vec::new();
 
-    assert_eq!(whitelist, empty)
+    assert_eq!(whitelist, empty);
+
+    // test remove non-existed addr
+    let msg = engine.remove_whitelist(alice.to_string()).unwrap();
+    let err = router.execute(owner.clone(), msg).unwrap_err();
+
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "Given address not registered as a hook".to_string(),
+        },
+        err.downcast().unwrap()
+    );
+
+    // test add as non-admin
+    let not_owner = Addr::unchecked("not_owner");
+
+    let msg = engine.add_whitelist(alice.to_string()).unwrap();
+    let err = router.execute(not_owner.clone(), msg).unwrap_err();
+
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "Caller is not admin".to_string(),
+        },
+        err.downcast().unwrap()
+    );
+
+    // test remove as non-admin
+    let msg = engine.remove_whitelist(alice.to_string()).unwrap();
+    let err = router.execute(not_owner.clone(), msg).unwrap_err();
+
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "Caller is not admin".to_string(),
+        },
+        err.downcast().unwrap()
+    );
 }
 
 #[test]
