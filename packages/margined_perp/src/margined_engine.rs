@@ -202,7 +202,7 @@ pub struct RemainMarginResponse {
     pub latest_premium_fraction: Integer,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct TransferResponse {
     pub messages: Vec<SubMsg>,
     pub spread_fee: Uint128,
