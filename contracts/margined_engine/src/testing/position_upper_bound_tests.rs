@@ -474,3 +474,115 @@ fn test_force_error_open_short_and_reverse_long_over_cap() {
         err.downcast().unwrap()
     );
 }
+
+#[test]
+fn test_add_remove_whitelist() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        owner,
+        engine,
+        ..
+    } = SimpleScenario::new();
+
+    // add alice to whitelist
+    let msg = engine.add_whitelist(alice.to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let whitelist = engine.get_whitelist(&router).unwrap();
+
+    assert_eq!(whitelist, vec![alice.to_string()]);
+
+    // remove alice from whitelist
+    let msg = engine.remove_whitelist(alice.to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let whitelist = engine.get_whitelist(&router).unwrap();
+    let empty: Vec<String> = Vec::new();
+
+    assert_eq!(whitelist, empty)
+}
+
+#[test]
+fn test_query_all_whitelist_and_is_whitelist() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        owner,
+        engine,
+        ..
+    } = SimpleScenario::new();
+
+    // add alice to whitelist
+    let msg = engine.add_whitelist(alice.to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let whitelist = engine.get_whitelist(&router).unwrap();
+
+    assert_eq!(whitelist, vec![alice.to_string()]);
+
+    // add bob to whitelist, alice already in
+    let msg = engine.add_whitelist(bob.to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let whitelist = engine.get_whitelist(&router).unwrap();
+
+    assert_eq!(whitelist, vec![alice.to_string(), bob.to_string()]);
+
+    // test if alice is in whitelist
+    let bool = engine.is_whitelist(&router, alice.to_string()).unwrap();
+
+    assert!(bool);
+    // test if bob is in whitelist
+    let bool = engine.is_whitelist(&router, bob.to_string()).unwrap();
+
+    assert!(bool);
+}
+
+#[test]
+fn test_whitelist_works() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        owner,
+        engine,
+        vamm,
+        ..
+    } = SimpleScenario::new();
+
+    // add alice to whitelist
+    let msg = engine.add_whitelist(alice.to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = vamm
+        .set_base_asset_holding_cap(Uint128::from(10_000_000_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(9u64),
+            to_decimals(1u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(21u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    let res = router.execute(alice.clone(), msg);
+
+    assert!(res.is_ok())
+}

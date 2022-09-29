@@ -9,7 +9,7 @@ use cosmwasm_std::{
     to_binary, Addr, Coin, CosmosMsg, Empty, Querier, QuerierWrapper, StdResult, Uint128, WasmMsg,
     WasmQuery,
 };
-
+use cw_controllers::HooksResponse;
 use margined_common::integer::Integer;
 
 /// EngineController is a wrapper around Addr that provides a lot of helpers
@@ -192,6 +192,16 @@ impl EngineController {
         self.call(msg, vec![])
     }
 
+    pub fn add_whitelist(&self, address: String) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::AddWhitelist { address };
+        self.call(msg, vec![])
+    }
+
+    pub fn remove_whitelist(&self, address: String) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::RemoveWhitelist { address };
+        self.call(msg, vec![])
+    }
+
     /// get margin engine configuration
     pub fn config<Q: Querier>(&self, querier: &Q) -> StdResult<ConfigResponse> {
         let msg = QueryMsg::Config {};
@@ -251,6 +261,33 @@ impl EngineController {
         .into();
 
         let res: Vec<Position> = QuerierWrapper::<Empty>::new(querier).query(&query)?;
+        Ok(res)
+    }
+
+    /// get the whitelist
+    pub fn get_whitelist<Q: Querier>(&self, querier: &Q) -> StdResult<Vec<String>> {
+        let msg = QueryMsg::GetWhitelist {};
+        let query = WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&msg)?,
+        }
+        .into();
+
+        let res: HooksResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
+
+        Ok(res.hooks)
+    }
+
+    /// checks if the address supplied is in the whitelist
+    pub fn is_whitelist<Q: Querier>(&self, querier: &Q, address: String) -> StdResult<bool> {
+        let msg = QueryMsg::IsWhitelisted { address };
+        let query = WasmQuery::Smart {
+            contract_addr: self.addr().into(),
+            msg: to_binary(&msg)?,
+        }
+        .into();
+
+        let res: bool = QuerierWrapper::<Empty>::new(querier).query(&query)?;
         Ok(res)
     }
 
