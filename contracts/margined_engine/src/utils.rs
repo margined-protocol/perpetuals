@@ -98,6 +98,7 @@ pub fn update_open_interest_notional(
     state: &mut State,
     vamm: Addr,
     amount: Integer,
+    trader: Addr,
 ) -> StdResult<Response> {
     let cap = query_vamm_config(deps, vamm.to_string())?.open_interest_notional_cap;
 
@@ -108,8 +109,11 @@ pub fn update_open_interest_notional(
         updated_open_interest = Integer::zero();
     }
 
-    // check if the cap has been exceeded
-    if !cap.is_zero() && amount.is_positive() && updated_open_interest > Integer::new_positive(cap)
+    // check if the cap has been exceeded - if trader address is in whitelist this bypasses
+    if (!cap.is_zero()
+        && amount.is_positive()
+        && updated_open_interest > Integer::new_positive(cap))
+        && !WHITELIST.query_hook(deps.to_owned(), trader.to_string())?
     {
         return Err(StdError::generic_err("open interest exceeds cap"));
     }
