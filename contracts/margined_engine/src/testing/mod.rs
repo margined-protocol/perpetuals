@@ -21,3 +21,4 @@ mod position_liquidation_tests;
 mod position_tests;
 mod position_upper_bound_tests;
 mod tests;
+mod whitelist_tests;

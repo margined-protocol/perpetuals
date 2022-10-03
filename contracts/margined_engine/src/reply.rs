@@ -59,6 +59,7 @@ pub fn increase_position_reply(
         &mut state,
         swap.vamm.clone(),
         Integer::new_positive(input),
+        swap.trader.clone(),
     )?;
 
     // calculate margin needed given swap
@@ -93,7 +94,12 @@ pub fn increase_position_reply(
     store_position(deps.storage, &position)?;
 
     // check the new position doesn't exceed any caps
-    check_base_asset_holding_cap(&deps.as_ref(), swap.vamm.clone(), position.size.value)?;
+    check_base_asset_holding_cap(
+        &deps.as_ref(),
+        swap.vamm.clone(),
+        position.size.value,
+        swap.trader.clone(),
+    )?;
 
     let mut msgs: Vec<SubMsg> = vec![];
 
@@ -202,6 +208,7 @@ pub fn decrease_position_reply(
         &mut state,
         swap.vamm.clone(),
         Integer::new_negative(input),
+        swap.trader.clone(),
     )?;
 
     // depending on the direction the output is positive or negative
@@ -294,6 +301,7 @@ pub fn reverse_position_reply(
         &mut state,
         swap.vamm.clone(),
         Integer::new_negative(output),
+        swap.trader.clone(),
     )?;
 
     let previous_margin = Integer::new_negative(position.margin);
@@ -446,7 +454,7 @@ pub fn close_position_reply(
     if !position.notional.is_zero() {
         let mut fees = transfer_fees(
             deps.as_ref(),
-            swap.trader,
+            swap.trader.clone(),
             swap.vamm.clone(),
             position.notional,
         )
@@ -461,7 +469,13 @@ pub fn close_position_reply(
     let value =
         margin_delta + Integer::new_positive(bad_debt) + Integer::new_positive(position.notional);
 
-    update_open_interest_notional(&deps.as_ref(), &mut state, swap.vamm, value.invert_sign())?;
+    update_open_interest_notional(
+        &deps.as_ref(),
+        &mut state,
+        swap.vamm,
+        value.invert_sign(),
+        swap.trader,
+    )?;
 
     remove_position(deps.storage, &position);
 
@@ -502,6 +516,7 @@ pub fn partial_close_position_reply(
         &mut state,
         swap.vamm.clone(),
         Integer::new_negative(input),
+        swap.trader.clone(),
     )?;
 
     // depending on the direction the output is positive or negative
