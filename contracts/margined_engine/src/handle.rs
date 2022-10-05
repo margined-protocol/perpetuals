@@ -314,14 +314,13 @@ pub fn close_position(
                 },
             )?;
 
-            open_reverse_position(
-                &deps,
-                position.clone(),
+            swap_input(
+                &position.vamm,
                 side,
                 partial_close_notional,
                 Uint128::zero(),
                 true,
-                Some(PARTIAL_CLOSE_POSITION_REPLY_ID),
+                PARTIAL_CLOSE_POSITION_REPLY_ID,
             )?
         } else {
             internal_close_position(deps, &position, quote_amount_limit, CLOSE_POSITION_REPLY_ID)?
@@ -599,14 +598,6 @@ fn open_reverse_position(
     can_go_over_fluctuation: bool,
     reply_id: Option<u64>,
 ) -> StdResult<SubMsg> {
-    let config: Config = read_config(deps.storage).unwrap();
-    // // let position: Position = get_position(env, deps.storage, &vamm, &trader, side.clone());
-
-    // // calc the input amount wrt to leverage and decimals
-    // let open_notional = quote_asset_amount
-    //     .checked_mul(leverage)?
-    //     .checked_div(config.decimals)?;
-
     let PositionUnrealizedPnlResponse {
         position_notional,
         unrealized_pnl: _,
@@ -620,7 +611,6 @@ fn open_reverse_position(
             None => DECREASE_POSITION_REPLY_ID,
         };
 
-        // then we are opening a new position or adding to an existing
         swap_input(
             &position.vamm,
             side,
