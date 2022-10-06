@@ -45,6 +45,12 @@ pub enum ExecuteMsg {
     UpdatePauser {
         pauser: String,
     },
+    AddWhitelist {
+        address: String,
+    },
+    RemoveWhitelist {
+        address: String,
+    },
     OpenPosition {
         vamm: String,
         side: Side,
@@ -83,6 +89,10 @@ pub enum QueryMsg {
     Config {},
     State {},
     GetPauser {},
+    IsWhitelisted {
+        address: String,
+    },
+    GetWhitelist {},
     Position {
         vamm: String,
         trader: String,
@@ -192,7 +202,7 @@ pub struct RemainMarginResponse {
     pub latest_premium_fraction: Integer,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct TransferResponse {
     pub messages: Vec<SubMsg>,
     pub spread_fee: Uint128,
