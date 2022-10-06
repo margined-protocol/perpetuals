@@ -255,6 +255,11 @@ impl NativeTokenScenario {
         fees: u128,
         count: u64,
     ) {
+        let funds = if fees == 0u128 {
+            vec![]
+        } else {
+            vec![Coin::new(fees, "uwasm")]
+        };
         for _ in 0..count {
             let msg = self
                 .engine
@@ -264,7 +269,7 @@ impl NativeTokenScenario {
                     quote_asset_amount,
                     leverage,
                     Uint128::zero(),
-                    vec![Coin::new(fees, "uwasm")],
+                    funds.clone(),
                 )
                 .unwrap();
             self.router.execute(account.clone(), msg).unwrap();

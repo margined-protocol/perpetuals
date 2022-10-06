@@ -185,7 +185,7 @@ pub fn open_position(
     require_additional_margin(Integer::from(margin_ratio), config.initial_margin_ratio)?;
 
     // retrieves existing position or creates a new one
-    let position: Position = get_position(env.clone(), deps.storage, &vamm, &trader, side.clone());
+    let position: Position = get_position(env, deps.storage, &vamm, &trader, side.clone());
 
     // if direction and side are same way then increasing else we are reversing
     let is_increase: bool = position.direction == Direction::AddToAmm && side == Side::Buy
@@ -203,12 +203,9 @@ pub fn open_position(
     } else {
         open_reverse_position(
             &deps,
-            env,
-            vamm.clone(),
-            trader.clone(),
+            position.clone(),
             side.clone(),
-            quote_asset_amount,
-            leverage,
+            open_notional,
             base_asset_limit,
             false,
             None,
@@ -337,17 +334,13 @@ pub fn close_position(
                 },
             )?;
 
-            open_reverse_position(
-                &deps,
-                env,
-                vamm.clone(),
-                trader.clone(),
+            swap_input(
+                &position.vamm,
                 side,
                 partial_close_notional,
-                config.decimals,
                 Uint128::zero(),
                 true,
-                Some(PARTIAL_CLOSE_POSITION_REPLY_ID),
+                PARTIAL_CLOSE_POSITION_REPLY_ID,
             )?
         } else {
             internal_close_position(deps, &position, quote_amount_limit, CLOSE_POSITION_REPLY_ID)?
@@ -618,26 +611,13 @@ pub fn internal_close_position(
 #[allow(clippy::too_many_arguments)]
 fn open_reverse_position(
     deps: &DepsMut,
-    env: Env,
-    vamm: Addr,
-    trader: Addr,
+    position: Position,
     side: Side,
     quote_asset_amount: Uint128,
-    leverage: Uint128,
     base_asset_limit: Uint128,
     can_go_over_fluctuation: bool,
     reply_id: Option<u64>,
 ) -> StdResult<SubMsg> {
-    let config: Config = read_config(deps.storage).unwrap();
-    let position: Position = get_position(env, deps.storage, &vamm, &trader, side.clone());
-
-    // calc the input amount wrt to leverage and decimals
-    let open_notional = quote_asset_amount
-        .checked_mul(leverage)
-        .unwrap()
-        .checked_div(config.decimals)
-        .unwrap();
-
     let PositionUnrealizedPnlResponse {
         position_notional,
         unrealized_pnl: _,
@@ -645,17 +625,16 @@ fn open_reverse_position(
         .unwrap();
 
     // reduce position if old position is larger
-    let msg: SubMsg = if position_notional > open_notional {
+    let msg: SubMsg = if position_notional > quote_asset_amount {
         let reply_id = match reply_id {
             Some(id) => id,
             None => DECREASE_POSITION_REPLY_ID,
         };
 
-        // then we are opening a new position or adding to an existing
         swap_input(
-            &vamm,
+            &position.vamm,
             side,
-            open_notional,
+            quote_asset_amount,
             base_asset_limit,
             can_go_over_fluctuation,
             reply_id,
@@ -669,7 +648,7 @@ fn open_reverse_position(
         };
 
         swap_output(
-            &vamm,
+            &position.vamm,
             direction_to_side(position.direction.clone()),
             position.size.value,
             Uint128::zero(),
