@@ -56,13 +56,16 @@ pub fn update_position_reply(
         Side::Sell => Integer::new_negative(output),
     };
 
-    let amount = if reply_id == INCREASE_POSITION_REPLY_ID {
-        Integer::new_positive(input)
-    } else {
-        Integer::new_negative(input)
-    };
-
-    update_open_interest_notional(&deps.as_ref(), &mut state, swap.vamm.clone(), amount)?;
+    update_open_interest_notional(
+        &deps.as_ref(),
+        &mut state,
+        swap.vamm.clone(),
+        if reply_id == INCREASE_POSITION_REPLY_ID {
+            Integer::new_positive(input)
+        } else {
+            Integer::new_negative(input)
+        },
+    )?;
 
     // define variables that differ across increase and decrease scenario
     let swap_margin: Uint128;
