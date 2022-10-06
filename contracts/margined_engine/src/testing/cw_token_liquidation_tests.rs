@@ -1742,6 +1742,12 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         5u64,
     );
 
+    let bob_balance = env
+        .usdc
+        .balance::<_, _, Empty>(&env.router, env.bob.clone())
+        .unwrap();
+    assert_eq!(bob_balance, Uint128::from(4_980_000_000_000u128));
+
     let price = env.vamm.spot_price(&env.router).unwrap();
     let msg = env
         .pricefeed

@@ -156,6 +156,7 @@ pub fn increase_position_reply(
     if let AssetInfo::NativeToken { .. } = config.eligible_collateral {
         funds.are_sufficient()?;
     }
+
     // check that the maintenance margin is correct
     let margin_ratio = query_margin_ratio(
         deps.as_ref(),
@@ -188,6 +189,7 @@ pub fn decrease_position_reply(
     let mut state: State = read_state(deps.storage)?;
 
     let swap: TmpSwapInfo = read_tmp_swap(deps.storage)?;
+    let mut funds = read_sent_funds(deps.storage)?;
 
     let mut position: Position = get_position(
         env.clone(),
@@ -197,6 +199,12 @@ pub fn decrease_position_reply(
         swap.side.clone(),
     );
 
+    // depending on the direction the output is positive or negative
+    let signed_output: Integer = match &swap.side {
+        Side::Buy => Integer::new_positive(output),
+        Side::Sell => Integer::new_negative(output),
+    };
+
     update_open_interest_notional(
         &deps.as_ref(),
         &mut state,
@@ -204,11 +212,8 @@ pub fn decrease_position_reply(
         Integer::new_negative(input),
     )?;
 
-    // depending on the direction the output is positive or negative
-    let signed_output: Integer = match &swap.side {
-        Side::Buy => Integer::new_positive(output),
-        Side::Sell => Integer::new_negative(output),
-    };
+    // calculate margin needed given swap
+    let swap_margin = Uint128::zero();
 
     // realized_pnl = unrealized_pnl * close_ratio
     let realized_pnl = if !position.size.is_zero() {
@@ -235,9 +240,6 @@ pub fn decrease_position_reply(
             - Integer::new_positive(swap.open_notional)
     };
 
-    // calculate the fees
-    let fees = transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional).unwrap();
-
     // set the new position
     position.size += signed_output;
     position.margin = margin;
@@ -246,7 +248,68 @@ pub fn decrease_position_reply(
     position.block_number = env.block.height;
 
     store_position(deps.storage, &position)?;
-    store_state(deps.storage, &state)?;
+
+    let mut msgs: Vec<SubMsg> = vec![];
+
+    // create transfer messages depending on PnL
+    #[allow(clippy::comparison_chain)]
+    if swap.margin_to_vault < Integer::zero() {
+        msgs.append(
+            &mut withdraw(
+                deps.as_ref(),
+                env,
+                &mut state,
+                &swap.trader,
+                config.eligible_collateral.clone(),
+                swap.margin_to_vault.value,
+                Uint128::zero(),
+            )
+            .unwrap(),
+        );
+    } else if swap.margin_to_vault > Integer::zero() {
+        match config.eligible_collateral {
+            AssetInfo::NativeToken { .. } => {
+                funds.required = funds.required.checked_add(swap_margin)?;
+            }
+            AssetInfo::Token { .. } => {
+                msgs.push(
+                    execute_transfer_from(
+                        deps.storage,
+                        &swap.trader,
+                        &env.contract.address,
+                        swap.margin_to_vault.value,
+                    )
+                    .unwrap(),
+                );
+            }
+        }
+    };
+
+    // create array for fee amounts
+    let mut fees_amount: [Uint128; 2] = [Uint128::zero(), Uint128::zero()];
+
+    // create messages to pay for toll and spread fees, check flag is true if this follows a reverse
+    if !swap.fees_paid {
+        let mut fees =
+            transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional).unwrap();
+
+        // add the fee transfer messages
+        msgs.append(&mut fees.messages);
+
+        // add the total fees to the required funds counter
+        funds.required = funds
+            .required
+            .checked_add(fees.spread_fee)?
+            .checked_add(fees.toll_fee)?;
+
+        fees_amount[0] = fees.spread_fee;
+        fees_amount[1] = fees.toll_fee;
+    };
+
+    // check if native tokens are sufficient
+    if let AssetInfo::NativeToken { .. } = config.eligible_collateral {
+        funds.are_sufficient()?;
+    }
 
     // check that the maintenance margin is correct
     let margin_ratio = query_margin_ratio(
@@ -259,14 +322,13 @@ pub fn decrease_position_reply(
 
     // remove the tmp position
     remove_tmp_swap(deps.storage);
+    store_state(deps.storage, &state)?;
 
-    Ok(Response::new()
-        .add_submessages(fees.messages)
-        .add_attributes(vec![
-            ("action", "decrease_position_reply"),
-            ("spread_fee", &fees.spread_fee.to_string()),
-            ("toll_fee", &fees.toll_fee.to_string()),
-        ]))
+    Ok(Response::new().add_submessages(msgs).add_attributes(vec![
+        ("action", "decrease_position_reply"),
+        ("spread_fee", &fees_amount[0].to_string()),
+        ("toll_fee", &fees_amount[1].to_string()),
+    ]))
 }
 
 // reverse position after successful execution of the swap
