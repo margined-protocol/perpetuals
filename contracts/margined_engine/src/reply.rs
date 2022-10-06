@@ -64,80 +64,76 @@ pub fn update_position_reply(
 
     update_open_interest_notional(&deps.as_ref(), &mut state, swap.vamm.clone(), amount)?;
 
+    // define variables that differ across increase and decrease scenario
     let swap_margin: Uint128;
+    let margin_delta: Integer;
+    let new_direction: Direction;
+    let new_notional: Uint128;
 
     // calculate margin needed given swap
-    if reply_id == INCREASE_POSITION_REPLY_ID {
-        swap_margin = swap
-            .open_notional
-            .checked_mul(config.decimals)?
-            .checked_div(swap.leverage)?;
+    match reply_id {
+        INCREASE_POSITION_REPLY_ID => {
+            swap_margin = swap
+                .open_notional
+                .checked_mul(config.decimals)?
+                .checked_div(swap.leverage)?;
 
-        swap.margin_to_vault = swap
-            .margin_to_vault
-            .checked_add(Integer::new_positive(swap_margin))?;
+            swap.margin_to_vault = swap
+                .margin_to_vault
+                .checked_add(Integer::new_positive(swap_margin))?;
 
-        let RemainMarginResponse {
-            funding_payment: _,
-            margin,
-            bad_debt: _,
-            latest_premium_fraction,
-        } = calc_remain_margin_with_funding_payment(
-            deps.as_ref(),
-            position.clone(),
-            Integer::new_positive(swap_margin),
-        )?;
+            margin_delta = Integer::new_positive(swap_margin);
+            new_direction = side_to_direction(swap.side);
+            new_notional = position.notional.checked_add(swap.open_notional)?;
+        }
+        // DECREASE_POSITION_REPLY
+        _ => {
+            swap_margin = Uint128::zero();
 
-        // set the new position
-        position.direction = side_to_direction(swap.side);
-        position.size += signed_output;
-        position.margin = margin;
-        position.notional = position.notional.checked_add(swap.open_notional)?;
-        position.last_updated_premium_fraction = latest_premium_fraction;
-        position.block_number = env.block.height;
-    } else {
-        // calculate margin needed given swap
-        swap_margin = Uint128::zero();
+            // realized_pnl = unrealized_pnl * close_ratio
+            let realized_pnl = if !position.size.is_zero() {
+                swap.unrealized_pnl.checked_mul(signed_output.abs())? / position.size.abs()
+            } else {
+                Integer::zero()
+            };
 
-        // realized_pnl = unrealized_pnl * close_ratio
-        let realized_pnl = if !position.size.is_zero() {
-            swap.unrealized_pnl.checked_mul(signed_output.abs())? / position.size.abs()
-        } else {
-            Integer::zero()
-        };
+            let unrealized_pnl_after = swap.unrealized_pnl - realized_pnl;
 
-        let RemainMarginResponse {
-            funding_payment: _,
-            margin,
-            bad_debt: _,
-            latest_premium_fraction,
-        } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), realized_pnl)?;
+            let remaining_notional = if position.size > Integer::zero() {
+                Integer::new_positive(swap.position_notional)
+                    - Integer::new_positive(swap.open_notional)
+                    - unrealized_pnl_after
+            } else {
+                unrealized_pnl_after + Integer::new_positive(swap.position_notional)
+                    - Integer::new_positive(swap.open_notional)
+            };
 
-        let unrealized_pnl_after = swap.unrealized_pnl - realized_pnl;
-
-        let remaining_notional = if position.size > Integer::zero() {
-            Integer::new_positive(swap.position_notional)
-                - Integer::new_positive(swap.open_notional)
-                - unrealized_pnl_after
-        } else {
-            unrealized_pnl_after + Integer::new_positive(swap.position_notional)
-                - Integer::new_positive(swap.open_notional)
-        };
-
-        // set the new position
-        position.size += signed_output;
-        position.margin = margin;
-        position.notional = remaining_notional.value;
-        position.last_updated_premium_fraction = latest_premium_fraction;
-        position.block_number = env.block.height;
+            margin_delta = realized_pnl;
+            new_direction = position.direction.clone();
+            new_notional = remaining_notional.value;
+        }
     }
+
+    // calculate the remaining margin
+    let RemainMarginResponse {
+        funding_payment: _,
+        margin,
+        bad_debt: _,
+        latest_premium_fraction,
+    } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), margin_delta)?;
+
+    // set the new position
+    position.direction = new_direction;
+    position.notional = new_notional;
+    position.size += signed_output;
+    position.margin = margin;
+    position.last_updated_premium_fraction = latest_premium_fraction;
+    position.block_number = env.block.height;
 
     store_position(deps.storage, &position)?;
 
     // check the new position doesn't exceed any caps
-    if reply_id == INCREASE_POSITION_REPLY_ID {
-        check_base_asset_holding_cap(&deps.as_ref(), swap.vamm.clone(), position.size.value)?;
-    }
+    check_base_asset_holding_cap(&deps.as_ref(), swap.vamm.clone(), position.size.value)?;
 
     let mut msgs: Vec<SubMsg> = vec![];
 
@@ -216,7 +212,7 @@ pub fn update_position_reply(
     remove_sent_funds(deps.storage);
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
-        ("action", "increase_position_reply"),
+        ("action", "update_position_reply"),
         ("spread_fee", &fees_amount[0].to_string()),
         ("toll_fee", &fees_amount[1].to_string()),
     ]))
