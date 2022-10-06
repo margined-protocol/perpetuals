@@ -22,9 +22,9 @@ use crate::{
         query_trader_balance_with_funding_payment, query_trader_position_with_funding_payment,
     },
     reply::{
-        close_position_reply, decrease_position_reply, increase_position_reply, liquidate_reply,
-        partial_close_position_reply, partial_liquidation_reply, pay_funding_reply,
-        reverse_position_reply,
+        close_position_reply, liquidate_reply, partial_close_position_reply,
+        partial_liquidation_reply, pay_funding_reply, reverse_position_reply,
+        update_position_reply,
     },
     state::{store_config, store_state, Config, State},
     utils::{parse_pay_funding, parse_swap},
@@ -208,12 +208,14 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
         SubMsgResult::Ok(response) => match msg.id {
             INCREASE_POSITION_REPLY_ID => {
                 let (input, output) = parse_swap(response).unwrap();
-                let response = increase_position_reply(deps, env, input, output)?;
+                let response =
+                    update_position_reply(deps, env, input, output, INCREASE_POSITION_REPLY_ID)?;
                 Ok(response)
             }
             DECREASE_POSITION_REPLY_ID => {
                 let (input, output) = parse_swap(response).unwrap();
-                let response = decrease_position_reply(deps, env, input, output)?;
+                let response =
+                    update_position_reply(deps, env, input, output, DECREASE_POSITION_REPLY_ID)?;
                 Ok(response)
             }
             REVERSE_POSITION_REPLY_ID => {
