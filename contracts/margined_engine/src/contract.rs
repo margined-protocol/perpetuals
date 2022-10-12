@@ -12,8 +12,8 @@ use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::error::ContractError;
 use crate::{
     handle::{
-        add_whitelist, close_position, deposit_margin, liquidate, open_position, pay_funding,
-        remove_whitelist, set_pause, update_config, update_pauser, withdraw_margin,
+        close_position, deposit_margin, liquidate, open_position, pay_funding, update_config,
+        withdraw_margin,
     },
     query::{
         query_all_positions, query_config, query_cumulative_premium_fraction,
@@ -27,7 +27,9 @@ use crate::{
         update_position_reply,
     },
     state::{store_config, store_state, Config, State},
-    utils::{parse_pay_funding, parse_swap},
+    utils::{
+        add_whitelist, parse_pay_funding, parse_swap, remove_whitelist, set_pause, update_pauser,
+    },
 };
 
 /// Contract name that is used for migration.
@@ -139,7 +141,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         ExecuteMsg::OpenPosition {
             vamm,
             side,
-            quote_asset_amount,
+            margin_amount,
             leverage,
             base_asset_limit,
         } => open_position(
@@ -148,7 +150,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             info,
             vamm,
             side,
-            quote_asset_amount,
+            margin_amount,
             leverage,
             base_asset_limit,
         ),
