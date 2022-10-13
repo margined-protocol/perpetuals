@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    Addr, Deps, Env, Event, MessageInfo, Response, StdError, StdResult, Storage, SubMsg,
+    Addr, Deps, DepsMut, Env, Event, MessageInfo, Response, StdError, StdResult, Storage, SubMsg,
     SubMsgResponse, Uint128,
 };
 
@@ -15,14 +15,14 @@ use margined_perp::margined_engine::{
 use margined_perp::margined_vamm::Direction;
 
 use crate::{
-    contract::WHITELIST,
+    contract::{PAUSER, WHITELIST},
     messages::execute_insurance_fund_withdrawal,
     querier::{
         query_insurance_is_vamm, query_vamm_config, query_vamm_output_amount,
         query_vamm_output_twap, query_vamm_state, query_vamm_underlying_price,
     },
     query::query_cumulative_premium_fraction,
-    state::{read_config, read_position, read_vamm_map, State},
+    state::{read_config, read_position, read_state, read_vamm_map, store_state, State},
 };
 
 // reads position from storage but also handles the case where there is no
@@ -286,6 +286,51 @@ pub fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
     position.block_number = env.block.height;
 
     Ok(position)
+}
+
+pub fn update_pauser(deps: DepsMut, info: MessageInfo, pauser: String) -> StdResult<Response> {
+    // validate the address
+    let valid_pauser = deps.api.addr_validate(&pauser)?;
+
+    PAUSER
+        .execute_update_admin(deps, info, Some(valid_pauser))
+        .map_err(|error| StdError::generic_err(format!("{}", error)))
+}
+
+// Adds an address to the whitelist for base asset holding cap
+pub fn add_whitelist(deps: DepsMut, info: MessageInfo, address: String) -> StdResult<Response> {
+    // validate the address
+    let valid_addr = deps.api.addr_validate(&address)?;
+
+    WHITELIST
+        .execute_add_hook(&PAUSER, deps, info, valid_addr)
+        .map_err(|error| StdError::generic_err(format!("{}", error)))
+}
+
+// Removes an address to the whitelist for base asset holding cap
+pub fn remove_whitelist(deps: DepsMut, info: MessageInfo, address: String) -> StdResult<Response> {
+    // validate the address
+    let valid_addr = deps.api.addr_validate(&address)?;
+
+    WHITELIST
+        .execute_remove_hook(&PAUSER, deps, info, valid_addr)
+        .map_err(|error| StdError::generic_err(format!("{}", error)))
+}
+
+pub fn set_pause(deps: DepsMut, _env: Env, info: MessageInfo, pause: bool) -> StdResult<Response> {
+    let mut state: State = read_state(deps.storage)?;
+
+    // check permission and if state matches
+    // note: we could use `assert_admin` instead of `is_admin` except this would throw an `AdminError` and we would have to change the function sig
+    if !PAUSER.is_admin(deps.as_ref(), &info.sender)? || state.pause == pause {
+        return Err(StdError::generic_err("unauthorized"));
+    }
+
+    state.pause = pause;
+
+    store_state(deps.storage, &state)?;
+
+    Ok(Response::default().add_attribute("action", "set_pause"))
 }
 
 pub fn require_vamm(deps: Deps, insurance: &Addr, vamm: &Addr) -> StdResult<Response> {
