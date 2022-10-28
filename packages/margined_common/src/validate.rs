@@ -32,7 +32,7 @@ pub fn validate_ratio(value: Uint128, decimals: Uint128) -> StdResult<Response> 
     Ok(Response::new())
 }
 
-/// Validates that the ratio is between zero and one
+/// Validates that the asset's string name is all caps, and either 3 or 4 characters
 pub fn validate_assets(string: String) -> StdResult<Response> {
     // check that the string is all caps
     if string.to_uppercase() != string {
