@@ -176,6 +176,101 @@ fn test_bad_reserves() {
 }
 
 #[test]
+fn test_bad_asset_strings() {
+    let mut deps = mock_dependencies();
+
+    // test quote asset capitalisation
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        quote_asset: "ETh".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: to_decimals(100),
+        base_asset_reserve: to_decimals(10_000),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
+        insurance_fund: Some("insurance_fund".to_string()),
+    };
+    let info = mock_info("addr0000", &[]);
+
+    let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+
+    assert_eq!(res.to_string(), "Generic error: Assets not capitalised");
+
+    // test base asset capitalisation
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        quote_asset: "ETH".to_string(),
+        base_asset: "USd".to_string(),
+        quote_asset_reserve: to_decimals(100),
+        base_asset_reserve: to_decimals(10_000),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
+        insurance_fund: Some("insurance_fund".to_string()),
+    };
+    let info = mock_info("addr0000", &[]);
+
+    let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+
+    assert_eq!(res.to_string(), "Generic error: Assets not capitalised");
+
+    // test quote asset length
+    let msg = InstantiateMsg {
+        decimals: 6u8,
+        quote_asset: "ETHEREUM".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: to_decimals(100),
+        base_asset_reserve: Uint128::from(10_000u128),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        margin_engine: Some("addr0000".to_string()),
+        insurance_fund: Some("insurance_fund".to_string()),
+        pricefeed: "oracle".to_string(),
+    };
+    let info = mock_info("addr0000", &[]);
+
+    let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+
+    assert_eq!(
+        res.to_string(),
+        "Generic error: Length of asset strings is incorrect"
+    );
+
+    // test base asset length
+    let msg = InstantiateMsg {
+        decimals: 6u8,
+        quote_asset: "ETH".to_string(),
+        base_asset: "UNITEDSTATESDOLLAR".to_string(),
+        quote_asset_reserve: to_decimals(100),
+        base_asset_reserve: Uint128::from(10_000u128),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        margin_engine: Some("addr0000".to_string()),
+        insurance_fund: Some("insurance_fund".to_string()),
+        pricefeed: "oracle".to_string(),
+    };
+    let info = mock_info("addr0000", &[]);
+
+    let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+
+    assert_eq!(
+        res.to_string(),
+        "Generic error: Length of asset strings is incorrect"
+    );
+}
+
+#[test]
 fn test_update_config() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
@@ -278,7 +373,7 @@ fn test_swap_input_zero_amount() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
@@ -333,7 +428,7 @@ fn test_swap_output_zero_amount() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
@@ -387,7 +482,7 @@ fn test_swap_input_long() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
@@ -442,7 +537,7 @@ fn test_swap_input_short() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
@@ -497,7 +592,7 @@ fn test_swap_output_short() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
@@ -551,7 +646,7 @@ fn test_swap_output_long() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
@@ -605,7 +700,7 @@ fn test_swap_input_short_long() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
@@ -685,7 +780,7 @@ fn test_swap_input_short_long_long() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
@@ -788,7 +883,7 @@ fn test_swap_input_short_long_short() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
@@ -891,7 +986,7 @@ fn test_swap_output_short_and_indivisable() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
@@ -951,7 +1046,7 @@ fn test_swap_output_long_and_indivisable() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
@@ -1011,7 +1106,7 @@ fn test_swap_output_long_short_same_size_should_get_diff_base_asset_amount() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1000),
         base_asset_reserve: to_decimals(100),
@@ -1084,7 +1179,7 @@ fn test_force_error_swapinput_long_but_less_than_min_base_amount() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1250),
         base_asset_reserve: to_decimals(80),
@@ -1130,7 +1225,7 @@ fn test_force_error_swapinput_short_but_more_than_min_base_amount() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(800),
         base_asset_reserve: to_decimals(125),
@@ -1176,7 +1271,7 @@ fn test_swapoutput_short_slippage_limit() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1250),
         base_asset_reserve: to_decimals(80),
@@ -1220,7 +1315,7 @@ fn test_swapoutput_short_at_slippage_limit() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1250),
         base_asset_reserve: to_decimals(80),
@@ -1264,7 +1359,7 @@ fn test_swapoutput_short_force_error_min_quote_251() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1250),
         base_asset_reserve: to_decimals(80),
@@ -1307,7 +1402,7 @@ fn test_swapoutput_short_force_error_min_quote_400() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(1250),
         base_asset_reserve: to_decimals(80),
@@ -1350,7 +1445,7 @@ fn test_swapoutput_long_slippage_limit() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(800),
         base_asset_reserve: to_decimals(125),
@@ -1394,7 +1489,7 @@ fn test_swapoutput_long_at_slippage_limit() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(800),
         base_asset_reserve: to_decimals(125),
@@ -1438,7 +1533,7 @@ fn test_swapoutput_long_force_error_min_quote_199() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(800),
         base_asset_reserve: to_decimals(125),
@@ -1481,7 +1576,7 @@ fn test_swapoutput_long_force_error_min_quote_100() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETH/USD".to_string(),
+        quote_asset: "ETH".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(800),
         base_asset_reserve: to_decimals(125),
