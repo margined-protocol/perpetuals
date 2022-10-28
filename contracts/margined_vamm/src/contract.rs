@@ -7,7 +7,7 @@ use cw2::set_contract_version;
 use cw_controllers::Admin;
 use margined_common::{
     integer::Integer,
-    validate::{validate_decimal_places, validate_non_fraction, validate_ratio},
+    validate::{validate_assets, validate_decimal_places, validate_non_fraction, validate_ratio},
 };
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
@@ -49,6 +49,9 @@ pub fn instantiate(
     validate_ratio(msg.toll_ratio, decimals)?;
     validate_ratio(msg.spread_ratio, decimals)?;
     validate_ratio(msg.fluctuation_limit_ratio, decimals)?;
+
+    validate_assets(msg.base_asset.clone())?;
+    validate_assets(msg.quote_asset.clone())?;
 
     let mut config = Config {
         margin_engine: Addr::unchecked("".to_string()), // default to nothing, must be set
