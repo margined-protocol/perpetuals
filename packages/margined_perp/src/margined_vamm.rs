@@ -126,6 +126,7 @@ pub struct ConfigResponse {
     pub fluctuation_limit_ratio: Uint128,
     pub decimals: Uint128,
     pub funding_period: u64,
+    pub spot_price_twap_interval: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]

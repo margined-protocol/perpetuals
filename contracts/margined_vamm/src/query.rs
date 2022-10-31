@@ -34,6 +34,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         insurance_fund: config.insurance_fund,
         pricefeed: config.pricefeed,
         funding_period: config.funding_period,
+        spot_price_twap_interval: config.spot_price_twap_interval,
     })
 }
 

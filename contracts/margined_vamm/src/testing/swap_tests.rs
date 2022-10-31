@@ -1,4 +1,6 @@
-use crate::contract::{execute, instantiate, query};
+use crate::contract::{
+    execute, instantiate, query, ONE_HOUR_IN_SECONDS, ONE_MINUTE_IN_SECONDS, ONE_WEEK_IN_SECONDS,
+};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr, Uint128};
 use margined_common::integer::Integer;
@@ -44,6 +46,7 @@ fn test_instantiation() {
             insurance_fund: Addr::unchecked("insurance_fund".to_string()),
             pricefeed: Addr::unchecked("oracle".to_string()),
             funding_period: 3_600u64,
+            spot_price_twap_interval: ONE_HOUR_IN_SECONDS,
         }
     );
 
@@ -271,6 +274,69 @@ fn test_bad_asset_strings() {
 }
 
 #[test]
+fn test_bad_twap_interval() {
+    let mut deps = mock_dependencies();
+    let msg = InstantiateMsg {
+        decimals: 9u8,
+        quote_asset: "ETH".to_string(),
+        base_asset: "USD".to_string(),
+        quote_asset_reserve: to_decimals(100),
+        base_asset_reserve: to_decimals(10_000),
+        funding_period: 3_600_u64,
+        toll_ratio: Uint128::zero(),
+        spread_ratio: Uint128::zero(),
+        fluctuation_limit_ratio: Uint128::zero(),
+        pricefeed: "oracle".to_string(),
+        margin_engine: Some("addr0000".to_string()),
+        insurance_fund: Some("insurance_fund".to_string()),
+    };
+    let info = mock_info("addr0000", &[]);
+    instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // Update the config with twap_price below range
+    let msg = ExecuteMsg::UpdateConfig {
+        base_asset_holding_cap: None,
+        open_interest_notional_cap: None,
+        toll_ratio: None,
+        spread_ratio: None,
+        fluctuation_limit_ratio: None,
+        margin_engine: None,
+        insurance_fund: None,
+        pricefeed: None,
+        spot_price_twap_interval: Some(59u64),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+
+    assert_eq!(
+        res.to_string(),
+        "Generic error: spot_price_twap_interval should be between one minute and one week"
+    );
+
+    // Update the config with twap_price above range
+    let msg = ExecuteMsg::UpdateConfig {
+        base_asset_holding_cap: None,
+        open_interest_notional_cap: None,
+        toll_ratio: None,
+        spread_ratio: None,
+        fluctuation_limit_ratio: None,
+        margin_engine: None,
+        insurance_fund: None,
+        pricefeed: None,
+        spot_price_twap_interval: Some(ONE_WEEK_IN_SECONDS + 1),
+    };
+
+    let info = mock_info("addr0000", &[]);
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+
+    assert_eq!(
+        res.to_string(),
+        "Generic error: spot_price_twap_interval should be between one minute and one week"
+    );
+}
+
+#[test]
 fn test_update_config() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
@@ -300,7 +366,7 @@ fn test_update_config() {
         margin_engine: Some("addr0001".to_string()),
         insurance_fund: Some("new_insurance_fund".to_string()),
         pricefeed: None,
-        spot_price_twap_interval: None,
+        spot_price_twap_interval: Some(ONE_MINUTE_IN_SECONDS),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -323,6 +389,7 @@ fn test_update_config() {
             insurance_fund: Addr::unchecked("new_insurance_fund".to_string()),
             pricefeed: Addr::unchecked("oracle".to_string()),
             funding_period: 3_600u64,
+            spot_price_twap_interval: ONE_MINUTE_IN_SECONDS,
         }
     );
 }

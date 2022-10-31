@@ -31,8 +31,10 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Owner admin
 pub const OWNER: Admin = Admin::new("owner");
 
+pub const ONE_MINUTE_IN_SECONDS: u64 = 60;
 pub const ONE_HOUR_IN_SECONDS: u64 = 60 * 60;
 pub const ONE_DAY_IN_SECONDS: u64 = 24 * 60 * 60;
+pub const ONE_WEEK_IN_SECONDS: u64 = 7 * 24 * 60 * 60;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(

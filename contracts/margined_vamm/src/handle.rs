@@ -6,7 +6,9 @@ use margined_common::{integer::Integer, validate::validate_ratio};
 use margined_perp::margined_vamm::Direction;
 
 use crate::{
-    contract::{ONE_DAY_IN_SECONDS, ONE_HOUR_IN_SECONDS, OWNER},
+    contract::{
+        ONE_DAY_IN_SECONDS, ONE_HOUR_IN_SECONDS, ONE_MINUTE_IN_SECONDS, ONE_WEEK_IN_SECONDS, OWNER,
+    },
     querier::query_underlying_twap_price,
     query::query_twap_price,
     state::{read_config, read_state, store_config, store_state, Config, State},
@@ -79,8 +81,13 @@ pub fn update_config(
         config.pricefeed = deps.api.addr_validate(&pricefeed).unwrap();
     }
 
-    // change spot price twap interval
+    // change spot price twap interval - check that the twap interval is between 1 min and 1 week
     if let Some(spot_price_twap_interval) = spot_price_twap_interval {
+        if !(ONE_MINUTE_IN_SECONDS..=ONE_WEEK_IN_SECONDS).contains(&spot_price_twap_interval) {
+            return Err(StdError::generic_err(
+                "spot_price_twap_interval should be between one minute and one week",
+            ));
+        }
         config.spot_price_twap_interval = spot_price_twap_interval;
     }
 
