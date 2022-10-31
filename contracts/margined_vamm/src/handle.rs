@@ -81,7 +81,7 @@ pub fn update_config(
 
     // change spot price twap interval - check that the twap interval is between 1 min and 1 week
     if let Some(spot_price_twap_interval) = spot_price_twap_interval {
-        if 60 <= spot_price_twap_interval && spot_price_twap_interval <= 60 * 60 * 24 * 7 {
+        if (60..=60 * 60 * 24 * 7).contains(&spot_price_twap_interval) {
             config.spot_price_twap_interval = spot_price_twap_interval
         } else {
             return Err(StdError::generic_err(
