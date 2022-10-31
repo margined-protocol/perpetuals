@@ -12,8 +12,8 @@ use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::error::ContractError;
 use crate::{
     handle::{
-        add_whitelist, close_position, deposit_margin, liquidate, open_position, pay_funding,
-        remove_whitelist, set_pause, update_config, update_pauser, withdraw_margin,
+        close_position, deposit_margin, liquidate, open_position, pay_funding, update_config,
+        withdraw_margin,
     },
     query::{
         query_all_positions, query_config, query_cumulative_premium_fraction,
@@ -22,12 +22,14 @@ use crate::{
         query_trader_balance_with_funding_payment, query_trader_position_with_funding_payment,
     },
     reply::{
-        close_position_reply, decrease_position_reply, increase_position_reply, liquidate_reply,
-        partial_close_position_reply, partial_liquidation_reply, pay_funding_reply,
-        reverse_position_reply,
+        close_position_reply, liquidate_reply, partial_close_position_reply,
+        partial_liquidation_reply, pay_funding_reply, reverse_position_reply,
+        update_position_reply,
     },
     state::{store_config, store_state, Config, State},
-    utils::{parse_pay_funding, parse_swap},
+    utils::{
+        add_whitelist, parse_pay_funding, parse_swap, remove_whitelist, set_pause, update_pauser,
+    },
 };
 
 /// Contract name that is used for migration.
@@ -139,7 +141,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         ExecuteMsg::OpenPosition {
             vamm,
             side,
-            quote_asset_amount,
+            margin_amount,
             leverage,
             base_asset_limit,
         } => open_position(
@@ -148,7 +150,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             info,
             vamm,
             side,
-            quote_asset_amount,
+            margin_amount,
             leverage,
             base_asset_limit,
         ),
@@ -214,12 +216,14 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
         SubMsgResult::Ok(response) => match msg.id {
             INCREASE_POSITION_REPLY_ID => {
                 let (input, output) = parse_swap(response).unwrap();
-                let response = increase_position_reply(deps, env, input, output)?;
+                let response =
+                    update_position_reply(deps, env, input, output, INCREASE_POSITION_REPLY_ID)?;
                 Ok(response)
             }
             DECREASE_POSITION_REPLY_ID => {
                 let (input, output) = parse_swap(response).unwrap();
-                let response = decrease_position_reply(deps, env, input, output)?;
+                let response =
+                    update_position_reply(deps, env, input, output, DECREASE_POSITION_REPLY_ID)?;
                 Ok(response)
             }
             REVERSE_POSITION_REPLY_ID => {

@@ -7,7 +7,7 @@ use crate::{
     contract::{
         CLOSE_POSITION_REPLY_ID, DECREASE_POSITION_REPLY_ID, INCREASE_POSITION_REPLY_ID,
         LIQUIDATION_REPLY_ID, PARTIAL_CLOSE_POSITION_REPLY_ID, PARTIAL_LIQUIDATION_REPLY_ID,
-        PAUSER, PAY_FUNDING_REPLY_ID, REVERSE_POSITION_REPLY_ID, WHITELIST,
+        PAY_FUNDING_REPLY_ID, REVERSE_POSITION_REPLY_ID,
     },
     messages::{execute_transfer_from, withdraw},
     querier::{
@@ -103,51 +103,6 @@ pub fn update_config(
     Ok(Response::default().add_attribute("action", "update_config"))
 }
 
-pub fn update_pauser(deps: DepsMut, info: MessageInfo, pauser: String) -> StdResult<Response> {
-    // validate the address
-    let valid_pauser = deps.api.addr_validate(&pauser)?;
-
-    PAUSER
-        .execute_update_admin(deps, info, Some(valid_pauser))
-        .map_err(|error| StdError::generic_err(format!("{}", error)))
-}
-
-// Adds an address to the whitelist for base asset holding cap
-pub fn add_whitelist(deps: DepsMut, info: MessageInfo, address: String) -> StdResult<Response> {
-    // validate the address
-    let valid_addr = deps.api.addr_validate(&address)?;
-
-    WHITELIST
-        .execute_add_hook(&PAUSER, deps, info, valid_addr)
-        .map_err(|error| StdError::generic_err(format!("{}", error)))
-}
-
-// Removes an address to the whitelist for base asset holding cap
-pub fn remove_whitelist(deps: DepsMut, info: MessageInfo, address: String) -> StdResult<Response> {
-    // validate the address
-    let valid_addr = deps.api.addr_validate(&address)?;
-
-    WHITELIST
-        .execute_remove_hook(&PAUSER, deps, info, valid_addr)
-        .map_err(|error| StdError::generic_err(format!("{}", error)))
-}
-
-pub fn set_pause(deps: DepsMut, _env: Env, info: MessageInfo, pause: bool) -> StdResult<Response> {
-    let mut state: State = read_state(deps.storage)?;
-
-    // check permission and if state matches
-    // note: we could use `assert_admin` instead of `is_admin` except this would throw an `AdminError` and we would have to change the function sig
-    if !PAUSER.is_admin(deps.as_ref(), &info.sender)? || state.pause == pause {
-        return Err(StdError::generic_err("unauthorized"));
-    }
-
-    state.pause = pause;
-
-    store_state(deps.storage, &state)?;
-
-    Ok(Response::default().add_attribute("action", "set_pause"))
-}
-
 // Opens a position
 #[allow(clippy::too_many_arguments)]
 pub fn open_position(
@@ -156,7 +111,7 @@ pub fn open_position(
     info: MessageInfo,
     vamm: String,
     side: Side,
-    quote_asset_amount: Uint128,
+    margin_amount: Uint128,
     leverage: Uint128,
     base_asset_limit: Uint128,
 ) -> StdResult<Response> {
@@ -170,7 +125,7 @@ pub fn open_position(
     require_not_paused(state.pause)?;
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
     require_not_restriction_mode(deps.storage, &vamm, &trader, env.block.height)?;
-    require_non_zero_input(quote_asset_amount)?;
+    require_non_zero_input(margin_amount)?;
     require_non_zero_input(leverage)?;
 
     if leverage < config.decimals {
@@ -185,14 +140,14 @@ pub fn open_position(
     require_additional_margin(Integer::from(margin_ratio), config.initial_margin_ratio)?;
 
     // retrieves existing position or creates a new one
-    let position: Position = get_position(env.clone(), deps.storage, &vamm, &trader, side.clone());
+    let position: Position = get_position(env, deps.storage, &vamm, &trader, side.clone());
 
     // if direction and side are same way then increasing else we are reversing
     let is_increase: bool = position.direction == Direction::AddToAmm && side == Side::Buy
         || position.direction == Direction::RemoveFromAmm && side == Side::Sell;
 
     // calculate the position notional
-    let open_notional = quote_asset_amount
+    let open_notional = margin_amount
         .checked_mul(leverage)?
         .checked_div(config.decimals)?;
 
@@ -203,12 +158,9 @@ pub fn open_position(
     } else {
         open_reverse_position(
             &deps,
-            env,
-            vamm.clone(),
-            trader.clone(),
+            position.clone(),
             side.clone(),
-            quote_asset_amount,
-            leverage,
+            open_notional,
             base_asset_limit,
             false,
             None,
@@ -228,7 +180,7 @@ pub fn open_position(
             vamm: vamm.clone(),
             trader: trader.clone(),
             side,
-            quote_asset_amount,
+            margin_amount,
             leverage,
             open_notional,
             position_notional,
@@ -250,7 +202,7 @@ pub fn open_position(
         ("action", "open_position"),
         ("vamm", vamm.as_ref()),
         ("trader", trader.as_ref()),
-        ("open_position_amount", &quote_asset_amount.to_string()),
+        ("margin_amount", &margin_amount.to_string()),
         ("leverage", &leverage.to_string()),
     ]))
 }
@@ -327,7 +279,7 @@ pub fn close_position(
                     vamm: position.vamm.clone(),
                     trader: position.trader.clone(),
                     side: side.clone(),
-                    quote_asset_amount: position.size.value,
+                    margin_amount: position.size.value,
                     leverage: config.decimals,
                     open_notional: partial_close_notional,
                     position_notional,
@@ -337,17 +289,13 @@ pub fn close_position(
                 },
             )?;
 
-            open_reverse_position(
-                &deps,
-                env,
-                vamm.clone(),
-                trader.clone(),
+            swap_input(
+                &position.vamm,
                 side,
                 partial_close_notional,
-                config.decimals,
                 Uint128::zero(),
                 true,
-                Some(PARTIAL_CLOSE_POSITION_REPLY_ID),
+                PARTIAL_CLOSE_POSITION_REPLY_ID,
             )?
         } else {
             internal_close_position(deps, &position, quote_amount_limit, CLOSE_POSITION_REPLY_ID)?
@@ -596,7 +544,7 @@ pub fn internal_close_position(
             vamm: position.vamm.clone(),
             trader: position.trader.clone(),
             side: direction_to_side(position.direction.clone()),
-            quote_asset_amount: position.size.value,
+            margin_amount: position.size.value,
             leverage: Uint128::zero(),
             open_notional: position.notional,
             position_notional: Uint128::zero(),
@@ -618,26 +566,13 @@ pub fn internal_close_position(
 #[allow(clippy::too_many_arguments)]
 fn open_reverse_position(
     deps: &DepsMut,
-    env: Env,
-    vamm: Addr,
-    trader: Addr,
+    position: Position,
     side: Side,
-    quote_asset_amount: Uint128,
-    leverage: Uint128,
+    notional_amount: Uint128,
     base_asset_limit: Uint128,
     can_go_over_fluctuation: bool,
     reply_id: Option<u64>,
 ) -> StdResult<SubMsg> {
-    let config: Config = read_config(deps.storage).unwrap();
-    let position: Position = get_position(env, deps.storage, &vamm, &trader, side.clone());
-
-    // calc the input amount wrt to leverage and decimals
-    let open_notional = quote_asset_amount
-        .checked_mul(leverage)
-        .unwrap()
-        .checked_div(config.decimals)
-        .unwrap();
-
     let PositionUnrealizedPnlResponse {
         position_notional,
         unrealized_pnl: _,
@@ -645,17 +580,16 @@ fn open_reverse_position(
         .unwrap();
 
     // reduce position if old position is larger
-    let msg: SubMsg = if position_notional > open_notional {
+    let msg: SubMsg = if position_notional > notional_amount {
         let reply_id = match reply_id {
             Some(id) => id,
             None => DECREASE_POSITION_REPLY_ID,
         };
 
-        // then we are opening a new position or adding to an existing
         swap_input(
-            &vamm,
+            &position.vamm,
             side,
-            open_notional,
+            notional_amount,
             base_asset_limit,
             can_go_over_fluctuation,
             reply_id,
@@ -669,7 +603,7 @@ fn open_reverse_position(
         };
 
         swap_output(
-            &vamm,
+            &position.vamm,
             direction_to_side(position.direction.clone()),
             position.size.value,
             Uint128::zero(),
@@ -728,7 +662,7 @@ fn partial_liquidation(
             vamm: position.vamm.clone(),
             trader: position.trader.clone(),
             side,
-            quote_asset_amount: partial_position_size,
+            margin_amount: partial_position_size,
             leverage: Uint128::zero(),
             open_notional: current_notional,
             position_notional: Uint128::zero(),
