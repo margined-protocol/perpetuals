@@ -1,4 +1,4 @@
-use crate::contract::{execute, instantiate, query};
+use crate::contract::{execute, instantiate, query, ONE_WEEK_IN_SECONDS};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr, Uint128};
 use margined_common::integer::Integer;
@@ -308,7 +308,7 @@ fn test_bad_twap_interval() {
 
     assert_eq!(
         res.to_string(),
-        "Generic error: spot_price_twap_interval in wrong range"
+        "Generic error: spot_price_twap_interval should be between one minute and one week"
     );
 
     // Update the config with twap_price above range
@@ -321,7 +321,7 @@ fn test_bad_twap_interval() {
         margin_engine: None,
         insurance_fund: None,
         pricefeed: None,
-        spot_price_twap_interval: Some(60 * 60 * 24 * 7 + 1),
+        spot_price_twap_interval: Some(ONE_WEEK_IN_SECONDS + 1),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -329,7 +329,7 @@ fn test_bad_twap_interval() {
 
     assert_eq!(
         res.to_string(),
-        "Generic error: spot_price_twap_interval in wrong range"
+        "Generic error: spot_price_twap_interval should be between one minute and one week"
     );
 }
 
