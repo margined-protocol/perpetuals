@@ -85,7 +85,7 @@ pub fn update_config(
             config.spot_price_twap_interval = spot_price_twap_interval
         } else {
             return Err(StdError::generic_err(
-                "spot_price_twap_interval in wrong range",
+                "spot_price_twap_interval should be between one minute and one week",
             ));
         }
     }
