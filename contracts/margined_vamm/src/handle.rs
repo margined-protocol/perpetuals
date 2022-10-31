@@ -19,7 +19,6 @@ use crate::{
 };
 
 #[allow(clippy::too_many_arguments)]
-#[allow(clippy::manual_range_contains)]
 pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,
@@ -84,15 +83,12 @@ pub fn update_config(
 
     // change spot price twap interval - check that the twap interval is between 1 min and 1 week
     if let Some(spot_price_twap_interval) = spot_price_twap_interval {
-        if ONE_MINUTE_IN_SECONDS <= spot_price_twap_interval
-            && spot_price_twap_interval <= ONE_WEEK_IN_SECONDS
-        {
-            config.spot_price_twap_interval = spot_price_twap_interval
-        } else {
+        if !(ONE_MINUTE_IN_SECONDS..=ONE_WEEK_IN_SECONDS).contains(&spot_price_twap_interval) {
             return Err(StdError::generic_err(
                 "spot_price_twap_interval should be between one minute and one week",
             ));
         }
+        config.spot_price_twap_interval = spot_price_twap_interval;
     }
 
     store_config(deps.storage, &config)?;
