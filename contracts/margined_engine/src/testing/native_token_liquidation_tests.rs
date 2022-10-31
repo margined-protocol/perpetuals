@@ -820,7 +820,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(20_000_000u128, "uwasm")],
+            vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -1090,7 +1090,7 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
         Side::Sell,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
-        4_000_000u128,
+        0u128,
         5u64,
     );
 
@@ -1211,7 +1211,7 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         Side::Sell,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
-        4_000_000u128,
+        0u128,
         5u64,
     );
 
@@ -1351,9 +1351,17 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         Side::Sell,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
-        4_000_000u128,
+        0u128,
         5u64,
     );
+
+    let bob_balance = env
+        .router
+        .wrap()
+        .query_balance(&env.bob, "uwasm")
+        .unwrap()
+        .amount;
+    assert_eq!(bob_balance, Uint128::from(4_980_000_000u128));
 
     let price = env.vamm.spot_price(&env.router).unwrap();
     let msg = env
@@ -1500,7 +1508,7 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         Side::Sell,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
-        4_000_000u128,
+        0u128,
         5u64,
     );
 
@@ -1621,7 +1629,7 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
         Side::Sell,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
-        4_000_000u128,
+        0u128,
         5u64,
     );
 
@@ -1724,7 +1732,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
         Side::Sell,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
-        4_000_000u128,
+        0u128,
         5u64,
     );
 
@@ -1876,7 +1884,7 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         Side::Sell,
         Uint128::from(10_000_000u64),
         Uint128::from(5_000_000u64),
-        10_000_000u128,
+        0u128,
         2u64,
     );
 

@@ -135,7 +135,7 @@ impl EngineController {
         &self,
         vamm: String,
         side: Side,
-        quote_asset_amount: Uint128,
+        margin_amount: Uint128,
         leverage: Uint128,
         base_asset_limit: Uint128,
         funds: Vec<Coin>,
@@ -143,7 +143,7 @@ impl EngineController {
         let msg = ExecuteMsg::OpenPosition {
             vamm,
             side,
-            quote_asset_amount,
+            margin_amount,
             leverage,
             base_asset_limit,
         };
