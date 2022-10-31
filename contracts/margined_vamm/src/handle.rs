@@ -17,6 +17,7 @@ use crate::{
 };
 
 #[allow(clippy::too_many_arguments)]
+#[allow(clippy::manual_range_contains)]
 pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,
