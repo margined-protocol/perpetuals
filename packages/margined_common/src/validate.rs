@@ -32,17 +32,11 @@ pub fn validate_ratio(value: Uint128, decimals: Uint128) -> StdResult<Response> 
     Ok(Response::new())
 }
 
-/// Validates that the asset's string name is all caps, and either 3 or 4 characters
+/// Validates that the asset's string name is all alphabetic
 pub fn validate_assets(string: String) -> StdResult<Response> {
-    // check that the string is all caps
-    if string.to_uppercase() != string {
-        return Err(StdError::generic_err("Assets not capitalised"));
-    }
-
-    if string.len() != 3 && string.len() != 4 {
-        return Err(StdError::generic_err(
-            "Length of asset strings is incorrect",
-        ));
+    // check that the string is all alphabetic
+    if !(string.chars().all(|x| x.is_alphabetic())) {
+        return Err(StdError::generic_err("Not a valid string"));
     }
 
     Ok(Response::new())
