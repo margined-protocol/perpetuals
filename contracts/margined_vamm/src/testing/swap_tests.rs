@@ -182,10 +182,10 @@ fn test_bad_reserves() {
 fn test_bad_asset_strings() {
     let mut deps = mock_dependencies();
 
-    // test quote asset capitalisation
+    // test quote asset is alphabetic
     let msg = InstantiateMsg {
         decimals: 9u8,
-        quote_asset: "ETh".to_string(),
+        quote_asset: "ET4".to_string(),
         base_asset: "USD".to_string(),
         quote_asset_reserve: to_decimals(100),
         base_asset_reserve: to_decimals(10_000),
@@ -201,13 +201,13 @@ fn test_bad_asset_strings() {
 
     let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
-    assert_eq!(res.to_string(), "Generic error: Assets not capitalised");
+    assert_eq!(res.to_string(), "Generic error: Not a valid string");
 
-    // test base asset capitalisation
+    // test base asset is alphabetic
     let msg = InstantiateMsg {
         decimals: 9u8,
         quote_asset: "ETH".to_string(),
-        base_asset: "USd".to_string(),
+        base_asset: "US3".to_string(),
         quote_asset_reserve: to_decimals(100),
         base_asset_reserve: to_decimals(10_000),
         funding_period: 3_600_u64,
@@ -222,55 +222,7 @@ fn test_bad_asset_strings() {
 
     let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
-    assert_eq!(res.to_string(), "Generic error: Assets not capitalised");
-
-    // test quote asset length
-    let msg = InstantiateMsg {
-        decimals: 6u8,
-        quote_asset: "ETHEREUM".to_string(),
-        base_asset: "USD".to_string(),
-        quote_asset_reserve: to_decimals(100),
-        base_asset_reserve: Uint128::from(10_000u128),
-        funding_period: 3_600_u64,
-        toll_ratio: Uint128::zero(),
-        spread_ratio: Uint128::zero(),
-        fluctuation_limit_ratio: Uint128::zero(),
-        margin_engine: Some("addr0000".to_string()),
-        insurance_fund: Some("insurance_fund".to_string()),
-        pricefeed: "oracle".to_string(),
-    };
-    let info = mock_info("addr0000", &[]);
-
-    let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-
-    assert_eq!(
-        res.to_string(),
-        "Generic error: Length of asset strings is incorrect"
-    );
-
-    // test base asset length
-    let msg = InstantiateMsg {
-        decimals: 6u8,
-        quote_asset: "ETH".to_string(),
-        base_asset: "UNITEDSTATESDOLLAR".to_string(),
-        quote_asset_reserve: to_decimals(100),
-        base_asset_reserve: Uint128::from(10_000u128),
-        funding_period: 3_600_u64,
-        toll_ratio: Uint128::zero(),
-        spread_ratio: Uint128::zero(),
-        fluctuation_limit_ratio: Uint128::zero(),
-        margin_engine: Some("addr0000".to_string()),
-        insurance_fund: Some("insurance_fund".to_string()),
-        pricefeed: "oracle".to_string(),
-    };
-    let info = mock_info("addr0000", &[]);
-
-    let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-
-    assert_eq!(
-        res.to_string(),
-        "Generic error: Length of asset strings is incorrect"
-    );
+    assert_eq!(res.to_string(), "Generic error: Not a valid string");
 }
 
 #[test]
