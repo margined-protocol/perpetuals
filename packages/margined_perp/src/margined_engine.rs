@@ -81,6 +81,9 @@ pub enum ExecuteMsg {
     SetPause {
         pause: bool,
     },
+    RebaseVamm {
+        vamm: String,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]

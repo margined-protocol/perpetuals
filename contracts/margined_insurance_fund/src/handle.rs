@@ -80,7 +80,9 @@ pub fn shutdown_all_vamm(deps: DepsMut, env: Env, info: MessageInfo) -> StdResul
         msgs.push(execute_vamm_shutdown(vamm.clone())?);
     }
 
-    Ok(Response::default().add_submessages(msgs))
+    Ok(Response::default()
+        .add_submessages(msgs)
+        .add_attributes(vec![("action", "vamm_shutdown")]))
 }
 
 pub fn withdraw(

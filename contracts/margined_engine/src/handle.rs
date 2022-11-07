@@ -7,9 +7,9 @@ use crate::{
     contract::{
         CLOSE_POSITION_REPLY_ID, DECREASE_POSITION_REPLY_ID, INCREASE_POSITION_REPLY_ID,
         LIQUIDATION_REPLY_ID, PARTIAL_CLOSE_POSITION_REPLY_ID, PARTIAL_LIQUIDATION_REPLY_ID,
-        PAY_FUNDING_REPLY_ID, REVERSE_POSITION_REPLY_ID,
+        PAUSER, PAY_FUNDING_REPLY_ID, REVERSE_POSITION_REPLY_ID,
     },
-    messages::{execute_transfer_from, withdraw},
+    messages::{execute_transfer_from, execute_vamm_rebase, withdraw},
     querier::{
         query_is_over_fluctuation_limit, query_vamm_output_amount, query_vamm_over_spread_limit,
     },
@@ -513,6 +513,20 @@ pub fn withdraw_margin(
         ("trader", trader.as_ref()),
         ("withdrawal_amount", &amount.to_string()),
     ]))
+}
+
+// rebase the vamm by changing the asset reserves to better replicate oracle price
+pub fn rebase_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Response> {
+    // check sender to make sure its admin
+    if !PAUSER.is_admin(deps.as_ref(), &info.sender)? {
+        return Err(StdError::generic_err("unauthorized"));
+    }
+
+    // verify vamm address
+    let vamm = deps.api.addr_validate(&vamm)?;
+
+    // call vamm function here
+    Ok(Response::new().add_submessage(execute_vamm_rebase(vamm)?))
 }
 
 // Increase the position through a swap

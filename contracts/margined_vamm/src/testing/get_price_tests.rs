@@ -2,8 +2,9 @@ use crate::contract::{instantiate, query};
 use crate::handle::{get_input_price_with_reserves, get_output_price_with_reserves};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Uint128};
+use cw_multi_test::Executor;
 use margined_perp::margined_vamm::{Direction, InstantiateMsg, QueryMsg, StateResponse};
-use margined_utils::scenarios::to_decimals;
+use margined_utils::scenarios::{to_decimals, SimpleScenario};
 
 /// Unit tests
 #[test]
@@ -328,4 +329,33 @@ fn test_get_input_and_output_price_with_reserves() {
     )
     .unwrap();
     assert_eq!(result, to_decimals(600));
+}
+
+#[test]
+fn test_rebase_vamm() {
+    let SimpleScenario {
+        mut router,
+        engine,
+        owner,
+        vamm,
+        pricefeed,
+        ..
+    } = SimpleScenario::new();
+
+    let spot_price = vamm.spot_price(&router).unwrap();
+    assert_eq!(spot_price, to_decimals(10u64));
+
+    let price: Uint128 = Uint128::from(20u128);
+    let timestamp: u64 = 1_000_000_000;
+
+    let msg = pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let msg = engine.rebase_vamm(vamm.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+
+    let new_spot_price = vamm.spot_price(&router).unwrap();
+    assert_eq!(new_spot_price, Uint128::from(20u64));
 }

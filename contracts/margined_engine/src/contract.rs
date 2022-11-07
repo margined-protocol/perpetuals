@@ -10,6 +10,7 @@ use margined_common::validate::{
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::error::ContractError;
+use crate::handle::rebase_vamm;
 use crate::{
     handle::{
         close_position, deposit_margin, liquidate, open_position, pay_funding, update_config,
@@ -169,6 +170,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             withdraw_margin(deps, env, info, vamm, amount)
         }
         ExecuteMsg::SetPause { pause } => set_pause(deps, env, info, pause),
+        ExecuteMsg::RebaseVamm { vamm } => rebase_vamm(deps, info, vamm),
     }
 }
 
