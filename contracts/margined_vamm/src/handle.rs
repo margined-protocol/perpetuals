@@ -150,7 +150,7 @@ pub fn rebase_vamm(deps: DepsMut, env: Env) -> StdResult<Response> {
 
     Ok(Response::new().add_attributes(vec![
         ("action", "rebase_vamm"),
-        ("vamm", &env.contract.address.as_ref()),
+        ("vamm", env.contract.address.as_ref()),
         ("new_base_asset", &state.base_asset_reserve.to_string()),
         ("new_price", &oracle_price.to_string()),
     ]))
