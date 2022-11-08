@@ -62,6 +62,7 @@ pub enum ExecuteMsg {
     SetOpen {
         open: bool,
     },
+    RebaseVamm {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]

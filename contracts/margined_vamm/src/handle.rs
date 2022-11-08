@@ -9,7 +9,7 @@ use crate::{
     contract::{
         ONE_DAY_IN_SECONDS, ONE_HOUR_IN_SECONDS, ONE_MINUTE_IN_SECONDS, ONE_WEEK_IN_SECONDS, OWNER,
     },
-    querier::query_underlying_twap_price,
+    querier::{query_underlying_price, query_underlying_twap_price},
     query::query_twap_price,
     state::{read_config, read_state, store_config, store_state, Config, State},
     utils::{
@@ -127,6 +127,37 @@ pub fn set_open(deps: DepsMut, env: Env, info: MessageInfo, open: bool) -> StdRe
     store_state(deps.storage, &state)?;
 
     Ok(Response::new().add_attribute("action", "set_open"))
+}
+
+// This function will rebase the vamm according to the current oracle price
+pub fn rebase_vamm(deps: DepsMut, info: MessageInfo, env: Env) -> StdResult<Response> {
+    let config: Config = read_config(deps.storage)?;
+    let mut state: State = read_state(deps.storage)?;
+
+    if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
+        return Err(StdError::generic_err("unauthorized"));
+    }
+
+    let oracle_price = query_underlying_price(&deps.as_ref())?;
+
+    // let P be oracle price, Q and B_old be current quote and base asset reserves
+    // B_new is the final base_asset_reserve we want.
+    // Current price is Q / B_old, P = Q / B_new
+    // Therefore B_new = Q / P
+
+    state.base_asset_reserve = state
+        .quote_asset_reserve
+        .checked_mul(config.decimals)?
+        .checked_div(oracle_price)?;
+
+    store_state(deps.storage, &state)?;
+
+    Ok(Response::new().add_attributes(vec![
+        ("action", "rebase_vamm"),
+        ("vamm", env.contract.address.as_ref()),
+        ("new_base_asset", &state.base_asset_reserve.to_string()),
+        ("new_price", &oracle_price.to_string()),
+    ]))
 }
 
 // Function should only be called by the margin engine

@@ -11,8 +11,8 @@ use margined_common::{
 };
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
-use crate::error::ContractError;
 use crate::querier::{query_underlying_price, query_underlying_twap_price};
+use crate::{error::ContractError, handle::rebase_vamm};
 use crate::{
     handle::{set_open, settle_funding, swap_input, swap_output, update_config, update_owner},
     query::{
@@ -170,6 +170,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         ),
         ExecuteMsg::SettleFunding {} => settle_funding(deps, env, info),
         ExecuteMsg::SetOpen { open } => set_open(deps, env, info, open),
+        ExecuteMsg::RebaseVamm {} => rebase_vamm(deps, info, env),
     }
 }
 
