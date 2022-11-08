@@ -61,6 +61,11 @@ impl VammController {
         self.call(msg, vec![])
     }
 
+    pub fn rebase_vamm(&self) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::RebaseVamm {};
+        self.call(msg, vec![])
+    }
+
     pub fn set_toll_ratio(&self, toll_ratio: Uint128) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::UpdateConfig {
             base_asset_holding_cap: None,

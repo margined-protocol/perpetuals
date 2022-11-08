@@ -130,9 +130,13 @@ pub fn set_open(deps: DepsMut, env: Env, info: MessageInfo, open: bool) -> StdRe
 }
 
 // This function will rebase the vamm according to the current oracle price
-pub fn rebase_vamm(deps: DepsMut, env: Env) -> StdResult<Response> {
+pub fn rebase_vamm(deps: DepsMut, info: MessageInfo, env: Env) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
+
+    if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
+        return Err(StdError::generic_err("unauthorized"));
+    }
 
     let oracle_price = query_underlying_price(&deps.as_ref())?;
 

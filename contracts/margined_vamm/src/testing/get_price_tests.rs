@@ -335,7 +335,6 @@ fn test_get_input_and_output_price_with_reserves() {
 fn test_rebase_vamm() {
     let SimpleScenario {
         mut router,
-        engine,
         owner,
         vamm,
         pricefeed,
@@ -353,7 +352,7 @@ fn test_rebase_vamm() {
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let msg = engine.rebase_vamm(vamm.addr().to_string()).unwrap();
+    let msg = vamm.rebase_vamm().unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
     let new_spot_price = vamm.spot_price(&router).unwrap();

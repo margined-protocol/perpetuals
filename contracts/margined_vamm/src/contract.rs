@@ -170,7 +170,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         ),
         ExecuteMsg::SettleFunding {} => settle_funding(deps, env, info),
         ExecuteMsg::SetOpen { open } => set_open(deps, env, info, open),
-        ExecuteMsg::RebaseVamm {} => rebase_vamm(deps, env),
+        ExecuteMsg::RebaseVamm {} => rebase_vamm(deps, info, env),
     }
 }
 

@@ -13,7 +13,7 @@ use crate::{
 use margined_common::asset::AssetInfo;
 use margined_perp::margined_engine::TransferResponse;
 use margined_perp::margined_insurance_fund::ExecuteMsg as InsuranceFundExecuteMessage;
-use margined_perp::margined_vamm::{CalcFeeResponse, ExecuteMsg as VammExecuteMessage};
+use margined_perp::margined_vamm::CalcFeeResponse;
 use margined_perp::querier::query_token_balance;
 
 pub fn execute_transfer_from(
@@ -124,23 +124,6 @@ pub fn execute_insurance_fund_withdrawal(deps: Deps, amount: Uint128) -> StdResu
     };
 
     Ok(transfer_msg)
-}
-
-pub fn execute_vamm_rebase(vamm: Addr) -> StdResult<SubMsg> {
-    let msg = WasmMsg::Execute {
-        contract_addr: vamm.to_string(),
-        funds: vec![],
-        msg: to_binary(&VammExecuteMessage::RebaseVamm {})?,
-    };
-
-    let rebase_msg = SubMsg {
-        msg: CosmosMsg::Wasm(msg),
-        gas_limit: None, // probably should set a limit in the config
-        id: 0u64,
-        reply_on: ReplyOn::Never,
-    };
-
-    Ok(rebase_msg)
 }
 
 // Transfers the toll and spread fees to the the insurance fund and fee pool

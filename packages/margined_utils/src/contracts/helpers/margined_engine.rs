@@ -97,11 +97,6 @@ impl EngineController {
         self.call(msg, vec![])
     }
 
-    pub fn rebase_vamm(&self, vamm: String) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::RebaseVamm { vamm };
-        self.call(msg, vec![])
-    }
-
     pub fn set_partial_liquidation_ratio(
         &self,
         partial_liquidation_ratio: Uint128,
