@@ -8,16 +8,24 @@ interface Opts {
 }
 
 export async function uploadContract(
+  testnet: String,
   client: SigningCosmWasmClient,
   senderAddress: string,
   filepath: string,
-  feeAmount: string,
+  feeAmount: string
 ) {
   const contract = readFileSync(filepath)
-  const fee = {
-    gas: '60000000',
-    amount: [{ denom: 'ujunox', amount: feeAmount }],
-  }
+
+  const fee =
+    testnet == 'osmo'
+      ? {
+          gas: '0',
+          amount: [{ denom: 'uosmo', amount: '0' }],
+        }
+      : {
+          gas: '60000000',
+          amount: [{ denom: 'ujunox', amount: feeAmount }],
+        }
 
   let code_id = await client.upload(senderAddress, contract, fee)
 
@@ -25,23 +33,30 @@ export async function uploadContract(
 }
 
 export async function instantiateContract(
+  testnet: String,
   client: SigningCosmWasmClient,
   senderAddress: string,
   codeId: number,
   label: string,
   msg: Record<string, unknown>,
   feeAmount: string,
-  opts: Opts = {},
+  opts: Opts = {}
 ) {
   let admin = opts.admin
   if (admin == undefined) {
     admin = senderAddress
   }
 
-  const fee = {
-    gas: '60000000',
-    amount: [{ denom: 'ujunox', amount: feeAmount }],
-  }
+  const fee =
+    testnet == 'osmo'
+      ? {
+          gas: '0',
+          amount: [{ denom: 'uosmo', amount: '0' }],
+        }
+      : {
+          gas: '60000000',
+          amount: [{ denom: 'ujunox', amount: feeAmount }],
+        }
 
   let result = await client.instantiate(
     senderAddress,
@@ -49,23 +64,30 @@ export async function instantiateContract(
     msg,
     label,
     fee,
-    opts,
+    opts
   )
   return result.contractAddress // contract address
 }
 
 export async function executeContract(
+  testnet: String,
   client: SigningCosmWasmClient,
   senderAddress: string,
   contractAddress: string,
   msg: Record<string, unknown>,
   feeAmount: string,
-  funds?: Coin[],
+  funds?: Coin[]
 ) {
-  const fee = {
-    gas: '30000000',
-    amount: [{ denom: 'ujunox', amount: feeAmount }],
-  }
+  const fee =
+    testnet == 'osmo'
+      ? {
+          gas: '0',
+          amount: [{ denom: 'uosmo', amount: '0' }],
+        }
+      : {
+          gas: '30000000',
+          amount: [{ denom: 'ujunox', amount: feeAmount }],
+        }
 
   const result = await client.execute(
     senderAddress,
@@ -73,7 +95,7 @@ export async function executeContract(
     msg,
     fee,
     undefined,
-    funds,
+    funds
   )
 
   return result
@@ -82,7 +104,7 @@ export async function executeContract(
 export async function queryContract(
   client: SigningCosmWasmClient,
   contractAddress: string,
-  query: Record<string, unknown>,
+  query: Record<string, unknown>
 ): Promise<any> {
   let result = await client.queryContractSmart(contractAddress, query)
   console.log(result)
@@ -90,47 +112,56 @@ export async function queryContract(
 }
 
 export async function deployContract(
+  testnet: String,
   client: SigningCosmWasmClient,
   senderAddress: string,
   filepath: string,
   label: string,
   initMsg: Record<string, unknown>,
   feeAmount: string,
-  opts: object,
+  opts: object
 ) {
   const codeId = await uploadContract(
+    testnet,
     client,
     senderAddress,
     filepath,
-    feeAmount,
+    feeAmount
   )
 
   return await instantiateContract(
+    testnet,
     client,
     senderAddress,
     codeId,
     label,
     initMsg,
     feeAmount,
-    opts,
+    opts
   )
 }
 
 export async function sendToken(
+  testnet: String,
   client: SigningCosmWasmClient,
   senderAddress: string,
   recipientAddress: string,
-  amount: string,
+  amount: string
 ) {
-  const fee = {
-    gas: '30000000',
-    amount: [{ denom: 'ujunox', amount: '150000' }],
-  }
+  const fee =
+    testnet == 'osmo'
+      ? {
+          gas: '0',
+          amount: [{ denom: 'uosmo', amount: '0' }],
+        }
+      : {
+          gas: '30000000',
+          amount: [{ denom: 'ujunox', amount: '150000' }],
+        }
+  const coin =
+    testnet == 'osmo'
+      ? [{ denom: 'uosmo', amount: amount }]
+      : [{ denom: 'ujunox', amount: amount }]
 
-  return await client.sendTokens(
-    senderAddress,
-    recipientAddress,
-    [{ denom: 'ujunox', amount: amount }],
-    fee,
-  )
+  return await client.sendTokens(senderAddress, recipientAddress, coin, fee)
 }

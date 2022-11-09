@@ -2,16 +2,26 @@ import 'dotenv/config.js'
 import { deployContract, executeContract, queryContract } from './helpers.js'
 import { setupNodeLocal } from 'cosmwasm'
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
-import { local, testnet } from './deploy_configs.js'
+import { local, juno_testnet, osmo_testnet } from './deploy_configs.js'
 import { join } from 'path'
+import { env } from 'process'
 
 // consts
 
-const config = {
+const osmo_config = {
+  chainId: 'osmo-test-4',
+  rpcEndpoint: 'https://rpc.margined.io',
+  prefix: 'osmo',
+}
+
+const juno_config = {
   chainId: 'uni-3',
   rpcEndpoint: 'https://rpc.margined.io',
   prefix: 'juno',
 }
+
+const testnet_prefix = true ? 'osmo' : 'juno' // need some condition which can tell which testnet
+const config = testnet_prefix == 'osmo' ? osmo_config : juno_config
 
 const MARGINED_ARTIFACTS_PATH = '../artifacts'
 
@@ -28,15 +38,18 @@ async function main() {
 
   const client = await setupNodeLocal(config, mnemonic)
   const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
-    prefix: 'juno',
+    prefix: testnet_prefix,
   })
   let deployConfig: Config
-  const isTestnet = process.env.NETWORK === 'testnet'
 
   const [account] = await wallet.getAccounts()
 
   if (process.env.NETWORK === 'testnet') {
-    deployConfig = testnet
+    if (testnet_prefix == 'osmo') {
+      deployConfig = osmo_testnet
+    } else {
+      deployConfig = juno_testnet
+    }
   } else {
     deployConfig = local
   }
@@ -48,13 +61,14 @@ async function main() {
   ///
   console.log('Deploying Fee Pool...')
   const feePoolContractAddress = await deployContract(
+    testnet_prefix,
     client,
     account.address,
     join(MARGINED_ARTIFACTS_PATH, 'margined_fee_pool.wasm'),
     'margined_fee_pool',
     {},
     '150000',
-    {},
+    {}
   )
   console.log('Fee Pool Contract Address: ' + feePoolContractAddress)
 
@@ -63,16 +77,17 @@ async function main() {
   ///
   console.log('Deploying Insurance Fund...')
   const insuranceFundContractAddress = await deployContract(
+    testnet_prefix,
     client,
     account.address,
     join(MARGINED_ARTIFACTS_PATH, 'margined_insurance_fund.wasm'),
     'margined_insurance_fund',
     {},
     '150000',
-    {},
+    {}
   )
   console.log(
-    'Insurance Fund Contract Address: ' + insuranceFundContractAddress,
+    'Insurance Fund Contract Address: ' + insuranceFundContractAddress
   )
 
   ///
@@ -80,31 +95,33 @@ async function main() {
   ///
   console.log('Deploying Mock PriceFeed...')
   const priceFeedAddress = await deployContract(
+    testnet_prefix,
     client,
     account.address,
     join(MARGINED_ARTIFACTS_PATH, 'margined_pricefeed.wasm'),
     'margined_pricefeed',
     deployConfig.priceFeedInitMsg,
     '150000',
-    {},
+    {}
   )
   console.log('Mock PriceFeed Address: ' + priceFeedAddress)
 
   ///
-  /// Deploy ETH:UST vAMM Contract
+  /// Deploy vAMM Contract
   ///
-  console.log('Deploying ETH:UST vAMM...')
+  console.log('Deploying osmo:mUSD vAMM...')
   deployConfig.vammInitMsg.pricefeed = priceFeedAddress
   const vammContractAddress = await deployContract(
+    testnet_prefix,
     client,
     account.address,
     join(MARGINED_ARTIFACTS_PATH, 'margined_vamm.wasm'),
     'margined_vamm',
     deployConfig.vammInitMsg,
     '300000',
-    {},
+    {}
   )
-  console.log('ETH:UST vAMM Address: ' + vammContractAddress)
+  console.log('osmo:mUSD vAMM Address: ' + vammContractAddress)
 
   ///
   /// Deploy CW20 Token Contract
@@ -112,13 +129,14 @@ async function main() {
   console.log('Deploy Margined CW20...')
 
   let marginCW20ContractAddress = await deployContract(
+    testnet_prefix,
     client,
     account.address,
     join(MARGINED_ARTIFACTS_PATH, 'cw20_base.wasm'),
     'margined_cw20',
     {
       name: 'Margined USD',
-      symbol: 'USDm',
+      symbol: 'mUSD',
       decimals: 6,
       initial_balances: [
         {
@@ -130,27 +148,27 @@ async function main() {
           amount: '5000000000', // 5,000
         },
         {
-          address: 'juno1w5jfhzm93vkpevpverdgkj33dw3dfus825mfnm',
+          address: testnet_prefix + '1w5jfhzm93vkpevpverdgkj33dw3dfus825mfnm',
           amount: '1000000000', // 1,000
         },
         {
-          address: 'juno1dedkvygl3kx903axl7ypnrhu0g2p855sflz305',
+          address: testnet_prefix + '1dedkvygl3kx903axl7ypnrhu0g2p855sflz305',
           amount: '1000000000', // 1,000
         },
         {
-          address: 'juno1evd2a75k42450nkkteatsmpmlq8kzk50vja0n8',
+          address: testnet_prefix + '1evd2a75k42450nkkteatsmpmlq8kzk50vja0n8',
           amount: '1000000000', // 1,000
         },
         {
-          address: 'juno18da0wya36037qq73whp4vkaf8fw078hl9y2kf5',
+          address: testnet_prefix + '18da0wya36037qq73whp4vkaf8fw078hl9y2kf5',
           amount: '1000000000', // 1,000
         },
         {
-          address: 'juno1peu2fm3rtuc3hrpaskazzh68qle8g654z68y2w',
+          address: testnet_prefix + '1peu2fm3rtuc3hrpaskazzh68qle8g654z68y2w',
           amount: '1000000000', // 1,000
         },
         {
-          address: 'juno1qrqw3650zq7md6txk4g3pyt98vr6f02neq0krc',
+          address: testnet_prefix + '1qrqw3650zq7md6txk4g3pyt98vr6f02neq0krc',
           amount: '1000000000', // 1,000
         },
       ],
@@ -159,7 +177,7 @@ async function main() {
       },
     },
     '150000',
-    {},
+    {}
   )
   console.log('Margin CW20 Address: ' + marginCW20ContractAddress)
 
@@ -170,21 +188,26 @@ async function main() {
   console.log('Deploy Margin Engine...')
   deployConfig.engineInitMsg.insurance_fund = insuranceFundContractAddress
   deployConfig.engineInitMsg.fee_pool = feePoolContractAddress
-  deployConfig.engineInitMsg.eligible_collateral = 'ujunox'
+  deployConfig.engineInitMsg.eligible_collateral =
+    testnet_prefix == 'osmo' //check condition again
+      ? 'factory/osmo1fx55jmauzw834gv6vqur6j4juheswjceptlng9/umusd' // check what is needed
+      : 'ujunox'
   const marginEngineContractAddress = await deployContract(
+    testnet_prefix,
     client,
     account.address,
     join(MARGINED_ARTIFACTS_PATH, 'margined_engine.wasm'),
     'margined_engine',
     deployConfig.engineInitMsg,
     '300000',
-    {},
+    {}
   )
   console.log('Margin Engine Address: ' + marginEngineContractAddress)
 
   // Define Margin engine address in vAMM
   console.log('Set Margin Engine in vAMM...')
   await executeContract(
+    testnet_prefix,
     client,
     account.address,
     vammContractAddress,
@@ -193,7 +216,7 @@ async function main() {
         margin_engine: marginEngineContractAddress,
       },
     },
-    '150000',
+    '150000'
   )
   console.log('Margin Engine set in vAMM')
 
@@ -202,6 +225,7 @@ async function main() {
   ///
   console.log('Set Eligible Collateral in Margin Engine...')
   await executeContract(
+    testnet_prefix,
     client,
     account.address,
     marginEngineContractAddress,
@@ -210,7 +234,7 @@ async function main() {
         eligible_collateral: marginCW20ContractAddress,
       },
     },
-    '150000',
+    '150000'
   )
   console.log('Margin Engine set in vAMM')
 
@@ -219,6 +243,7 @@ async function main() {
   ///
   console.log('Register vAMM in Insurance Fund...')
   await executeContract(
+    testnet_prefix,
     client,
     account.address,
     insuranceFundContractAddress,
@@ -227,7 +252,7 @@ async function main() {
         vamm: vammContractAddress,
       },
     },
-    '150000',
+    '150000'
   )
   console.log('vAMM registered')
 
@@ -238,6 +263,7 @@ async function main() {
   ///
   console.log('Define Margin Engine as Insurance Fund Beneficiary...')
   await executeContract(
+    testnet_prefix,
     client,
     account.address,
     insuranceFundContractAddress,
@@ -246,7 +272,7 @@ async function main() {
         beneficiary: marginEngineContractAddress,
       },
     },
-    '150000',
+    '150000'
   )
   console.log('Margin Engine set as beneficiary')
 
@@ -255,6 +281,7 @@ async function main() {
   ///
   console.log('Set vAMM Open...')
   await executeContract(
+    testnet_prefix,
     client,
     account.address,
     vammContractAddress,
@@ -263,7 +290,7 @@ async function main() {
         open: true,
       },
     },
-    '150000',
+    '150000'
   )
   console.log('vAMM set to open')
 
