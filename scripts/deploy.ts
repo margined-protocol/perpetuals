@@ -4,7 +4,6 @@ import { setupNodeLocal } from 'cosmwasm'
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
 import { local, juno_testnet, osmo_testnet } from './deploy_configs.js'
 import { join } from 'path'
-import { env } from 'process'
 
 // consts
 
@@ -20,9 +19,6 @@ const juno_config = {
   prefix: 'juno',
 }
 
-const testnet_prefix = true ? 'osmo' : 'juno' // need some condition which can tell which testnet
-const config = testnet_prefix == 'osmo' ? osmo_config : juno_config
-
 const MARGINED_ARTIFACTS_PATH = '../artifacts'
 
 // main
@@ -36,16 +32,28 @@ async function main() {
     throw new Error(message)
   }
 
+  const prefix = process.env.PREFIX
+
+  // check prefix has been supplied
+  if (prefix === null || prefix === undefined) {
+    const message = `no prefix added in .env`
+
+    throw new Error(message)
+  }
+
+  const config = prefix == 'osmo' ? osmo_config : juno_config
+
   const client = await setupNodeLocal(config, mnemonic)
   const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
-    prefix: testnet_prefix,
+    prefix: prefix,
   })
   let deployConfig: Config
 
   const [account] = await wallet.getAccounts()
 
   if (process.env.NETWORK === 'testnet') {
-    if (testnet_prefix == 'osmo') {
+    // different testnet configs
+    if (prefix == 'osmo') {
       deployConfig = osmo_testnet
     } else {
       deployConfig = juno_testnet
@@ -61,7 +69,7 @@ async function main() {
   ///
   console.log('Deploying Fee Pool...')
   const feePoolContractAddress = await deployContract(
-    testnet_prefix,
+    prefix,
     client,
     account.address,
     join(MARGINED_ARTIFACTS_PATH, 'margined_fee_pool.wasm'),
@@ -77,7 +85,7 @@ async function main() {
   ///
   console.log('Deploying Insurance Fund...')
   const insuranceFundContractAddress = await deployContract(
-    testnet_prefix,
+    prefix,
     client,
     account.address,
     join(MARGINED_ARTIFACTS_PATH, 'margined_insurance_fund.wasm'),
@@ -95,7 +103,7 @@ async function main() {
   ///
   console.log('Deploying Mock PriceFeed...')
   const priceFeedAddress = await deployContract(
-    testnet_prefix,
+    prefix,
     client,
     account.address,
     join(MARGINED_ARTIFACTS_PATH, 'margined_pricefeed.wasm'),
@@ -109,10 +117,10 @@ async function main() {
   ///
   /// Deploy vAMM Contract
   ///
-  console.log('Deploying osmo:mUSD vAMM...')
+  console.log(`Deploying ${prefix}:mUSD vAMM...`)
   deployConfig.vammInitMsg.pricefeed = priceFeedAddress
   const vammContractAddress = await deployContract(
-    testnet_prefix,
+    prefix,
     client,
     account.address,
     join(MARGINED_ARTIFACTS_PATH, 'margined_vamm.wasm'),
@@ -121,7 +129,7 @@ async function main() {
     '300000',
     {}
   )
-  console.log('osmo:mUSD vAMM Address: ' + vammContractAddress)
+  console.log(`${prefix}:mUSD vAMM Address: ` + vammContractAddress)
 
   ///
   /// Deploy CW20 Token Contract
@@ -129,7 +137,7 @@ async function main() {
   console.log('Deploy Margined CW20...')
 
   let marginCW20ContractAddress = await deployContract(
-    testnet_prefix,
+    prefix,
     client,
     account.address,
     join(MARGINED_ARTIFACTS_PATH, 'cw20_base.wasm'),
@@ -148,27 +156,27 @@ async function main() {
           amount: '5000000000', // 5,000
         },
         {
-          address: testnet_prefix + '1w5jfhzm93vkpevpverdgkj33dw3dfus825mfnm',
+          address: prefix + '1w5jfhzm93vkpevpverdgkj33dw3dfus825mfnm',
           amount: '1000000000', // 1,000
         },
         {
-          address: testnet_prefix + '1dedkvygl3kx903axl7ypnrhu0g2p855sflz305',
+          address: prefix + '1dedkvygl3kx903axl7ypnrhu0g2p855sflz305',
           amount: '1000000000', // 1,000
         },
         {
-          address: testnet_prefix + '1evd2a75k42450nkkteatsmpmlq8kzk50vja0n8',
+          address: prefix + '1evd2a75k42450nkkteatsmpmlq8kzk50vja0n8',
           amount: '1000000000', // 1,000
         },
         {
-          address: testnet_prefix + '18da0wya36037qq73whp4vkaf8fw078hl9y2kf5',
+          address: prefix + '18da0wya36037qq73whp4vkaf8fw078hl9y2kf5',
           amount: '1000000000', // 1,000
         },
         {
-          address: testnet_prefix + '1peu2fm3rtuc3hrpaskazzh68qle8g654z68y2w',
+          address: prefix + '1peu2fm3rtuc3hrpaskazzh68qle8g654z68y2w',
           amount: '1000000000', // 1,000
         },
         {
-          address: testnet_prefix + '1qrqw3650zq7md6txk4g3pyt98vr6f02neq0krc',
+          address: prefix + '1qrqw3650zq7md6txk4g3pyt98vr6f02neq0krc',
           amount: '1000000000', // 1,000
         },
       ],
@@ -189,11 +197,11 @@ async function main() {
   deployConfig.engineInitMsg.insurance_fund = insuranceFundContractAddress
   deployConfig.engineInitMsg.fee_pool = feePoolContractAddress
   deployConfig.engineInitMsg.eligible_collateral =
-    testnet_prefix == 'osmo' //check condition again
-      ? 'factory/osmo1fx55jmauzw834gv6vqur6j4juheswjceptlng9/umusd' // check what is needed
+    prefix == 'osmo'
+      ? 'osmo' // check what is needed
       : 'ujunox'
   const marginEngineContractAddress = await deployContract(
-    testnet_prefix,
+    prefix,
     client,
     account.address,
     join(MARGINED_ARTIFACTS_PATH, 'margined_engine.wasm'),
@@ -207,7 +215,7 @@ async function main() {
   // Define Margin engine address in vAMM
   console.log('Set Margin Engine in vAMM...')
   await executeContract(
-    testnet_prefix,
+    prefix,
     client,
     account.address,
     vammContractAddress,
@@ -225,7 +233,7 @@ async function main() {
   ///
   console.log('Set Eligible Collateral in Margin Engine...')
   await executeContract(
-    testnet_prefix,
+    prefix,
     client,
     account.address,
     marginEngineContractAddress,
@@ -243,7 +251,7 @@ async function main() {
   ///
   console.log('Register vAMM in Insurance Fund...')
   await executeContract(
-    testnet_prefix,
+    prefix,
     client,
     account.address,
     insuranceFundContractAddress,
@@ -263,7 +271,7 @@ async function main() {
   ///
   console.log('Define Margin Engine as Insurance Fund Beneficiary...')
   await executeContract(
-    testnet_prefix,
+    prefix,
     client,
     account.address,
     insuranceFundContractAddress,
@@ -281,7 +289,7 @@ async function main() {
   ///
   console.log('Set vAMM Open...')
   await executeContract(
-    testnet_prefix,
+    prefix,
     client,
     account.address,
     vammContractAddress,

@@ -66,6 +66,9 @@ pub fn validate_eligible_collateral(deps: Deps, input: String) -> StdResult<Asse
         "uwasm" => AssetInfo::NativeToken {
             denom: input.to_string(),
         },
+        "uosmo" => AssetInfo::NativeToken {
+            denom: input.to_string(),
+        },
         _ => {
             // check that the input is a valid address else
             // this should throw

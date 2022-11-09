@@ -8,7 +8,7 @@ interface Opts {
 }
 
 export async function uploadContract(
-  testnet: String,
+  prefix: String,
   client: SigningCosmWasmClient,
   senderAddress: string,
   filepath: string,
@@ -17,7 +17,7 @@ export async function uploadContract(
   const contract = readFileSync(filepath)
 
   const fee =
-    testnet == 'osmo'
+    prefix == 'osmo'
       ? {
           gas: '0',
           amount: [{ denom: 'uosmo', amount: '0' }],
@@ -33,7 +33,7 @@ export async function uploadContract(
 }
 
 export async function instantiateContract(
-  testnet: String,
+  prefix: String,
   client: SigningCosmWasmClient,
   senderAddress: string,
   codeId: number,
@@ -48,7 +48,7 @@ export async function instantiateContract(
   }
 
   const fee =
-    testnet == 'osmo'
+    prefix == 'osmo'
       ? {
           gas: '0',
           amount: [{ denom: 'uosmo', amount: '0' }],
@@ -70,7 +70,7 @@ export async function instantiateContract(
 }
 
 export async function executeContract(
-  testnet: String,
+  prefix: String,
   client: SigningCosmWasmClient,
   senderAddress: string,
   contractAddress: string,
@@ -79,7 +79,7 @@ export async function executeContract(
   funds?: Coin[]
 ) {
   const fee =
-    testnet == 'osmo'
+    prefix == 'osmo'
       ? {
           gas: '0',
           amount: [{ denom: 'uosmo', amount: '0' }],
@@ -112,7 +112,7 @@ export async function queryContract(
 }
 
 export async function deployContract(
-  testnet: String,
+  prefix: String,
   client: SigningCosmWasmClient,
   senderAddress: string,
   filepath: string,
@@ -122,7 +122,7 @@ export async function deployContract(
   opts: object
 ) {
   const codeId = await uploadContract(
-    testnet,
+    prefix,
     client,
     senderAddress,
     filepath,
@@ -130,7 +130,7 @@ export async function deployContract(
   )
 
   return await instantiateContract(
-    testnet,
+    prefix,
     client,
     senderAddress,
     codeId,
@@ -142,14 +142,14 @@ export async function deployContract(
 }
 
 export async function sendToken(
-  testnet: String,
+  prefix: String,
   client: SigningCosmWasmClient,
   senderAddress: string,
   recipientAddress: string,
   amount: string
 ) {
   const fee =
-    testnet == 'osmo'
+    prefix == 'osmo'
       ? {
           gas: '0',
           amount: [{ denom: 'uosmo', amount: '0' }],
@@ -159,7 +159,7 @@ export async function sendToken(
           amount: [{ denom: 'ujunox', amount: '150000' }],
         }
   const coin =
-    testnet == 'osmo'
+    prefix == 'osmo'
       ? [{ denom: 'uosmo', amount: amount }]
       : [{ denom: 'ujunox', amount: amount }]
 
