@@ -1,12 +1,11 @@
 use cosmwasm_schema::cw_serde;
 
 use cosmwasm_std::{Deps, DepsMut, StdError::GenericErr, StdResult, Storage};
-use cosmwasm_storage::singleton;
-use cw_storage_plus::Item;
+use cosmwasm_storage::{singleton, singleton_read};
 use margined_common::asset::AssetInfo;
 
 pub static KEY_CONFIG: &[u8] = b"config";
-pub const TOKEN_LIST: Item<Vec<AssetInfo>> = Item::new("token-list");
+pub const TOKEN_LIST: &[u8] = b"token-list";
 pub const TOKEN_LIMIT: usize = 3usize;
 
 #[cw_serde]
@@ -20,10 +19,9 @@ pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()>
 // We also check that we have not reached the limit of tokens here
 pub fn save_token(deps: DepsMut, input: AssetInfo) -> StdResult<()> {
     // check if the list exists already
-    let mut token_list = match TOKEN_LIST.may_load(deps.storage)? {
-        None => vec![],
-        Some(list) => list,
-    };
+    let mut token_list: Vec<AssetInfo> = singleton_read(deps.storage, TOKEN_LIST)
+        .may_load()?
+        .unwrap_or_default();
 
     // check if we already added the token
     if token_list.contains(&input) {
@@ -41,13 +39,14 @@ pub fn save_token(deps: DepsMut, input: AssetInfo) -> StdResult<()> {
 
     // add the token
     token_list.push(input);
-    TOKEN_LIST.save(deps.storage, &token_list)
+
+    singleton(deps.storage, TOKEN_LIST).save(&token_list)
 }
 
 // this function reads Addrs stored in the TOKEN_LIST.
 // note that this function ONLY takes the first TOKEN_LIMIT terms
 pub fn read_token_list(deps: Deps, limit: usize) -> StdResult<Vec<AssetInfo>> {
-    match TOKEN_LIST.may_load(deps.storage)? {
+    match singleton_read::<Vec<AssetInfo>>(deps.storage, TOKEN_LIST).may_load()? {
         None => Err(GenericErr {
             msg: "No tokens are stored".to_string(),
         }),
@@ -60,23 +59,24 @@ pub fn read_token_list(deps: Deps, limit: usize) -> StdResult<Vec<AssetInfo>> {
 
 // this function checks whether the token is stored already
 pub fn is_token(storage: &dyn Storage, token: AssetInfo) -> bool {
-    match TOKEN_LIST.may_load(storage).unwrap() {
-        None => false,
-        Some(list) => list.contains(&token),
+    if let Ok(list) = singleton_read::<Vec<AssetInfo>>(storage, TOKEN_LIST).load() {
+        return list.contains(&token);
     }
+    false
 }
 
 // this function deletes the entry under the given key
 pub fn remove_token(deps: DepsMut, token: AssetInfo) -> StdResult<()> {
     // check if the list exists
-    let mut token_list = match TOKEN_LIST.may_load(deps.storage)? {
-        None => {
-            return Err(GenericErr {
-                msg: "No tokens are stored".to_string(),
-            })
-        }
-        Some(value) => value,
-    };
+    let mut token_list: Vec<AssetInfo> =
+        match singleton_read(deps.storage, TOKEN_LIST).may_load()? {
+            None => {
+                return Err(GenericErr {
+                    msg: "No tokens are stored".to_string(),
+                })
+            }
+            Some(value) => value,
+        };
 
     // check if the token is added
     if !token_list.contains(&token) {
@@ -94,5 +94,5 @@ pub fn remove_token(deps: DepsMut, token: AssetInfo) -> StdResult<()> {
     token_list.swap_remove(index);
 
     // saves the updated token_list
-    TOKEN_LIST.save(deps.storage, &token_list)
+    singleton(deps.storage, TOKEN_LIST).save(&token_list)
 }

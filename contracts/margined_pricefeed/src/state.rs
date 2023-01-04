@@ -1,12 +1,11 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{StdResult, Storage, Timestamp, Uint128};
-use cosmwasm_storage::singleton;
-use cw_storage_plus::Map;
+use cosmwasm_storage::{singleton, Bucket, ReadonlyBucket};
 use margined_perp::margined_pricefeed::PriceData;
 
 pub static KEY_CONFIG: &[u8] = b"config";
 
-pub const PRICES: Map<String, Vec<PriceData>> = Map::new("prices");
+pub const PRICES: &[u8] = b"prices";
 
 #[cw_serde]
 pub struct Config {}
@@ -32,18 +31,15 @@ pub fn store_price_data(
 
     prices.push(price_data);
 
-    PRICES.save(storage, key, &prices)
+    Bucket::new(storage, PRICES).save(key.as_bytes(), &prices)
 }
 
 pub fn read_price_data(storage: &dyn Storage, key: String) -> StdResult<Vec<PriceData>> {
-    let prices = PRICES.may_load(storage, key)?;
-    let mut result = Vec::new();
-
-    if let Some(prices) = prices {
-        result = prices;
-    } else {
-        result.push(PriceData::default());
-    }
+    // let prices = ReadonlyBucket::new(storage, PRICES).may_load(key.as_bytes())?;
+    let result = match ReadonlyBucket::new(storage, PRICES).may_load(key.as_bytes())? {
+        None => vec![PriceData::default()],
+        Some(prices) => prices,
+    };
 
     Ok(result)
 }
