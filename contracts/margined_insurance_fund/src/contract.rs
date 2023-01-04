@@ -13,7 +13,7 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use cw_controllers::Admin;
-use margined_perp::margined_insurance_fund::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use margined_perp::margined_insurance_fund::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 /// Contract name that is used for migration.
 const CONTRACT_NAME: &str = "crates.io:margined-insurance-fund";
@@ -63,4 +63,10 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetVammStatus { vamm } => to_binary(&query_vamm_status(deps, vamm)?),
         QueryMsg::GetAllVammStatus { limit } => to_binary(&query_status_all_vamm(deps, limit)?),
     }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    Ok(Response::new())
 }

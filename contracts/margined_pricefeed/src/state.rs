@@ -1,26 +1,18 @@
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{StdResult, Storage, Timestamp, Uint128};
 use cosmwasm_storage::singleton;
 use cw_storage_plus::Map;
+use margined_perp::margined_pricefeed::PriceData;
 
 pub static KEY_CONFIG: &[u8] = b"config";
 
 pub const PRICES: Map<String, Vec<PriceData>> = Map::new("prices");
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct Config {}
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
     singleton(storage, KEY_CONFIG).save(config)
-}
-
-#[derive(Serialize, Default, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-pub struct PriceData {
-    pub round_id: Uint128,
-    pub price: Uint128,
-    pub timestamp: Timestamp,
 }
 
 pub fn store_price_data(

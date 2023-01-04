@@ -2,7 +2,7 @@
 name = "margined_utils"
 version = "0.1.0"
 authors = ["Margined Protocol"]
-edition = "2018"
+edition = "2021"
 description = "Common helpers for margin protocol contracts"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -13,12 +13,13 @@ description = "Common helpers for margin protocol contracts"
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cw20 = { version = "0.13.2" }
-cw20-base = { version = "0.13.2", features = ["library"] }
-cw-controllers = "0.15.1"
-cw-multi-test = "0.13.2"
-cosmwasm-std = { version = "1.0.0" }
-cosmwasm-storage = { version = "1.0.0" }
+cw20 = { version = "1.0.1" }
+cw20-base = { version = "1.0.1", features = ["library"] }
+cw-controllers = "1.0.1"
+cw-multi-test = "0.16.2"
+cosmwasm-schema = { version = "1.1.9" }
+cosmwasm-std = { version = "1.1.9" }
+cosmwasm-storage = { version = "1.1.9" }
 margined_common = { version = "0.1.0", path = "../margined_common"}
 margined_perp = { version = "0.1.0", path = "../margined_perp"}
 margined_vamm = { version = "0.1.0", path = "../../contracts/margined_vamm" }
@@ -27,9 +28,3 @@ margined_fee_pool = { version = "0.1.0", path = "../../contracts/margined_fee_po
 margined_insurance_fund = { version = "0.1.0", path = "../../contracts/margined_insurance_fund" }
 margined_pricefeed = { version = "0.1.0", path = "../../contracts/margined_pricefeed" }
 mock_pricefeed = { version = "0.1.0", path = "../../contracts/mocks/mock_pricefeed" }
-schemars = "0.8.1"
-serde = { version = "1.0.103", default-features = false, features = ["derive"] }
-serde_json = "^1.0"
-
-[profile.release]
-overflow-checks = true

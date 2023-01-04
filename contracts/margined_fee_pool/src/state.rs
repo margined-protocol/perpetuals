@@ -1,5 +1,4 @@
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cosmwasm_schema::cw_serde;
 
 use cosmwasm_std::{Deps, DepsMut, StdError::GenericErr, StdResult, Storage};
 use cosmwasm_storage::singleton;
@@ -10,7 +9,7 @@ pub static KEY_CONFIG: &[u8] = b"config";
 pub const TOKEN_LIST: Item<Vec<AssetInfo>> = Item::new("token-list");
 pub const TOKEN_LIMIT: usize = 3usize;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct Config {}
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {

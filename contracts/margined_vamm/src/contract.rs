@@ -9,7 +9,7 @@ use margined_common::{
     integer::Integer,
     validate::{validate_assets, validate_decimal_places, validate_non_fraction, validate_ratio},
 };
-use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 use crate::error::ContractError;
 use crate::querier::{query_underlying_price, query_underlying_twap_price};
@@ -217,4 +217,10 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             base_asset_amount,
         )?),
     }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    Ok(Response::new())
 }

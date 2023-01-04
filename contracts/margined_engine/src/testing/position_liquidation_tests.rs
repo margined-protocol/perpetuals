@@ -1,4 +1,4 @@
-use cosmwasm_std::{Empty, StdError, Uint128};
+use cosmwasm_std::{StdError, Uint128};
 use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
 use margined_common::integer::Integer;
@@ -20,6 +20,7 @@ fn test_liquidation_fee_100_percent() {
         insurance_fund,
         ..
     } = SimpleScenario::new();
+
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000_000u128);
     let timestamp: u64 = router.block_info().time.seconds();
@@ -47,9 +48,7 @@ fn test_liquidation_fee_100_percent() {
     */
 
     // engine contract balance: 0 USDC
-    let engine_balance = usdc
-        .balance::<_, _, Empty>(&router, engine.addr().clone())
-        .unwrap();
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(0u128));
 
     // alice creates 25 USDC position
@@ -71,14 +70,12 @@ fn test_liquidation_fee_100_percent() {
 
     // insurance contract balance: 5000 USDC
     let insurance_balance = usdc
-        .balance::<_, _, Empty>(&router, insurance_fund.addr().clone())
+        .balance(&router.wrap(), insurance_fund.addr().clone())
         .unwrap();
     assert_eq!(insurance_balance, Uint128::from(to_decimals(5000u64)));
 
     // query engine contract balance to make sure 25 USDC exist
-    let engine_balance = usdc
-        .balance::<_, _, Empty>(&router, engine.addr().clone())
-        .unwrap();
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, to_decimals(25u64));
 
     // attempt liquidation
@@ -100,19 +97,17 @@ fn test_liquidation_fee_100_percent() {
     */
 
     // Engine contract balance should be 0
-    let engine_balance = usdc
-        .balance::<_, _, Empty>(&router, engine.addr().clone())
-        .unwrap();
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, to_decimals(0u64));
 
     // insurance contract balance, 5000-100 = 4900
     let insurance_balance = usdc
-        .balance::<_, _, Empty>(&router, insurance_fund.addr().clone())
+        .balance(&router.wrap(), insurance_fund.addr().clone())
         .unwrap();
     assert_eq!(insurance_balance, to_decimals(4900u64));
 
     // liquidator (carol) balance should have 125 USDC
-    let liquidator_balance = usdc.balance::<_, _, Empty>(&router, carol.clone()).unwrap();
+    let liquidator_balance = usdc.balance(&router.wrap(), carol.clone()).unwrap();
     assert_eq!(liquidator_balance, to_decimals(125u64));
 }
 
@@ -193,7 +188,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(alice_balance, Uint128::from(5_094_117_647_059u128));
 
     let state = engine.state(&router).unwrap();
@@ -218,9 +213,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let engine_balance = usdc
-        .balance::<_, _, Empty>(&router, engine.addr().clone())
-        .unwrap();
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::zero());
 }
 
@@ -296,7 +289,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(alice_balance, Uint128::from(5_094_117_647_059u128));
 
     // keeper liquidate bob's under collateral position, bob's positionValue is -294.11
@@ -318,12 +311,10 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 
-    let carol_balance = usdc.balance::<_, _, Empty>(&router, carol.clone()).unwrap();
+    let carol_balance = usdc.balance(&router.wrap(), carol.clone()).unwrap();
     assert_eq!(carol_balance, Uint128::from(7_352_941_176u128));
 
-    let engine_balance = usdc
-        .balance::<_, _, Empty>(&router, engine.addr().clone())
-        .unwrap();
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
     // NOTE: this seems to work ok but there is some dust left over in the engine.
     assert_eq!(engine_balance, Uint128::from(3u64));
 }
@@ -1024,7 +1015,7 @@ fn test_close_partial_position_long_position_when_closing_whole_position_is_over
     assert_eq!(position.margin, Uint128::from(25_000_000_000u128));
 
     // 5000 - open pos margin (25) + fee (-73.53 * 0.1%)
-    let alice_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(alice_balance, Uint128::from(4_974_926_470_589u128));
 }
 
@@ -1092,7 +1083,7 @@ fn test_close_partial_position_short_position_when_closing_whole_position_is_ove
     assert_eq!(position.margin, Uint128::from(20_000_000_000u128));
 
     // 5000 - open pos margin (25) + fee (-42.11 * 0.1%)
-    let alice_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(alice_balance, Uint128::from(4_979_957_894_737u128));
 }
 

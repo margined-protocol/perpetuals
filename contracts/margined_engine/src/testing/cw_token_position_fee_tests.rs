@@ -1,4 +1,4 @@
-use cosmwasm_std::{Empty, Uint128};
+use cosmwasm_std::Uint128;
 use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
 use margined_common::integer::Integer;
@@ -40,7 +40,7 @@ fn test_ten_percent_fee_open_long_position() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(alice_balance, Uint128::from(4_880_000_000_000u128));
 
     let position: Position = engine
@@ -53,12 +53,10 @@ fn test_ten_percent_fee_open_long_position() {
     assert_eq!(position.notional, Uint128::from(600_000_000_000u64));
 
     let fee_pool_balance = usdc
-        .balance::<_, _, Empty>(&router, fee_pool.addr().clone())
+        .balance(&router.wrap(), fee_pool.addr().clone())
         .unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(60_000_000_000u64));
-    let engine_balance = usdc
-        .balance::<_, _, Empty>(&router, engine.addr().clone())
-        .unwrap();
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(60_000_000_000u64));
 }
 
@@ -96,7 +94,7 @@ fn test_ten_percent_fee_open_short_position() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(alice_balance, Uint128::from(4_880_000_000_000u128));
 
     let position: Position = engine
@@ -109,12 +107,10 @@ fn test_ten_percent_fee_open_short_position() {
     assert_eq!(position.notional, Uint128::from(600_000_000_000u64));
 
     let fee_pool_balance = usdc
-        .balance::<_, _, Empty>(&router, fee_pool.addr().clone())
+        .balance(&router.wrap(), fee_pool.addr().clone())
         .unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(60_000_000_000u64));
-    let engine_balance = usdc
-        .balance::<_, _, Empty>(&router, engine.addr().clone())
-        .unwrap();
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(60_000_000_000u64));
 }
 
@@ -152,7 +148,7 @@ fn test_ten_percent_fee_long_position_price_remains_long_again() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_1 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_1 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(alice_balance_1, Uint128::from(4_950_000_000_000u128));
 
     // alice opens long position with 175 margin, 2x leverage
@@ -169,7 +165,7 @@ fn test_ten_percent_fee_long_position_price_remains_long_again() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_2 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_2 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
         alice_balance_1 - alice_balance_2,
         Uint128::from(210_000_000_000u128)
@@ -185,12 +181,10 @@ fn test_ten_percent_fee_long_position_price_remains_long_again() {
     assert_eq!(position.notional, Uint128::from(600_000_000_000u64));
 
     let fee_pool_balance = usdc
-        .balance::<_, _, Empty>(&router, fee_pool.addr().clone())
+        .balance(&router.wrap(), fee_pool.addr().clone())
         .unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(60_000_000_000u64));
-    let engine_balance = usdc
-        .balance::<_, _, Empty>(&router, engine.addr().clone())
-        .unwrap();
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(200_000_000_000u64));
 }
 
@@ -229,7 +223,7 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_1 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_1 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(alice_balance_1, Uint128::from(4_950_000_000_000u128));
 
     // bob opens long position with 35 margin, 10x leverage, price up
@@ -273,7 +267,7 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_2 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_2 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
         alice_balance_1 - alice_balance_2,
         Uint128::from(240_000_000_000u128)
@@ -289,12 +283,10 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
     assert_eq!(position.notional, Uint128::from(650_000_000_000u64));
 
     let fee_pool_balance = usdc
-        .balance::<_, _, Empty>(&router, fee_pool.addr().clone())
+        .balance(&router.wrap(), fee_pool.addr().clone())
         .unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(100_000_000_000u64));
-    let engine_balance = usdc
-        .balance::<_, _, Empty>(&router, engine.addr().clone())
-        .unwrap();
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(260_000_000_000u64));
 }
 
@@ -332,7 +324,7 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_1 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_1 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
 
     // bob opens short position with 125 margin, 2x leverage, price down
     // (1250 - 250) * (80 + baseAssetDelta) = 100k, baseAssetDelta = 20
@@ -375,7 +367,7 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_2 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_2 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
         alice_balance_1 - alice_balance_2,
         Uint128::from(75_000_000_000u128)
@@ -424,7 +416,7 @@ fn test_ten_percent_fee_short_position_price_remains_short_again() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_1 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_1 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
 
     // alice opens short position with 50 margin, 8x leverage
     // (800 - 400) * (125 + baseAssetDelta) = 100k, baseAssetDelta = 125
@@ -440,7 +432,7 @@ fn test_ten_percent_fee_short_position_price_remains_short_again() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_2 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_2 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
         alice_balance_1 - alice_balance_2,
         Uint128::from(90_000_000_000u128)
@@ -500,7 +492,7 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_1 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_1 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
 
     // bob opens short position with 150 margin, 2x leverage, price down
     // (800 - 300) * (125 + baseAssetDelta) = 100k, baseAssetDelta = 75
@@ -547,7 +539,7 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
     router.execute(alice.clone(), msg).unwrap();
 
     // transferred margin = margin + fee = 100 + (100 * 3 * 10%) = 130
-    let alice_balance_2 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_2 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
         alice_balance_1 - alice_balance_2,
         Uint128::from(130_000_000_000u128)
@@ -596,7 +588,7 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_1 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_1 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
 
     // bob opens long position with 200 margin, 1x leverage, price up
     // (800 + 200) * (125 + baseAssetDelta) = 100k, baseAssetDelta = -25
@@ -643,7 +635,7 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
     router.execute(alice.clone(), msg).unwrap();
 
     // then transferred margin = margin + fee = 50 + (50 * 4 * 10%) = 70
-    let alice_balance_2 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_2 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
         alice_balance_1 - alice_balance_2,
         Uint128::from(70_000_000_000u128)
@@ -1218,7 +1210,7 @@ fn test_ten_percent_fee_open_long_price_remains_close_manually() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_1 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_1 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
 
     let msg = engine
         .open_position(
@@ -1232,7 +1224,7 @@ fn test_ten_percent_fee_open_long_price_remains_close_manually() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_2 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_2 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
         alice_balance_2 - alice_balance_1,
         Uint128::from(25_000_000_000u64)
@@ -1277,7 +1269,7 @@ fn test_ten_percent_fee_open_short_price_remains_close_manually() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_1 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_1 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
 
     let msg = engine
         .open_position(
@@ -1291,7 +1283,7 @@ fn test_ten_percent_fee_open_short_price_remains_close_manually() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_2 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_2 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
         alice_balance_2 - alice_balance_1,
         Uint128::from(80_000_000_000u64)
@@ -1350,7 +1342,7 @@ fn test_ten_percent_fee_open_long_price_up_close_manually() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_1 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_1 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
 
     let msg = engine
         .open_position(
@@ -1389,7 +1381,7 @@ fn test_ten_percent_fee_open_long_price_up_close_manually() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_2 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_2 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
         alice_balance_2 - alice_balance_1,
         Uint128::from(124_090_909_091u64)
@@ -1435,7 +1427,7 @@ fn test_ten_percent_fee_open_long_price_down_close_manually() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_1 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_1 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
 
     let msg = engine
         .open_position(
@@ -1474,7 +1466,7 @@ fn test_ten_percent_fee_open_long_price_down_close_manually() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_2 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_2 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
         alice_balance_2 - alice_balance_1,
         Uint128::from(140_000_000_000u64)
@@ -1520,7 +1512,7 @@ fn test_ten_percent_fee_open_short_price_up_close_manually() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_1 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_1 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
 
     let msg = engine
         .open_position(
@@ -1556,7 +1548,7 @@ fn test_ten_percent_fee_open_short_price_up_close_manually() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_2 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_2 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
         alice_balance_2 - alice_balance_1,
         Uint128::from(147_698_412_700u64)
@@ -1616,7 +1608,7 @@ fn test_ten_percent_fee_open_short_price_down_close_manually() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_1 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_1 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
 
     let msg = engine
         .open_position(
@@ -1655,7 +1647,7 @@ fn test_ten_percent_fee_open_short_price_down_close_manually() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_2 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_2 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
         alice_balance_2 - alice_balance_1,
         Uint128::from(456_666_666_667u64)
@@ -1700,7 +1692,7 @@ fn test_ten_percent_fee_open_long_price_remains_close_opening_larger_short() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_1 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_1 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
 
     let msg = engine
         .open_position(
@@ -1714,7 +1706,7 @@ fn test_ten_percent_fee_open_long_price_remains_close_opening_larger_short() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_2 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_2 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
         alice_balance_2 - alice_balance_1,
         Uint128::from(60_000_000_000u64)
@@ -1759,7 +1751,7 @@ fn test_ten_percent_fee_open_short_price_remains_close_opening_larger_long() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_1 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_1 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
 
     let msg = engine
         .open_position(
@@ -1773,7 +1765,7 @@ fn test_ten_percent_fee_open_short_price_remains_close_opening_larger_long() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_2 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_2 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
         alice_balance_1 - alice_balance_2,
         Uint128::from(75_000_000_000u64)
@@ -1830,7 +1822,7 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_1 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_1 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
 
     let msg = engine
         .open_position(
@@ -1869,7 +1861,7 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_2 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_2 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
         alice_balance_2 - alice_balance_1,
         Uint128::from(31_363_636_363u64)
@@ -1893,7 +1885,7 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(9u64));
 
     let fee_pool_balance = usdc
-        .balance::<_, _, Empty>(&router, fee_pool.addr().clone())
+        .balance(&router.wrap(), fee_pool.addr().clone())
         .unwrap();
     assert_eq!(fee_pool_balance, Uint128::from(140_000_000_000u64));
 }
@@ -1930,7 +1922,7 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_1 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_1 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
 
     let msg = engine
         .open_position(
@@ -1966,7 +1958,7 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_2 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_2 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
         alice_balance_1 - alice_balance_2,
         Uint128::from(61_666_666_667u64)
@@ -2108,7 +2100,7 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_1 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_1 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
 
     let msg = engine
         .open_position(
@@ -2147,7 +2139,7 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let alice_balance_2 = usdc.balance::<_, _, Empty>(&router, alice.clone()).unwrap();
+    let alice_balance_2 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
         alice_balance_2 - alice_balance_1,
         Uint128::from(640_000_000_000u64)

@@ -1,8 +1,7 @@
+use cosmwasm_schema::cw_serde;
 use margined_perp::margined_vamm::{
     CalcFeeResponse, ConfigResponse, Direction, ExecuteMsg, QueryMsg, StateResponse,
 };
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{
     to_binary, Addr, Coin, CosmosMsg, Empty, Querier, QuerierWrapper, StdResult, Uint128, WasmMsg,
@@ -11,7 +10,7 @@ use cosmwasm_std::{
 
 /// VammController is a wrapper around Addr that provides a lot of helpers
 /// for working with this.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct VammController(pub Addr);
 
 impl VammController {

@@ -1,5 +1,4 @@
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cosmwasm_schema::cw_serde;
 
 use cosmwasm_std::{Addr, Deps, DepsMut, StdError, StdResult, Storage};
 use cosmwasm_storage::{singleton, singleton_read};
@@ -86,7 +85,7 @@ pub fn remove_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
     VAMM_LIST.save(deps.storage, &vamm_list)
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct Config {
     pub engine: Addr,
 }

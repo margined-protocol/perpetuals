@@ -1,25 +1,22 @@
 use crate::margined_vamm::Direction;
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, SubMsg, Uint128};
 use margined_common::{asset::AssetInfo, integer::Integer};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum Side {
     Buy,
     Sell,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum PnlCalcOption {
     SpotPrice,
     Twap,
     Oracle,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct InstantiateMsg {
     pub pauser: String,
     pub insurance_fund: String,
@@ -30,8 +27,7 @@ pub struct InstantiateMsg {
     pub liquidation_fee: Uint128,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg {
     UpdateConfig {
         owner: Option<String>,
@@ -83,49 +79,45 @@ pub enum ExecuteMsg {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
+pub struct MigrateMsg {}
+
+#[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
+    #[returns(ConfigResponse)]
     Config {},
+    #[returns(StateResponse)]
     State {},
+    #[returns(PauserResponse)]
     GetPauser {},
-    IsWhitelisted {
-        address: String,
-    },
+    #[returns(bool)]
+    IsWhitelisted { address: String },
+    #[returns(cw_controllers::HooksResponse)]
     GetWhitelist {},
-    Position {
-        vamm: String,
-        trader: String,
-    },
-    AllPositions {
-        trader: String,
-    },
+    #[returns(Position)]
+    Position { vamm: String, trader: String },
+    #[returns(Vec<Position>)]
+    AllPositions { trader: String },
+    #[returns(PositionUnrealizedPnlResponse)]
     UnrealizedPnl {
         vamm: String,
         trader: String,
         calc_option: PnlCalcOption,
     },
-    CumulativePremiumFraction {
-        vamm: String,
-    },
-    MarginRatio {
-        vamm: String,
-        trader: String,
-    },
-    FreeCollateral {
-        vamm: String,
-        trader: String,
-    },
-    BalanceWithFundingPayment {
-        trader: String,
-    },
-    PositionWithFundingPayment {
-        vamm: String,
-        trader: String,
-    },
+    #[returns(Integer)]
+    CumulativePremiumFraction { vamm: String },
+    #[returns(Integer)]
+    MarginRatio { vamm: String, trader: String },
+    #[returns(Integer)]
+    FreeCollateral { vamm: String, trader: String },
+    #[returns(Uint128)]
+    BalanceWithFundingPayment { trader: String },
+    #[returns(Position)]
+    PositionWithFundingPayment { vamm: String, trader: String },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct ConfigResponse {
     pub owner: Addr,
     pub insurance_fund: Addr,
@@ -138,18 +130,18 @@ pub struct ConfigResponse {
     pub liquidation_fee: Uint128,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct StateResponse {
     pub open_interest_notional: Uint128,
     pub bad_debt: Uint128,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct PauserResponse {
     pub pauser: Addr,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct Position {
     pub vamm: Addr,
     pub trader: Addr,
@@ -176,7 +168,7 @@ impl Default for Position {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct SwapResponse {
     pub vamm: String,
     pub trader: String,
@@ -188,13 +180,13 @@ pub struct SwapResponse {
     pub output: Uint128,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct PositionUnrealizedPnlResponse {
     pub position_notional: Uint128,
     pub unrealized_pnl: Integer,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct RemainMarginResponse {
     pub funding_payment: Integer,
     pub margin: Uint128,
@@ -202,7 +194,7 @@ pub struct RemainMarginResponse {
     pub latest_premium_fraction: Integer,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct TransferResponse {
     pub messages: Vec<SubMsg>,
     pub spread_fee: Uint128,

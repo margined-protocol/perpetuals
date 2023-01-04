@@ -11,7 +11,7 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use cw_controllers::Admin;
-use margined_perp::margined_fee_pool::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use margined_perp::margined_fee_pool::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 /// Contract name that is used for migration.
 const CONTRACT_NAME: &str = "crates.io:margined-fee-pool";
@@ -61,4 +61,10 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetTokenList { limit } => to_binary(&query_all_token(deps, limit)?),
         QueryMsg::GetTokenLength {} => to_binary(&query_token_list_length(deps)?),
     }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    Ok(Response::new())
 }

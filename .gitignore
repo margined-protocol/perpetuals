@@ -7,6 +7,12 @@
 # Cargo+Git helper file (https://github.com/rust-lang/cargo/blob/0.44.1/src/cargo/sources/git/utils.rs#L320-L327)
 .cargo-ok
 
+# Auto-gen
+
+artifacts
+
+.env
+
 # Text file backups
 **/*.rs.bk
 
@@ -16,3 +22,6 @@
 # IDEs
 *.iml
 .idea
+
+# ts gen
+build/

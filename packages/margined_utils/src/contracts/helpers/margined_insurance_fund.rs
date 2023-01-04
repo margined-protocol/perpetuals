@@ -1,9 +1,8 @@
+use cosmwasm_schema::cw_serde;
 use margined_perp::margined_insurance_fund::{
     AllVammResponse, AllVammStatusResponse, ConfigResponse, ExecuteMsg, QueryMsg, VammResponse,
     VammStatusResponse,
 };
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{
     to_binary, Addr, Coin, CosmosMsg, Empty, Querier, QuerierWrapper, StdResult, WasmMsg, WasmQuery,
@@ -11,7 +10,7 @@ use cosmwasm_std::{
 
 /// InsuranceFundController is a wrapper around Addr that provides a lot of helpers
 /// for working with this.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct InsuranceFundController(pub Addr);
 
 impl InsuranceFundController {

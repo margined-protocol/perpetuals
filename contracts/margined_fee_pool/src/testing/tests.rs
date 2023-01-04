@@ -1,7 +1,7 @@
 use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, Empty, StdError, Uint128, WasmMsg,
+    from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, StdError, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use cw_multi_test::Executor;
@@ -704,13 +704,11 @@ fn test_send_cw20_token() {
     router.execute(owner.clone(), msg).unwrap();
 
     // query balance of intended recipient (say, bob)
-    let balance = usdc.balance::<_, _, Empty>(&router, bob.clone()).unwrap();
+    let balance = usdc.balance(&router.wrap(), bob.clone()).unwrap();
     assert_eq!(balance, Uint128::from(5000u128 * 10u128.pow(9)));
 
     // query balance of contract
-    let balance = usdc
-        .balance::<_, _, Empty>(&router, fee_pool.addr())
-        .unwrap();
+    let balance = usdc.balance(&router.wrap(), fee_pool.addr()).unwrap();
     assert_eq!(balance, Uint128::from(5000u128 * 10u128.pow(9)));
 
     // send token to bob
@@ -724,13 +722,11 @@ fn test_send_cw20_token() {
     router.execute(owner.clone(), msg).unwrap();
 
     // query new balance of bob
-    let balance = usdc.balance::<_, _, Empty>(&router, bob).unwrap();
+    let balance = usdc.balance(&router.wrap(), bob).unwrap();
     assert_eq!(balance, Uint128::from(6000u128 * 10u128.pow(9)));
 
     // Query new contract balance
-    let balance = usdc
-        .balance::<_, _, Empty>(&router, fee_pool.addr())
-        .unwrap();
+    let balance = usdc.balance(&router.wrap(), fee_pool.addr()).unwrap();
     assert_eq!(balance, Uint128::from(4000u128 * 10u128.pow(9)));
 
     /////////////////////////
@@ -804,13 +800,11 @@ fn test_send_cw20_token() {
     router.execute(owner.clone(), msg).unwrap();
 
     // query balance of intended recipient (say, bob)
-    let balance = usdc.balance::<_, _, Empty>(&router, bob.clone()).unwrap();
+    let balance = usdc.balance(&router.wrap(), bob.clone()).unwrap();
     assert_eq!(balance, Uint128::from(5000u128 * 10u128.pow(9)));
 
     // query balance of contract
-    let balance = usdc
-        .balance::<_, _, Empty>(&router, fee_pool.addr())
-        .unwrap();
+    let balance = usdc.balance(&router.wrap(), fee_pool.addr()).unwrap();
     assert_eq!(balance, Uint128::from(1000u128 * 10u128.pow(9)));
 
     // send token to bob
@@ -830,13 +824,11 @@ fn test_send_cw20_token() {
     );
 
     // query new balance of bob
-    let balance = usdc.balance::<_, _, Empty>(&router, bob).unwrap();
+    let balance = usdc.balance(&router.wrap(), bob).unwrap();
     assert_eq!(balance, Uint128::from(5000u128 * 10u128.pow(9)));
 
     // Query new contract balance
-    let balance = usdc
-        .balance::<_, _, Empty>(&router, fee_pool.addr())
-        .unwrap();
+    let balance = usdc.balance(&router.wrap(), fee_pool.addr()).unwrap();
     assert_eq!(balance, Uint128::from(1000u128 * 10u128.pow(9)));
 }
 

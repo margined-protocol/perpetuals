@@ -1,5 +1,4 @@
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cosmwasm_schema::cw_serde;
 
 use cosmwasm_std::{Addr, StdResult, Storage, Timestamp, Uint128};
 use cosmwasm_storage::{bucket, bucket_read, singleton, singleton_read};
@@ -11,7 +10,7 @@ pub static KEY_STATE: &[u8] = b"state";
 pub static KEY_RESERVE_SNAPSHOT: &[u8] = b"reserve_snapshot";
 pub static KEY_RESERVE_SNAPSHOT_COUNTER: &[u8] = b"reserve_snapshot_counter";
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct Config {
     pub margin_engine: Addr,
     pub insurance_fund: Addr,
@@ -37,7 +36,7 @@ pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
     singleton_read(storage, KEY_CONFIG).load()
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct State {
     pub open: bool,
     pub quote_asset_reserve: Uint128,
@@ -55,7 +54,7 @@ pub fn read_state(storage: &dyn Storage) -> StdResult<State> {
     singleton_read(storage, KEY_STATE).load()
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema, Default)]
+#[cw_serde]
 pub struct ReserveSnapshot {
     pub quote_asset_reserve: Uint128,
     pub base_asset_reserve: Uint128,

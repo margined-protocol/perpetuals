@@ -1,10 +1,7 @@
 use cosmwasm_std::{Deps, Env, StdError, StdResult, Uint128};
-use margined_perp::margined_pricefeed::{ConfigResponse, OwnerResponse};
+use margined_perp::margined_pricefeed::{ConfigResponse, OwnerResponse, PriceData};
 
-use crate::{
-    contract::OWNER,
-    state::{read_price_data, PriceData},
-};
+use crate::{contract::OWNER, state::read_price_data};
 
 /// Queries contract Config
 pub fn query_config(_deps: Deps) -> StdResult<ConfigResponse> {

@@ -1,4 +1,4 @@
-use cosmwasm_std::{Empty, Uint128};
+use cosmwasm_std::Uint128;
 use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
@@ -45,9 +45,7 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let engine_balance = usdc
-        .balance::<_, _, Empty>(&router, engine.addr().clone())
-        .unwrap();
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(1_500_000_000_000u128));
 
     let price: Uint128 = Uint128::from(1_590_000_000u128);
@@ -100,13 +98,9 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
     // then fundingPayment will generate 1.5 loss and clearingHouse will withdraw in advanced from insuranceFund
     // clearingHouse: 1500 + 1.5
     // insuranceFund: 5000 - 1.5
-    let engine_balance = usdc
-        .balance::<_, _, Empty>(&router, engine.addr().clone())
-        .unwrap();
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(1_501_500_000_000u128));
-    let insurance_balance = usdc
-        .balance::<_, _, Empty>(&router, insurance_fund.addr())
-        .unwrap();
+    let insurance_balance = usdc.balance(&router.wrap(), insurance_fund.addr()).unwrap();
     assert_eq!(insurance_balance, Uint128::from(4_998_500_000_000u128));
 }
 
@@ -184,13 +178,9 @@ fn test_will_keep_generating_same_loss_when_funding_rate_is_positive() {
     // then fundingPayment will generate 1.5 * 2 loss and clearingHouse will withdraw in advanced from insuranceFund
     // clearingHouse: 1500 + 3
     // insuranceFund: 5000 - 3
-    let engine_balance = usdc
-        .balance::<_, _, Empty>(&router, engine.addr().clone())
-        .unwrap();
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(1_503_000_000_000u128));
-    let insurance_balance = usdc
-        .balance::<_, _, Empty>(&router, insurance_fund.addr())
-        .unwrap();
+    let insurance_balance = usdc.balance(&router.wrap(), insurance_fund.addr()).unwrap();
     assert_eq!(insurance_balance, Uint128::from(4_997_000_000_000u128));
 }
 
@@ -652,9 +642,7 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
     let msg = engine.pay_funding(vamm.addr().to_string()).unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let engine_balance = usdc
-        .balance::<_, _, Empty>(&router, engine.addr().clone())
-        .unwrap();
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(0u128));
 
     // then bob will get 2000% of his position size as fundingPayment
@@ -670,9 +658,7 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
         .unwrap();
     assert_eq!(bob_position.margin, to_decimals(0u64));
 
-    let engine_balance = usdc
-        .balance::<_, _, Empty>(&router, engine.addr().clone())
-        .unwrap();
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, to_decimals(1u64));
 }
 
@@ -731,9 +717,7 @@ fn test_have_huge_funding_payment_loss_margin_zero_cannot_remove_margin() {
     let msg = engine.pay_funding(vamm.addr().to_string()).unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let engine_balance = usdc
-        .balance::<_, _, Empty>(&router, engine.addr().clone())
-        .unwrap();
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(0u128));
 
     // then bob will get 2000% of his position size as fundingPayment
@@ -804,9 +788,7 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
     let msg = engine.pay_funding(vamm.addr().to_string()).unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let engine_balance = usdc
-        .balance::<_, _, Empty>(&router, engine.addr().clone())
-        .unwrap();
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(0u128));
 
     // then bob will get 2000% of his position size as fundingPayment
@@ -921,12 +903,8 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
 
     // clearingHouse: 1500
     // insuranceFund: 5000
-    let engine_balance = usdc
-        .balance::<_, _, Empty>(&router, engine.addr().clone())
-        .unwrap();
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::from(1_500_000_000_000u128));
-    let insurance_balance = usdc
-        .balance::<_, _, Empty>(&router, insurance_fund.addr())
-        .unwrap();
+    let insurance_balance = usdc.balance(&router.wrap(), insurance_fund.addr()).unwrap();
     assert_eq!(insurance_balance, Uint128::from(5_000_000_000_000u128));
 }

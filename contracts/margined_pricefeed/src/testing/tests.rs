@@ -1,14 +1,11 @@
-use crate::{
-    contract::{execute, instantiate, query},
-    state::PriceData,
-};
+use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::{from_binary, Addr, Uint128};
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
     Timestamp,
 };
 use margined_perp::margined_pricefeed::{
-    ConfigResponse, ExecuteMsg, InstantiateMsg, OwnerResponse, QueryMsg,
+    ConfigResponse, ExecuteMsg, InstantiateMsg, OwnerResponse, PriceData, QueryMsg,
 };
 
 #[test]

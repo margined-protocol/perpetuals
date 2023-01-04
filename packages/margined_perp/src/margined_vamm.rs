@@ -1,19 +1,21 @@
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cosmwasm_schema::{cw_serde, QueryResponses};
 
 use cosmwasm_std::{Addr, Uint128};
-use strum_macros::Display;
 
 use margined_common::integer::Integer;
+use strum::Display;
 
-#[derive(Serialize, Display, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
+#[derive(Eq, Display)]
 pub enum Direction {
     AddToAmm,
     RemoveFromAmm,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
+pub struct MigrateMsg {}
+
+#[cw_serde]
 pub struct InstantiateMsg {
     pub decimals: u8,
     pub pricefeed: String,
@@ -29,8 +31,7 @@ pub struct InstantiateMsg {
     pub fluctuation_limit_ratio: Uint128,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 #[allow(clippy::large_enum_variant)]
 pub enum ExecuteMsg {
     UpdateConfig {
@@ -64,55 +65,65 @@ pub enum ExecuteMsg {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
+    #[returns(ConfigResponse)]
     Config {},
+    #[returns(StateResponse)]
     State {},
+    #[returns(OwnerResponse)]
     GetOwner {},
+    #[returns(Uint128)]
     InputPrice {
         direction: Direction,
         amount: Uint128,
     },
+    #[returns(Uint128)]
     OutputPrice {
         direction: Direction,
         amount: Uint128,
     },
+    #[returns(Uint128)]
     InputAmount {
         direction: Direction,
         amount: Uint128,
     },
+    #[returns(Uint128)]
     OutputAmount {
         direction: Direction,
         amount: Uint128,
     },
+    #[returns(Uint128)]
     InputTwap {
         direction: Direction,
         amount: Uint128,
     },
+    #[returns(Uint128)]
     OutputTwap {
         direction: Direction,
         amount: Uint128,
     },
+    #[returns(Uint128)]
     SpotPrice {},
-    TwapPrice {
-        interval: u64,
-    },
+    #[returns(Uint128)]
+    TwapPrice { interval: u64 },
+    #[returns(Uint128)]
     UnderlyingPrice {},
-    UnderlyingTwapPrice {
-        interval: u64,
-    },
-    CalcFee {
-        quote_asset_amount: Uint128,
-    },
+    #[returns(Uint128)]
+    UnderlyingTwapPrice { interval: u64 },
+    #[returns(CalcFeeResponse)]
+    CalcFee { quote_asset_amount: Uint128 },
+    #[returns(bool)]
     IsOverSpreadLimit {},
+    #[returns(bool)]
     IsOverFluctuationLimit {
         direction: Direction,
         base_asset_amount: Uint128,
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct ConfigResponse {
     pub base_asset_holding_cap: Uint128,
     pub open_interest_notional_cap: Uint128,
@@ -129,12 +140,12 @@ pub struct ConfigResponse {
     pub spot_price_twap_interval: u64,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct OwnerResponse {
     pub owner: Addr,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct StateResponse {
     pub open: bool,
     pub quote_asset_reserve: Uint128,
@@ -144,7 +155,7 @@ pub struct StateResponse {
     pub next_funding_time: u64,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct CalcFeeResponse {
     pub toll_fee: Uint128,
     pub spread_fee: Uint128,

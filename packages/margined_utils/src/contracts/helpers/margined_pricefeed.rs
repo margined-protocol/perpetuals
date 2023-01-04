@@ -1,6 +1,5 @@
+use cosmwasm_schema::cw_serde;
 use margined_perp::margined_pricefeed::{ConfigResponse, ExecuteMsg, QueryMsg};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{
     to_binary, Addr, Coin, CosmosMsg, Empty, Querier, QuerierWrapper, StdResult, Uint128, WasmMsg,
@@ -9,7 +8,7 @@ use cosmwasm_std::{
 
 /// PricefeedController is a wrapper around Addr that provides a lot of helpers
 /// for working with this.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct PricefeedController(pub Addr);
 
 impl PricefeedController {

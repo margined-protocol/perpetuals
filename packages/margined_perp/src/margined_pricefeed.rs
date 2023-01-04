@@ -1,22 +1,29 @@
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::{Addr, Timestamp, Uint128};
 
-use cosmwasm_std::{Addr, Uint128};
+#[cw_serde]
+#[derive(Default)]
+pub struct PriceData {
+    pub round_id: Uint128,
+    pub price: Uint128,
+    pub timestamp: Timestamp,
+}
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum Direction {
     AddToAmm,
     RemoveFromAmm,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct InstantiateMsg {
     pub oracle_hub_contract: String, // address of the oracle hub we are using
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
+pub struct MigrateMsg {}
+
+#[cw_serde]
 pub enum ExecuteMsg {
     AppendPrice {
         key: String,
@@ -33,28 +40,28 @@ pub enum ExecuteMsg {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
+    #[returns(ConfigResponse)]
     Config {},
+    #[returns(OwnerResponse)]
     GetOwner {},
-    GetPrice {
-        key: String,
-    },
+    #[returns(PriceData)]
+    GetPrice { key: String },
+    #[returns(PriceData)]
     GetPreviousPrice {
         key: String,
         num_round_back: Uint128,
     },
-    GetTwapPrice {
-        key: String,
-        interval: u64,
-    },
+    #[returns(Uint128)]
+    GetTwapPrice { key: String, interval: u64 },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct ConfigResponse {}
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct OwnerResponse {
     pub owner: Addr,
 }
