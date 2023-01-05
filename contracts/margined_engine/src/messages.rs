@@ -143,13 +143,12 @@ pub fn transfer_fees(
     let mut messages: Vec<SubMsg> = vec![];
 
     if !spread_fee.is_zero() {
-        let msg =
-            execute_transfer_from(deps.storage, &from, &config.insurance_fund, spread_fee).unwrap();
+        let msg = execute_transfer_from(deps.storage, &from, &config.insurance_fund, spread_fee)?;
         messages.push(msg);
     };
 
     if !toll_fee.is_zero() {
-        let msg = execute_transfer_from(deps.storage, &from, &config.fee_pool, toll_fee).unwrap();
+        let msg = execute_transfer_from(deps.storage, &from, &config.fee_pool, toll_fee)?;
         messages.push(msg);
     };
 
@@ -179,10 +178,10 @@ pub fn withdraw(
         // add any shortfall to bad_debt
         state.prepaid_bad_debt = state.prepaid_bad_debt.checked_add(shortfall)?;
 
-        messages.push(execute_insurance_fund_withdrawal(deps, shortfall).unwrap());
+        messages.push(execute_insurance_fund_withdrawal(deps, shortfall)?);
     }
 
-    messages.push(execute_transfer(deps.storage, receiver, amount).unwrap());
+    messages.push(execute_transfer(deps.storage, receiver, amount)?);
 
     Ok(messages)
 }

@@ -142,14 +142,9 @@ pub fn remove_sent_funds(storage: &mut dyn Storage) {
 }
 
 pub fn read_sent_funds(storage: &dyn Storage) -> StdResult<SentFunds> {
-    let res = singleton_read(storage, KEY_SENT_FUNDS).may_load();
-    match res {
-        Ok(_) => {
-            let funds = res.unwrap();
-            Ok(funds.unwrap())
-        }
-        Err(_) => Err(StdError::generic_err("no sent funds")),
-    }
+    singleton_read(storage, KEY_SENT_FUNDS)
+        .load()
+        .map_err(|_| StdError::generic_err("no sent funds"))
 }
 
 #[cw_serde]
@@ -176,14 +171,9 @@ pub fn remove_tmp_swap(storage: &mut dyn Storage) {
 }
 
 pub fn read_tmp_swap(storage: &dyn Storage) -> StdResult<TmpSwapInfo> {
-    let res = singleton_read(storage, KEY_TMP_SWAP).may_load();
-    match res {
-        Ok(_) => {
-            let swap = res.unwrap();
-            Ok(swap.unwrap())
-        }
-        Err(_) => Err(StdError::generic_err("no temporary position")),
-    }
+    singleton_read(storage, KEY_TMP_SWAP)
+        .load()
+        .map_err(|_| StdError::generic_err("no temporary position"))
 }
 
 pub fn store_tmp_liquidator(storage: &mut dyn Storage, liquidator: &Addr) -> StdResult<()> {
@@ -196,14 +186,9 @@ pub fn remove_tmp_liquidator(storage: &mut dyn Storage) {
 }
 
 pub fn read_tmp_liquidator(storage: &dyn Storage) -> StdResult<Addr> {
-    let res = singleton_read(storage, KEY_TMP_LIQUIDATOR).may_load();
-    match res {
-        Ok(_) => {
-            let swap = res.unwrap();
-            Ok(swap.unwrap())
-        }
-        Err(_) => Err(StdError::generic_err("no liquidator")),
-    }
+    singleton_read(storage, KEY_TMP_LIQUIDATOR)
+        .load()
+        .map_err(|_| StdError::generic_err("no liquidator"))
 }
 
 #[cw_serde]

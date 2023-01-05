@@ -215,44 +215,44 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
     match msg.result {
         SubMsgResult::Ok(response) => match msg.id {
             INCREASE_POSITION_REPLY_ID => {
-                let (input, output) = parse_swap(response).unwrap();
+                let (input, output) = parse_swap(response)?;
                 let response =
                     update_position_reply(deps, env, input, output, INCREASE_POSITION_REPLY_ID)?;
                 Ok(response)
             }
             DECREASE_POSITION_REPLY_ID => {
-                let (input, output) = parse_swap(response).unwrap();
+                let (input, output) = parse_swap(response)?;
                 let response =
                     update_position_reply(deps, env, input, output, DECREASE_POSITION_REPLY_ID)?;
                 Ok(response)
             }
             REVERSE_POSITION_REPLY_ID => {
-                let (input, output) = parse_swap(response).unwrap();
+                let (input, output) = parse_swap(response)?;
                 let response = reverse_position_reply(deps, env, input, output)?;
                 Ok(response)
             }
             CLOSE_POSITION_REPLY_ID => {
-                let (input, output) = parse_swap(response).unwrap();
+                let (input, output) = parse_swap(response)?;
                 let response = close_position_reply(deps, env, input, output)?;
                 Ok(response)
             }
             PARTIAL_CLOSE_POSITION_REPLY_ID => {
-                let (input, output) = parse_swap(response).unwrap();
+                let (input, output) = parse_swap(response)?;
                 let response = partial_close_position_reply(deps, env, input, output)?;
                 Ok(response)
             }
             LIQUIDATION_REPLY_ID => {
-                let (input, output) = parse_swap(response).unwrap();
+                let (input, output) = parse_swap(response)?;
                 let response = liquidate_reply(deps, env, input, output)?;
                 Ok(response)
             }
             PARTIAL_LIQUIDATION_REPLY_ID => {
-                let (input, output) = parse_swap(response).unwrap();
+                let (input, output) = parse_swap(response)?;
                 let response = partial_liquidation_reply(deps, env, input, output)?;
                 Ok(response)
             }
             PAY_FUNDING_REPLY_ID => {
-                let (premium_fraction, sender) = parse_pay_funding(response).unwrap();
+                let (premium_fraction, sender) = parse_pay_funding(response)?;
                 let response = pay_funding_reply(deps, env, premium_fraction, sender)?;
                 Ok(response)
             }

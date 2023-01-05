@@ -24,7 +24,7 @@ use crate::{
 
 use margined_common::{asset::AssetInfo, integer::Integer};
 use margined_perp::{
-    margined_engine::{Position, RemainMarginResponse, Side},
+    margined_engine::{RemainMarginResponse, Side},
     margined_vamm::Direction,
 };
 
@@ -48,7 +48,7 @@ pub fn update_position_reply(
         &swap.vamm,
         &swap.trader,
         swap.side.clone(),
-    );
+    )?;
 
     // depending on the direction the output is positive or negative
     let signed_output: Integer = match &swap.side {
@@ -149,33 +149,27 @@ pub fn update_position_reply(
     // create transfer messages depending on PnL
     #[allow(clippy::comparison_chain)]
     if swap.margin_to_vault < Integer::zero() {
-        msgs.append(
-            &mut withdraw(
-                deps.as_ref(),
-                env,
-                &mut state,
-                &swap.trader,
-                config.eligible_collateral.clone(),
-                swap.margin_to_vault.value,
-                Uint128::zero(),
-            )
-            .unwrap(),
-        );
+        msgs.append(&mut withdraw(
+            deps.as_ref(),
+            env,
+            &mut state,
+            &swap.trader,
+            config.eligible_collateral.clone(),
+            swap.margin_to_vault.value,
+            Uint128::zero(),
+        )?);
     } else if swap.margin_to_vault > Integer::zero() {
         match config.eligible_collateral {
             AssetInfo::NativeToken { .. } => {
                 funds.required = funds.required.checked_add(swap_margin)?;
             }
             AssetInfo::Token { .. } => {
-                msgs.push(
-                    execute_transfer_from(
-                        deps.storage,
-                        &swap.trader,
-                        &env.contract.address,
-                        swap.margin_to_vault.value,
-                    )
-                    .unwrap(),
-                );
+                msgs.push(execute_transfer_from(
+                    deps.storage,
+                    &swap.trader,
+                    &env.contract.address,
+                    swap.margin_to_vault.value,
+                )?);
             }
         }
     };
@@ -185,8 +179,7 @@ pub fn update_position_reply(
 
     // create messages to pay for toll and spread fees, check flag is true if this follows a reverse
     if !swap.fees_paid {
-        let mut fees =
-            transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional).unwrap();
+        let mut fees = transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional)?;
 
         // add the fee transfer messages
         msgs.append(&mut fees.messages);
@@ -245,7 +238,7 @@ pub fn reverse_position_reply(
         &swap.vamm,
         &swap.trader,
         swap.side.clone(),
-    );
+    )?;
 
     update_open_interest_notional(
         &deps.as_ref(),
@@ -274,8 +267,7 @@ pub fn reverse_position_reply(
         swap.trader.clone(),
         swap.vamm.clone(),
         current_open_notional,
-    )
-    .unwrap();
+    )?;
 
     // add the fee transfer messages
     let mut msgs: Vec<SubMsg> = fees.messages;
@@ -292,7 +284,7 @@ pub fn reverse_position_reply(
         let margin = previous_margin.checked_sub(swap.unrealized_pnl)?;
 
         // create transfer message
-        msgs.push(execute_transfer(deps.storage, &swap.trader, margin.value).unwrap());
+        msgs.push(execute_transfer(deps.storage, &swap.trader, margin.value)?);
 
         // check if native tokens are sufficient
         if let AssetInfo::NativeToken { .. } = config.eligible_collateral {
@@ -357,7 +349,7 @@ pub fn close_position_reply(
         &swap.vamm.clone(),
         &swap.trader,
         swap.side.clone(),
-    );
+    )?;
 
     let margin_delta: Integer = match &position.direction {
         Direction::AddToAmm => {
@@ -385,18 +377,15 @@ pub fn close_position_reply(
     }
 
     if !withdraw_amount.is_zero() {
-        msgs.append(
-            &mut withdraw(
-                deps.as_ref(),
-                env,
-                &mut state,
-                &swap.trader,
-                config.eligible_collateral,
-                withdraw_amount.value,
-                Uint128::zero(),
-            )
-            .unwrap(),
-        );
+        msgs.append(&mut withdraw(
+            deps.as_ref(),
+            env,
+            &mut state,
+            &swap.trader,
+            config.eligible_collateral,
+            withdraw_amount.value,
+            Uint128::zero(),
+        )?);
     }
 
     // create array for fee amounts
@@ -408,8 +397,7 @@ pub fn close_position_reply(
             swap.trader.clone(),
             swap.vamm.clone(),
             position.notional,
-        )
-        .unwrap();
+        )?;
 
         fees_amount[0] = fees.spread_fee;
         fees_amount[1] = fees.toll_fee;
@@ -454,13 +442,13 @@ pub fn partial_close_position_reply(
 
     let swap: TmpSwapInfo = read_tmp_swap(deps.storage)?;
 
-    let mut position: Position = get_position(
+    let mut position = get_position(
         env.clone(),
         deps.storage,
         &swap.vamm,
         &swap.trader,
         swap.side.clone(),
-    );
+    )?;
 
     update_open_interest_notional(
         &deps.as_ref(),
@@ -502,7 +490,7 @@ pub fn partial_close_position_reply(
     };
 
     // calculate the fees
-    let fees = transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional).unwrap();
+    let fees = transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional)?;
 
     // set the new position
     position.size += signed_output;
@@ -552,7 +540,7 @@ pub fn liquidate_reply(
         &swap.vamm,
         &swap.trader,
         swap.side.clone(),
-    );
+    )?;
 
     // calculate delta from trade and whether it was profitable or a loss
     let margin_delta: Integer = match &position.direction {
@@ -586,31 +574,30 @@ pub fn liquidate_reply(
 
     let mut msgs: Vec<SubMsg> = vec![];
 
-    let pre_paid_shortfall: Uint128 = if !remain_margin.bad_debt.is_zero() {
-        realize_bad_debt(deps.as_ref(), remain_margin.bad_debt, &mut msgs, &mut state)
+    let pre_paid_shortfall = if !remain_margin.bad_debt.is_zero() {
+        realize_bad_debt(deps.as_ref(), remain_margin.bad_debt, &mut msgs, &mut state)?
     } else {
         Uint128::zero()
     };
 
     // any remaining margin goes to the insurance contract
     if !remain_margin.margin.is_zero() {
-        msgs.push(
-            execute_transfer(deps.storage, &config.insurance_fund, remain_margin.margin).unwrap(),
-        );
+        msgs.push(execute_transfer(
+            deps.storage,
+            &config.insurance_fund,
+            remain_margin.margin,
+        )?);
     }
 
-    msgs.append(
-        &mut withdraw(
-            deps.as_ref(),
-            env.clone(),
-            &mut state,
-            &liquidator,
-            config.eligible_collateral,
-            liquidation_fee,
-            pre_paid_shortfall,
-        )
-        .unwrap(),
-    );
+    msgs.append(&mut withdraw(
+        deps.as_ref(),
+        env.clone(),
+        &mut state,
+        &liquidator,
+        config.eligible_collateral,
+        liquidation_fee,
+        pre_paid_shortfall,
+    )?);
 
     store_state(deps.storage, &state)?;
 
@@ -652,7 +639,7 @@ pub fn partial_liquidation_reply(
         &swap.vamm,
         &swap.trader,
         swap.side.clone(),
-    );
+    )?;
 
     // calculate delta from trade and whether it was profitable or a loss
     let realized_pnl = (swap.unrealized_pnl
@@ -697,23 +684,23 @@ pub fn partial_liquidation_reply(
     let mut messages: Vec<SubMsg> = vec![];
 
     if !liquidation_fee.is_zero() {
-        messages
-            .push(execute_transfer(deps.storage, &config.insurance_fund, liquidation_fee).unwrap());
+        messages.push(execute_transfer(
+            deps.storage,
+            &config.insurance_fund,
+            liquidation_fee,
+        )?);
 
         // calculate token balance that should be remaining once
         // insurance fees have been paid
-        messages.append(
-            &mut withdraw(
-                deps.as_ref(),
-                env.clone(),
-                &mut state,
-                &liquidator,
-                config.eligible_collateral,
-                liquidation_fee,
-                Uint128::zero(),
-            )
-            .unwrap(),
-        );
+        messages.append(&mut withdraw(
+            deps.as_ref(),
+            env.clone(),
+            &mut state,
+            &liquidator,
+            config.eligible_collateral,
+            liquidation_fee,
+            Uint128::zero(),
+        )?);
     }
 
     store_position(deps.storage, &position)?;

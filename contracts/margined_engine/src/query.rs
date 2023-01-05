@@ -57,8 +57,7 @@ pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Pos
         deps.storage,
         &deps.api.addr_validate(&vamm)?,
         &deps.api.addr_validate(&trader)?,
-    )
-    .unwrap();
+    )?;
 
     // a default is returned if no position found with no trader set
     if position.trader != trader {
@@ -70,14 +69,13 @@ pub fn query_position(deps: Deps, vamm: String, trader: String) -> StdResult<Pos
 
 /// Queries and returns users position for all registered vamms
 pub fn query_all_positions(deps: Deps, trader: String) -> StdResult<Vec<Position>> {
-    let config = read_config(deps.storage).unwrap();
+    let config = read_config(deps.storage)?;
 
     let mut response: Vec<Position> = vec![];
 
     let vamms = query_insurance_all_vamm(&deps, config.insurance_fund.to_string(), None)?.vamm_list;
     for vamm in vamms.iter() {
-        let position =
-            read_position(deps.storage, vamm, &deps.api.addr_validate(&trader)?).unwrap();
+        let position = read_position(deps.storage, vamm, &deps.api.addr_validate(&trader)?)?;
 
         // a default is returned if no position found with no trader set
         if position.trader == trader {
@@ -100,8 +98,7 @@ pub fn query_position_notional_unrealized_pnl(
         deps.storage,
         &deps.api.addr_validate(&vamm)?,
         &deps.api.addr_validate(&trader)?,
-    )
-    .unwrap();
+    )?;
 
     let result = get_position_notional_unrealized_pnl(deps, &position, calc_option)?;
 
@@ -111,7 +108,7 @@ pub fn query_position_notional_unrealized_pnl(
 /// Queries cumulative premium fractions
 pub fn query_cumulative_premium_fraction(deps: Deps, vamm: String) -> StdResult<Integer> {
     // retrieve vamm data
-    let vamm_map = read_vamm_map(deps.storage, deps.api.addr_validate(&vamm)?).unwrap();
+    let vamm_map = read_vamm_map(deps.storage, deps.api.addr_validate(&vamm)?)?;
 
     let result = match vamm_map.cumulative_premium_fractions.len() {
         0 => Integer::zero(),
@@ -123,7 +120,7 @@ pub fn query_cumulative_premium_fraction(deps: Deps, vamm: String) -> StdResult<
 
 /// Queries traders balance across all vamms with funding payment
 pub fn query_trader_balance_with_funding_payment(deps: Deps, trader: String) -> StdResult<Uint128> {
-    let config = read_config(deps.storage).unwrap();
+    let config = read_config(deps.storage)?;
 
     let mut margin = Uint128::zero();
     let vamms = query_insurance_all_vamm(&deps, config.insurance_fund.to_string(), None)?.vamm_list;
@@ -142,7 +139,7 @@ pub fn query_trader_position_with_funding_payment(
     vamm: String,
     trader: String,
 ) -> StdResult<Position> {
-    let config = read_config(deps.storage).unwrap();
+    let config = read_config(deps.storage)?;
 
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = deps.api.addr_validate(&trader)?;
@@ -151,7 +148,7 @@ pub fn query_trader_position_with_funding_payment(
     let mut position = read_position(deps.storage, &vamm, &trader)?;
 
     let latest_cumulative_premium_fraction =
-        query_cumulative_premium_fraction(deps, vamm.to_string()).unwrap();
+        query_cumulative_premium_fraction(deps, vamm.to_string())?;
 
     let funding_payment = calc_funding_payment(
         position.clone(),
@@ -179,8 +176,7 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
         deps.storage,
         &deps.api.addr_validate(&vamm)?,
         &deps.api.addr_validate(&trader)?,
-    )
-    .unwrap();
+    )?;
 
     if position.size.is_zero() {
         return Ok(Integer::zero());

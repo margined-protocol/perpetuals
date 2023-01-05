@@ -140,7 +140,7 @@ pub fn open_position(
     require_additional_margin(Integer::from(margin_ratio), config.initial_margin_ratio)?;
 
     // retrieves existing position or creates a new one
-    let position: Position = get_position(env, deps.storage, &vamm, &trader, side.clone());
+    let position = get_position(env, deps.storage, &vamm, &trader, side.clone())?;
 
     // if direction and side are same way then increasing else we are reversing
     let is_increase: bool = position.direction == Direction::AddToAmm && side == Side::Buy
@@ -152,9 +152,8 @@ pub fn open_position(
         .checked_div(config.decimals)?;
 
     // check if the position is new or being increased, else position is being reversed
-    let msg: SubMsg = if is_increase {
-        internal_increase_position(vamm.clone(), side.clone(), open_notional, base_asset_limit)
-            .unwrap()
+    let msg = if is_increase {
+        internal_increase_position(vamm.clone(), side.clone(), open_notional, base_asset_limit)?
     } else {
         open_reverse_position(
             &deps,
@@ -164,15 +163,13 @@ pub fn open_position(
             base_asset_limit,
             false,
             None,
-        )
-        .unwrap()
+        )?
     };
 
     let PositionUnrealizedPnlResponse {
         position_notional,
         unrealized_pnl,
-    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)
-        .unwrap();
+    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)?;
 
     store_tmp_swap(
         deps.storage,
@@ -222,7 +219,7 @@ pub fn close_position(
     let trader = info.sender;
 
     // read the position for the trader from vamm
-    let position = read_position(deps.storage, &vamm, &trader).unwrap();
+    let position = read_position(deps.storage, &vamm, &trader)?;
 
     // check the position isn't zero
     require_not_paused(state.pause)?;
@@ -270,8 +267,7 @@ pub fn close_position(
                 deps.as_ref(),
                 &position,
                 PnlCalcOption::SpotPrice,
-            )
-            .unwrap();
+            )?;
 
             store_tmp_swap(
                 deps.storage,
@@ -345,7 +341,7 @@ pub fn liquidate(
     require_insufficient_margin(margin_ratio, config.maintenance_margin_ratio)?;
 
     // read the position for the trader from vamm
-    let position = read_position(deps.storage, &vamm, &trader).unwrap();
+    let position = read_position(deps.storage, &vamm, &trader)?;
 
     // check the position isn't zero
     require_position_not_zero(position.size.value)?;
@@ -434,7 +430,7 @@ pub fn deposit_margin(
     };
 
     // read the position for the trader from vamm
-    let mut position = read_position(deps.storage, &vamm, &trader).unwrap();
+    let mut position = read_position(deps.storage, &vamm, &trader)?;
 
     if position.trader != trader {
         return Err(StdError::generic_err("No position found"));
@@ -471,7 +467,7 @@ pub fn withdraw_margin(
     require_non_zero_input(amount)?;
 
     // read the position for the trader from vamm
-    let mut position = read_position(deps.storage, &vamm, &trader).unwrap();
+    let mut position = read_position(deps.storage, &vamm, &trader)?;
 
     let remain_margin = calc_remain_margin_with_funding_payment(
         deps.as_ref(),
@@ -502,8 +498,7 @@ pub fn withdraw_margin(
         config.eligible_collateral,
         amount,
         Uint128::zero(),
-    )
-    .unwrap();
+    )?;
 
     store_position(deps.storage, &position)?;
     store_state(deps.storage, &state)?;
@@ -576,8 +571,7 @@ fn open_reverse_position(
     let PositionUnrealizedPnlResponse {
         position_notional,
         unrealized_pnl: _,
-    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)
-        .unwrap();
+    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)?;
 
     // reduce position if old position is larger
     let msg: SubMsg = if position_notional > notional_amount {
@@ -593,8 +587,7 @@ fn open_reverse_position(
             base_asset_limit,
             can_go_over_fluctuation,
             reply_id,
-        )
-        .unwrap()
+        )?
     } else {
         // first close position swap out the entire position
         let reply_id = match reply_id {
@@ -608,8 +601,7 @@ fn open_reverse_position(
             position.size.value,
             Uint128::zero(),
             reply_id,
-        )
-        .unwrap()
+        )?
     };
 
     Ok(msg)
@@ -622,37 +614,31 @@ fn partial_liquidation(
     trader: Addr,
     quote_asset_limit: Uint128,
 ) -> StdResult<SubMsg> {
-    let config: Config = read_config(deps.storage).unwrap();
+    let config: Config = read_config(deps.storage)?;
 
-    let position: Position = read_position(deps.storage, &vamm, &trader).unwrap();
+    let position: Position = read_position(deps.storage, &vamm, &trader)?;
 
     let partial_position_size = position
         .size
         .value
-        .checked_mul(config.partial_liquidation_ratio)
-        .unwrap()
-        .checked_div(config.decimals)
-        .unwrap();
+        .checked_mul(config.partial_liquidation_ratio)?
+        .checked_div(config.decimals)?;
 
     let partial_asset_limit = quote_asset_limit
-        .checked_mul(config.partial_liquidation_ratio)
-        .unwrap()
-        .checked_div(config.decimals)
-        .unwrap();
+        .checked_mul(config.partial_liquidation_ratio)?
+        .checked_div(config.decimals)?;
 
     let current_notional = query_vamm_output_amount(
         &deps.as_ref(),
         vamm.to_string(),
         position.direction.clone(),
         partial_position_size,
-    )
-    .unwrap();
+    )?;
 
     let PositionUnrealizedPnlResponse {
         position_notional: _,
         unrealized_pnl,
-    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)
-        .unwrap();
+    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)?;
 
     let side = position_to_side(position.size);
 
@@ -670,8 +656,7 @@ fn partial_liquidation(
             margin_to_vault: Integer::zero(),
             fees_paid: false,
         },
-    )
-    .unwrap();
+    )?;
 
     let msg: SubMsg = if current_notional > position.notional {
         swap_input(
@@ -681,8 +666,7 @@ fn partial_liquidation(
             Uint128::zero(),
             true,
             PARTIAL_LIQUIDATION_REPLY_ID,
-        )
-        .unwrap()
+        )?
     } else {
         swap_output(
             &vamm,
@@ -690,8 +674,7 @@ fn partial_liquidation(
             partial_position_size,
             partial_asset_limit,
             PARTIAL_LIQUIDATION_REPLY_ID,
-        )
-        .unwrap()
+        )?
     };
 
     Ok(msg)

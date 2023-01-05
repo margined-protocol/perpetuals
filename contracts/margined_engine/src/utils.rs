@@ -33,12 +33,12 @@ pub fn get_position(
     vamm: &Addr,
     trader: &Addr,
     side: Side,
-) -> Position {
+) -> StdResult<Position> {
     // read the position for the trader from vamm
-    let mut position = read_position(storage, vamm, trader).unwrap();
+    let mut position = read_position(storage, vamm, trader)?;
 
     // so if the position returned is None then its new
-    if position.vamm == Addr::unchecked("") {
+    if position.vamm.as_str().is_empty() {
         // update the default position
         position.vamm = vamm.clone();
         position.trader = trader.clone();
@@ -46,12 +46,12 @@ pub fn get_position(
         position.block_number = env.block.height;
     }
 
-    position
+    Ok(position)
 }
 
 // Creates an asset from the eligible collateral and msg sent
 pub fn get_asset(info: MessageInfo, eligible_collateral: AssetInfo) -> Asset {
-    match eligible_collateral.clone() {
+    match &eligible_collateral {
         AssetInfo::Token { .. } => Asset {
             info: eligible_collateral,
             amount: Uint128::zero(),
@@ -74,22 +74,22 @@ pub fn realize_bad_debt(
     bad_debt: Uint128,
     messages: &mut Vec<SubMsg>,
     state: &mut State,
-) -> Uint128 {
+) -> StdResult<Uint128> {
     if state.prepaid_bad_debt > bad_debt {
         // no need to move extra tokens because vault already prepay bad debt, only need to update the numbers
-        state.prepaid_bad_debt = state.prepaid_bad_debt.checked_sub(bad_debt).unwrap();
+        state.prepaid_bad_debt = state.prepaid_bad_debt.checked_sub(bad_debt)?;
     } else {
         // in order to realize all the bad debt vault need extra tokens from insuranceFund
-        let bad_debt_delta = bad_debt.checked_sub(state.prepaid_bad_debt).unwrap();
+        let bad_debt_delta = bad_debt.checked_sub(state.prepaid_bad_debt)?;
 
-        messages.push(execute_insurance_fund_withdrawal(deps, bad_debt_delta).unwrap());
+        messages.push(execute_insurance_fund_withdrawal(deps, bad_debt_delta)?);
 
         state.prepaid_bad_debt = Uint128::zero();
 
-        return bad_debt_delta;
+        return Ok(bad_debt_delta);
     };
 
-    Uint128::zero()
+    Ok(Uint128::zero())
 }
 
 // this blocks trades if open interest is too high, required during the bootstrapping of the project
@@ -155,8 +155,7 @@ pub fn get_margin_ratio_calc_option(
         deps.storage,
         &deps.api.addr_validate(&vamm)?,
         &deps.api.addr_validate(&trader)?,
-    )
-    .unwrap();
+    )?;
 
     if position.size.is_zero() {
         return Ok(Integer::zero());
@@ -205,8 +204,7 @@ pub fn get_position_notional_unrealized_pnl(
             }
             PnlCalcOption::Oracle => {
                 let config = read_config(deps.storage)?;
-                let oracle_price: Uint128 =
-                    query_vamm_underlying_price(&deps, position.vamm.to_string())?;
+                let oracle_price = query_vamm_underlying_price(&deps, position.vamm.to_string())?;
 
                 output_notional = oracle_price
                     .checked_mul(position.size.value)?
@@ -318,7 +316,7 @@ pub fn remove_whitelist(deps: DepsMut, info: MessageInfo, address: String) -> St
 }
 
 pub fn set_pause(deps: DepsMut, _env: Env, info: MessageInfo, pause: bool) -> StdResult<Response> {
-    let mut state: State = read_state(deps.storage)?;
+    let mut state = read_state(deps.storage)?;
 
     // check permission and if state matches
     // note: we could use `assert_admin` instead of `is_admin` except this would throw an `AdminError` and we would have to change the function sig
@@ -395,7 +393,7 @@ pub fn require_not_restriction_mode(
     block_height: u64,
 ) -> StdResult<Response> {
     let vamm_map = read_vamm_map(storage, vamm.clone())?;
-    let position = read_position(storage, vamm, trader).unwrap();
+    let position = read_position(storage, vamm, trader)?;
 
     if vamm_map.last_restriction_block == block_height && position.block_number == block_height {
         return Err(StdError::generic_err("Only one action allowed"));
@@ -424,46 +422,51 @@ pub fn require_non_zero_input(input: Uint128) -> StdResult<Response> {
 
 pub fn parse_swap(response: SubMsgResponse) -> StdResult<(Uint128, Uint128)> {
     // Find swap inputs and output events
-    let wasm = response.events.iter().find(|&e| e.ty == "wasm");
-
-    let wasm = wasm.unwrap();
+    let wasm = response
+        .events
+        .iter()
+        .find(|&e| e.ty == "wasm")
+        .ok_or_else(|| StdError::generic_err("No event found"))?;
 
     let swap = read_event("type".to_string(), wasm)?;
 
-    let input: Uint128;
-    let output: Uint128;
     match swap.as_str() {
         "input" => {
             let input_str = read_event("quote_asset_amount".to_string(), wasm)?;
             let output_str = read_event("base_asset_amount".to_string(), wasm)?;
 
-            input = Uint128::from_str(&input_str).unwrap();
-            output = Uint128::from_str(&output_str).unwrap();
+            Ok((
+                Uint128::from_str(&input_str)?,
+                Uint128::from_str(&output_str)?,
+            ))
         }
         "output" => {
             let input_str = read_event("base_asset_amount".to_string(), wasm)?;
             let output_str = read_event("quote_asset_amount".to_string(), wasm)?;
 
-            input = Uint128::from_str(&input_str).unwrap();
-            output = Uint128::from_str(&output_str).unwrap();
+            Ok((
+                Uint128::from_str(&input_str)?,
+                Uint128::from_str(&output_str)?,
+            ))
         }
         _ => {
             return Err(StdError::generic_err("Cannot parse swap"));
         }
     }
-
-    Ok((input, output))
 }
 
 pub fn parse_pay_funding(response: SubMsgResponse) -> StdResult<(Integer, String)> {
     // Find swap inputs and output events
-    let wasm = response.events.iter().find(|&e| e.ty == "wasm");
-    let wasm = wasm.unwrap();
+    let wasm = response
+        .events
+        .iter()
+        .find(|&e| e.ty == "wasm")
+        .ok_or_else(|| StdError::generic_err("No event found"))?;
 
     let premium_str = read_event("premium_fraction".to_string(), wasm)?;
-    let premium: Integer = Integer::from_str(&premium_str).unwrap();
+    let premium: Integer = Integer::from_str(&premium_str)?;
 
-    let sender = read_contract_address(wasm).unwrap();
+    let sender = read_contract_address(wasm)?;
 
     Ok((premium, sender))
 }
@@ -471,33 +474,24 @@ pub fn parse_pay_funding(response: SubMsgResponse) -> StdResult<(Integer, String
 // Reads contract address from an event takes into account that there are
 // inconistencies between cosmwasm versions and multitest etc...
 fn read_contract_address(event: &Event) -> StdResult<String> {
-    let mut result = event
+    let result = event
         .attributes
         .iter()
-        .find(|&attr| attr.key == *"_contract_addr".to_string());
+        .find(|&attr| attr.key.eq("_contract_addr") || attr.key.eq("_contract_address"));
 
-    if result.is_none() {
-        result = event
-            .attributes
-            .iter()
-            .find(|&attr| attr.key == *"_contract_address".to_string());
-    }
-
-    let value = &result.unwrap().value;
-
-    Ok(value.to_string())
+    result
+        .ok_or_else(|| StdError::generic_err("No attribute found"))
+        .map(|attr| attr.value.to_string())
 }
 
 fn read_event(key: String, event: &Event) -> StdResult<String> {
-    let result = event.attributes.iter().find(|&attr| attr.key == key);
+    let attr = event
+        .attributes
+        .iter()
+        .find(|&attr| attr.key == key)
+        .ok_or_else(|| StdError::generic_err("No attribute found"))?;
 
-    if result.is_none() {
-        return Err(StdError::generic_err(format!("No event found: {}", key)));
-    }
-
-    let value = &result.unwrap().value;
-
-    Ok(value.to_string())
+    Ok(attr.value.to_string())
 }
 
 // takes the side (buy|sell) and returns the direction (long|short)
