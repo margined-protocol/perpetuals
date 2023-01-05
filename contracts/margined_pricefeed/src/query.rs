@@ -19,43 +19,30 @@ pub fn query_owner(deps: Deps) -> StdResult<OwnerResponse> {
 
 /// Queries latest price for pair stored with key
 pub fn query_get_price(deps: Deps, key: String) -> StdResult<PriceData> {
-    let prices_response = read_price_data(deps.storage, key);
+    let prices = read_price_data(deps.storage, key)?;
 
-    let prices = prices_response.unwrap();
-    let price = prices.last().unwrap();
+    if let Some(price) = prices.last() {
+        return Ok(price.clone());
+    }
 
-    Ok(price.clone())
+    Err(StdError::generic_err("No price found"))
 }
 
 /// Queries previous price for pair stored with key
 pub fn query_get_previous_price(
     deps: Deps,
     key: String,
-    num_round_back: Uint128,
+    num_round_back: u64,
 ) -> StdResult<PriceData> {
-    let prices_response = read_price_data(deps.storage, key);
+    let mut prices = read_price_data(deps.storage, key)?;
+    prices.sort_by(|a, b| a.round_id.cmp(&b.round_id));
 
-    let prices = prices_response.unwrap();
-    let latest_price = prices.last().unwrap();
-
-    if num_round_back > latest_price.round_id {
-        return Err(StdError::generic_err("Not enough history"));
+    // check ind to get last previous price ind by num_round_back
+    if let Some(ind) = prices.len().checked_sub((num_round_back + 1) as usize) {
+        return Ok(prices[ind].clone());
     }
 
-    let mut previous_prices = prices.clone();
-
-    // obvs not the most efficient way to do this but this is
-    // just a placeholder while we build the twap logic and
-    // do the integration with the rest of the project.
-    let mut i = 0;
-    while i < num_round_back.u128() {
-        previous_prices.pop();
-        i += 1;
-    }
-
-    let previous_price = previous_prices.last().unwrap();
-
-    Ok(previous_price.clone())
+    Err(StdError::generic_err("Not enough history"))
 }
 
 /// Queries contract Config
@@ -77,14 +64,12 @@ pub fn query_get_twap_price(
     let mut latest_round = prices.last().unwrap();
     let mut timestamp = latest_round.timestamp.seconds();
 
-    if latest_round.round_id == Uint128::zero() {
+    if latest_round.round_id == 0u64 {
         return Err(StdError::generic_err("Insufficient history"));
     }
 
     // if latest updated timestamp is earlier than target timestamp, return the latest price.
-    if latest_round.timestamp.seconds() < base_timestamp
-        || latest_round.round_id == Uint128::from(1u128)
-    {
+    if latest_round.timestamp.seconds() < base_timestamp || latest_round.round_id == 1u64 {
         return Ok(latest_round.price);
     }
 
@@ -94,7 +79,7 @@ pub fn query_get_twap_price(
     let mut weighted_price = latest_round.price.checked_mul(cumulative_time)?;
 
     loop {
-        if latest_round.round_id == Uint128::from(1u128) {
+        if latest_round.round_id == 1u64 {
             let twap = weighted_price.checked_div(cumulative_time).unwrap();
             return Ok(twap);
         }

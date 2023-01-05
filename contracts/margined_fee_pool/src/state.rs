@@ -78,20 +78,14 @@ pub fn remove_token(deps: DepsMut, token: AssetInfo) -> StdResult<()> {
             Some(value) => value,
         };
 
-    // check if the token is added
-    if !token_list.contains(&token) {
+    // change token_list
+    if let Some(index) = token_list.clone().iter().position(|x| x.eq(&token)) {
+        token_list.swap_remove(index);
+    } else {
         return Err(GenericErr {
             msg: "This token has not been added".to_string(),
         });
     }
-
-    // change token_list
-    let index = token_list
-        .clone()
-        .iter()
-        .position(|x| x.eq(&token))
-        .unwrap();
-    token_list.swap_remove(index);
 
     // saves the updated token_list
     singleton(deps.storage, TOKEN_LIST).save(&token_list)

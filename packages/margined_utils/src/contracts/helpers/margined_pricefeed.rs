@@ -85,7 +85,7 @@ impl PricefeedController {
         &self,
         querier: &Q,
         key: String,
-        num_round_back: Uint128,
+        num_round_back: u64,
     ) -> StdResult<Uint128> {
         let msg = QueryMsg::GetPreviousPrice {
             key,

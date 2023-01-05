@@ -68,16 +68,14 @@ pub fn remove_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
         Some(value) => value,
     };
 
-    // check if the vamm is added
-    if !vamm_list.contains(&input) {
+    // change vamm_list
+    if let Some(index) = vamm_list.clone().iter().position(|x| x.eq(&input)) {
+        vamm_list.swap_remove(index);
+    } else {
         return Err(StdError::GenericErr {
             msg: "This vAMM has not been added".to_string(),
         });
     }
-
-    // change vamm_list
-    let index = vamm_list.clone().iter().position(|x| x.eq(&input)).unwrap();
-    vamm_list.swap_remove(index);
 
     // saves the updated vamm_list
     singleton(deps.storage, VAMM_LIST).save(&vamm_list)

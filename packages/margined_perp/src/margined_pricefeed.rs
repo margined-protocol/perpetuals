@@ -4,7 +4,7 @@ use cosmwasm_std::{Addr, Timestamp, Uint128};
 #[cw_serde]
 #[derive(Default)]
 pub struct PriceData {
-    pub round_id: Uint128,
+    pub round_id: u64,
     pub price: Uint128,
     pub timestamp: Timestamp,
 }
@@ -50,10 +50,7 @@ pub enum QueryMsg {
     #[returns(PriceData)]
     GetPrice { key: String },
     #[returns(PriceData)]
-    GetPreviousPrice {
-        key: String,
-        num_round_back: Uint128,
-    },
+    GetPreviousPrice { key: String, num_round_back: u64 },
     #[returns(Uint128)]
     GetTwapPrice { key: String, interval: u64 },
 }

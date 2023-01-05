@@ -93,7 +93,7 @@ fn test_set_and_get_price() {
     assert_eq!(
         price,
         PriceData {
-            round_id: Uint128::from(1u64),
+            round_id: 1u64,
             price: Uint128::from(500_000_000u128),
             timestamp: Timestamp::from_seconds(1_000_000),
         }
@@ -121,7 +121,7 @@ fn test_set_and_get_price() {
     assert_eq!(
         price,
         PriceData {
-            round_id: Uint128::from(2u64),
+            round_id: 2u64,
             price: Uint128::from(600_000_000u128),
             timestamp: Timestamp::from_seconds(1_000_001),
         }
@@ -172,7 +172,7 @@ fn test_set_multiple_price() {
     assert_eq!(
         price,
         PriceData {
-            round_id: Uint128::from(3u64),
+            round_id: 3u64,
             price: Uint128::from(700_000_000u128),
             timestamp: Timestamp::from_seconds(1_000_002),
         }
@@ -221,7 +221,7 @@ fn test_get_previous_price() {
         mock_env(),
         QueryMsg::GetPreviousPrice {
             key: "ETHUSD".to_string(),
-            num_round_back: Uint128::from(3u128),
+            num_round_back: 3u64,
         },
     )
     .unwrap();
@@ -230,7 +230,7 @@ fn test_get_previous_price() {
     assert_eq!(
         price,
         PriceData {
-            round_id: Uint128::from(3u64),
+            round_id: 3u64,
             price: Uint128::from(700_000_000u128),
             timestamp: Timestamp::from_seconds(1_000_002),
         }
@@ -241,7 +241,7 @@ fn test_get_previous_price() {
         mock_env(),
         QueryMsg::GetPreviousPrice {
             key: "ETHUSD".to_string(),
-            num_round_back: Uint128::from(7u128),
+            num_round_back: 7u64,
         },
     );
     assert!(res.is_err());
