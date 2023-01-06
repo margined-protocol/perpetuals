@@ -154,7 +154,7 @@ pub fn query_spot_price(deps: Deps) -> StdResult<Uint128> {
 
 /// Queries twap price of the vAMM, using the reserve snapshots
 pub fn query_twap_price(deps: Deps, env: Env, interval: u64) -> StdResult<Uint128> {
-    let snapshot_index = read_reserve_snapshot_counter(deps.storage).unwrap();
+    let snapshot_index = read_reserve_snapshot_counter(deps.storage)?;
     let params = TwapPriceCalcParams {
         opt: TwapCalcOption::Reserve,
         snapshot_index,
@@ -170,7 +170,7 @@ pub fn query_input_twap(
     direction: Direction,
     amount: Uint128,
 ) -> StdResult<Uint128> {
-    let snapshot_index = read_reserve_snapshot_counter(deps.storage).unwrap();
+    let snapshot_index = read_reserve_snapshot_counter(deps.storage)?;
 
     let asset = TwapInputAsset {
         direction,
@@ -194,7 +194,7 @@ pub fn query_output_twap(
     direction: Direction,
     amount: Uint128,
 ) -> StdResult<Uint128> {
-    let snapshot_index = read_reserve_snapshot_counter(deps.storage).unwrap();
+    let snapshot_index = read_reserve_snapshot_counter(deps.storage)?;
 
     let asset = TwapInputAsset {
         direction,

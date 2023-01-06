@@ -175,27 +175,28 @@ pub fn get_price_with_specific_snapshot(
         // safe to unwrap as entry requires it to be so,
         // maybe its nicer just to set defaults instead of option
         // ¯\_(ツ)_/¯
-        let asset = params.asset.unwrap();
-        if asset.amount.is_zero() {
-            return Ok(Uint128::zero());
-        }
+        if let Some(asset) = params.asset {
+            if asset.amount.is_zero() {
+                return Ok(Uint128::zero());
+            }
 
-        if asset.quote {
-            return get_input_price_with_reserves(
-                deps,
-                &asset.direction,
-                asset.amount,
-                snapshot.quote_asset_reserve,
-                snapshot.base_asset_reserve,
-            );
-        } else {
-            return get_output_price_with_reserves(
-                deps,
-                &asset.direction,
-                asset.amount,
-                snapshot.quote_asset_reserve,
-                snapshot.base_asset_reserve,
-            );
+            if asset.quote {
+                return get_input_price_with_reserves(
+                    deps,
+                    &asset.direction,
+                    asset.amount,
+                    snapshot.quote_asset_reserve,
+                    snapshot.base_asset_reserve,
+                );
+            } else {
+                return get_output_price_with_reserves(
+                    deps,
+                    &asset.direction,
+                    asset.amount,
+                    snapshot.quote_asset_reserve,
+                    snapshot.base_asset_reserve,
+                );
+            }
         }
     }
     Ok(Uint128::zero())
@@ -214,23 +215,20 @@ pub fn calc_twap(
         return Ok(current_price);
     }
 
-    let base_timestamp = env.block.time.seconds().checked_sub(interval).unwrap();
-    let reserve_snapshot_length = read_reserve_snapshot_counter(deps.storage).unwrap();
+    let interval = Uint128::from(interval);
+    let block_time = Uint128::from(env.block.time.seconds());
+
+    let base_timestamp = block_time.checked_sub(interval)?;
+    let reserve_snapshot_length = read_reserve_snapshot_counter(deps.storage)?;
     let mut current_snapshot = read_reserve_snapshot(deps.storage, params.snapshot_index)?;
 
-    if reserve_snapshot_length == 1 || current_snapshot.timestamp.seconds() <= base_timestamp {
+    let mut previous_timestamp = Uint128::from(current_snapshot.timestamp.seconds());
+
+    if reserve_snapshot_length == 1 || previous_timestamp <= base_timestamp {
         return Ok(current_price);
     }
 
-    let mut previous_timestamp = current_snapshot.timestamp.seconds();
-    let mut period = Uint128::from(
-        env.block
-            .time
-            .seconds()
-            .checked_sub(previous_timestamp)
-            .unwrap(),
-    );
-
+    let mut period = block_time.checked_sub(previous_timestamp)?;
     let mut weighted_price = current_price.checked_mul(period)?;
 
     loop {
@@ -241,41 +239,35 @@ pub fn calc_twap(
             return Ok(weighted_price.checked_div(period)?);
         }
 
-        current_snapshot = read_reserve_snapshot(deps.storage, params.snapshot_index).unwrap();
+        current_snapshot = read_reserve_snapshot(deps.storage, params.snapshot_index)?;
         let current_price = get_price_with_specific_snapshot(deps, params.clone())?;
+        let current_timestamp = Uint128::from(current_snapshot.timestamp.seconds());
 
-        if current_snapshot.timestamp.seconds() <= base_timestamp {
-            let delta_timestamp =
-                Uint128::from(previous_timestamp.checked_sub(base_timestamp).unwrap());
+        // time to break
+        if current_timestamp <= base_timestamp {
+            let delta_timestamp = previous_timestamp.checked_sub(base_timestamp)?;
 
-            weighted_price = weighted_price
-                .checked_add(current_price.checked_mul(delta_timestamp).unwrap())
-                .unwrap();
+            weighted_price =
+                weighted_price.checked_add(current_price.checked_mul(delta_timestamp)?)?;
 
             break;
         }
 
-        let delta_timestamp = Uint128::from(
-            previous_timestamp
-                .checked_sub(current_snapshot.timestamp.seconds())
-                .unwrap(),
-        );
-        weighted_price = weighted_price
-            .checked_add(current_price.checked_mul(delta_timestamp).unwrap())
-            .unwrap();
+        let delta_timestamp = previous_timestamp.checked_sub(current_timestamp)?;
+        weighted_price = weighted_price.checked_add(current_price.checked_mul(delta_timestamp)?)?;
 
-        period = period.checked_add(delta_timestamp).unwrap();
-        previous_timestamp = current_snapshot.timestamp.seconds();
+        period = period.checked_add(delta_timestamp)?;
+        previous_timestamp = current_timestamp;
     }
 
-    Ok(weighted_price.checked_div(Uint128::from(interval))?)
+    Ok(weighted_price.checked_div(interval)?)
 }
 
 /// Does the modulus (%) operator on Uint128.
 /// However it follows the design of the perpetual protocol decimals
 /// https://github.com/perpetual-protocol/perpetual-protocol/blob/release/v2.1.x/src/utils/Decimal.sol
-pub(crate) fn modulo(a: Uint128, b: Uint128, decimals: Uint128) -> Uint128 {
-    let a_decimals = a.checked_mul(decimals).unwrap();
+pub(crate) fn modulo(a: Uint128, b: Uint128, decimals: Uint128) -> StdResult<Uint128> {
+    let a_decimals = a.checked_mul(decimals)?;
     let integral = a_decimals / b;
-    a_decimals - (b * integral)
+    Ok(a_decimals - (b * integral))
 }

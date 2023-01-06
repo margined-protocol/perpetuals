@@ -78,7 +78,7 @@ pub fn update_config(
 
     // change pricefeed
     if let Some(pricefeed) = pricefeed {
-        config.pricefeed = deps.api.addr_validate(&pricefeed).unwrap();
+        config.pricefeed = deps.api.addr_validate(&pricefeed)?;
     }
 
     // change spot price twap interval - check that the twap interval is between 1 min and 1 week
@@ -354,7 +354,7 @@ pub fn get_input_price_with_reserves(
         base_asset_reserve - base_asset_after
     };
 
-    let remainder = modulo(invariant_k, quote_asset_after, config.decimals);
+    let remainder = modulo(invariant_k, quote_asset_after, config.decimals)?;
     if remainder != Uint128::zero() {
         if *direction == Direction::AddToAmm {
             base_asset_bought = base_asset_bought.checked_sub(Uint128::new(1u128))?;
@@ -398,7 +398,7 @@ pub fn get_output_price_with_reserves(
         quote_asset_reserve - quote_asset_after
     };
 
-    let remainder = modulo(invariant_k, base_asset_after, config.decimals);
+    let remainder = modulo(invariant_k, base_asset_after, config.decimals)?;
     if remainder != Uint128::zero() {
         if *direction == Direction::AddToAmm {
             quote_asset_sold = quote_asset_sold.checked_sub(Uint128::from(1u128))?;

@@ -65,7 +65,7 @@ pub fn instantiate(
         toll_ratio: msg.toll_ratio,
         spread_ratio: msg.spread_ratio,
         fluctuation_limit_ratio: msg.fluctuation_limit_ratio,
-        pricefeed: deps.api.addr_validate(&msg.pricefeed).unwrap(),
+        pricefeed: deps.api.addr_validate(&msg.pricefeed)?,
         decimals,
         spot_price_twap_interval: ONE_HOUR_IN_SECONDS,
         funding_period: msg.funding_period,

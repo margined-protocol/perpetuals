@@ -187,10 +187,11 @@ impl AssetInfo {
         match &self {
             AssetInfo::NativeToken { denom } => {
                 // prefix must follow -> https://github.com/osmosis-labs/osmosis/pull/2223
-                match denom.chars().next().unwrap() {
-                    'u' => Ok(6u8),  // micro
-                    'n' => Ok(9u8),  // nano
-                    'p' => Ok(12u8), // pico
+                match denom.chars().next() {
+                    // default is empty char => go to Err case
+                    Some('u') => Ok(6u8),  // micro
+                    Some('n') => Ok(9u8),  // nano
+                    Some('p') => Ok(12u8), // pico
                     _ => Err(StdError::generic_err(
                         "Native token does not follow prefix standards",
                     )),
@@ -198,13 +199,11 @@ impl AssetInfo {
             }
             AssetInfo::Token { contract_addr } => {
                 // query the CW20 contract for its decimals
-                let response: TokenInfoResponse = deps
-                    .querier
-                    .query(&QueryRequest::Wasm(WasmQuery::Smart {
+                let response: TokenInfoResponse =
+                    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                         contract_addr: contract_addr.to_string(),
                         msg: to_binary(&Cw20QueryMsg::TokenInfo {})?,
-                    }))
-                    .unwrap();
+                    }))?;
 
                 Ok(response.decimals)
             }
