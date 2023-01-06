@@ -594,7 +594,6 @@ dependencies = [
  "cw20",
  "margined_common",
  "strum",
- "strum_macros",
 ]
 
 [[package]]
