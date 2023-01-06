@@ -72,12 +72,10 @@ impl Asset {
     ///
     /// * **message_info** is an object of type [`MessageInfo`]
     pub fn assert_sent_native_token_balance(&self, message_info: &MessageInfo) -> StdResult<()> {
-        let msg_amount: Uint128;
-
         // grab the denom from self so we can test
-        if let AssetInfo::NativeToken { denom } = &self.info {
+        let msg_amount = if let AssetInfo::NativeToken { denom } = &self.info {
             // call `must_pay` to ensure its the right denom + funds are sent
-            msg_amount = must_pay(message_info, denom)
+            must_pay(message_info, denom)
                 .map_err(|error| StdError::generic_err(format!("{}", error)))?
         } else {
             // this error occurs if self is of type `AssetInfo::Token`

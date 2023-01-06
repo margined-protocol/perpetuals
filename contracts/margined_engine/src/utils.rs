@@ -57,7 +57,7 @@ pub fn get_asset(info: MessageInfo, eligible_collateral: AssetInfo) -> Asset {
             amount: Uint128::zero(),
         },
         AssetInfo::NativeToken { denom } => {
-            let sent = match info.funds.iter().find(|x| x.denom == *denom) {
+            let sent = match info.funds.iter().find(|&x| x.denom.eq(denom)) {
                 Some(coin) => coin.amount,
                 None => Uint128::zero(),
             };
