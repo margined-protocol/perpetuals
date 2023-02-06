@@ -1,17 +1,19 @@
 # Margined Protocol Price Feed
 
-**NOTE:** In the current state the price feed is entirely centralised around the contract deployer just while the other logic is developed.
+**NOTE:** In the current state the price feed is entirely centralized around the contract deployer just while the other logic is developed.
 
-Price feed was meant to integrate against the [TeFi oracle hub](https://github.com/terra-money/tefi-oracle-contracts), but obvs not gonna fly anymore. Additionally, the price feed performs other logic, e.g. TWAP, of data retrieved from the data oracles for use throughout the protocol.
+Price feed was meant to integrate against the [TeFi oracle hub](https://github.com/oraichain/oracle-hub), but obvs not gonna fly anymore. Additionally, the price feed performs other logic, e.g. TWAP, of data retrieved from the data oracles for use throughout the protocol.
+In next version it will utilizing Orai oracle pricefeed.
 
 ---
 
 ## InstantiateMsg
 
 The instantiation message takes the oracle hub contract, that would be used in a production version.
+
 ```json
 {
-    "oracle_hub_contract": "juno..."
+  "oracle_hub_contract": "juno..."
 }
 ```
 
@@ -21,9 +23,9 @@ The instantiation message takes the oracle hub contract, that would be used in a
 
 ```json
 {
-    "update_config": {
-        "owner": "juno..."
-    }
+  "update_config": {
+    "owner": "juno..."
+  }
 }
 ```
 
@@ -35,7 +37,7 @@ Returns contract parameters.
 
 ```json
 {
-    "config": {}
+  "config": {}
 }
 ```
 
@@ -45,9 +47,9 @@ Returns latest price submitted to the contract.
 
 ```json
 {
-    "get_price": {
-        "key": "BTC",
-    }
+  "get_price": {
+    "key": "BTC"
+  }
 }
 ```
 
@@ -57,10 +59,10 @@ Returns a price submitted in a previous round.
 
 ```json
 {
-    "get_previous_price": {
-        "key": "BTC",
-        "num_round_back": 9,
-    }
+  "get_previous_price": {
+    "key": "BTC",
+    "num_round_back": 9
+  }
 }
 ```
 
@@ -70,9 +72,9 @@ Returns a twap of the prices submitted to the contract.
 
 ```json
 {
-    "get_twap_price": {
-        "key": "BTC",
-        "interval": 900,
-    }
+  "get_twap_price": {
+    "key": "BTC",
+    "interval": 900
+  }
 }
 ```
