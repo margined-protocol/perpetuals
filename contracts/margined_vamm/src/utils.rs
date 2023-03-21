@@ -268,6 +268,5 @@ pub fn calc_twap(
 /// https://github.com/perpetual-protocol/perpetual-protocol/blob/release/v2.1.x/src/utils/Decimal.sol
 pub(crate) fn modulo(a: Uint128, b: Uint128, decimals: Uint128) -> StdResult<Uint128> {
     let a_decimals = a.checked_mul(decimals)?;
-    let integral = a_decimals / b;
-    Ok(a_decimals - (b * integral))
+    Ok(a_decimals % b)
 }
