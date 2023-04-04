@@ -8,6 +8,8 @@ use cosmwasm_std::{
 use cw20::{Cw20ExecuteMsg, Cw20QueryMsg, TokenInfoResponse};
 use cw_utils::must_pay;
 
+pub const ORAI_DENOM: &str = "orai";
+
 /// ## Description
 /// This enum describes a Cosmos asset (native or CW20).
 #[cw_serde]
@@ -184,6 +186,10 @@ impl AssetInfo {
     pub fn get_decimals(&self, deps: Deps) -> StdResult<u8> {
         match &self {
             AssetInfo::NativeToken { denom } => {
+                // orai is 6 decimals
+                if denom.eq(ORAI_DENOM) {
+                    return Ok(6);
+                }
                 // prefix must follow -> https://github.com/osmosis-labs/osmosis/pull/2223
                 match denom.chars().next() {
                     // default is empty char => go to Err case
