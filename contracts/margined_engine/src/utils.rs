@@ -331,7 +331,12 @@ pub fn set_pause(deps: DepsMut, _env: Env, info: MessageInfo, pause: bool) -> St
     Ok(Response::default().add_attribute("action", "set_pause"))
 }
 
-pub fn require_vamm(deps: Deps, insurance: &Addr, vamm: &Addr) -> StdResult<Response> {
+pub fn require_vamm(deps: Deps, insurance: &Option<Addr>, vamm: &Addr) -> StdResult<Response> {
+    let insurance = match insurance {
+        Some(arr) => arr,
+        None => return Err(StdError::generic_err("insurance fund is not registered")),
+    };
+
     // check that it is a registered vamm
     if !query_insurance_is_vamm(&deps, insurance.to_string(), vamm.to_string())?.is_vamm {
         return Err(StdError::generic_err("vAMM is not registered"));

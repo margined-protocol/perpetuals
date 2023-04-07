@@ -62,7 +62,7 @@ pub fn update_config(
 
     // update insurance fund - note altering insurance fund could lead to vAMMs being unusable maybe make this a migration
     if let Some(insurance_fund) = insurance_fund {
-        config.insurance_fund = deps.api.addr_validate(insurance_fund.as_str())?;
+        config.insurance_fund = Some(deps.api.addr_validate(insurance_fund.as_str())?);
     }
 
     // update fee pool

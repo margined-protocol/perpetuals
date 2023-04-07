@@ -63,7 +63,11 @@ pub fn instantiate(
 
     // validate message addresses
     let valid_pauser = deps.api.addr_validate(&msg.pauser)?;
-    let insurance_fund = deps.api.addr_validate(&msg.insurance_fund)?;
+    let insurance_fund = match msg.insurance_fund {
+        Some(addr) => Some(deps.api.addr_validate(&addr)?),
+        None => None,
+    };
+
     let fee_pool = deps.api.addr_validate(&msg.fee_pool)?;
 
     // validate eligible collateral

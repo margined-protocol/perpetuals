@@ -97,7 +97,7 @@ impl NativeTokenScenario {
                 owner.clone(),
                 &InstantiateMsg {
                     pauser: owner.to_string(),
-                    insurance_fund: "insurance_fund".to_string(),
+                    insurance_fund: None,
                     fee_pool: fee_pool.addr().to_string(),
                     eligible_collateral: native_denom.to_string(),
                     initial_margin_ratio: Uint128::from(50_000u128), // 0.05
@@ -375,7 +375,7 @@ impl SimpleScenario {
                 owner.clone(),
                 &InstantiateMsg {
                     pauser: owner.to_string(),
-                    insurance_fund: "insurance_fund".to_string(),
+                    insurance_fund: None,
                     fee_pool: fee_pool.addr().to_string(),
                     eligible_collateral: usdc.addr().to_string(),
                     initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
@@ -755,7 +755,7 @@ impl ShutdownScenario {
                 owner.clone(),
                 &InstantiateMsg {
                     pauser: owner.to_string(),
-                    insurance_fund: "insurance_fund".to_string(),
+                    insurance_fund: None,
                     fee_pool: "fee_pool".to_string(),
                     eligible_collateral: "uwasm".to_string(),
                     initial_margin_ratio: Uint128::from(50_000u128), // 0.05

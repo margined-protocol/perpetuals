@@ -16,7 +16,7 @@ fn test_instantiation() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         pauser: OWNER.to_string(),
-        insurance_fund: INSURANCE_FUND.to_string(),
+        insurance_fund: Some(INSURANCE_FUND.to_string()),
         fee_pool: FEE_POOL.to_string(),
         eligible_collateral: TOKEN.to_string(),
         initial_margin_ratio: Uint128::from(50_000u128), // 0.05
@@ -33,7 +33,7 @@ fn test_instantiation() {
         config,
         ConfigResponse {
             owner: info.sender,
-            insurance_fund: Addr::unchecked(INSURANCE_FUND.to_string()),
+            insurance_fund: Some(Addr::unchecked(INSURANCE_FUND.to_string())),
             fee_pool: Addr::unchecked(FEE_POOL.to_string()),
             eligible_collateral: AssetInfo::NativeToken {
                 denom: TOKEN.to_string(),
@@ -52,7 +52,7 @@ fn test_update_config() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         pauser: OWNER.to_string(),
-        insurance_fund: INSURANCE_FUND.to_string(),
+        insurance_fund: Some(INSURANCE_FUND.to_string()),
         fee_pool: FEE_POOL.to_string(),
         eligible_collateral: TOKEN.to_string(),
         initial_margin_ratio: Uint128::from(50_000u128), // 0.05
@@ -82,7 +82,7 @@ fn test_update_config() {
         config,
         ConfigResponse {
             owner: Addr::unchecked("addr0001".to_string()),
-            insurance_fund: Addr::unchecked(INSURANCE_FUND.to_string()),
+            insurance_fund: Some(Addr::unchecked(INSURANCE_FUND.to_string())),
             fee_pool: Addr::unchecked(FEE_POOL.to_string()),
             eligible_collateral: AssetInfo::NativeToken {
                 denom: TOKEN.to_string(),
@@ -131,7 +131,7 @@ fn test_update_pauser() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         pauser: OWNER.to_string(),
-        insurance_fund: INSURANCE_FUND.to_string(),
+        insurance_fund: Some(INSURANCE_FUND.to_string()),
         fee_pool: FEE_POOL.to_string(),
         eligible_collateral: TOKEN.to_string(),
         initial_margin_ratio: Uint128::from(50_000u128), // 0.05
