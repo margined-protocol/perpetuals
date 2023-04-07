@@ -25,7 +25,7 @@ pub static KEY_VAMM_MAP: &[u8] = b"vamm-map";
 #[cw_serde]
 pub struct Config {
     pub owner: Addr,
-    pub insurance_fund: Addr,
+    pub insurance_fund: Option<Addr>,
     pub fee_pool: Addr,
     pub eligible_collateral: AssetInfo,
     pub decimals: Uint128,

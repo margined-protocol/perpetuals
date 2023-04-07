@@ -73,7 +73,13 @@ pub fn query_all_positions(deps: Deps, trader: String) -> StdResult<Vec<Position
 
     let mut response: Vec<Position> = vec![];
 
-    let vamms = query_insurance_all_vamm(&deps, config.insurance_fund.to_string(), None)?.vamm_list;
+    let vamms = match config.insurance_fund {
+        Some(insurance_fund) => {
+            query_insurance_all_vamm(&deps, insurance_fund.to_string(), None)?.vamm_list
+        }
+        None => return Err(StdError::generic_err("insurance fund is not registered")),
+    };
+
     for vamm in vamms.iter() {
         let position = read_position(deps.storage, vamm, &deps.api.addr_validate(&trader)?)?;
 
@@ -123,7 +129,14 @@ pub fn query_trader_balance_with_funding_payment(deps: Deps, trader: String) -> 
     let config = read_config(deps.storage)?;
 
     let mut margin = Uint128::zero();
-    let vamms = query_insurance_all_vamm(&deps, config.insurance_fund.to_string(), None)?.vamm_list;
+
+    let vamms = match config.insurance_fund {
+        Some(insurance_fund) => {
+            query_insurance_all_vamm(&deps, insurance_fund.to_string(), None)?.vamm_list
+        }
+        None => return Err(StdError::generic_err("insurance fund is not registered")),
+    };
+
     for vamm in vamms.iter() {
         let position =
             query_trader_position_with_funding_payment(deps, vamm.to_string(), trader.clone())?;

@@ -582,11 +582,14 @@ pub fn liquidate_reply(
 
     // any remaining margin goes to the insurance contract
     if !remain_margin.margin.is_zero() {
-        msgs.push(execute_transfer(
-            deps.storage,
-            &config.insurance_fund,
-            remain_margin.margin,
-        )?);
+        let msg = match config.insurance_fund {
+            Some(insurance_fund) => {
+                execute_transfer(deps.storage, &insurance_fund, remain_margin.margin)?
+            }
+            None => return Err(StdError::generic_err("insurance fund is not registered")),
+        };
+
+        msgs.push(msg);
     }
 
     msgs.append(&mut withdraw(
@@ -684,11 +687,14 @@ pub fn partial_liquidation_reply(
     let mut messages: Vec<SubMsg> = vec![];
 
     if !liquidation_fee.is_zero() {
-        messages.push(execute_transfer(
-            deps.storage,
-            &config.insurance_fund,
-            liquidation_fee,
-        )?);
+        let msg = match config.insurance_fund {
+            Some(insurance_fund) => {
+                execute_transfer(deps.storage, &insurance_fund, liquidation_fee)?
+            }
+            None => return Err(StdError::generic_err("insurance fund is not registered")),
+        };
+
+        messages.push(msg);
 
         // calculate token balance that should be remaining once
         // insurance fees have been paid

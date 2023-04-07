@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, Env, ReplyOn, StdResult, Storage, SubMsg,
-    Uint128, WasmMsg,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, Env, ReplyOn, StdError, StdResult, Storage,
+    SubMsg, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 
@@ -101,14 +101,22 @@ pub fn execute_transfer_to_insurance_fund(
         amount
     };
 
-    execute_transfer(deps.storage, &config.insurance_fund, amount_to_send)
+    match config.insurance_fund {
+        Some(insurance_fund) => execute_transfer(deps.storage, &insurance_fund, amount_to_send),
+        None => return Err(StdError::generic_err("insurance fund is not registered")),
+    }
 }
 
 pub fn execute_insurance_fund_withdrawal(deps: Deps, amount: Uint128) -> StdResult<SubMsg> {
     let config = read_config(deps.storage)?;
 
+    let insurance_fund = match config.insurance_fund {
+        Some(insurance_fund) => insurance_fund,
+        None => return Err(StdError::generic_err("insurance fund is not registered")),
+    };
+
     let msg = WasmMsg::Execute {
-        contract_addr: config.insurance_fund.to_string(),
+        contract_addr: insurance_fund.to_string(),
         funds: vec![],
         msg: to_binary(&InsuranceFundExecuteMessage::Withdraw {
             token: config.eligible_collateral,
@@ -143,7 +151,13 @@ pub fn transfer_fees(
     let mut messages: Vec<SubMsg> = vec![];
 
     if !spread_fee.is_zero() {
-        let msg = execute_transfer_from(deps.storage, &from, &config.insurance_fund, spread_fee)?;
+        let msg = match config.insurance_fund {
+            Some(insurance_fund) => {
+                execute_transfer_from(deps.storage, &from, &insurance_fund, spread_fee)?
+            }
+            None => return Err(StdError::generic_err("insurance fund is not registered")),
+        };
+
         messages.push(msg);
     };
 

@@ -2,6 +2,7 @@ use cosmwasm_std::{
     to_binary, Addr, Coin, Empty, Querier, QuerierWrapper, QueryRequest, StdResult, Uint128,
     WasmQuery,
 };
+use margined_common::asset::ORAI_DENOM;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::QueryMsg as EngineQueryMsg;
 use margined_perp::margined_engine::{
@@ -82,7 +83,7 @@ pub fn calculate_funds_needed<Q: Querier>(
     if funds_owed.is_zero() {
         Ok(vec![])
     } else {
-        Ok(vec![Coin::new(funds_owed.u128(), "uwasm")])
+        Ok(vec![Coin::new(funds_owed.u128(), ORAI_DENOM)])
     }
 }
 

@@ -26,14 +26,14 @@ fn test_add_margin() {
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(60_000_000u128, "uwasm")],
+            vec![Coin::new(60_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let engine_balance = router
         .wrap()
-        .query_balance(&engine.addr(), "uwasm")
+        .query_balance(&engine.addr(), "orai")
         .unwrap()
         .amount;
     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
@@ -42,14 +42,14 @@ fn test_add_margin() {
         .deposit_margin(
             vamm.addr().to_string(),
             Uint128::from(80_000_000u64),
-            vec![Coin::new(80_000_000u128, "uwasm")],
+            vec![Coin::new(80_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let engine_balance = router
         .wrap()
-        .query_balance(&engine.addr(), "uwasm")
+        .query_balance(&engine.addr(), "orai")
         .unwrap()
         .amount;
     assert_eq!(engine_balance, Uint128::from(140_000_000u64));
@@ -80,7 +80,7 @@ fn test_force_error_add_incorrect_margin() {
     // give alice a balance of uwasm
     let msg = CosmosMsg::Bank(BankMsg::Send {
         to_address: alice.to_string(),
-        amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "uwasm")],
+        amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "orai")],
     });
     router.execute(bank.clone(), msg).unwrap();
 
@@ -101,7 +101,7 @@ fn test_force_error_add_incorrect_margin() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "Must send reserve token 'uwasm'".to_string(),
+            msg: "Must send reserve token 'orai'".to_string(),
         },
         err.downcast().unwrap()
     );
@@ -121,7 +121,7 @@ fn test_add_margin_no_open_position() {
         .deposit_margin(
             vamm.addr().to_string(),
             Uint128::from(80_000_000u64),
-            vec![Coin::new(80_000_000u128, "uwasm")],
+            vec![Coin::new(80_000_000u128, "orai")],
         )
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
@@ -149,14 +149,14 @@ fn test_remove_margin() {
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
-            vec![Coin::new(60_000_000u128, "uwasm")],
+            vec![Coin::new(60_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let engine_balance = router
         .wrap()
-        .query_balance(&engine.addr(), "uwasm")
+        .query_balance(&engine.addr(), "orai")
         .unwrap()
         .amount;
     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
@@ -168,7 +168,7 @@ fn test_remove_margin() {
 
     let engine_balance = router
         .wrap()
-        .query_balance(&engine.addr(), "uwasm")
+        .query_balance(&engine.addr(), "orai")
         .unwrap()
         .amount;
     assert_eq!(engine_balance, Uint128::from(40_000_000u64));
@@ -204,14 +204,14 @@ fn test_remove_margin_after_paying_funding() {
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(0_000_000u64),
-            vec![Coin::new(60_000_000u128, "uwasm")],
+            vec![Coin::new(60_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let engine_balance = router
         .wrap()
-        .query_balance(&engine.addr(), "uwasm")
+        .query_balance(&engine.addr(), "orai")
         .unwrap()
         .amount;
     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
@@ -241,7 +241,7 @@ fn test_remove_margin_after_paying_funding() {
 
     let engine_balance = router
         .wrap()
-        .query_balance(&engine.addr(), "uwasm")
+        .query_balance(&engine.addr(), "orai")
         .unwrap()
         .amount;
     assert_eq!(engine_balance, Uint128::from(36_250_000u128));
@@ -275,14 +275,14 @@ fn test_remove_margin_insufficient_margin() {
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(0_000_000u64),
-            vec![Coin::new(60_000_000u128, "uwasm")],
+            vec![Coin::new(60_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let engine_balance = router
         .wrap()
-        .query_balance(&engine.addr(), "uwasm")
+        .query_balance(&engine.addr(), "orai")
         .unwrap()
         .amount;
     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
@@ -314,14 +314,14 @@ fn test_remove_margin_incorrect_ratio_four_percent() {
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::from(0_000_000u64),
-            vec![Coin::new(60_000_000u128, "uwasm")],
+            vec![Coin::new(60_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let engine_balance = router
         .wrap()
-        .query_balance(&engine.addr(), "uwasm")
+        .query_balance(&engine.addr(), "orai")
         .unwrap()
         .amount;
     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
@@ -355,7 +355,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price(
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0_000_000u64),
-            vec![Coin::new(60_000_000u128, "uwasm")],
+            vec![Coin::new(60_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -368,7 +368,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price(
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0_000_000u64),
-            vec![Coin::new(60_000_000u128, "uwasm")],
+            vec![Coin::new(60_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -413,7 +413,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() 
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(60_000_000u128, "uwasm")],
+            vec![Coin::new(60_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -426,7 +426,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() 
             Uint128::from(10_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(10_000_000u128, "uwasm")],
+            vec![Coin::new(10_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -470,7 +470,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(20_000_000u128, "uwasm")],
+            vec![Coin::new(20_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -483,7 +483,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(20_000_000u128, "uwasm")],
+            vec![Coin::new(20_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -535,7 +535,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_spot_price()
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(20_000_000u128, "uwasm")],
+            vec![Coin::new(20_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -547,7 +547,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_spot_price()
             Uint128::from(10_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(10_000_000u128, "uwasm")],
+            vec![Coin::new(10_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -592,7 +592,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_twap_price(
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(60_000_000u128, "uwasm")],
+            vec![Coin::new(60_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -610,7 +610,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_twap_price(
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(60_000_000u128, "uwasm")],
+            vec![Coin::new(60_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -660,7 +660,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() 
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(60_000_000u128, "uwasm")],
+            vec![Coin::new(60_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -678,7 +678,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() 
             Uint128::from(10_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(10_000_000u128, "uwasm")],
+            vec![Coin::new(10_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -727,7 +727,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(20_000_000u128, "uwasm")],
+            vec![Coin::new(20_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -745,7 +745,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(20_000_000u128, "uwasm")],
+            vec![Coin::new(20_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -802,7 +802,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_twap_price()
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(20_000_000u128, "uwasm")],
+            vec![Coin::new(20_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -819,7 +819,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_twap_price()
             Uint128::from(10_000_000u64),
             Uint128::from(5_000_000u64),
             Uint128::from(0u64),
-            vec![Coin::new(10_000_000u128, "uwasm")],
+            vec![Coin::new(10_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -869,7 +869,7 @@ fn test_native_token_sent() {
 
     // message payload
     let coin = Coin {
-        denom: "uwasm".to_string(),
+        denom: "orai".to_string(),
         amount: Uint128::from(100_000_000u32),
     };
     let msg_info = MessageInfo {
@@ -891,7 +891,7 @@ fn test_native_token_missing_denom() {
     // required token
     let required = Asset {
         info: AssetInfo::NativeToken {
-            denom: "uwasm".to_string(),
+            denom: "orai".to_string(),
         },
         amount: Uint128::from(100_000_000u32),
     };
@@ -914,7 +914,7 @@ fn test_native_token_missing_denom() {
     // check error
     assert_eq!(
         err.to_string(),
-        "Generic error: Must send reserve token 'uwasm'"
+        "Generic error: Must send reserve token 'orai'"
     );
 }
 
@@ -927,7 +927,7 @@ fn test_native_token_multiple_denoms() {
     // required token
     let required = Asset {
         info: AssetInfo::NativeToken {
-            denom: "uwasm".to_string(),
+            denom: "orai".to_string(),
         },
         amount: Uint128::from(100_000_000u32),
     };
@@ -963,7 +963,7 @@ fn test_native_token_no_funds() {
     // required token
     let required = Asset {
         info: AssetInfo::NativeToken {
-            denom: "uwasm".to_string(),
+            denom: "orai".to_string(),
         },
         amount: Uint128::from(100_000_000u32),
     };
@@ -992,14 +992,14 @@ fn test_native_token_different_amounts() {
     // required token
     let required = Asset {
         info: AssetInfo::NativeToken {
-            denom: "uwasm".to_string(),
+            denom: "orai".to_string(),
         },
         amount: Uint128::from(100_000_000u32),
     };
 
     // message payload
     let coin = Coin {
-        denom: "uwasm".to_string(),
+        denom: "orai".to_string(),
         amount: Uint128::from(100_000u32),
     };
     let msg_info = MessageInfo {
