@@ -6,11 +6,10 @@ import { local, testnet } from './deploy_configs.js';
 import { join } from 'path';
 
 // consts
-
 const config = {
-  chainId: 'uni-3',
-  rpcEndpoint: 'https://rpc.margined.io',
-  prefix: 'juno'
+  chainId: process.env.CHAIN_ID || 'Oraichain',
+  rpcEndpoint: process.env.RPC || 'https://rpc.orai.io',
+  prefix: 'orai'
 };
 
 const MARGINED_ARTIFACTS_PATH = '../artifacts';
