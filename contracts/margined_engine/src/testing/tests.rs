@@ -1,12 +1,11 @@
 use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr, Uint128};
-use margined_common::asset::AssetInfo;
+use margined_common::asset::{AssetInfo, ORAI_DENOM};
 use margined_perp::margined_engine::{
     ConfigResponse, ExecuteMsg, InstantiateMsg, PauserResponse, QueryMsg,
 };
 
-const TOKEN: &str = "uwasm";
 const OWNER: &str = "owner";
 const INSURANCE_FUND: &str = "insurance_fund";
 const FEE_POOL: &str = "fee_pool";
@@ -18,7 +17,7 @@ fn test_instantiation() {
         pauser: OWNER.to_string(),
         insurance_fund: Some(INSURANCE_FUND.to_string()),
         fee_pool: FEE_POOL.to_string(),
-        eligible_collateral: TOKEN.to_string(),
+        eligible_collateral: ORAI_DENOM.to_string(),
         initial_margin_ratio: Uint128::from(50_000u128), // 0.05
         maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
         liquidation_fee: Uint128::from(100u128),
@@ -36,7 +35,7 @@ fn test_instantiation() {
             insurance_fund: Some(Addr::unchecked(INSURANCE_FUND.to_string())),
             fee_pool: Addr::unchecked(FEE_POOL.to_string()),
             eligible_collateral: AssetInfo::NativeToken {
-                denom: TOKEN.to_string(),
+                denom: ORAI_DENOM.to_string(),
             },
             decimals: Uint128::from(10u128.pow(6u32)),
             initial_margin_ratio: Uint128::from(50_000u128),
@@ -54,7 +53,7 @@ fn test_update_config() {
         pauser: OWNER.to_string(),
         insurance_fund: Some(INSURANCE_FUND.to_string()),
         fee_pool: FEE_POOL.to_string(),
-        eligible_collateral: TOKEN.to_string(),
+        eligible_collateral: ORAI_DENOM.to_string(),
         initial_margin_ratio: Uint128::from(50_000u128), // 0.05
         maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
         liquidation_fee: Uint128::from(100u128),
@@ -85,7 +84,7 @@ fn test_update_config() {
             insurance_fund: Some(Addr::unchecked(INSURANCE_FUND.to_string())),
             fee_pool: Addr::unchecked(FEE_POOL.to_string()),
             eligible_collateral: AssetInfo::NativeToken {
-                denom: TOKEN.to_string(),
+                denom: ORAI_DENOM.to_string(),
             },
             decimals: Uint128::from(10u128.pow(6u32)),
             initial_margin_ratio: Uint128::from(50_000u128),
@@ -133,7 +132,7 @@ fn test_update_pauser() {
         pauser: OWNER.to_string(),
         insurance_fund: Some(INSURANCE_FUND.to_string()),
         fee_pool: FEE_POOL.to_string(),
-        eligible_collateral: TOKEN.to_string(),
+        eligible_collateral: ORAI_DENOM.to_string(),
         initial_margin_ratio: Uint128::from(50_000u128), // 0.05
         maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
         liquidation_fee: Uint128::from(100u128),
