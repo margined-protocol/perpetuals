@@ -1,8 +1,12 @@
 use cosmwasm_std::{StdError, Uint128};
 use cw20::Cw20ExecuteMsg;
-use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
-use margined_utils::scenarios::{to_decimals, SimpleScenario};
+use margined_utils::{
+    cw_multi_test::Executor,
+    testing::{to_decimals, SimpleScenario},
+};
+
+use crate::testing::new_simple_scenario;
 
 #[test]
 fn test_force_error_open_position_exceeds_fluctuation_limit() {
@@ -14,7 +18,7 @@ fn test_force_error_open_position_exceeds_fluctuation_limit() {
         usdc,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reduce the allowance
     router
@@ -66,7 +70,7 @@ fn test_force_error_reduce_position_exceeds_fluctuation_limit() {
         usdc,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reduce the allowance
     router
@@ -133,7 +137,7 @@ fn test_close_position_limit_force_error_exceeding_fluctuation_limit_twice_in_sa
         usdc,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     router
         .execute_contract(
@@ -242,7 +246,7 @@ fn test_close_position_slippage_limit_originally_long() {
         usdc,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     router.update_block(|block| {
         block.time = block.time.plus_seconds(15);
@@ -338,7 +342,7 @@ fn test_close_position_slippage_limit_originally_short() {
         usdc,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     router.update_block(|block| {
         block.time = block.time.plus_seconds(15);
@@ -434,7 +438,7 @@ fn test_force_error_close_position_slippage_limit_originally_long() {
         usdc,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     router.update_block(|block| {
         block.time = block.time.plus_seconds(15);
@@ -523,7 +527,7 @@ fn test_force_error_close_position_slippage_limit_originally_short() {
         usdc,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     router.update_block(|block| {
         block.time = block.time.plus_seconds(15);

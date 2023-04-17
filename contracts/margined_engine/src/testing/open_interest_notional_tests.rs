@@ -1,8 +1,12 @@
 use cosmwasm_std::{StdError, Uint128};
 use cw20::Cw20ExecuteMsg;
-use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
-use margined_utils::scenarios::{to_decimals, SimpleScenario};
+use margined_utils::{
+    cw_multi_test::Executor,
+    testing::{to_decimals, SimpleScenario},
+};
+
+use crate::testing::new_simple_scenario;
 
 #[test]
 fn test_increase_with_increase_position() {
@@ -14,7 +18,7 @@ fn test_increase_with_increase_position() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = vamm
         .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
@@ -61,7 +65,7 @@ fn test_reduce_when_position_is_reduced() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = vamm
         .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
@@ -120,7 +124,7 @@ fn test_reduce_when_close_position() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = vamm
         .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
@@ -174,7 +178,7 @@ fn test_increase_when_traders_open_positions_in_diff_directions() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = vamm
         .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
@@ -246,7 +250,7 @@ fn test_increase_when_traders_open_larger_positions_in_reverse_directions() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = vamm
         .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
@@ -307,7 +311,7 @@ fn test_zero_when_everyone_closes_positions() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = vamm
         .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
@@ -391,7 +395,7 @@ fn test_zero_when_everyone_closes_positions_one_position_is_bankrupt() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = vamm
         .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
@@ -482,7 +486,7 @@ fn test_open_interest_logged_without_cap() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -549,7 +553,7 @@ fn test_stop_trading_if_over_open_interest_notional_cap() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = vamm
         .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
@@ -625,7 +629,7 @@ fn test_wont_stop_trading_if_reducing_position_even_if_over_open_interest_notion
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = vamm
         .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))

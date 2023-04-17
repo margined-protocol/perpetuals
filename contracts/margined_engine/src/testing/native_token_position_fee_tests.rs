@@ -1,9 +1,11 @@
 use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Uint128};
-use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Position, Side};
-use margined_utils::scenarios::NativeTokenScenario;
 use margined_utils::tools::fund_calculator::calculate_funds_needed;
+
+use margined_utils::{cw_multi_test::Executor, testing::NativeTokenScenario};
+
+use crate::testing::new_native_token_scenario;
 
 // Note: these tests also verify the 10% fees for the amm are functioning
 
@@ -16,7 +18,7 @@ fn test_initialization() {
         bob,
         engine,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // verfiy the balances
     let owner_balance = router.wrap().query_balance(&owner, "orai").unwrap().amount;
@@ -42,7 +44,7 @@ fn test_force_error_open_position_no_token_sent() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -79,7 +81,7 @@ fn test_ten_percent_fee_open_long_position() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -146,7 +148,7 @@ fn test_force_error_insufficient_token_long_position() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -182,7 +184,7 @@ fn test_ten_percent_fee_open_short_position() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -249,7 +251,7 @@ fn test_force_error_insufficient_token_short_position() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -287,7 +289,7 @@ fn test_ten_percent_fee_long_position_price_remains_long_again() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -385,7 +387,7 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -512,7 +514,7 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -630,7 +632,7 @@ fn test_ten_percent_fee_short_position_price_remains_short_again() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -723,7 +725,7 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -842,7 +844,7 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -960,7 +962,7 @@ fn test_ten_percent_fee_long_position_price_remains_reduce_position() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -1038,7 +1040,7 @@ fn test_ten_percent_fee_reduce_long_position_zero_fee() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     let msg = vamm.set_toll_ratio(Uint128::zero()).unwrap();
     router.execute(owner.clone(), msg).unwrap();
@@ -1115,7 +1117,7 @@ fn test_ten_percent_fee_short_position_price_remains_reduce_position() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -1194,7 +1196,7 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -1304,7 +1306,7 @@ fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -1414,7 +1416,7 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -1524,7 +1526,7 @@ fn test_ten_percent_fee_reduce_short_position_price_down_short_again() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -1633,7 +1635,7 @@ fn test_ten_percent_fee_open_long_price_remains_close_manually() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
     router.execute(owner.clone(), msg).unwrap();
@@ -1708,7 +1710,7 @@ fn test_ten_percent_fee_open_short_price_remains_close_manually() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -1786,7 +1788,7 @@ fn test_ten_percent_fee_open_long_price_up_close_manually() {
         vamm,
         bank,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -1901,7 +1903,7 @@ fn test_ten_percent_fee_open_long_price_down_close_manually() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -2009,7 +2011,7 @@ fn test_ten_percent_fee_open_short_price_up_close_manually() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -2118,7 +2120,7 @@ fn test_ten_percent_fee_open_short_price_down_close_manually() {
         vamm,
         bank,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -2232,7 +2234,7 @@ fn test_ten_percent_fee_open_long_price_remains_close_opening_larger_short() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
     router.execute(owner.clone(), msg).unwrap();
@@ -2307,7 +2309,7 @@ fn test_ten_percent_fee_open_short_price_remains_close_opening_larger_long() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
     router.execute(owner.clone(), msg).unwrap();
@@ -2394,7 +2396,7 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -2519,7 +2521,7 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -2637,7 +2639,7 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -2747,7 +2749,7 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
     router.execute(owner.clone(), msg).unwrap();
@@ -2854,7 +2856,7 @@ fn test_ten_percent_fee_open_long_price_down_liquidation() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
     router.execute(owner.clone(), msg).unwrap();
@@ -2967,7 +2969,7 @@ fn test_ten_percent_fee_open_long_price_down_liquidation() {
 //         engine,
 //         vamm,
 //         ..
-//     } = NativeTokenScenario::new();
+//     } = new_native_token_scenario();
 //     // 10% fee
 //     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
 //     router.execute(owner.clone(), msg).unwrap();

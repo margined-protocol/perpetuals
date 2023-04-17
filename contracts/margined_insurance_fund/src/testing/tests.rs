@@ -1,11 +1,12 @@
 use crate::contract::{execute, instantiate, query};
+use crate::testing::new_shutdown_scenario;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr, StdError};
-use cw_multi_test::Executor;
 use margined_perp::margined_insurance_fund::{
     ConfigResponse, ExecuteMsg, InstantiateMsg, OwnerResponse, QueryMsg,
 };
-use margined_utils::scenarios::ShutdownScenario;
+use margined_utils::cw_multi_test::Executor;
+use margined_utils::testing::ShutdownScenario;
 
 const ENGINE: &str = "engine";
 
@@ -61,7 +62,7 @@ fn test_query_vamm() {
         insurance_fund,
         vamm1,
         ..
-    } = ShutdownScenario::new();
+    } = new_shutdown_scenario();
 
     // add vamm to vammlist in insurance_fund here
     let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
@@ -85,7 +86,7 @@ fn test_query_all_vamm() {
         vamm1,
         vamm2,
         ..
-    } = ShutdownScenario::new();
+    } = new_shutdown_scenario();
 
     // check to see that there are no vAMMs
     let res = insurance_fund.all_vamms(None, &router).unwrap_err();
@@ -118,7 +119,7 @@ fn test_add_vamm() {
         insurance_fund,
         vamm1,
         ..
-    } = ShutdownScenario::new();
+    } = new_shutdown_scenario();
 
     // query the vAMM we want to add
     let res = insurance_fund
@@ -149,7 +150,7 @@ fn test_add_vamm_twice() {
         insurance_fund,
         vamm1,
         ..
-    } = ShutdownScenario::new();
+    } = new_shutdown_scenario();
 
     // add vamm to vammlist in insurance_fund here
     let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
@@ -176,7 +177,7 @@ fn test_add_second_vamm() {
         vamm1,
         vamm2,
         ..
-    } = ShutdownScenario::new();
+    } = new_shutdown_scenario();
 
     // add first vamm to vammlist in insurance_fund here
     let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
@@ -203,7 +204,7 @@ fn test_remove_vamm() {
         insurance_fund,
         vamm1,
         ..
-    } = ShutdownScenario::new();
+    } = new_shutdown_scenario();
 
     // add first vamm to vammlist in insurance_fund here
     let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
@@ -240,7 +241,7 @@ fn test_remove_no_vamms() {
         insurance_fund,
         vamm1,
         ..
-    } = ShutdownScenario::new();
+    } = new_shutdown_scenario();
 
     // check to see that there is no vAMM
     let res = insurance_fund
@@ -272,7 +273,7 @@ fn test_remove_non_existed_vamm() {
         vamm1,
         vamm2,
         ..
-    } = ShutdownScenario::new();
+    } = new_shutdown_scenario();
 
     // add first vamm to vammlist in insurance_fund here
     let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
@@ -307,7 +308,7 @@ fn test_off_vamm_off_again() {
         insurance_fund,
         vamm1,
         ..
-    } = ShutdownScenario::new();
+    } = new_shutdown_scenario();
 
     // add vamm (remember it is default added as 'on')
     let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
@@ -338,7 +339,7 @@ fn test_vamm_shutdown() {
         vamm2,
         vamm3,
         ..
-    } = ShutdownScenario::new();
+    } = new_shutdown_scenario();
 
     // add vamm
     let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
@@ -393,7 +394,7 @@ fn test_vamm_shutdown_from_insurance() {
         vamm2,
         vamm3,
         ..
-    } = ShutdownScenario::new();
+    } = new_shutdown_scenario();
 
     // add vamm
     let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
@@ -446,7 +447,7 @@ fn test_query_vamm_status() {
         insurance_fund,
         vamm1,
         ..
-    } = ShutdownScenario::new();
+    } = new_shutdown_scenario();
 
     // add vamm
     let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
@@ -482,7 +483,7 @@ fn test_all_vamm_status() {
         vamm1,
         vamm2,
         ..
-    } = ShutdownScenario::new();
+    } = new_shutdown_scenario();
 
     // query all vamms' status (there aren't any yet)
     let res = insurance_fund.all_vamm_status(None, &router).unwrap_err();
@@ -534,7 +535,7 @@ fn test_pagination() {
         vamm1,
         vamm2,
         ..
-    } = ShutdownScenario::new();
+    } = new_shutdown_scenario();
 
     // add vamm
     let msg = insurance_fund.add_vamm(vamm1.addr().to_string()).unwrap();
@@ -562,7 +563,7 @@ fn test_pagination_limit() {
         vamm2,
         vamm3,
         ..
-    } = ShutdownScenario::new();
+    } = new_shutdown_scenario();
 
     let vamms: Vec<String> = vec![
         vamm1.addr().to_string(),
@@ -612,7 +613,7 @@ fn test_vamm_capacity() {
         vamm3,
         vamm4,
         ..
-    } = ShutdownScenario::new();
+    } = new_shutdown_scenario();
 
     ///////////////////////////////////////////////////////
     // Test exceeding VAMM_LIMIT by adding a single vAMM //
@@ -654,7 +655,7 @@ fn test_vamm_capacity() {
         vamm3,
         vamm4,
         ..
-    } = ShutdownScenario::new();
+    } = new_shutdown_scenario();
 
     let vamms: Vec<String> = vec![
         vamm1.addr().to_string(),
@@ -741,7 +742,7 @@ fn test_incompatible_decimals() {
         insurance_fund,
         vamm5,
         ..
-    } = ShutdownScenario::new();
+    } = new_shutdown_scenario();
 
     let msg = insurance_fund.add_vamm(vamm5.addr().to_string()).unwrap();
     let err = router.execute(owner, msg).unwrap_err();

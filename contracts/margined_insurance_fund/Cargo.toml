@@ -32,8 +32,10 @@ cw2 = "1.0.1"
 cosmwasm-schema = { version = "1.1.9" }
 margined_perp = { version = "0.1.0", path = "../../packages/margined_perp" }
 margined_common = { version = "0.1.0", path = "../../packages/margined_common" }
+margined_utils = { version = "0.1.0", path = "../../packages/margined_utils" }
 thiserror = { version = "1.0.23" }
 
 [dev-dependencies]
-margined_utils = { version = "0.1.0", path = "../../packages/margined_utils" }
-cw-multi-test = "0.16.2"
+margined_vamm = { version = "0.1.0", path = "../margined_vamm" }
+margined_engine = { version = "0.1.0", path = "../margined_engine" }
+mock_pricefeed = { version = "0.1.0", path = "../mocks/mock_pricefeed" }

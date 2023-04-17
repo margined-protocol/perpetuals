@@ -1,13 +1,14 @@
 // use crate::testing::setup::{self, to_decimals};
 use cosmwasm_std::Uint128;
 use cw20::Cw20ExecuteMsg;
-use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
-use margined_utils::scenarios::{to_decimals, SimpleScenario};
+use margined_utils::{cw_multi_test::Executor, testing::to_decimals};
+
+use crate::testing::new_simple_scenario;
 
 #[test]
 fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
-    let mut env = SimpleScenario::new();
+    let mut env = new_simple_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000_000u128);
@@ -191,7 +192,7 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
 
 #[test]
 fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_same_block() {
-    let mut env = SimpleScenario::new();
+    let mut env = new_simple_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000_000u128);
@@ -379,7 +380,7 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
 
 #[test]
 fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same_block() {
-    let mut env = SimpleScenario::new();
+    let mut env = new_simple_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000_000u128);
@@ -559,7 +560,7 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
 
 #[test]
 fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_block() {
-    let mut env = SimpleScenario::new();
+    let mut env = new_simple_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000_000u128);
@@ -746,7 +747,7 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
 
 #[test]
 fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in_same_block() {
-    let mut env = SimpleScenario::new();
+    let mut env = new_simple_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000_000u128);

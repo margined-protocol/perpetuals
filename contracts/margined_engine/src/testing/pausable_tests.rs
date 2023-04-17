@@ -1,6 +1,10 @@
-use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
-use margined_utils::scenarios::{to_decimals, SimpleScenario};
+use margined_utils::{
+    cw_multi_test::Executor,
+    testing::{to_decimals, SimpleScenario},
+};
+
+use crate::testing::new_simple_scenario;
 
 #[test]
 fn test_paused_by_admin() {
@@ -11,7 +15,7 @@ fn test_paused_by_admin() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine.set_pause(true).unwrap();
     router.execute(owner.clone(), msg).unwrap();
@@ -67,7 +71,7 @@ fn test_cant_be_paused_by_non_admin() {
         alice,
         engine,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine.set_pause(true).unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
@@ -86,7 +90,7 @@ fn test_pause_then_unpause_by_admin() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine.set_pause(true).unwrap();
     router.execute(owner.clone(), msg).unwrap();
@@ -129,7 +133,7 @@ fn test_cant_unpause_when_already_unpaused_and_vice_versa() {
         owner,
         engine,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine.set_pause(false).unwrap();
     let err = router.execute(owner.clone(), msg).unwrap_err();

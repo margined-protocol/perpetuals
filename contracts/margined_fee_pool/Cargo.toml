@@ -30,11 +30,15 @@ cosmwasm-storage = { version = "1.1.9" }
 cw2 = "1.0.1"
 cw-controllers = "1.0.1"
 cw20 = { version = "1.0.1" }
+margined_utils = { version = "0.1.0", path = "../../packages/margined_utils" }
 margined_perp = { version = "0.1.0", path = "../../packages/margined_perp" }
 margined_common = { version = "0.1.0", path = "../../packages/margined_common" }
 cosmwasm-schema = { version = "1.1.9" }
 thiserror = { version = "1.0.23" }
 
 [dev-dependencies]
-margined_utils = { version = "0.1.0", path = "../../packages/margined_utils" }
-cw-multi-test = "0.16.2"
+cw20-base = { version = "1.0.1", features = ["library"] }
+margined_vamm = { version = "0.1.0", path = "../margined_vamm" }
+margined_engine = { version = "0.1.0", path = "../margined_engine" }
+margined_insurance_fund = { version = "0.1.0", path = "../margined_insurance_fund" }
+mock_pricefeed = { version = "0.1.0", path = "../mocks/mock_pricefeed" }

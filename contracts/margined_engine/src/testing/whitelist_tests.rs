@@ -1,7 +1,11 @@
 use cosmwasm_std::{Addr, StdError, Uint128};
-use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
-use margined_utils::scenarios::{to_decimals, SimpleScenario};
+use margined_utils::{
+    cw_multi_test::Executor,
+    testing::{to_decimals, SimpleScenario},
+};
+
+use crate::testing::new_simple_scenario;
 
 #[test]
 fn test_add_remove_whitelist() {
@@ -11,7 +15,7 @@ fn test_add_remove_whitelist() {
         owner,
         engine,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // add alice to whitelist
     let msg = engine.add_whitelist(alice.to_string()).unwrap();
@@ -61,7 +65,7 @@ fn test_add_remove_then_add_whitelist() {
         owner,
         engine,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // add alice to whitelist
     let msg = engine.add_whitelist(alice.to_string()).unwrap();
@@ -96,7 +100,7 @@ fn test_not_admin() {
         alice,
         engine,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // test add as non-admin
     let not_owner = Addr::unchecked("not_owner");
@@ -132,7 +136,7 @@ fn test_query_all_whitelist_and_is_whitelist() {
         owner,
         engine,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // add alice to whitelist
     let msg = engine.add_whitelist(alice.to_string()).unwrap();
@@ -169,7 +173,7 @@ fn test_whitelist_works_open_short_over_limit() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // add alice to whitelist
     let msg = engine.add_whitelist(alice.to_string()).unwrap();
@@ -204,7 +208,7 @@ fn test_whitelist_works_open_long_over_limit() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // add alice to whitelist
     let msg = engine.add_whitelist(alice.to_string()).unwrap();
@@ -239,7 +243,7 @@ fn test_whitelist_works_open_short_into_reverse_long() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // add alice to whitelist
     let msg = engine.add_whitelist(alice.to_string()).unwrap();
@@ -287,7 +291,7 @@ fn test_whitelist_works_open_long_into_reverse_short() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // add alice to whitelist
     let msg = engine.add_whitelist(alice.to_string()).unwrap();
@@ -335,7 +339,7 @@ fn test_whitelist_works_blocks_short_into_reverse_long() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // set base asset holding cap
     let msg = vamm
@@ -386,7 +390,7 @@ fn test_whitelist_blocks_open_long_into_reverse_short() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // set base asset holding cap
     let msg = vamm.set_base_asset_holding_cap(to_decimals(10u64)).unwrap();
@@ -435,7 +439,7 @@ fn test_whitelist_no_limit_notional_cap() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // add alice to whitelist
     let msg = engine.add_whitelist(alice.to_string()).unwrap();
@@ -472,7 +476,7 @@ fn test_whitelist_wont_stop_trading_if_reduce_pos() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // add alice to whitelist
     let msg = engine.add_whitelist(alice.to_string()).unwrap();

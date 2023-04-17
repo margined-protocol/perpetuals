@@ -1,9 +1,13 @@
 use cosmwasm_std::{StdError, Uint128};
 use cw20::Cw20ExecuteMsg;
-use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Side};
-use margined_utils::scenarios::{to_decimals, SimpleScenario};
+use margined_utils::{
+    cw_multi_test::Executor,
+    testing::{to_decimals, SimpleScenario},
+};
+
+use crate::testing::new_simple_scenario;
 
 #[test]
 fn test_liquidation_fee_100_percent() {
@@ -19,7 +23,7 @@ fn test_liquidation_fee_100_percent() {
         pricefeed,
         insurance_fund,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000_000u128);
@@ -122,7 +126,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
         usdc,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reduce the allowance
     router
@@ -228,7 +232,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
         usdc,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reduce the allowance
     router
@@ -330,7 +334,7 @@ fn test_alice_has_enough_margin_cant_get_liquidated() {
         usdc,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reduce the allowance
     router
@@ -414,7 +418,7 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
         usdc,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reduce the allowance
     router
@@ -500,7 +504,7 @@ fn test_alice_long_position_underwater_oracle_price_activated_doesnt_get_liquida
         vamm,
         pricefeed,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     router
         .execute_contract(
@@ -594,7 +598,7 @@ fn test_alice_short_position_underwater_oracle_price_activated_doesnt_get_liquid
         vamm,
         pricefeed,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     router
         .execute_contract(
@@ -688,7 +692,7 @@ fn test_can_open_same_side_position_even_thought_long_is_underwater_as_long_over
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -762,7 +766,7 @@ fn test_can_open_same_side_position_even_thought_short_is_underwater_as_long_ove
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -840,7 +844,7 @@ fn test_cannot_open_position_even_thought_long_is_underwater_if_still_under_afte
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -908,7 +912,7 @@ fn test_cannot_open_position_even_thought_short_is_underwater_if_still_under_aft
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -962,7 +966,7 @@ fn test_close_partial_position_long_position_when_closing_whole_position_is_over
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .set_partial_liquidation_ratio(Uint128::from(250_000_000u128))
@@ -1030,7 +1034,7 @@ fn test_close_partial_position_short_position_when_closing_whole_position_is_ove
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .set_partial_liquidation_ratio(Uint128::from(250_000_000u128))
@@ -1096,7 +1100,7 @@ fn test_close_whole_partial_position_when_partial_liquidation_ratio_is_one() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .set_partial_liquidation_ratio(Uint128::from(1_000_000_000u128))

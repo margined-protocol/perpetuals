@@ -4,7 +4,7 @@ use cosmwasm_std::{from_binary, Uint128};
 use margined_perp::margined_vamm::{
     Direction, ExecuteMsg, InstantiateMsg, QueryMsg, StateResponse,
 };
-use margined_utils::scenarios::to_decimals;
+use margined_utils::testing::to_decimals;
 
 #[test]
 fn test_set_open_admin_open_amm() {

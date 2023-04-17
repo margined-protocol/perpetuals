@@ -7,7 +7,7 @@ use margined_common::integer::Integer;
 use margined_perp::margined_vamm::{
     ConfigResponse, Direction, ExecuteMsg, InstantiateMsg, OwnerResponse, QueryMsg, StateResponse,
 };
-use margined_utils::scenarios::{parse_event, to_decimals, DECIMAL_MULTIPLIER};
+use margined_utils::testing::{parse_event, to_decimals, DECIMAL_MULTIPLIER};
 
 #[test]
 fn test_instantiation() {

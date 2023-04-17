@@ -1,8 +1,9 @@
 use cosmwasm_std::{Coin, Uint128};
-use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
-use margined_utils::scenarios::NativeTokenScenario;
+use margined_utils::{cw_multi_test::Executor, testing::NativeTokenScenario};
+
+use crate::testing::new_native_token_scenario;
 
 pub const NEXT_FUNDING_PERIOD_DELTA: u64 = 86_400u64;
 
@@ -18,7 +19,7 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
         vamm,
         pricefeed,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     let msg = engine
         .open_position(
@@ -121,7 +122,7 @@ fn test_will_keep_generating_same_loss_when_funding_rate_is_positive() {
         vamm,
         pricefeed,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     let msg = engine
         .open_position(
@@ -207,7 +208,7 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
         vamm,
         pricefeed,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     let msg = engine
         .open_position(
@@ -325,7 +326,7 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
         vamm,
         pricefeed,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     let msg = engine
         .open_position(
@@ -404,7 +405,7 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
         vamm,
         pricefeed,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     let msg = engine
         .open_position(
@@ -479,7 +480,7 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
         vamm,
         pricefeed,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     let msg = engine
         .open_position(
@@ -565,7 +566,7 @@ fn test_have_huge_funding_payment_margin_zero_cannot_remove_margin() {
         vamm,
         pricefeed,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     let msg = engine
         .open_position(
@@ -639,7 +640,7 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
         vamm,
         pricefeed,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     let msg = engine
         .open_position(
@@ -729,7 +730,7 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
         vamm,
         pricefeed,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     let msg = engine
         .open_position(

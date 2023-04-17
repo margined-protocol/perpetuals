@@ -1,6 +1,10 @@
 use cosmwasm_std::Uint128;
-use cw_multi_test::Executor;
-use margined_utils::scenarios::{to_decimals, VammScenario};
+use margined_utils::{
+    cw_multi_test::Executor,
+    testing::{to_decimals, VammScenario},
+};
+
+use crate::testing::new_vammscenario;
 
 #[test]
 fn test_will_fail_is_pricefeed_zero() {
@@ -10,7 +14,7 @@ fn test_will_fail_is_pricefeed_zero() {
         vamm,
         pricefeed,
         ..
-    } = VammScenario::new();
+    } = new_vammscenario();
 
     let spot_price = vamm.spot_price(&router).unwrap();
     assert_eq!(spot_price, to_decimals(10u64));
@@ -38,7 +42,7 @@ fn test_is_true_if_greater_than_ten_percent() {
         vamm,
         pricefeed,
         ..
-    } = VammScenario::new();
+    } = new_vammscenario();
 
     let spot_price = vamm.spot_price(&router).unwrap();
     assert_eq!(spot_price, to_decimals(10u64));
@@ -74,7 +78,7 @@ fn test_is_false_if_less_than_ten_percent() {
         vamm,
         pricefeed,
         ..
-    } = VammScenario::new();
+    } = new_vammscenario();
 
     let spot_price = vamm.spot_price(&router).unwrap();
     assert_eq!(spot_price, to_decimals(10u64));

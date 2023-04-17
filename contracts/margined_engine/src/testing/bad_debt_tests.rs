@@ -1,9 +1,13 @@
 use cosmwasm_std::{StdError, Uint128};
 use cw20::Cw20ExecuteMsg;
-use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
-use margined_utils::scenarios::{to_decimals, SimpleScenario};
+use margined_utils::{
+    cw_multi_test::Executor,
+    testing::{to_decimals, SimpleScenario},
+};
+
+use crate::testing::new_simple_scenario;
 
 #[test]
 fn test_cannot_increase_position_when_bad_debt() {
@@ -15,7 +19,7 @@ fn test_cannot_increase_position_when_bad_debt() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reduce the allowance
     router
@@ -114,7 +118,7 @@ fn test_cannot_reduce_position_when_bad_debt() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reduce the allowance
     router
@@ -213,7 +217,7 @@ fn test_cannot_close_position_when_bad_debt() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reduce the allowance
     router
@@ -302,7 +306,7 @@ fn test_cannot_partial_close_position_when_bad_debt() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reduce the allowance
     router
@@ -390,7 +394,7 @@ fn test_can_partial_close_position_as_long_as_no_bad_debt_is_incurred() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reduce the allowance
     router

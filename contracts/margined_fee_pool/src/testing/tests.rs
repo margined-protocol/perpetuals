@@ -1,16 +1,17 @@
 use crate::contract::{execute, instantiate, query};
+use crate::testing::{new_native_token_scenario, new_simple_scenario};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
     from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, StdError, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
-use cw_multi_test::Executor;
 use margined_common::asset::AssetInfo;
 use margined_perp::margined_fee_pool::{
     AllTokenResponse, ConfigResponse, ExecuteMsg, InstantiateMsg, OwnerResponse, QueryMsg,
     TokenLengthResponse, TokenResponse,
 };
-use margined_utils::scenarios::{NativeTokenScenario, SimpleScenario};
+use margined_utils::cw_multi_test::Executor;
+use margined_utils::testing::{NativeTokenScenario, SimpleScenario};
 
 #[test]
 fn test_instantiation() {
@@ -527,7 +528,7 @@ fn test_send_native_token() {
         bob,
         fee_pool,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // give funds to the fee pool contract
     let msg = CosmosMsg::Bank(BankMsg::Send {
@@ -585,7 +586,7 @@ fn test_send_native_token() {
         bob,
         fee_pool,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // give funds to the fee pool contract
     let msg = CosmosMsg::Bank(BankMsg::Send {
@@ -621,7 +622,7 @@ fn test_send_native_token() {
         bob,
         fee_pool,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // give funds to the fee pool contract
     let msg = CosmosMsg::Bank(BankMsg::Send {
@@ -685,7 +686,7 @@ fn test_send_cw20_token() {
         fee_pool,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // give funds to the fee pool contract for the test
     let msg: CosmosMsg = CosmosMsg::Wasm(WasmMsg::Execute {
@@ -740,7 +741,7 @@ fn test_send_cw20_token() {
         fee_pool,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // give funds to the fee pool contract
     let msg: CosmosMsg = CosmosMsg::Wasm(WasmMsg::Execute {
@@ -781,7 +782,7 @@ fn test_send_cw20_token() {
         fee_pool,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // give funds to the fee pool contract for the test
     let msg: CosmosMsg = CosmosMsg::Wasm(WasmMsg::Execute {
@@ -882,7 +883,7 @@ fn test_not_owner() {
         fee_pool,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // try to send money
     let msg = fee_pool

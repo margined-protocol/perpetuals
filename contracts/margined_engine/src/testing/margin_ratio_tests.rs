@@ -1,8 +1,12 @@
 use cosmwasm_std::Uint128;
-use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
-use margined_utils::scenarios::{to_decimals, SimpleScenario};
+use margined_utils::{
+    cw_multi_test::Executor,
+    testing::{to_decimals, SimpleScenario},
+};
+
+use crate::testing::new_simple_scenario;
 
 pub const NEXT_FUNDING_PERIOD_DELTA: u64 = 86_400u64;
 
@@ -14,7 +18,7 @@ fn test_get_margin_ratio() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -44,7 +48,7 @@ fn test_get_margin_ratio_long() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -96,7 +100,7 @@ fn test_get_margin_ratio_short() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -138,7 +142,7 @@ fn test_get_margin_higher_twap() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // moves block forward 1 and 15 secs timestamp
     router.update_block(|block| {
@@ -198,7 +202,7 @@ fn test_verify_margin_ratio_funding_payment_positive() {
         vamm,
         pricefeed,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // moves block forward 1 and 15 secs timestamp
     router.update_block(|block| {
@@ -260,7 +264,7 @@ fn test_verify_margin_ratio_funding_payment_negative() {
         vamm,
         pricefeed,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // moves block forward 1 and 15 secs timestamp
     router.update_block(|block| {
@@ -323,7 +327,7 @@ fn test_verify_margin_ratio_with_pnl_funding_payment_positive() {
         vamm,
         pricefeed,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // moves block forward 1 and 15 secs timestamp
     router.update_block(|block| {
@@ -410,7 +414,7 @@ fn test_verify_margin_ratio_with_pnl_funding_payment_negative() {
         vamm,
         pricefeed,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // moves block forward 1 and 15 secs timestamp
     router.update_block(|block| {

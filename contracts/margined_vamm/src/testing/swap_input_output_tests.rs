@@ -5,7 +5,7 @@ use margined_common::integer::Integer;
 use margined_perp::margined_vamm::{
     Direction, ExecuteMsg, InstantiateMsg, QueryMsg, StateResponse,
 };
-use margined_utils::scenarios::to_decimals;
+use margined_utils::testing::to_decimals;
 
 #[test]
 fn test_use_getoutputprice_use_to_swapinput_long() {

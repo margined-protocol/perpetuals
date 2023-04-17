@@ -1,9 +1,13 @@
 use cosmwasm_std::{StdError, Uint128};
 use cw20::Cw20ExecuteMsg;
-use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Position, Side};
-use margined_utils::scenarios::{to_decimals, SimpleScenario};
+use margined_utils::{
+    cw_multi_test::Executor,
+    testing::{to_decimals, SimpleScenario},
+};
+
+use crate::testing::new_simple_scenario;
 
 #[test]
 fn test_initialization() {
@@ -15,7 +19,7 @@ fn test_initialization() {
         usdc,
         engine,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // verfiy the balances
     let owner_balance = usdc.balance(&router.wrap(), owner.clone()).unwrap();
@@ -36,7 +40,7 @@ fn test_force_error_open_position_zero() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -63,7 +67,7 @@ fn test_force_error_open_position_zero_leverage_or_fractional_leverage() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -107,7 +111,7 @@ fn test_get_all_positions_open_position_long() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -148,7 +152,7 @@ fn test_open_position_long() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -188,7 +192,7 @@ fn test_open_position_two_longs() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -235,7 +239,7 @@ fn test_open_position_two_shorts() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -283,7 +287,7 @@ fn test_open_position_equal_size_opposite_side() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -331,7 +335,7 @@ fn test_open_position_one_long_two_shorts() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -398,7 +402,7 @@ fn test_open_position_short_and_two_longs() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -477,7 +481,7 @@ fn test_open_position_short_long_short() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -537,7 +541,7 @@ fn test_open_position_long_short_long() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -596,7 +600,7 @@ fn test_pnl_zero_no_others_trading() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -643,7 +647,7 @@ fn test_close_safe_position() {
         usdc,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -715,7 +719,7 @@ fn test_close_position_over_maintenance_margin_ratio() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -778,7 +782,7 @@ fn test_cannot_close_position_with_bad_debt() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -832,7 +836,7 @@ fn test_close_zero_position() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .close_position(vamm.addr().to_string(), to_decimals(0u64))
@@ -858,7 +862,7 @@ fn test_openclose_position_to_check_fee_is_charged() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = vamm
         .update_config(
@@ -920,7 +924,7 @@ fn test_openclose_position_to_check_fee_is_charged_toll_ratio_5_percent() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = vamm
         .update_config(
@@ -994,7 +998,7 @@ fn test_pnl_unrealized() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // Alice long by 25 base token with leverage 10x to get 20 ptoken
     // 25 * 10 = 250 which is x
@@ -1069,7 +1073,7 @@ fn test_error_open_position_insufficient_balance() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reduce the allowance
     router
@@ -1124,7 +1128,7 @@ fn test_error_open_position_exceed_margin_ratio() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -1157,7 +1161,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
         usdc,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // avoid actions from exceeding the fluctuation limit
     let msg = vamm
@@ -1276,7 +1280,7 @@ fn test_query_no_user_positions() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // alice opens a position
     let msg = engine
@@ -1323,7 +1327,7 @@ fn test_bad_debt_recorded() {
         usdc,
         insurance_fund,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // insurance contract have 5000 USDC balance
     let insurance_balance = usdc

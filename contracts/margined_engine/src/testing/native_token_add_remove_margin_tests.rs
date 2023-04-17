@@ -1,11 +1,12 @@
 use cosmwasm_std::{Addr, BankMsg, Coin, CosmosMsg, MessageInfo, StdError, Uint128};
-use cw_multi_test::Executor;
 use margined_common::{
     asset::{Asset, AssetInfo},
     integer::Integer,
 };
 use margined_perp::margined_engine::Side;
-use margined_utils::scenarios::NativeTokenScenario;
+use margined_utils::{cw_multi_test::Executor, testing::NativeTokenScenario};
+
+use crate::testing::new_native_token_scenario;
 
 pub const NEXT_FUNDING_PERIOD_DELTA: u64 = 86_400u64;
 
@@ -17,7 +18,7 @@ fn test_add_margin() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     let msg = engine
         .open_position(
@@ -75,7 +76,7 @@ fn test_force_error_add_incorrect_margin() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // give alice a balance of uwasm
     let msg = CosmosMsg::Bank(BankMsg::Send {
@@ -115,7 +116,7 @@ fn test_add_margin_no_open_position() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     let msg = engine
         .deposit_margin(
@@ -140,7 +141,7 @@ fn test_remove_margin() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     let msg = engine
         .open_position(
@@ -195,7 +196,7 @@ fn test_remove_margin_after_paying_funding() {
         vamm,
         pricefeed,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     let msg = engine
         .open_position(
@@ -266,7 +267,7 @@ fn test_remove_margin_insufficient_margin() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     let msg = engine
         .open_position(
@@ -305,7 +306,7 @@ fn test_remove_margin_incorrect_ratio_four_percent() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     let msg = engine
         .open_position(
@@ -345,7 +346,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price(
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // reserve 1000 : 100
     let msg = engine
@@ -403,7 +404,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() 
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // reserve 1000 : 100
     let msg = engine
@@ -460,7 +461,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // reserve 1000 : 100
     let msg = engine
@@ -525,7 +526,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_spot_price()
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // reserve 1000 : 100
     let msg = engine
@@ -582,7 +583,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_twap_price(
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // reserve 1000 : 100
     let msg = engine
@@ -650,7 +651,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() 
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // reserve 1000 : 100
     let msg = engine
@@ -717,7 +718,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // reserve 1000 : 100
     let msg = engine
@@ -792,7 +793,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_twap_price()
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // reserve 1000 : 100
     let msg = engine

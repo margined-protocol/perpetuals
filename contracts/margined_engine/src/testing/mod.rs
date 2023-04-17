@@ -1,4 +1,3 @@
-#[cfg(test)]
 mod bad_debt_tests;
 mod cw_token_add_remove_margin_tests;
 mod cw_token_liquidation_frontrun_hack_tests;
@@ -22,3 +21,28 @@ mod position_tests;
 mod position_upper_bound_tests;
 mod tests;
 mod whitelist_tests;
+
+use margined_utils::{
+    create_entry_points_testing,
+    testing::{NativeTokenScenario, SimpleScenario},
+};
+pub fn new_simple_scenario() -> SimpleScenario {
+    SimpleScenario::new(
+        Box::new(create_entry_points_testing!(margined_fee_pool)),
+        Box::new(create_entry_points_testing!(cw20_base)),
+        Box::new(create_entry_points_testing!(crate).with_reply(crate::contract::reply)),
+        Box::new(create_entry_points_testing!(margined_vamm)),
+        Box::new(create_entry_points_testing!(margined_insurance_fund)),
+        Box::new(create_entry_points_testing!(mock_pricefeed)),
+    )
+}
+
+pub fn new_native_token_scenario() -> NativeTokenScenario {
+    NativeTokenScenario::new(
+        Box::new(create_entry_points_testing!(margined_fee_pool)),
+        Box::new(create_entry_points_testing!(crate).with_reply(crate::contract::reply)),
+        Box::new(create_entry_points_testing!(margined_vamm)),
+        Box::new(create_entry_points_testing!(margined_insurance_fund)),
+        Box::new(create_entry_points_testing!(mock_pricefeed)),
+    )
+}

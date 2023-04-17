@@ -1,8 +1,12 @@
 use cosmwasm_std::Uint128;
-use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
-use margined_utils::scenarios::{to_decimals, SimpleScenario};
+use margined_utils::{
+    cw_multi_test::Executor,
+    testing::{to_decimals, SimpleScenario},
+};
+
+use crate::testing::new_simple_scenario;
 
 pub const NEXT_FUNDING_PERIOD_DELTA: u64 = 86_400u64;
 
@@ -19,7 +23,7 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
         usdc,
         pricefeed,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -117,7 +121,7 @@ fn test_will_keep_generating_same_loss_when_funding_rate_is_positive() {
         usdc,
         pricefeed,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -195,7 +199,7 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
         vamm,
         pricefeed,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -313,7 +317,7 @@ fn test_funding_rate_is_negative_1_percent_then_negative_1_percent() {
         vamm,
         pricefeed,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -444,7 +448,7 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
         vamm,
         pricefeed,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -523,7 +527,7 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
         vamm,
         pricefeed,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -599,7 +603,7 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
         pricefeed,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -674,7 +678,7 @@ fn test_have_huge_funding_payment_loss_margin_zero_cannot_remove_margin() {
         pricefeed,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -745,7 +749,7 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
         pricefeed,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -828,7 +832,7 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
         pricefeed,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(

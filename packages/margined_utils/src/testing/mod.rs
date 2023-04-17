@@ -16,7 +16,9 @@ use margined_perp::margined_vamm::{
     ExecuteMsg as VammExecuteMsg, InstantiateMsg as VammInstantiateMsg,
 };
 // use terra_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
-use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
+use cw_multi_test::{App, AppBuilder, Contract, Executor};
+
+pub type ContractCode = Box<dyn Contract<Empty>>;
 
 pub struct ContractInfo {
     pub addr: Addr,
@@ -39,7 +41,13 @@ pub struct NativeTokenScenario {
 }
 
 impl NativeTokenScenario {
-    pub fn new() -> Self {
+    pub fn new(
+        fee_pool_code: ContractCode,
+        engine_code: ContractCode,
+        vamm_code: ContractCode,
+        insurance_fund_code: ContractCode,
+        pricefeed_code: ContractCode,
+    ) -> Self {
         let bank = Addr::unchecked("bank"); //just holds a lot of funds to send to people
         let owner = Addr::unchecked("owner");
         let alice = Addr::unchecked("alice");
@@ -73,11 +81,11 @@ impl NativeTokenScenario {
                 .unwrap();
         });
 
-        let fee_pool_id = router.store_code(contract_fee_pool());
-        let engine_id = router.store_code(contract_engine());
-        let vamm_id = router.store_code(contract_vamm());
-        let insurance_fund_id = router.store_code(contract_insurance_fund());
-        let pricefeed_id = router.store_code(contract_mock_pricefeed());
+        let fee_pool_id = router.store_code(fee_pool_code);
+        let engine_id = router.store_code(engine_code);
+        let vamm_id = router.store_code(vamm_code);
+        let insurance_fund_id = router.store_code(insurance_fund_code);
+        let pricefeed_id = router.store_code(pricefeed_code);
 
         let fee_pool_addr = router
             .instantiate_contract(
@@ -283,12 +291,6 @@ impl NativeTokenScenario {
     }
 }
 
-impl Default for NativeTokenScenario {
-    fn default() -> Self {
-        NativeTokenScenario::new()
-    }
-}
-
 pub struct SimpleScenario {
     pub router: App,
     pub owner: Addr,
@@ -305,7 +307,14 @@ pub struct SimpleScenario {
 }
 
 impl SimpleScenario {
-    pub fn new() -> Self {
+    pub fn new(
+        fee_pool_code: ContractCode,
+        cw20_code: ContractCode,
+        engine_code: ContractCode,
+        vamm_code: ContractCode,
+        insurance_fund_code: ContractCode,
+        pricefeed_code: ContractCode,
+    ) -> Self {
         let mut router = AppBuilder::new().build(|_router, _, _storage| {});
 
         let owner = Addr::unchecked("owner");
@@ -314,12 +323,12 @@ impl SimpleScenario {
         let carol = Addr::unchecked("carol");
         let david = Addr::unchecked("david");
 
-        let fee_pool_id = router.store_code(contract_fee_pool());
-        let usdc_id = router.store_code(contract_cw20());
-        let engine_id = router.store_code(contract_engine());
-        let vamm_id = router.store_code(contract_vamm());
-        let insurance_fund_id = router.store_code(contract_insurance_fund());
-        let pricefeed_id = router.store_code(contract_mock_pricefeed());
+        let fee_pool_id = router.store_code(fee_pool_code);
+        let usdc_id = router.store_code(cw20_code);
+        let engine_id = router.store_code(engine_code);
+        let vamm_id = router.store_code(vamm_code);
+        let insurance_fund_id = router.store_code(insurance_fund_code);
+        let pricefeed_id = router.store_code(pricefeed_code);
 
         let fee_pool_addr = router
             .instantiate_contract(
@@ -602,12 +611,6 @@ impl SimpleScenario {
     }
 }
 
-impl Default for SimpleScenario {
-    fn default() -> Self {
-        SimpleScenario::new()
-    }
-}
-
 pub struct VammScenario {
     pub router: App,
     pub owner: Addr,
@@ -620,7 +623,11 @@ pub struct VammScenario {
 }
 
 impl VammScenario {
-    pub fn new() -> Self {
+    pub fn new(
+        cw20_code: ContractCode,
+        vamm_code: ContractCode,
+        pricefeed_code: ContractCode,
+    ) -> Self {
         let mut router = AppBuilder::new().build(|_router, _, _storage| {});
 
         let owner = Addr::unchecked("owner");
@@ -628,9 +635,9 @@ impl VammScenario {
         let bob = Addr::unchecked("bob");
         let carol = Addr::unchecked("carol");
 
-        let usdc_id = router.store_code(contract_cw20());
-        let vamm_id = router.store_code(contract_vamm());
-        let pricefeed_id = router.store_code(contract_mock_pricefeed());
+        let usdc_id = router.store_code(cw20_code);
+        let vamm_id = router.store_code(vamm_code);
+        let pricefeed_id = router.store_code(pricefeed_code);
 
         let usdc_addr = router
             .instantiate_contract(
@@ -720,12 +727,6 @@ impl VammScenario {
     }
 }
 
-impl Default for VammScenario {
-    fn default() -> Self {
-        VammScenario::new()
-    }
-}
-
 pub struct ShutdownScenario {
     pub router: App,
     pub owner: Addr,
@@ -739,15 +740,21 @@ pub struct ShutdownScenario {
 }
 
 impl ShutdownScenario {
-    pub fn new() -> Self {
+    pub fn new(
+        insurance_fund_code: ContractCode,
+        engine_code: ContractCode,
+        vamm_code: ContractCode,
+
+        pricefeed_code: ContractCode,
+    ) -> Self {
         let mut router = AppBuilder::new().build(|_router, _, _storage| {});
 
         let owner = Addr::unchecked("owner");
 
-        let insurance_fund_id = router.store_code(contract_insurance_fund());
-        let vamm_id = router.store_code(contract_vamm());
-        let engine_id = router.store_code(contract_engine());
-        let pricefeed_id = router.store_code(contract_mock_pricefeed());
+        let insurance_fund_id = router.store_code(insurance_fund_code);
+        let engine_id = router.store_code(engine_code);
+        let vamm_id = router.store_code(vamm_code);
+        let pricefeed_id = router.store_code(pricefeed_code);
 
         // set up margined engine contract
         let engine_addr = router
@@ -949,77 +956,18 @@ impl ShutdownScenario {
     }
 }
 
-impl Default for ShutdownScenario {
-    fn default() -> Self {
-        ShutdownScenario::new()
-    }
-}
-
 pub const DECIMAL_MULTIPLIER: Uint128 = Uint128::new(1_000_000_000);
 
-fn contract_cw20() -> Box<dyn Contract<Empty>> {
-    let contract = ContractWrapper::new_with_empty(
-        cw20_base::contract::execute,
-        cw20_base::contract::instantiate,
-        cw20_base::contract::query,
-    );
-    Box::new(contract)
-}
-
-fn contract_vamm() -> Box<dyn Contract<Empty>> {
-    let contract = ContractWrapper::new_with_empty(
-        margined_vamm::contract::execute,
-        margined_vamm::contract::instantiate,
-        margined_vamm::contract::query,
-    );
-    Box::new(contract)
-}
-
-fn contract_insurance_fund() -> Box<dyn Contract<Empty>> {
-    let contract = ContractWrapper::new_with_empty(
-        margined_insurance_fund::contract::execute,
-        margined_insurance_fund::contract::instantiate,
-        margined_insurance_fund::contract::query,
-    );
-    Box::new(contract)
-}
-
-fn contract_fee_pool() -> Box<dyn Contract<Empty>> {
-    let contract = ContractWrapper::new_with_empty(
-        margined_fee_pool::contract::execute,
-        margined_fee_pool::contract::instantiate,
-        margined_fee_pool::contract::query,
-    );
-    Box::new(contract)
-}
-
-fn contract_engine() -> Box<dyn Contract<Empty>> {
-    let contract = ContractWrapper::new_with_empty(
-        margined_engine::contract::execute,
-        margined_engine::contract::instantiate,
-        margined_engine::contract::query,
-    )
-    .with_reply(margined_engine::contract::reply);
-    Box::new(contract)
-}
-
-// note this is unused as it will take a lot of work to have the pricefeed full of data
-fn _contract_pricefeed() -> Box<dyn Contract<Empty>> {
-    let contract = ContractWrapper::new_with_empty(
-        margined_pricefeed::contract::execute,
-        margined_pricefeed::contract::instantiate,
-        margined_pricefeed::contract::query,
-    );
-    Box::new(contract)
-}
-
-fn contract_mock_pricefeed() -> Box<dyn Contract<Empty>> {
-    let contract = ContractWrapper::new_with_empty(
-        mock_pricefeed::contract::execute,
-        mock_pricefeed::contract::instantiate,
-        mock_pricefeed::contract::query,
-    );
-    Box::new(contract)
+/// contract initialization
+#[macro_export]
+macro_rules! create_entry_points_testing {
+    ($contract:ident) => {
+        $crate::cw_multi_test::ContractWrapper::new_with_empty(
+            $contract::contract::execute,
+            $contract::contract::instantiate,
+            $contract::contract::query,
+        )
+    };
 }
 
 // takes in a Uint128 and multiplies by the decimals just to make tests more legible

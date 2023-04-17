@@ -1,8 +1,9 @@
 use cosmwasm_std::{BankMsg, Coin, CosmosMsg, StdError, Uint128};
-use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Side};
-use margined_utils::scenarios::NativeTokenScenario;
+use margined_utils::{cw_multi_test::Executor, testing::NativeTokenScenario};
+
+use crate::testing::new_native_token_scenario;
 
 #[test]
 fn test_partially_liquidate_long_position() {
@@ -17,7 +18,7 @@ fn test_partially_liquidate_long_position() {
         vamm,
         pricefeed,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000u128);
@@ -120,7 +121,7 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
         vamm,
         pricefeed,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000u128);
@@ -226,7 +227,7 @@ fn test_partially_liquidate_short_position() {
         vamm,
         pricefeed,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000u128);
@@ -329,7 +330,7 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
         vamm,
         pricefeed,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000u128);
@@ -435,7 +436,7 @@ fn test_long_position_complete_liquidation() {
         vamm,
         pricefeed,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000u128);
@@ -538,7 +539,7 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
         vamm,
         pricefeed,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000u128);
@@ -640,7 +641,7 @@ fn test_short_position_complete_liquidation() {
         vamm,
         pricefeed,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000u128);
@@ -742,7 +743,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
         vamm,
         pricefeed,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000u128);
@@ -888,7 +889,7 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
         vamm,
         pricefeed,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000u128);
@@ -996,7 +997,7 @@ fn test_force_error_empty_position() {
         engine,
         vamm,
         ..
-    } = NativeTokenScenario::new();
+    } = new_native_token_scenario();
 
     let msg = engine
         .set_margin_ratios(Uint128::from(100_000u128))
@@ -1026,7 +1027,7 @@ fn test_force_error_empty_position() {
 
 #[test]
 fn test_partially_liquidate_one_position_within_fluctuation_limit() {
-    let mut env = NativeTokenScenario::new();
+    let mut env = new_native_token_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000u128);
@@ -1123,7 +1124,7 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
 
 #[test]
 fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
-    let mut env = NativeTokenScenario::new();
+    let mut env = new_native_token_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000u128);
@@ -1251,7 +1252,7 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
 
 #[test]
 fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
-    let mut env = NativeTokenScenario::new();
+    let mut env = new_native_token_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000u128);
@@ -1409,7 +1410,7 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
 
 #[test]
 fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fluctuation_limit() {
-    let mut env = NativeTokenScenario::new();
+    let mut env = new_native_token_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000u128);
@@ -1559,7 +1560,7 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
 
 #[test]
 fn test_liquidate_one_position_exceeding_fluctuation_limit() {
-    let mut env = NativeTokenScenario::new();
+    let mut env = new_native_token_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000u128);
@@ -1662,7 +1663,7 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
 
 #[test]
 fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
-    let mut env = NativeTokenScenario::new();
+    let mut env = new_native_token_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000u128);
@@ -1796,7 +1797,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
 
 #[test]
 fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limit() {
-    let mut env = NativeTokenScenario::new();
+    let mut env = new_native_token_scenario();
 
     // set the latest price
     let price: Uint128 = Uint128::from(10_000_000u128);

@@ -1,8 +1,11 @@
+use crate::testing::new_simple_scenario;
 use cosmwasm_std::Uint128;
-use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
-use margined_utils::scenarios::{to_decimals, SimpleScenario};
+use margined_utils::{
+    cw_multi_test::Executor,
+    testing::{to_decimals, SimpleScenario},
+};
 
 pub const NEXT_FUNDING_PERIOD_DELTA: u64 = 86_400u64;
 
@@ -15,7 +18,7 @@ fn test_add_margin() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -61,7 +64,7 @@ fn test_add_margin_insufficent_balance() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -96,7 +99,7 @@ fn test_add_margin_no_open_position() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .deposit_margin(vamm.addr().to_string(), to_decimals(80u64), vec![])
@@ -118,7 +121,7 @@ fn test_remove_margin() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -171,7 +174,7 @@ fn test_remove_margin_after_paying_funding() {
         usdc,
         pricefeed,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -235,7 +238,7 @@ fn test_remove_margin_insufficient_margin() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -271,7 +274,7 @@ fn test_remove_margin_incorrect_ratio_four_percent() {
         vamm,
         usdc,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = engine
         .open_position(
@@ -307,7 +310,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price(
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reserve 1000 : 100
     let msg = engine
@@ -365,7 +368,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() 
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reserve 1000 : 100
     let msg = engine
@@ -422,7 +425,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reserve 1000 : 100
     let msg = engine
@@ -487,7 +490,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_spot_price()
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reserve 1000 : 100
     let msg = engine
@@ -544,7 +547,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_twap_price(
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reserve 1000 : 100
     let msg = engine
@@ -612,7 +615,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() 
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reserve 1000 : 100
     let msg = engine
@@ -680,7 +683,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reserve 1000 : 100
     let msg = engine
@@ -755,7 +758,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_twap_price()
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reserve 1000 : 100
     let msg = engine

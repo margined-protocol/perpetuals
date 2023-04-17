@@ -1,8 +1,12 @@
 use cosmwasm_std::Uint128;
 use cw20::Cw20ExecuteMsg;
-use cw_multi_test::Executor;
 use margined_perp::margined_engine::Side;
-use margined_utils::scenarios::{to_decimals, SimpleScenario};
+use margined_utils::{
+    cw_multi_test::Executor,
+    testing::{to_decimals, SimpleScenario},
+};
+
+use crate::testing::new_simple_scenario;
 
 #[test]
 fn test_margin_engine_should_have_enough_balance_after_close_position() {
@@ -15,7 +19,7 @@ fn test_margin_engine_should_have_enough_balance_after_close_position() {
         usdc,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reduce the allowance
     router
@@ -105,7 +109,7 @@ fn test_margin_engine_does_not_have_enough_balance_after_close_position() {
         usdc,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // reduce the allowance
     router

@@ -1,8 +1,9 @@
 use cosmwasm_std::{StdError, Uint128};
 use cw20::Cw20ExecuteMsg;
-use cw_multi_test::Executor;
 use margined_perp::margined_engine::{PnlCalcOption, Side};
-use margined_utils::scenarios::SimpleScenario;
+use margined_utils::{cw_multi_test::Executor, testing::SimpleScenario};
+
+use crate::testing::new_simple_scenario;
 
 #[test]
 fn test_open_position_total_fee_ten_percent() {
@@ -16,7 +17,7 @@ fn test_open_position_total_fee_ten_percent() {
         vamm,
         insurance_fund,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(50_000_000u128)).unwrap();
@@ -73,7 +74,7 @@ fn test_open_short_position_twice_total_fee_ten_percent() {
         vamm,
         insurance_fund,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(50_000_000u128)).unwrap();
@@ -145,7 +146,7 @@ fn test_open_and_close_position_fee_ten_percent() {
         vamm,
         insurance_fund,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(50_000_000u128)).unwrap();
@@ -202,7 +203,7 @@ fn test_open_position_close_manually_open_reverse_position_total_fee_ten_percent
         vamm,
         insurance_fund,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(50_000_000u128)).unwrap();
@@ -273,7 +274,7 @@ fn test_open_position_close_manually_open_reverse_position_short_then_long_total
         vamm,
         insurance_fund,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(50_000_000u128)).unwrap();
@@ -344,7 +345,7 @@ fn test_open_position_reduce_position_total_fee_ten_percent() {
         vamm,
         insurance_fund,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(50_000_000u128)).unwrap();
@@ -406,7 +407,7 @@ fn test_open_position_reduce_position_short_then_long_total_fee_ten_percent() {
         vamm,
         insurance_fund,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(50_000_000u128)).unwrap();
@@ -468,7 +469,7 @@ fn test_close_under_collateral_position_total_fee_ten_percent() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(50_000_000u128)).unwrap();
@@ -538,7 +539,7 @@ fn test_force_error_insufficient_balance_open_position_total_fee_ten_percent() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(50_000_000u128)).unwrap();
@@ -594,7 +595,7 @@ fn test_has_spread_no_toll() {
         vamm,
         insurance_fund,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::zero()).unwrap();

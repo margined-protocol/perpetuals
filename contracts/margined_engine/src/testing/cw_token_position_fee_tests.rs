@@ -1,9 +1,10 @@
 use cosmwasm_std::Uint128;
 use cw20::Cw20ExecuteMsg;
-use cw_multi_test::Executor;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Position, Side};
-use margined_utils::scenarios::SimpleScenario;
+use margined_utils::{cw_multi_test::Executor, testing::SimpleScenario};
+
+use crate::testing::new_simple_scenario;
 
 // Note: these tests also verify the 10% fees for the amm are functioning
 #[test]
@@ -17,7 +18,7 @@ fn test_ten_percent_fee_open_long_position() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -71,7 +72,7 @@ fn test_ten_percent_fee_open_short_position() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -125,7 +126,7 @@ fn test_ten_percent_fee_long_position_price_remains_long_again() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -200,7 +201,7 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -301,7 +302,7 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -393,7 +394,7 @@ fn test_ten_percent_fee_short_position_price_remains_short_again() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -469,7 +470,7 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -565,7 +566,7 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -659,7 +660,7 @@ fn test_ten_percent_fee_long_position_price_remains_reduce_position() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -719,7 +720,7 @@ fn test_ten_percent_fee_reduce_long_position_zero_fee() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     let msg = vamm.set_toll_ratio(Uint128::zero()).unwrap();
     router.execute(owner.clone(), msg).unwrap();
@@ -778,7 +779,7 @@ fn test_ten_percent_fee_short_position_price_remains_reduce_position() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -839,7 +840,7 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -928,7 +929,7 @@ fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -1017,7 +1018,7 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -1100,7 +1101,7 @@ fn test_ten_percent_fee_reduce_short_position_price_down_short_again() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -1189,7 +1190,7 @@ fn test_ten_percent_fee_open_long_price_remains_close_manually() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -1248,7 +1249,7 @@ fn test_ten_percent_fee_open_short_price_remains_close_manually() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -1308,7 +1309,7 @@ fn test_ten_percent_fee_open_long_price_up_close_manually() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -1406,7 +1407,7 @@ fn test_ten_percent_fee_open_long_price_down_close_manually() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -1491,7 +1492,7 @@ fn test_ten_percent_fee_open_short_price_up_close_manually() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -1573,7 +1574,7 @@ fn test_ten_percent_fee_open_short_price_down_close_manually() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -1671,7 +1672,7 @@ fn test_ten_percent_fee_open_long_price_remains_close_opening_larger_short() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -1730,7 +1731,7 @@ fn test_ten_percent_fee_open_short_price_remains_close_opening_larger_long() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -1801,7 +1802,7 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -1901,7 +1902,7 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -1992,7 +1993,7 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -2079,7 +2080,7 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
@@ -2163,7 +2164,7 @@ fn test_ten_percent_fee_open_long_price_down_liquidation() {
         engine,
         vamm,
         ..
-    } = SimpleScenario::new();
+    } = new_simple_scenario();
 
     // 10% fee
     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
@@ -2245,7 +2246,7 @@ fn test_ten_percent_fee_open_long_price_down_liquidation() {
 //         engine,
 //         vamm,
 //         ..
-//     } = SimpleScenario::new();
+//     } = new_simple_scenario();
 //     // 10% fee
 //     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
 //     router.execute(owner.clone(), msg).unwrap();

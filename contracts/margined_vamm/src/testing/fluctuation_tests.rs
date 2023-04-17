@@ -4,7 +4,7 @@ use cosmwasm_std::testing::{
 };
 use cosmwasm_std::{from_binary, Env, OwnedDeps, Uint128};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg, InstantiateMsg, QueryMsg};
-use margined_utils::scenarios::{parse_event, to_decimals};
+use margined_utils::testing::{parse_event, to_decimals};
 
 pub struct TestingEnv {
     pub deps: OwnedDeps<MockStorage, MockApi, MockQuerier>,
