@@ -179,8 +179,8 @@ impl NativeTokenScenario {
                 owner.clone(),
                 &VammInstantiateMsg {
                     decimals: 6u8,
-                    quote_asset: "ETH".to_string(),
-                    base_asset: "USD".to_string(),
+                    quote_asset: "USD".to_string(),
+                    base_asset: "ETH".to_string(),
                     quote_asset_reserve: Uint128::from(1_000_000_000u128),
                     base_asset_reserve: Uint128::from(100_000_000u128),
                     funding_period: 86_400_u64, // funding period is 1 day to make calcs easier
@@ -463,8 +463,8 @@ impl SimpleScenario {
                 owner.clone(),
                 &VammInstantiateMsg {
                     decimals: 9u8, //see here
-                    quote_asset: "ETH".to_string(),
-                    base_asset: "USD".to_string(),
+                    quote_asset: "USD".to_string(),
+                    base_asset: "ETH".to_string(),
                     quote_asset_reserve: to_decimals(1_000),
                     base_asset_reserve: to_decimals(100),
                     funding_period: 86_400_u64, // funding period is 1 day to make calcs easier
@@ -692,8 +692,8 @@ impl VammScenario {
                 owner.clone(),
                 &VammInstantiateMsg {
                     decimals: 9u8, //see here
-                    quote_asset: "ETH".to_string(),
-                    base_asset: "USD".to_string(),
+                    quote_asset: "USD".to_string(),
+                    base_asset: "ETH".to_string(),
                     quote_asset_reserve: to_decimals(1_000),
                     base_asset_reserve: to_decimals(100),
                     funding_period: 3_600_u64, // funding period is 1 day to make calcs easier
@@ -811,8 +811,8 @@ impl ShutdownScenario {
                 insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
                     decimals: 6u8, //see here
-                    quote_asset: "ETH".to_string(),
-                    base_asset: "USD".to_string(),
+                    quote_asset: "USD".to_string(),
+                    base_asset: "ETH".to_string(),
                     quote_asset_reserve: Uint128::from(1_000_000_000u128),
                     base_asset_reserve: Uint128::from(100_000_000u128),
                     funding_period: 3_600_u64, // funding period is 1 day to make calcs easier
@@ -839,8 +839,8 @@ impl ShutdownScenario {
                 insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
                     decimals: 6u8, //see here
-                    quote_asset: "ETH".to_string(),
-                    base_asset: "USD".to_string(),
+                    quote_asset: "USD".to_string(),
+                    base_asset: "ETH".to_string(),
                     quote_asset_reserve: Uint128::from(1_000_000_000u128),
                     base_asset_reserve: Uint128::from(100_000_000u128),
                     funding_period: 3_600_u64, // funding period is 1 day to make calcs easier
@@ -867,8 +867,8 @@ impl ShutdownScenario {
                 insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
                     decimals: 6u8, //see here
-                    quote_asset: "ETH".to_string(),
-                    base_asset: "USD".to_string(),
+                    quote_asset: "USD".to_string(),
+                    base_asset: "ETH".to_string(),
                     quote_asset_reserve: Uint128::from(1_000_000_000u128),
                     base_asset_reserve: Uint128::from(100_000_000u128),
                     funding_period: 3_600_u64, // funding period is 1 day to make calcs easier
@@ -895,8 +895,8 @@ impl ShutdownScenario {
                 insurance_fund_addr.clone(),
                 &VammInstantiateMsg {
                     decimals: 6u8, //see here
-                    quote_asset: "ETH".to_string(),
-                    base_asset: "USD".to_string(),
+                    quote_asset: "USD".to_string(),
+                    base_asset: "ETH".to_string(),
                     quote_asset_reserve: Uint128::from(1_000_000_000u128),
                     base_asset_reserve: Uint128::from(100_000_000u128),
                     funding_period: 3_600_u64, // funding period is 1 day to make calcs easier
@@ -923,8 +923,8 @@ impl ShutdownScenario {
                 insurance_fund.addr(),
                 &VammInstantiateMsg {
                     decimals: 7u8, //see here
-                    quote_asset: "ETH".to_string(),
-                    base_asset: "USD".to_string(),
+                    quote_asset: "USD".to_string(),
+                    base_asset: "ETH".to_string(),
                     quote_asset_reserve: Uint128::from(1_000_000_000u128),
                     base_asset_reserve: Uint128::from(100_000_000u128),
                     funding_period: 3_600_u64, // funding period is 1 day to make calcs easier
