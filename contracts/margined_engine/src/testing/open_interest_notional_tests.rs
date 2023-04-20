@@ -51,7 +51,7 @@ fn test_increase_with_increase_position() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let open_interest_notional = engine.state(&router).unwrap().open_interest_notional;
+    let open_interest_notional = engine.state(&router.wrap()).unwrap().open_interest_notional;
     assert_eq!(open_interest_notional, to_decimals(600u64));
 }
 
@@ -110,7 +110,7 @@ fn test_reduce_when_position_is_reduced() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let open_interest_notional = engine.state(&router).unwrap().open_interest_notional;
+    let open_interest_notional = engine.state(&router.wrap()).unwrap().open_interest_notional;
     assert_eq!(open_interest_notional, to_decimals(300u64));
 }
 
@@ -162,7 +162,7 @@ fn test_reduce_when_close_position() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let open_interest_notional = engine.state(&router).unwrap().open_interest_notional;
+    let open_interest_notional = engine.state(&router.wrap()).unwrap().open_interest_notional;
     // this is near zero due to some rounding errors
     assert!(open_interest_notional < to_decimals(10u64));
 }
@@ -236,7 +236,7 @@ fn test_increase_when_traders_open_positions_in_diff_directions() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let open_interest_notional = engine.state(&router).unwrap().open_interest_notional;
+    let open_interest_notional = engine.state(&router.wrap()).unwrap().open_interest_notional;
     assert_eq!(open_interest_notional, to_decimals(600u64));
 }
 
@@ -295,7 +295,7 @@ fn test_increase_when_traders_open_larger_positions_in_reverse_directions() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let open_interest_notional = engine.state(&router).unwrap().open_interest_notional;
+    let open_interest_notional = engine.state(&router.wrap()).unwrap().open_interest_notional;
     // this is near zero due to some rounding errors
     assert_eq!(open_interest_notional, to_decimals(200u64));
 }
@@ -379,7 +379,7 @@ fn test_zero_when_everyone_closes_positions() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let open_interest_notional = engine.state(&router).unwrap().open_interest_notional;
+    let open_interest_notional = engine.state(&router.wrap()).unwrap().open_interest_notional;
     // this is near zero due to some rounding errors
     assert!(open_interest_notional < to_decimals(10u64));
 }
@@ -472,7 +472,7 @@ fn test_zero_when_everyone_closes_positions_one_position_is_bankrupt() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let open_interest_notional = engine.state(&router).unwrap().open_interest_notional;
+    let open_interest_notional = engine.state(&router.wrap()).unwrap().open_interest_notional;
     // this is near zero due to some rounding errors
     assert!(open_interest_notional < to_decimals(10u64));
 }
@@ -500,7 +500,7 @@ fn test_open_interest_logged_without_cap() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let open_interest_notional = engine.state(&router).unwrap().open_interest_notional;
+    let open_interest_notional = engine.state(&router.wrap()).unwrap().open_interest_notional;
     assert_eq!(open_interest_notional, Uint128::from(250_000_000_000u64));
 
     let msg = engine
@@ -515,7 +515,7 @@ fn test_open_interest_logged_without_cap() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let open_interest_notional = engine.state(&router).unwrap().open_interest_notional;
+    let open_interest_notional = engine.state(&router.wrap()).unwrap().open_interest_notional;
     assert_eq!(open_interest_notional, Uint128::from(500_000_000_000u64));
 
     let msg = engine
@@ -537,7 +537,7 @@ fn test_open_interest_logged_without_cap() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let open_interest_notional = engine.state(&router).unwrap().open_interest_notional;
+    let open_interest_notional = engine.state(&router.wrap()).unwrap().open_interest_notional;
     // this is near zero due to some rounding errors
     assert!(open_interest_notional < to_decimals(10u64));
 }
@@ -692,6 +692,6 @@ fn test_wont_stop_trading_if_reducing_position_even_if_over_open_interest_notion
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let open_interest_notional = engine.state(&router).unwrap().open_interest_notional;
+    let open_interest_notional = engine.state(&router.wrap()).unwrap().open_interest_notional;
     assert_eq!(open_interest_notional, to_decimals(300u64));
 }

@@ -24,7 +24,7 @@ fn test_calc_fee() {
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let result = vamm.calc_fee(&router, to_decimals(10)).unwrap();
+    let result = vamm.calc_fee(&router.wrap(), to_decimals(10)).unwrap();
 
     assert_eq!(
         result,
@@ -58,7 +58,7 @@ fn test_set_diff_fee_ratio() {
         )
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
-    let result = vamm.calc_fee(&router, to_decimals(100)).unwrap();
+    let result = vamm.calc_fee(&router.wrap(), to_decimals(100)).unwrap();
 
     assert_eq!(
         result,
@@ -93,7 +93,7 @@ fn test_set_fee_ratio_zero() {
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let result = vamm.calc_fee(&router, to_decimals(100)).unwrap();
+    let result = vamm.calc_fee(&router.wrap(), to_decimals(100)).unwrap();
     assert_eq!(
         result,
         CalcFeeResponse {
@@ -107,7 +107,7 @@ fn test_set_fee_ratio_zero() {
 fn test_calc_fee_input_zero() {
     let SimpleScenario { router, vamm, .. } = new_simple_scenario();
 
-    let result = vamm.calc_fee(&router, to_decimals(0)).unwrap();
+    let result = vamm.calc_fee(&router.wrap(), to_decimals(0)).unwrap();
     assert_eq!(
         result,
         CalcFeeResponse {

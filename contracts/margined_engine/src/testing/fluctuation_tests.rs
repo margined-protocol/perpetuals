@@ -324,7 +324,7 @@ fn test_close_position_slippage_limit_originally_long() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let state = vamm.state(&router).unwrap();
+    let state = vamm.state(&router.wrap()).unwrap();
     assert_eq!(
         state.quote_asset_reserve,
         Uint128::from(1_081_967_213_128u128)
@@ -420,7 +420,7 @@ fn test_close_position_slippage_limit_originally_short() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let state = vamm.state(&router).unwrap();
+    let state = vamm.state(&router.wrap()).unwrap();
     assert_eq!(
         state.quote_asset_reserve,
         Uint128::from(878_048_780_494u128)

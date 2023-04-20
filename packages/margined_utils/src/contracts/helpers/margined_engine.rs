@@ -1,14 +1,14 @@
 use cosmwasm_schema::cw_serde;
+use cw_controllers::HooksResponse;
 use margined_perp::margined_engine::{
     ConfigResponse, ExecuteMsg, PnlCalcOption, Position, PositionUnrealizedPnlResponse, QueryMsg,
     Side, StateResponse,
 };
 
 use cosmwasm_std::{
-    to_binary, Addr, Coin, CosmosMsg, Empty, Querier, QuerierWrapper, StdResult, Uint128, WasmMsg,
-    WasmQuery,
+    to_binary, Addr, Coin, CosmosMsg, QuerierWrapper, StdResult, Uint128, WasmMsg, WasmQuery,
 };
-use cw_controllers::HooksResponse;
+
 use margined_common::integer::Integer;
 
 /// EngineController is a wrapper around Addr that provides a lot of helpers
@@ -202,7 +202,7 @@ impl EngineController {
     }
 
     /// get margin engine configuration
-    pub fn config<Q: Querier>(&self, querier: &Q) -> StdResult<ConfigResponse> {
+    pub fn config(&self, querier: &QuerierWrapper) -> StdResult<ConfigResponse> {
         let msg = QueryMsg::Config {};
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -210,13 +210,11 @@ impl EngineController {
         }
         .into();
 
-        let res: ConfigResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get margin engine state
-    pub fn state<Q: Querier>(&self, querier: &Q) -> StdResult<StateResponse> {
+    pub fn state(&self, querier: &QuerierWrapper) -> StdResult<StateResponse> {
         let msg = QueryMsg::State {};
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -224,14 +222,13 @@ impl EngineController {
         }
         .into();
 
-        let res: StateResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get traders position for a particular vamm
-    pub fn position<Q: Querier>(
+    pub fn position(
         &self,
-        querier: &Q,
+        querier: &QuerierWrapper,
         vamm: String,
         trader: String,
     ) -> StdResult<Position> {
@@ -242,14 +239,13 @@ impl EngineController {
         }
         .into();
 
-        let res: Position = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get traders positions for all registered vamms
-    pub fn get_all_positions<Q: Querier>(
+    pub fn get_all_positions(
         &self,
-        querier: &Q,
+        querier: &QuerierWrapper,
         trader: String,
     ) -> StdResult<Vec<Position>> {
         let msg = QueryMsg::AllPositions { trader };
@@ -259,12 +255,11 @@ impl EngineController {
         }
         .into();
 
-        let res: Vec<Position> = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get the whitelist
-    pub fn get_whitelist<Q: Querier>(&self, querier: &Q) -> StdResult<Vec<String>> {
+    pub fn get_whitelist(&self, querier: &QuerierWrapper) -> StdResult<Vec<String>> {
         let msg = QueryMsg::GetWhitelist {};
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -272,13 +267,11 @@ impl EngineController {
         }
         .into();
 
-        let res: HooksResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-
-        Ok(res.hooks)
+        querier.query::<HooksResponse>(&query).map(|res| res.hooks)
     }
 
     /// checks if the address supplied is in the whitelist
-    pub fn is_whitelist<Q: Querier>(&self, querier: &Q, address: String) -> StdResult<bool> {
+    pub fn is_whitelist(&self, querier: &QuerierWrapper, address: String) -> StdResult<bool> {
         let msg = QueryMsg::IsWhitelisted { address };
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -286,14 +279,13 @@ impl EngineController {
         }
         .into();
 
-        let res: bool = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get unrealized profit and loss for a position
-    pub fn get_unrealized_pnl<Q: Querier>(
+    pub fn get_unrealized_pnl(
         &self,
-        querier: &Q,
+        querier: &QuerierWrapper,
         vamm: String,
         trader: String,
         calc_option: PnlCalcOption,
@@ -309,15 +301,13 @@ impl EngineController {
         }
         .into();
 
-        let res: PositionUnrealizedPnlResponse =
-            QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get free collateral
-    pub fn get_free_collateral<Q: Querier>(
+    pub fn get_free_collateral(
         &self,
-        querier: &Q,
+        querier: &QuerierWrapper,
         vamm: String,
         trader: String,
     ) -> StdResult<Integer> {
@@ -328,14 +318,13 @@ impl EngineController {
         }
         .into();
 
-        let res: Integer = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get margin ratio
-    pub fn get_margin_ratio<Q: Querier>(
+    pub fn get_margin_ratio(
         &self,
-        querier: &Q,
+        querier: &QuerierWrapper,
         vamm: String,
         trader: String,
     ) -> StdResult<Integer> {
@@ -346,14 +335,13 @@ impl EngineController {
         }
         .into();
 
-        let res: Integer = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get traders margin balance
-    pub fn get_balance_with_funding_payment<Q: Querier>(
+    pub fn get_balance_with_funding_payment(
         &self,
-        querier: &Q,
+        querier: &QuerierWrapper,
         trader: String,
     ) -> StdResult<Uint128> {
         let msg = QueryMsg::BalanceWithFundingPayment { trader };
@@ -363,14 +351,13 @@ impl EngineController {
         }
         .into();
 
-        let res: Uint128 = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get personal position with funding payment
-    pub fn get_position_with_funding_payment<Q: Querier>(
+    pub fn get_position_with_funding_payment(
         &self,
-        querier: &Q,
+        querier: &QuerierWrapper,
         vamm: String,
         trader: String,
     ) -> StdResult<Position> {
@@ -381,14 +368,13 @@ impl EngineController {
         }
         .into();
 
-        let res: Position = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get the latest cumulative premium fraction
-    pub fn get_latest_cumulative_premium_fraction<Q: Querier>(
+    pub fn get_latest_cumulative_premium_fraction(
         &self,
-        querier: &Q,
+        querier: &QuerierWrapper,
         vamm: String,
     ) -> StdResult<Integer> {
         let msg = QueryMsg::CumulativePremiumFraction { vamm };
@@ -398,7 +384,6 @@ impl EngineController {
         }
         .into();
 
-        let res: Integer = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 }

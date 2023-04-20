@@ -127,13 +127,13 @@ fn test_get_all_positions_open_position_long() {
 
     // expect to be 60
     let margin = engine
-        .get_balance_with_funding_payment(&router, alice.to_string())
+        .get_balance_with_funding_payment(&router.wrap(), alice.to_string())
         .unwrap();
     assert_eq!(margin, to_decimals(60));
 
     // personal position should be 37.5
     let positions: Vec<Position> = engine
-        .get_all_positions(&router, alice.to_string())
+        .get_all_positions(&router.wrap(), alice.to_string())
         .unwrap();
     assert_eq!(positions[0].size, Integer::new_positive(37_500_000_000u128));
     assert_eq!(positions[0].margin, to_decimals(60u64));
@@ -168,13 +168,13 @@ fn test_open_position_long() {
 
     // expect to be 60
     let margin = engine
-        .get_balance_with_funding_payment(&router, alice.to_string())
+        .get_balance_with_funding_payment(&router.wrap(), alice.to_string())
         .unwrap();
     assert_eq!(margin, to_decimals(60));
 
     // personal position should be 37.5
     let position: Position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(37_500_000_000u128));
     assert_eq!(position.margin, to_decimals(60u64));
@@ -220,12 +220,12 @@ fn test_open_position_two_longs() {
 
     // expect to be 120
     let margin = engine
-        .get_balance_with_funding_payment(&router, alice.to_string())
+        .get_balance_with_funding_payment(&router.wrap(), alice.to_string())
         .unwrap();
     assert_eq!(margin, to_decimals(120));
 
     let position: Position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(54_545_454_545u128));
     assert_eq!(position.margin, to_decimals(120));
@@ -267,13 +267,13 @@ fn test_open_position_two_shorts() {
 
     // personal balance with funding payment
     let margin = engine
-        .get_balance_with_funding_payment(&router, alice.to_string())
+        .get_balance_with_funding_payment(&router.wrap(), alice.to_string())
         .unwrap();
     assert_eq!(margin, to_decimals(80));
 
     // retrieve the vamm state
     let position: Position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(66_666_666_667u128));
     assert_eq!(position.margin, to_decimals(80));
@@ -315,13 +315,13 @@ fn test_open_position_equal_size_opposite_side() {
 
     // personal balance with funding payment
     let margin = engine
-        .get_balance_with_funding_payment(&router, alice.to_string())
+        .get_balance_with_funding_payment(&router.wrap(), alice.to_string())
         .unwrap();
     assert_eq!(margin, Uint128::zero());
 
     // retrieve the vamm state
     let position: Position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::zero());
     assert_eq!(position.margin, Uint128::zero());
@@ -363,7 +363,7 @@ fn test_open_position_one_long_two_shorts() {
 
     // retrieve the vamm state
     let position: Position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(33_333_333_333u128));
     assert_eq!(position.margin, to_decimals(60));
@@ -382,13 +382,13 @@ fn test_open_position_one_long_two_shorts() {
 
     // personal balance with funding payment
     let margin = engine
-        .get_balance_with_funding_payment(&router, alice.to_string())
+        .get_balance_with_funding_payment(&router.wrap(), alice.to_string())
         .unwrap();
     assert_eq!(margin, Uint128::zero());
 
     // retrieve the vamm state
     let position: Position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::zero());
     assert_eq!(position.margin, Uint128::zero());
@@ -417,7 +417,7 @@ fn test_open_position_short_and_two_longs() {
     router.execute(alice.clone(), msg).unwrap();
 
     let position: Position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(25_000_000_000u128));
     assert_eq!(position.margin, to_decimals(40));
@@ -437,7 +437,7 @@ fn test_open_position_short_and_two_longs() {
 
     let pnl = engine
         .get_unrealized_pnl(
-            &router,
+            &router.wrap(),
             vamm.addr().to_string(),
             alice.to_string(),
             PnlCalcOption::SpotPrice,
@@ -446,7 +446,7 @@ fn test_open_position_short_and_two_longs() {
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(8u64));
 
     let position: Position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
 
     assert_eq!(position.size, Integer::new_negative(11_111_111_112u128));
@@ -467,7 +467,7 @@ fn test_open_position_short_and_two_longs() {
 
     // retrieve the vamm state
     let position: Position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(1_u128));
     assert_eq!(position.margin, Uint128::from(39_999_999_993u128));
@@ -508,7 +508,7 @@ fn test_open_position_short_long_short() {
     router.execute(alice.clone(), msg).unwrap();
 
     let position: Position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(to_decimals(20u64)));
     assert_eq!(position.margin, Uint128::new(83_333_333_333));
@@ -527,7 +527,7 @@ fn test_open_position_short_long_short() {
 
     // retrieve the vamm state
     let position: Position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::zero());
     assert_eq!(position.margin, Uint128::zero());
@@ -567,7 +567,7 @@ fn test_open_position_long_short_long() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
     let position: Position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(to_decimals(25u64)));
     assert_eq!(position.margin, Uint128::new(66_666_666_666));
@@ -586,7 +586,7 @@ fn test_open_position_long_short_long() {
 
     // retrieve the vamm state
     let position: Position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::zero());
     assert_eq!(position.margin, Uint128::zero());
@@ -628,7 +628,7 @@ fn test_pnl_zero_no_others_trading() {
 
     let pnl = engine
         .get_unrealized_pnl(
-            &router,
+            &router.wrap(),
             vamm.addr().to_string(),
             alice.to_string(),
             PnlCalcOption::SpotPrice,
@@ -663,7 +663,7 @@ fn test_close_safe_position() {
 
     // retrieve the vamm state
     let position: Position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(11_111_111_112u128));
 
@@ -679,7 +679,7 @@ fn test_close_safe_position() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let state = vamm.state(&router).unwrap();
+    let state = vamm.state(&router.wrap()).unwrap();
     assert_eq!(state.quote_asset_reserve, to_decimals(960));
     assert_eq!(state.base_asset_reserve, Uint128::from(104_166_666_668u128));
 
@@ -689,7 +689,7 @@ fn test_close_safe_position() {
     router.execute(alice.clone(), msg).unwrap();
 
     let err = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap_err();
     assert_eq!(
         StdError::GenericErr {
@@ -698,7 +698,7 @@ fn test_close_safe_position() {
         err
     );
 
-    let state = vamm.state(&router).unwrap();
+    let state = vamm.state(&router.wrap()).unwrap();
     assert_eq!(
         state.quote_asset_reserve,
         Uint128::from(1_074_626_865_681u128)
@@ -734,7 +734,7 @@ fn test_close_position_over_maintenance_margin_ratio() {
     router.execute(alice.clone(), msg).unwrap();
 
     let position: Position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(to_decimals(20)));
 
@@ -756,7 +756,7 @@ fn test_close_position_over_maintenance_margin_ratio() {
     router.execute(alice.clone(), msg).unwrap();
 
     let err = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap_err();
     assert_eq!(
         StdError::GenericErr {
@@ -765,7 +765,7 @@ fn test_close_position_over_maintenance_margin_ratio() {
         err
     );
 
-    let state = vamm.state(&router).unwrap();
+    let state = vamm.state(&router.wrap()).unwrap();
     assert_eq!(
         state.quote_asset_reserve,
         Uint128::from(977_422_074_621u128)
@@ -797,7 +797,7 @@ fn test_cannot_close_position_with_bad_debt() {
     router.execute(alice.clone(), msg).unwrap();
 
     let position: Position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(to_decimals(20)));
 
@@ -1039,7 +1039,7 @@ fn test_pnl_unrealized() {
     router.execute(bob.clone(), msg).unwrap();
 
     let position: Position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(to_decimals(20u64)));
 
@@ -1052,7 +1052,7 @@ fn test_pnl_unrealized() {
     // 11.9047619048 - 250 = -238.0952380952 which is unrealized PNL.
     let pnl = engine
         .get_unrealized_pnl(
-            &router,
+            &router.wrap(),
             vamm.addr().to_string(),
             alice.to_string(),
             PnlCalcOption::SpotPrice,
@@ -1250,7 +1250,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     // which is already prepaid by insurance fund when alice close the position before
     // clearing house doesn't need to ask insurance fund for covering the bad debt
     let margin_ratio = engine
-        .get_margin_ratio(&router, vamm.addr().to_string(), bob.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), bob.to_string())
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_negative(252_000_000u128));
 
@@ -1303,7 +1303,7 @@ fn test_query_no_user_positions() {
 
     // we query alices' position to ensure it was closed
     let err = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap_err();
     assert_eq!(
         StdError::GenericErr {
@@ -1313,7 +1313,9 @@ fn test_query_no_user_positions() {
     );
 
     // we query all of bob's positions (should return an empty array)
-    let positions: Vec<Position> = engine.get_all_positions(&router, bob.to_string()).unwrap();
+    let positions: Vec<Position> = engine
+        .get_all_positions(&router.wrap(), bob.to_string())
+        .unwrap();
     assert_eq!(positions, vec![]);
 }
 
@@ -1390,6 +1392,6 @@ fn test_bad_debt_recorded() {
     assert_eq!(insurance_balance, to_decimals(4980u64));
 
     // engine contract's state should reflect bad debt as 20
-    let bad_debt = engine.state(&router).unwrap().bad_debt;
+    let bad_debt = engine.state(&router.wrap()).unwrap().bad_debt;
     assert_eq!(bad_debt, to_decimals(20u64));
 }

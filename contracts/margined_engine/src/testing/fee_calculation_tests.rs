@@ -44,7 +44,11 @@ fn test_open_position_total_fee_ten_percent() {
     router.execute(alice.clone(), msg).unwrap();
 
     let alice_position = engine
-        .get_position_with_funding_payment(&router, vamm.addr().to_string(), alice.to_string())
+        .get_position_with_funding_payment(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            alice.to_string(),
+        )
         .unwrap();
     assert_eq!(alice_position.margin, Uint128::from(300_000_000_000u64));
 
@@ -228,7 +232,7 @@ fn test_open_position_close_manually_open_reverse_position_total_fee_ten_percent
 
     let pnl = engine
         .get_unrealized_pnl(
-            &router,
+            &router.wrap(),
             vamm.addr().to_string(),
             alice.to_string(),
             PnlCalcOption::SpotPrice,
@@ -299,7 +303,7 @@ fn test_open_position_close_manually_open_reverse_position_short_then_long_total
 
     let pnl = engine
         .get_unrealized_pnl(
-            &router,
+            &router.wrap(),
             vamm.addr().to_string(),
             alice.to_string(),
             PnlCalcOption::SpotPrice,

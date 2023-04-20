@@ -125,13 +125,13 @@ fn test_partially_liquidate_long_position() {
     router.execute(carol.clone(), msg).unwrap();
 
     let position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.margin, Uint128::from(19_274_981_657u128));
     assert_eq!(position.size, Integer::new_positive(15_000_000_000u128));
 
     let margin_ratio = engine
-        .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_positive(43_713_253u128));
 
@@ -394,13 +394,13 @@ fn test_partially_liquidate_short_position() {
     router.execute(carol.clone(), msg).unwrap();
 
     let position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.margin, Uint128::from(16_079_605_165u128));
     assert_eq!(position.size, Integer::new_negative(18_750_000_000u128));
 
     let margin_ratio = engine
-        .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_positive(45_736_327u128));
 
@@ -659,7 +659,7 @@ fn test_long_position_complete_liquidation() {
     router.execute(carol.clone(), msg).unwrap();
 
     let err = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap_err();
     assert_eq!(
         StdError::GenericErr {
@@ -920,7 +920,7 @@ fn test_short_position_complete_liquidation() {
     router.execute(carol.clone(), msg).unwrap();
 
     let err = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap_err();
     assert_eq!(
         StdError::GenericErr {
@@ -1073,13 +1073,13 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
     // TWAP PnL = (70.42 * 270 + 84.62 * 15 + 99.96 * 600 + 84.62 * 15) / 900 - 100 ~= -9.39
     // Use TWAP price PnL since -9.39 > -15.38
     let position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.notional, to_decimals(100u64));
 
     let pnl = engine
         .get_unrealized_pnl(
-            &router,
+            &router.wrap(),
             vamm.addr().to_string(),
             alice.to_string(),
             PnlCalcOption::SpotPrice,
@@ -1092,7 +1092,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
 
     let pnl = engine
         .get_unrealized_pnl(
-            &router,
+            &router.wrap(),
             vamm.addr().to_string(),
             alice.to_string(),
             PnlCalcOption::Twap,
@@ -1100,7 +1100,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(9_386_059_960u128));
 
-    let price = vamm.spot_price(&router).unwrap();
+    let price = vamm.spot_price(&router.wrap()).unwrap();
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
         .unwrap();
@@ -1214,14 +1214,14 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
     // TWAP PnL = (83.3333333333 * 885 + 100 * 15) / 900 - 100 = -16.39
     // Use spot price PnL since 0 > -16.39
     let position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.notional, to_decimals(100u64));
 
     // workaround: rounding error, should be 0 but it's actually 10 wei
     let pnl = engine
         .get_unrealized_pnl(
-            &router,
+            &router.wrap(),
             vamm.addr().to_string(),
             alice.to_string(),
             PnlCalcOption::SpotPrice,
@@ -1231,7 +1231,7 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
 
     let pnl = engine
         .get_unrealized_pnl(
-            &router,
+            &router.wrap(),
             vamm.addr().to_string(),
             alice.to_string(),
             PnlCalcOption::Twap,
@@ -1242,7 +1242,7 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
         Integer::new_negative(16_388_888_898u128)
     );
 
-    let price = vamm.spot_price(&router).unwrap();
+    let price = vamm.spot_price(&router.wrap()).unwrap();
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
         .unwrap();
@@ -1392,7 +1392,7 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
         5u64,
     );
 
-    let price = env.vamm.spot_price(&env.router).unwrap();
+    let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
     let msg = env
         .pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -1414,7 +1414,7 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
-    let state = env.vamm.state(&env.router).unwrap();
+    let state = env.vamm.state(&env.router.wrap()).unwrap();
     assert_eq!(
         state.quote_asset_reserve,
         Uint128::from(1_077_551_020_421u128)
@@ -1561,7 +1561,7 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         5u64,
     );
 
-    let price = env.vamm.spot_price(&env.router).unwrap();
+    let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
     let msg = env
         .pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -1590,7 +1590,7 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
-    let state = env.vamm.state(&env.router).unwrap();
+    let state = env.vamm.state(&env.router.wrap()).unwrap();
     assert_eq!(
         state.quote_asset_reserve,
         Uint128::from(1_077_551_020_423u128)
@@ -1752,7 +1752,7 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         .unwrap();
     assert_eq!(bob_balance, Uint128::from(4_980_000_000_000u128));
 
-    let price = env.vamm.spot_price(&env.router).unwrap();
+    let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
     let msg = env
         .pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -1791,7 +1791,7 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
-    let state = env.vamm.state(&env.router).unwrap();
+    let state = env.vamm.state(&env.router.wrap()).unwrap();
     assert_eq!(
         state.quote_asset_reserve,
         Uint128::from(1_079_066_030_673u128)
@@ -1947,7 +1947,7 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         5u64,
     );
 
-    let price = env.vamm.spot_price(&env.router).unwrap();
+    let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
     let msg = env
         .pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -1987,7 +1987,7 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
-    let state = env.vamm.state(&env.router).unwrap();
+    let state = env.vamm.state(&env.router.wrap()).unwrap();
     assert_eq!(
         state.quote_asset_reserve,
         Uint128::from(1_084_789_366_541u128)
@@ -2096,7 +2096,7 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
         5u64,
     );
 
-    let price = env.vamm.spot_price(&env.router).unwrap();
+    let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
     let msg = env
         .pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -2255,7 +2255,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
-    let price = env.vamm.spot_price(&env.router).unwrap();
+    let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
     let msg = env
         .pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -2426,7 +2426,7 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
-    let price = env.vamm.spot_price(&env.router).unwrap();
+    let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
     let msg = env
         .pricefeed
         .append_price("ETH".to_string(), price, timestamp)

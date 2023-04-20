@@ -70,7 +70,7 @@ fn test_query_vamm() {
 
     // query if the vamm has been added
     let res = insurance_fund
-        .is_vamm(vamm1.addr().to_string(), &router)
+        .is_vamm(vamm1.addr().to_string(), &router.wrap())
         .unwrap();
     let is_vamm = res.is_vamm;
 
@@ -89,7 +89,7 @@ fn test_query_all_vamm() {
     } = new_shutdown_scenario();
 
     // check to see that there are no vAMMs
-    let res = insurance_fund.all_vamms(None, &router).unwrap_err();
+    let res = insurance_fund.all_vamms(None, &router.wrap()).unwrap_err();
 
     assert_eq!(
         res.to_string(),
@@ -105,7 +105,7 @@ fn test_query_all_vamm() {
     router.execute(owner, msg).unwrap();
 
     // check for the added vAMMs
-    let res = insurance_fund.all_vamms(None, &router).unwrap();
+    let res = insurance_fund.all_vamms(None, &router.wrap()).unwrap();
     let list = res.vamm_list;
 
     assert_eq!(list, vec![vamm1.addr(), vamm2.addr()]);
@@ -123,7 +123,7 @@ fn test_add_vamm() {
 
     // query the vAMM we want to add
     let res = insurance_fund
-        .is_vamm(vamm1.addr().to_string(), &router)
+        .is_vamm(vamm1.addr().to_string(), &router.wrap())
         .unwrap();
     let is_vamm = res.is_vamm;
 
@@ -135,7 +135,7 @@ fn test_add_vamm() {
 
     // check for the added vAMM
     let res = insurance_fund
-        .is_vamm(vamm1.addr().to_string(), &router)
+        .is_vamm(vamm1.addr().to_string(), &router.wrap())
         .unwrap();
     let is_vamm = res.is_vamm;
 
@@ -189,7 +189,7 @@ fn test_add_second_vamm() {
 
     // check for the second added vAMM
     let res = insurance_fund
-        .is_vamm(vamm2.addr().to_string(), &router)
+        .is_vamm(vamm2.addr().to_string(), &router.wrap())
         .unwrap();
     let is_vamm = res.is_vamm;
 
@@ -212,7 +212,7 @@ fn test_remove_vamm() {
 
     // check to see that there is one vAMM
     let res = insurance_fund
-        .is_vamm(vamm1.addr().to_string(), &router)
+        .is_vamm(vamm1.addr().to_string(), &router.wrap())
         .unwrap();
     let is_vamm = res.is_vamm;
 
@@ -226,7 +226,7 @@ fn test_remove_vamm() {
 
     // check that there are zero AMMs
     let res = insurance_fund
-        .is_vamm(vamm1.addr().to_string(), &router)
+        .is_vamm(vamm1.addr().to_string(), &router.wrap())
         .unwrap();
     let is_vamm = res.is_vamm;
 
@@ -245,7 +245,7 @@ fn test_remove_no_vamms() {
 
     // check to see that there is no vAMM
     let res = insurance_fund
-        .is_vamm(vamm1.addr().to_string(), &router)
+        .is_vamm(vamm1.addr().to_string(), &router.wrap())
         .unwrap();
     let is_vamm = res.is_vamm;
 
@@ -281,7 +281,7 @@ fn test_remove_non_existed_vamm() {
 
     // check to see that there is one vAMM
     let res = insurance_fund
-        .is_vamm(vamm1.addr().to_string(), &router)
+        .is_vamm(vamm1.addr().to_string(), &router.wrap())
         .unwrap();
     let is_vamm = res.is_vamm;
 
@@ -354,7 +354,9 @@ fn test_vamm_shutdown() {
     router.execute(owner.clone(), msg).unwrap();
 
     // query all vamms' status
-    let res = insurance_fund.all_vamm_status(None, &router).unwrap();
+    let res = insurance_fund
+        .all_vamm_status(None, &router.wrap())
+        .unwrap();
     let vamms_status = res.vamm_list_status;
 
     assert_eq!(
@@ -371,7 +373,9 @@ fn test_vamm_shutdown() {
     router.execute(owner, msg).unwrap();
 
     // query all vamms' status
-    let res = insurance_fund.all_vamm_status(None, &router).unwrap();
+    let res = insurance_fund
+        .all_vamm_status(None, &router.wrap())
+        .unwrap();
     let vamms_status = res.vamm_list_status;
 
     assert_eq!(
@@ -409,7 +413,9 @@ fn test_vamm_shutdown_from_insurance() {
     router.execute(owner.clone(), msg).unwrap();
 
     // query all vamms' status
-    let res = insurance_fund.all_vamm_status(None, &router).unwrap();
+    let res = insurance_fund
+        .all_vamm_status(None, &router.wrap())
+        .unwrap();
     let vamms_status = res.vamm_list_status;
 
     assert_eq!(
@@ -426,7 +432,9 @@ fn test_vamm_shutdown_from_insurance() {
     router.execute(insurance_fund.addr(), msg).unwrap();
 
     // query all vamms' status
-    let res = insurance_fund.all_vamm_status(None, &router).unwrap();
+    let res = insurance_fund
+        .all_vamm_status(None, &router.wrap())
+        .unwrap();
     let vamms_status = res.vamm_list_status;
 
     assert_eq!(
@@ -455,7 +463,7 @@ fn test_query_vamm_status() {
 
     // query vamm status
     let res = insurance_fund
-        .vamm_status(vamm1.addr().to_string(), &router)
+        .vamm_status(vamm1.addr().to_string(), &router.wrap())
         .unwrap();
     let status = res.vamm_status;
 
@@ -467,7 +475,7 @@ fn test_query_vamm_status() {
 
     // query vamm status
     let res = insurance_fund
-        .vamm_status(vamm1.addr().to_string(), &router)
+        .vamm_status(vamm1.addr().to_string(), &router.wrap())
         .unwrap();
     let status = res.vamm_status;
 
@@ -486,7 +494,9 @@ fn test_all_vamm_status() {
     } = new_shutdown_scenario();
 
     // query all vamms' status (there aren't any yet)
-    let res = insurance_fund.all_vamm_status(None, &router).unwrap_err();
+    let res = insurance_fund
+        .all_vamm_status(None, &router.wrap())
+        .unwrap_err();
 
     assert_eq!(
         res.to_string(),
@@ -502,7 +512,9 @@ fn test_all_vamm_status() {
     router.execute(owner.clone(), msg).unwrap();
 
     // query all vamms' status
-    let res = insurance_fund.all_vamm_status(None, &router).unwrap();
+    let res = insurance_fund
+        .all_vamm_status(None, &router.wrap())
+        .unwrap();
     let vamms_status = res.vamm_list_status;
 
     assert_eq!(
@@ -515,7 +527,9 @@ fn test_all_vamm_status() {
     router.execute(owner.clone(), msg).unwrap();
 
     // query all vamms' status
-    let res = insurance_fund.all_vamm_status(None, &router).unwrap();
+    let res = insurance_fund
+        .all_vamm_status(None, &router.wrap())
+        .unwrap();
     let vamms_status = res.vamm_list_status;
 
     assert_eq!(
@@ -546,7 +560,9 @@ fn test_pagination() {
     router.execute(owner.clone(), msg).unwrap();
 
     //query only the first vamm (because we gave it limit of 1)
-    let res = insurance_fund.all_vamm_status(Some(1u32), &router).unwrap();
+    let res = insurance_fund
+        .all_vamm_status(Some(1u32), &router.wrap())
+        .unwrap();
     let vamms_status = res.vamm_list_status;
 
     assert_eq!(vamms_status, vec![(vamm1.addr(), true)]);
@@ -578,7 +594,9 @@ fn test_pagination_limit() {
     }
 
     // query all vamms status
-    let res = insurance_fund.all_vamm_status(None, &router).unwrap();
+    let res = insurance_fund
+        .all_vamm_status(None, &router.wrap())
+        .unwrap();
     let vamms_status = res.vamm_list_status;
 
     assert_eq!(
@@ -591,7 +609,9 @@ fn test_pagination_limit() {
     );
 
     //query only the first two vamms
-    let res = insurance_fund.all_vamm_status(Some(2u32), &router).unwrap();
+    let res = insurance_fund
+        .all_vamm_status(Some(2u32), &router.wrap())
+        .unwrap();
     let vamms_status = res.vamm_list_status;
 
     assert_eq!(

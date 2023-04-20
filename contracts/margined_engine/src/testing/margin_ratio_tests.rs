@@ -34,7 +34,7 @@ fn test_get_margin_ratio() {
 
     // expect to be 0.1
     let margin_ratio = engine
-        .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_positive(100_000_000u128));
 }
@@ -63,7 +63,7 @@ fn test_get_margin_ratio_long() {
     router.execute(alice.clone(), msg).unwrap();
 
     let position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(20_000_000_000u128));
 
@@ -80,13 +80,13 @@ fn test_get_margin_ratio_long() {
     router.execute(bob.clone(), msg).unwrap();
 
     let position = engine
-        .position(&router, vamm.addr().to_string(), bob.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), bob.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(10_909_090_910u128));
 
     // expect to be -0.13429752
     let margin_ratio = engine
-        .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_negative(134_297_520u128));
 }
@@ -128,7 +128,7 @@ fn test_get_margin_ratio_short() {
 
     // expect to be 0.287037037
     let margin_ratio = engine
-        .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_negative(287_037_037u128));
 }
@@ -187,7 +187,7 @@ fn test_get_margin_higher_twap() {
 
     // expect to be 0.09689093601
     let margin_ratio = engine
-        .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_positive(96_890_936u128));
 }
@@ -240,7 +240,7 @@ fn test_verify_margin_ratio_funding_payment_positive() {
     router.execute(owner.clone(), msg).unwrap();
 
     let premium_fraction = engine
-        .get_latest_cumulative_premium_fraction(&router, vamm.addr().to_string())
+        .get_latest_cumulative_premium_fraction(&router.wrap(), vamm.addr().to_string())
         .unwrap();
     assert_eq!(premium_fraction, Integer::new_positive(125_000_000u128));
 
@@ -249,7 +249,7 @@ fn test_verify_margin_ratio_funding_payment_positive() {
     // position notional: 250
     // margin ratio: (25 - 2.5) / 250 = 0.09
     let margin_ratio = engine
-        .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_positive(90_000_000u128));
 }
@@ -302,7 +302,7 @@ fn test_verify_margin_ratio_funding_payment_negative() {
     router.execute(owner.clone(), msg).unwrap();
 
     let premium_fraction = engine
-        .get_latest_cumulative_premium_fraction(&router, vamm.addr().to_string())
+        .get_latest_cumulative_premium_fraction(&router.wrap(), vamm.addr().to_string())
         .unwrap();
     assert_eq!(premium_fraction, Integer::new_negative(75_000_000u128));
 
@@ -311,7 +311,7 @@ fn test_verify_margin_ratio_funding_payment_negative() {
     // position notional: 250
     // margin ratio: (25 + 1.5) / 250 =  0.106
     let margin_ratio = engine
-        .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_positive(106_000_000u128));
 }
@@ -380,7 +380,7 @@ fn test_verify_margin_ratio_with_pnl_funding_payment_positive() {
     router.execute(owner.clone(), msg).unwrap();
 
     let premium_fraction = engine
-        .get_latest_cumulative_premium_fraction(&router, vamm.addr().to_string())
+        .get_latest_cumulative_premium_fraction(&router.wrap(), vamm.addr().to_string())
         .unwrap();
     assert_eq!(premium_fraction, Integer::new_positive(100_000_000u128));
 
@@ -391,14 +391,14 @@ fn test_verify_margin_ratio_with_pnl_funding_payment_positive() {
     // unrealized Pnl: 250 - 110.3448275862 = 139.6551724138
     // margin ratio: (25 - 2 - 139.6551724138) / 110.3448275862 = -1.0571875
     let margin_ratio = engine
-        .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_negative(1_057_187_500u128));
 
     // funding payment (bob receives): 45 * 10% = 4.5
     // margin ratio: (45 + 4.5) / 450 = 0.11
     let margin_ratio = engine
-        .get_margin_ratio(&router, vamm.addr().to_string(), bob.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), bob.to_string())
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_positive(110_000_000u128));
 }
@@ -467,7 +467,7 @@ fn test_verify_margin_ratio_with_pnl_funding_payment_negative() {
     router.execute(owner.clone(), msg).unwrap();
 
     let premium_fraction = engine
-        .get_latest_cumulative_premium_fraction(&router, vamm.addr().to_string())
+        .get_latest_cumulative_premium_fraction(&router.wrap(), vamm.addr().to_string())
         .unwrap();
     assert_eq!(premium_fraction, Integer::new_negative(100_000_000u128));
 
@@ -477,14 +477,14 @@ fn test_verify_margin_ratio_with_pnl_funding_payment_negative() {
     // unrealized Pnl: 250 - 110.3448275862 = 139.6551724138
     // margin ratio: (25 + 2 - 139.6551724138) / 110.3448275862 = -1.0209375
     let margin_ratio = engine
-        .get_margin_ratio(&router, vamm.addr().to_string(), alice.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_negative(1_020_937_500u128));
 
     // funding payment: 45 (position size) * -10% = -4.5
     // margin ratio: (45 - 4.5) / 450 = 0.09
     let margin_ratio = engine
-        .get_margin_ratio(&router, vamm.addr().to_string(), bob.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), bob.to_string())
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_positive(90_000_000u128));
 }

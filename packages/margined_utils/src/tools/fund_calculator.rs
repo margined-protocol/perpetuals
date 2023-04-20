@@ -1,6 +1,5 @@
 use cosmwasm_std::{
-    to_binary, Addr, Coin, Empty, Querier, QuerierWrapper, QueryRequest, StdResult, Uint128,
-    WasmQuery,
+    to_binary, Addr, Coin, QuerierWrapper, QueryRequest, StdResult, Uint128, WasmQuery,
 };
 use margined_common::asset::ORAI_DENOM;
 use margined_common::integer::Integer;
@@ -22,8 +21,8 @@ use margined_perp::margined_vamm::{CalcFeeResponse, Direction, QueryMsg as VammQ
 
 pub const SIX_D_P: Uint128 = Uint128::new(1_000_000u128); // this is 6d.p.
 
-pub fn calculate_funds_needed<Q: Querier>(
-    querier: &Q,
+pub fn calculate_funds_needed(
+    querier: &QuerierWrapper,
     engine: Addr,
     trader: Addr,
     quote_asset_amount: Uint128,
@@ -88,51 +87,47 @@ pub fn calculate_funds_needed<Q: Querier>(
 }
 
 // to query the given vamm's fees for use in the fund calculator
-pub fn query_vamm_fees<Q: Querier>(
-    querier: &Q,
+pub fn query_vamm_fees(
+    querier: &QuerierWrapper,
     vamm_addr: String,
     quote_asset_amount: Uint128,
 ) -> StdResult<Uint128> {
-    Ok(QuerierWrapper::<Empty>::new(querier)
+    querier
         .query::<CalcFeeResponse>(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: vamm_addr,
             msg: to_binary(&VammQueryMsg::CalcFee { quote_asset_amount })?,
-        }))?
-        .toll_fee)
+        }))
+        .map(|res| res.toll_fee)
 }
 
 // to query the position of the given trader, on the given vamm for use in the fund calculator
-pub fn query_existing_position<Q: Querier>(
-    querier: &Q,
+pub fn query_existing_position(
+    querier: &QuerierWrapper,
     engine: String,
     vamm: String,
     trader: String,
 ) -> StdResult<Position> {
-    let position = QuerierWrapper::<Empty>::new(querier)
-        .query::<Position>(&QueryRequest::Wasm(WasmQuery::Smart {
+    Ok(querier
+        .query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: engine,
             msg: to_binary(&EngineQueryMsg::Position { vamm, trader })?,
         }))
-        .unwrap_or_default();
-
-    Ok(position)
+        .unwrap_or_default())
 }
 
 // to query the PnL of the given trader's position on the given vamm, for use in the fund calculator
-pub fn query_existing_position_pnl<Q: Querier>(
-    querier: &Q,
+pub fn query_existing_position_pnl(
+    querier: &QuerierWrapper,
     engine: String,
     vamm: String,
     trader: String,
 ) -> StdResult<PositionUnrealizedPnlResponse> {
-    let pnl_response = QuerierWrapper::<Empty>::new(querier)
-        .query::<PositionUnrealizedPnlResponse>(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: engine,
-            msg: to_binary(&EngineQueryMsg::UnrealizedPnl {
-                vamm,
-                trader,
-                calc_option: PnlCalcOption::SpotPrice,
-            })?,
-        }))?;
-    Ok(pnl_response)
+    querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: engine,
+        msg: to_binary(&EngineQueryMsg::UnrealizedPnl {
+            vamm,
+            trader,
+            calc_option: PnlCalcOption::SpotPrice,
+        })?,
+    }))
 }

@@ -16,7 +16,7 @@ fn test_will_fail_is_pricefeed_zero() {
         ..
     } = new_vammscenario();
 
-    let spot_price = vamm.spot_price(&router).unwrap();
+    let spot_price = vamm.spot_price(&router.wrap()).unwrap();
     assert_eq!(spot_price, to_decimals(10u64));
 
     let price: Uint128 = Uint128::from(0u128);
@@ -27,7 +27,7 @@ fn test_will_fail_is_pricefeed_zero() {
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let result = vamm.is_over_spread_limit(&router).unwrap_err();
+    let result = vamm.is_over_spread_limit(&router.wrap()).unwrap_err();
     assert_eq!(
         result.to_string(),
         "Generic error: Querier contract error: Generic error: underlying price is 0".to_string()
@@ -44,7 +44,7 @@ fn test_is_true_if_greater_than_ten_percent() {
         ..
     } = new_vammscenario();
 
-    let spot_price = vamm.spot_price(&router).unwrap();
+    let spot_price = vamm.spot_price(&router.wrap()).unwrap();
     assert_eq!(spot_price, to_decimals(10u64));
 
     let price: Uint128 = to_decimals(12u64);
@@ -55,7 +55,7 @@ fn test_is_true_if_greater_than_ten_percent() {
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let result = vamm.is_over_spread_limit(&router).unwrap();
+    let result = vamm.is_over_spread_limit(&router.wrap()).unwrap();
     assert_eq!(result, true,);
 
     let price: Uint128 = to_decimals(8u64);
@@ -66,7 +66,7 @@ fn test_is_true_if_greater_than_ten_percent() {
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let result = vamm.is_over_spread_limit(&router).unwrap();
+    let result = vamm.is_over_spread_limit(&router.wrap()).unwrap();
     assert_eq!(result, true,);
 }
 
@@ -80,7 +80,7 @@ fn test_is_false_if_less_than_ten_percent() {
         ..
     } = new_vammscenario();
 
-    let spot_price = vamm.spot_price(&router).unwrap();
+    let spot_price = vamm.spot_price(&router.wrap()).unwrap();
     assert_eq!(spot_price, to_decimals(10u64));
 
     let price: Uint128 = Uint128::from(10_500_000_000u128);
@@ -91,7 +91,7 @@ fn test_is_false_if_less_than_ten_percent() {
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let result = vamm.is_over_spread_limit(&router).unwrap();
+    let result = vamm.is_over_spread_limit(&router.wrap()).unwrap();
     assert_eq!(result, false,);
 
     let price: Uint128 = Uint128::from(9_500_000_000u128);
@@ -102,6 +102,6 @@ fn test_is_false_if_less_than_ten_percent() {
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let result = vamm.is_over_spread_limit(&router).unwrap();
+    let result = vamm.is_over_spread_limit(&router.wrap()).unwrap();
     assert_eq!(result, false,);
 }

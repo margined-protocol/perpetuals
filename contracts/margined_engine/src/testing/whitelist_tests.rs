@@ -21,7 +21,7 @@ fn test_add_remove_whitelist() {
     let msg = engine.add_whitelist(alice.to_string()).unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let whitelist = engine.get_whitelist(&router).unwrap();
+    let whitelist = engine.get_whitelist(&router.wrap()).unwrap();
 
     assert_eq!(whitelist, vec![alice.to_string()]);
 
@@ -40,7 +40,7 @@ fn test_add_remove_whitelist() {
     let msg = engine.remove_whitelist(alice.to_string()).unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let whitelist = engine.get_whitelist(&router).unwrap();
+    let whitelist = engine.get_whitelist(&router.wrap()).unwrap();
     let empty: Vec<String> = Vec::new();
 
     assert_eq!(whitelist, empty);
@@ -71,7 +71,7 @@ fn test_add_remove_then_add_whitelist() {
     let msg = engine.add_whitelist(alice.to_string()).unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let whitelist = engine.get_whitelist(&router).unwrap();
+    let whitelist = engine.get_whitelist(&router.wrap()).unwrap();
 
     assert_eq!(whitelist, vec![alice.to_string()]);
 
@@ -79,7 +79,7 @@ fn test_add_remove_then_add_whitelist() {
     let msg = engine.remove_whitelist(alice.to_string()).unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let whitelist = engine.get_whitelist(&router).unwrap();
+    let whitelist = engine.get_whitelist(&router.wrap()).unwrap();
     let empty: Vec<String> = Vec::new();
 
     assert_eq!(whitelist, empty);
@@ -88,7 +88,7 @@ fn test_add_remove_then_add_whitelist() {
     let msg = engine.add_whitelist(alice.to_string()).unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let whitelist = engine.get_whitelist(&router).unwrap();
+    let whitelist = engine.get_whitelist(&router.wrap()).unwrap();
 
     assert_eq!(whitelist, vec![alice.to_string()]);
 }
@@ -142,7 +142,7 @@ fn test_query_all_whitelist_and_is_whitelist() {
     let msg = engine.add_whitelist(alice.to_string()).unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let whitelist = engine.get_whitelist(&router).unwrap();
+    let whitelist = engine.get_whitelist(&router.wrap()).unwrap();
 
     assert_eq!(whitelist, vec![alice.to_string()]);
 
@@ -150,16 +150,20 @@ fn test_query_all_whitelist_and_is_whitelist() {
     let msg = engine.add_whitelist(bob.to_string()).unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let whitelist = engine.get_whitelist(&router).unwrap();
+    let whitelist = engine.get_whitelist(&router.wrap()).unwrap();
 
     assert_eq!(whitelist, vec![alice.to_string(), bob.to_string()]);
 
     // test if alice is in whitelist
-    let bool = engine.is_whitelist(&router, alice.to_string()).unwrap();
+    let bool = engine
+        .is_whitelist(&router.wrap(), alice.to_string())
+        .unwrap();
 
     assert!(bool);
     // test if bob is in whitelist
-    let bool = engine.is_whitelist(&router, bob.to_string()).unwrap();
+    let bool = engine
+        .is_whitelist(&router.wrap(), bob.to_string())
+        .unwrap();
 
     assert!(bool);
 }

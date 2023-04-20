@@ -4,8 +4,7 @@ use margined_perp::margined_vamm::{
 };
 
 use cosmwasm_std::{
-    to_binary, Addr, Coin, CosmosMsg, Empty, Querier, QuerierWrapper, StdResult, Uint128, WasmMsg,
-    WasmQuery,
+    to_binary, Addr, Coin, CosmosMsg, QuerierWrapper, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 
 /// VammController is a wrapper around Addr that provides a lot of helpers
@@ -185,7 +184,7 @@ impl VammController {
     }
 
     /// get margin vamm configuration
-    pub fn config<Q: Querier>(&self, querier: &Q) -> StdResult<ConfigResponse> {
+    pub fn config(&self, querier: &QuerierWrapper) -> StdResult<ConfigResponse> {
         let msg = QueryMsg::Config {};
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -193,12 +192,11 @@ impl VammController {
         }
         .into();
 
-        let res: ConfigResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get margin vamm state
-    pub fn state<Q: Querier>(&self, querier: &Q) -> StdResult<StateResponse> {
+    pub fn state(&self, querier: &QuerierWrapper) -> StdResult<StateResponse> {
         let msg = QueryMsg::State {};
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -206,14 +204,13 @@ impl VammController {
         }
         .into();
 
-        let res: StateResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get output price
-    pub fn output_price<Q: Querier>(
+    pub fn output_price(
         &self,
-        querier: &Q,
+        querier: &QuerierWrapper,
         direction: Direction,
         amount: Uint128,
     ) -> StdResult<Uint128> {
@@ -224,12 +221,11 @@ impl VammController {
         }
         .into();
 
-        let res: Uint128 = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get spot price
-    pub fn spot_price<Q: Querier>(&self, querier: &Q) -> StdResult<Uint128> {
+    pub fn spot_price(&self, querier: &QuerierWrapper) -> StdResult<Uint128> {
         let msg = QueryMsg::SpotPrice {};
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -237,12 +233,11 @@ impl VammController {
         }
         .into();
 
-        let res: Uint128 = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get twap price
-    pub fn twap_price<Q: Querier>(&self, querier: &Q, interval: u64) -> StdResult<Uint128> {
+    pub fn twap_price(&self, querier: &QuerierWrapper, interval: u64) -> StdResult<Uint128> {
         let msg = QueryMsg::TwapPrice { interval };
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -250,14 +245,13 @@ impl VammController {
         }
         .into();
 
-        let res: Uint128 = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get swap fees
-    pub fn calc_fee<Q: Querier>(
+    pub fn calc_fee(
         &self,
-        querier: &Q,
+        querier: &QuerierWrapper,
         quote_asset_amount: Uint128,
     ) -> StdResult<CalcFeeResponse> {
         let msg = QueryMsg::CalcFee { quote_asset_amount };
@@ -267,12 +261,11 @@ impl VammController {
         }
         .into();
 
-        let res: CalcFeeResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// is over spread limit
-    pub fn is_over_spread_limit<Q: Querier>(&self, querier: &Q) -> StdResult<bool> {
+    pub fn is_over_spread_limit(&self, querier: &QuerierWrapper) -> StdResult<bool> {
         let msg = QueryMsg::IsOverSpreadLimit {};
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -280,7 +273,6 @@ impl VammController {
         }
         .into();
 
-        let res: bool = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 }

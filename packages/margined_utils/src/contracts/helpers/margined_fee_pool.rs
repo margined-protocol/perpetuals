@@ -4,8 +4,7 @@ use margined_perp::margined_fee_pool::{
 };
 
 use cosmwasm_std::{
-    to_binary, Addr, Coin, CosmosMsg, Empty, Querier, QuerierWrapper, StdResult, Uint128, WasmMsg,
-    WasmQuery,
+    to_binary, Addr, Coin, CosmosMsg, QuerierWrapper, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 
 /// FeePoolController is a wrapper around Addr that provides a lot of helpers
@@ -67,7 +66,7 @@ impl FeePoolController {
     //////////////////////
 
     /// get margin fee pool configuration
-    pub fn config<Q: Querier>(&self, querier: &Q) -> StdResult<ConfigResponse> {
+    pub fn config(&self, querier: &QuerierWrapper) -> StdResult<ConfigResponse> {
         let msg = QueryMsg::Config {};
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -75,12 +74,11 @@ impl FeePoolController {
         }
         .into();
 
-        let res: ConfigResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get the token list length
-    pub fn token_list_length<Q: Querier>(&self, querier: &Q) -> StdResult<TokenLengthResponse> {
+    pub fn token_list_length(&self, querier: &QuerierWrapper) -> StdResult<TokenLengthResponse> {
         let msg = QueryMsg::GetTokenLength {};
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -88,15 +86,14 @@ impl FeePoolController {
         }
         .into();
 
-        let res: TokenLengthResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get all the tokens in a list
-    pub fn all_tokens_list<Q: Querier>(
+    pub fn all_tokens_list(
         &self,
         limit: Option<u32>,
-        querier: &Q,
+        querier: &QuerierWrapper,
     ) -> StdResult<AllTokenResponse> {
         let msg = QueryMsg::GetTokenList { limit };
         let query = WasmQuery::Smart {
@@ -105,12 +102,11 @@ impl FeePoolController {
         }
         .into();
 
-        let res: AllTokenResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// query if the given token is actually stored
-    pub fn is_token<Q: Querier>(&self, token: String, querier: &Q) -> StdResult<TokenResponse> {
+    pub fn is_token(&self, token: String, querier: &QuerierWrapper) -> StdResult<TokenResponse> {
         let msg = QueryMsg::IsToken { token };
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -118,7 +114,6 @@ impl FeePoolController {
         }
         .into();
 
-        let res: TokenResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 }

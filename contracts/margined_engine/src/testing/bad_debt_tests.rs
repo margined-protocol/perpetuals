@@ -187,6 +187,11 @@ fn test_cannot_reduce_position_when_bad_debt() {
         err.downcast().unwrap()
     );
 
+    println!(
+        "{:?}",
+        engine.get_margin_ratio(&router.wrap(), vamm.addr().to_string(), bob.to_string())
+    );
+
     // pump spot price
     let msg = engine
         .close_position(vamm.addr().to_string(), to_decimals(0u64))
@@ -467,7 +472,7 @@ fn test_can_partial_close_position_as_long_as_no_bad_debt_is_incurred() {
     router.execute(alice.clone(), msg).unwrap();
 
     let position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(6_666_666_667u128));
 }

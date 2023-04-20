@@ -116,7 +116,7 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
-    let price = env.vamm.spot_price(&env.router).unwrap();
+    let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
     let msg = env
         .pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -250,7 +250,7 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
-    let price = env.vamm.spot_price(&env.router).unwrap();
+    let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
     let msg = env
         .pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -382,7 +382,7 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
-    let price = env.vamm.spot_price(&env.router).unwrap();
+    let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
     let msg = env
         .pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -521,7 +521,7 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
-    let price = env.vamm.spot_price(&env.router).unwrap();
+    let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
     let msg = env
         .pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -653,7 +653,7 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
-    let price = env.vamm.spot_price(&env.router).unwrap();
+    let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
     let msg = env
         .pricefeed
         .append_price("ETH".to_string(), price, timestamp)

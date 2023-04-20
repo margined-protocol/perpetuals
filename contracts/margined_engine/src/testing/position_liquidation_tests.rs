@@ -195,7 +195,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     let alice_balance = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(alice_balance, Uint128::from(5_094_117_647_059u128));
 
-    let state = engine.state(&router).unwrap();
+    let state = engine.state(&router.wrap()).unwrap();
     assert_eq!(state.bad_debt, Uint128::from(74_117_647_059u128));
 
     // keeper liquidate bob's under collateral position, bob's positionValue is -294.11
@@ -203,7 +203,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     // bob loss all his margin (20) and there's 74.12 badDebt
     // which is already prepaid by insurance fund when alice close the position
     let margin_ratio = engine
-        .get_margin_ratio(&router, vamm.addr().to_string(), bob.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), bob.to_string())
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_negative(252_000_000u128));
 
@@ -301,7 +301,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
     // bob loss all his margin (20) and there's 74.12 badDebt
     // which is already prepaid by insurance fund when alice close the position
     let margin_ratio = engine
-        .get_margin_ratio(&router, vamm.addr().to_string(), bob.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), bob.to_string())
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_negative(252_000_000u128));
 
@@ -545,7 +545,7 @@ fn test_alice_long_position_underwater_oracle_price_activated_doesnt_get_liquida
     router.execute(alice.clone(), msg).unwrap();
 
     // sync amm price to oracle = 25.6
-    let price = vamm.spot_price(&router).unwrap();
+    let price = vamm.spot_price(&router.wrap()).unwrap();
     let timestamp: u64 = 1_000_000_000;
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -639,7 +639,7 @@ fn test_alice_short_position_underwater_oracle_price_activated_doesnt_get_liquid
     router.execute(alice.clone(), msg).unwrap();
 
     // sync amm price to oracle = 25.6
-    let price = vamm.spot_price(&router).unwrap();
+    let price = vamm.spot_price(&router.wrap()).unwrap();
     let timestamp: u64 = 1_000_000_000;
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -741,13 +741,13 @@ fn test_can_open_same_side_position_even_thought_long_is_underwater_as_long_over
     // position size = 20 + 9.09 = 29.09
     // margin = 25 + 100
     let position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.margin, to_decimals(125u64));
     assert_eq!(position.size, Integer::from(29_090_909_090u128));
     let pnl = engine
         .get_unrealized_pnl(
-            &router,
+            &router.wrap(),
             vamm.addr().to_string(),
             alice.to_string(),
             PnlCalcOption::SpotPrice,
@@ -780,7 +780,7 @@ fn test_can_open_same_side_position_even_thought_short_is_underwater_as_long_ove
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
     let position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.margin, to_decimals(88u64));
 
@@ -820,13 +820,13 @@ fn test_can_open_same_side_position_even_thought_short_is_underwater_as_long_ove
     // realizedPnl = -83.33 * (20 - 2.35) / 20 = -73.538725
     // margin = 88 -73.538725 ~= 14.4
     let position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::from(2_353_760_434u128));
     assert_eq!(position.margin, Uint128::from(14_471_986_128u128));
     let pnl = engine
         .get_unrealized_pnl(
-            &router,
+            &router.wrap(),
             vamm.addr().to_string(),
             alice.to_string(),
             PnlCalcOption::SpotPrice,
@@ -1013,7 +1013,7 @@ fn test_close_partial_position_long_position_when_closing_whole_position_is_over
     router.execute(alice.clone(), msg).unwrap();
 
     let position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(15_000_000_000u128));
     assert_eq!(position.margin, Uint128::from(25_000_000_000u128));
@@ -1081,7 +1081,7 @@ fn test_close_partial_position_short_position_when_closing_whole_position_is_ove
     router.execute(alice.clone(), msg).unwrap();
 
     let position = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(18_750_000_000u128));
     assert_eq!(position.margin, Uint128::from(20_000_000_000u128));
@@ -1142,7 +1142,7 @@ fn test_close_whole_partial_position_when_partial_liquidation_ratio_is_one() {
     router.execute(alice.clone(), msg).unwrap();
 
     let err = engine
-        .position(&router, vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap_err();
     assert_eq!(
         StdError::GenericErr {

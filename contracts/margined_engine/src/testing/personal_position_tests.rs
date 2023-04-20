@@ -71,7 +71,7 @@ fn test_return_zero_margin_when_alices_position_is_underwater() {
     router.execute(owner.clone(), msg).unwrap();
 
     let premium_fraction = engine
-        .get_latest_cumulative_premium_fraction(&router, vamm.addr().to_string())
+        .get_latest_cumulative_premium_fraction(&router.wrap(), vamm.addr().to_string())
         .unwrap();
     assert_eq!(
         premium_fraction,
@@ -81,7 +81,11 @@ fn test_return_zero_margin_when_alices_position_is_underwater() {
     // then alice need to pay 150 * 50% = $75
     // {size: -150, margin: 300} => {size: -150, margin: 0}
     let alice_position = engine
-        .get_position_with_funding_payment(&router, vamm.addr().to_string(), alice.to_string())
+        .get_position_with_funding_payment(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            alice.to_string(),
+        )
         .unwrap();
     assert_eq!(alice_position.margin, to_decimals(0u64),);
     assert_eq!(
