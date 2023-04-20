@@ -2,8 +2,7 @@ use cosmwasm_schema::cw_serde;
 use margined_perp::margined_pricefeed::{ConfigResponse, ExecuteMsg, QueryMsg};
 
 use cosmwasm_std::{
-    to_binary, Addr, Coin, CosmosMsg, Empty, Querier, QuerierWrapper, StdResult, Uint128, WasmMsg,
-    WasmQuery,
+    to_binary, Addr, Coin, CosmosMsg, QuerierWrapper, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 
 /// PricefeedController is a wrapper around Addr that provides a lot of helpers
@@ -55,7 +54,7 @@ impl PricefeedController {
     }
 
     /// get margined pricefeed configuration
-    pub fn config<Q: Querier>(&self, querier: &Q) -> StdResult<ConfigResponse> {
+    pub fn config(&self, querier: &QuerierWrapper) -> StdResult<ConfigResponse> {
         let msg = QueryMsg::Config {};
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -63,12 +62,11 @@ impl PricefeedController {
         }
         .into();
 
-        let res: ConfigResponse = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get price
-    pub fn get_price<Q: Querier>(&self, querier: &Q, key: String) -> StdResult<Uint128> {
+    pub fn get_price(&self, querier: &QuerierWrapper, key: String) -> StdResult<Uint128> {
         let msg = QueryMsg::GetPrice { key };
         let query = WasmQuery::Smart {
             contract_addr: self.addr().into(),
@@ -76,14 +74,13 @@ impl PricefeedController {
         }
         .into();
 
-        let res: Uint128 = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get previous price
-    pub fn get_previous_price<Q: Querier>(
+    pub fn get_previous_price(
         &self,
-        querier: &Q,
+        querier: &QuerierWrapper,
         key: String,
         num_round_back: u64,
     ) -> StdResult<Uint128> {
@@ -97,14 +94,13 @@ impl PricefeedController {
         }
         .into();
 
-        let res: Uint128 = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 
     /// get twap price
-    pub fn twap_price<Q: Querier>(
+    pub fn twap_price(
         &self,
-        querier: &Q,
+        querier: &QuerierWrapper,
         key: String,
         interval: u64,
     ) -> StdResult<Uint128> {
@@ -115,7 +111,6 @@ impl PricefeedController {
         }
         .into();
 
-        let res: Uint128 = QuerierWrapper::<Empty>::new(querier).query(&query)?;
-        Ok(res)
+        querier.query(&query)
     }
 }

@@ -47,9 +47,9 @@ pub enum QueryMsg {
     Config {},
     #[returns(OwnerResponse)]
     GetOwner {},
-    #[returns(PriceData)]
+    #[returns(Uint128)]
     GetPrice { key: String },
-    #[returns(PriceData)]
+    #[returns(Uint128)]
     GetPreviousPrice { key: String, num_round_back: u64 },
     #[returns(Uint128)]
     GetTwapPrice { key: String, interval: u64 },

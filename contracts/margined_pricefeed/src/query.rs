@@ -1,5 +1,5 @@
 use cosmwasm_std::{Deps, Env, StdError, StdResult, Uint128};
-use margined_perp::margined_pricefeed::{ConfigResponse, OwnerResponse, PriceData};
+use margined_perp::margined_pricefeed::{ConfigResponse, OwnerResponse};
 
 use crate::{contract::OWNER, state::read_price_data};
 
@@ -18,11 +18,11 @@ pub fn query_owner(deps: Deps) -> StdResult<OwnerResponse> {
 }
 
 /// Queries latest price for pair stored with key
-pub fn query_get_price(deps: Deps, key: String) -> StdResult<PriceData> {
+pub fn query_get_price(deps: Deps, key: String) -> StdResult<Uint128> {
     let prices = read_price_data(deps.storage, key)?;
 
     if let Some(price) = prices.last() {
-        return Ok(price.clone());
+        return Ok(price.price);
     }
 
     Err(StdError::generic_err("No price found"))
@@ -33,13 +33,13 @@ pub fn query_get_previous_price(
     deps: Deps,
     key: String,
     num_round_back: u64,
-) -> StdResult<PriceData> {
+) -> StdResult<Uint128> {
     let prices = read_price_data(deps.storage, key)?;
     // prices.sort_by(|a, b| a.round_id.cmp(&b.round_id));
 
     // check ind to get last previous price ind by num_round_back
     if let Some(ind) = prices.len().checked_sub((num_round_back + 1) as usize) {
-        return Ok(prices[ind].clone());
+        return Ok(prices[ind].price);
     }
 
     Err(StdError::generic_err("Not enough history"))

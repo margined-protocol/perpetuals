@@ -1,11 +1,8 @@
 use crate::contract::{execute, instantiate, query};
+use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr, Uint128};
-use cosmwasm_std::{
-    testing::{mock_dependencies, mock_env, mock_info},
-    Timestamp,
-};
 use margined_perp::margined_pricefeed::{
-    ConfigResponse, ExecuteMsg, InstantiateMsg, OwnerResponse, PriceData, QueryMsg,
+    ConfigResponse, ExecuteMsg, InstantiateMsg, OwnerResponse, QueryMsg,
 };
 
 #[test]
@@ -89,15 +86,8 @@ fn test_set_and_get_price() {
         },
     )
     .unwrap();
-    let price: PriceData = from_binary(&res).unwrap();
-    assert_eq!(
-        price,
-        PriceData {
-            round_id: 1u64,
-            price: Uint128::from(500_000_000u128),
-            timestamp: Timestamp::from_seconds(1_000_000),
-        }
-    );
+    let price: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(price, Uint128::from(500_000_000u128));
 
     // Set some market data
     let msg = ExecuteMsg::AppendPrice {
@@ -117,15 +107,8 @@ fn test_set_and_get_price() {
         },
     )
     .unwrap();
-    let price: PriceData = from_binary(&res).unwrap();
-    assert_eq!(
-        price,
-        PriceData {
-            round_id: 2u64,
-            price: Uint128::from(600_000_000u128),
-            timestamp: Timestamp::from_seconds(1_000_001),
-        }
-    );
+    let price: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(price, Uint128::from(600_000_000u128),);
 }
 
 #[test]
@@ -168,15 +151,8 @@ fn test_set_multiple_price() {
         },
     )
     .unwrap();
-    let price: PriceData = from_binary(&res).unwrap();
-    assert_eq!(
-        price,
-        PriceData {
-            round_id: 3u64,
-            price: Uint128::from(700_000_000u128),
-            timestamp: Timestamp::from_seconds(1_000_002),
-        }
-    );
+    let price: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(price, Uint128::from(700_000_000u128),);
 }
 
 #[test]
@@ -226,15 +202,8 @@ fn test_get_previous_price() {
     )
     .unwrap();
 
-    let price: PriceData = from_binary(&res).unwrap();
-    assert_eq!(
-        price,
-        PriceData {
-            round_id: 3u64,
-            price: Uint128::from(700_000_000u128),
-            timestamp: Timestamp::from_seconds(1_000_002),
-        }
-    );
+    let price: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(price, Uint128::from(700_000_000u128),);
 
     let res = query(
         deps.as_ref(),
