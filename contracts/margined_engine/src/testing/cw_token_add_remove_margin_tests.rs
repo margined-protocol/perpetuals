@@ -145,6 +145,7 @@ fn test_remove_margin() {
     let free_collateral = engine
         .get_free_collateral(&router.wrap(), vamm.addr().to_string(), alice.to_string())
         .unwrap();
+
     assert_eq!(free_collateral, Integer::new_positive(30_000_000_000u128));
 
     let msg = engine

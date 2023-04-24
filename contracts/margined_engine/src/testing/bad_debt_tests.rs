@@ -187,11 +187,6 @@ fn test_cannot_reduce_position_when_bad_debt() {
         err.downcast().unwrap()
     );
 
-    println!(
-        "{:?}",
-        engine.get_margin_ratio(&router.wrap(), vamm.addr().to_string(), bob.to_string())
-    );
-
     // pump spot price
     let msg = engine
         .close_position(vamm.addr().to_string(), to_decimals(0u64))
