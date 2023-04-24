@@ -2,6 +2,7 @@ use cosmwasm_std::{
     Addr, Deps, DepsMut, Env, Event, MessageInfo, Response, StdError, StdResult, Storage, SubMsg,
     SubMsgResponse, Uint128,
 };
+use sha3::{Digest, Sha3_256};
 
 use std::str::FromStr;
 
@@ -25,17 +26,29 @@ use crate::{
     state::{read_config, read_position, read_state, read_vamm_map, store_state, State},
 };
 
+pub fn keccak_256(input: &[u8]) -> Vec<u8> {
+    // create a SHA3-256 object
+    let mut hasher = Sha3_256::new();
+
+    // write input message
+    hasher.update(input);
+
+    // read hash digest
+    hasher.finalize().to_vec()
+}
+
 // reads position from storage but also handles the case where there is no
 // previously stored position, i.e. a new position
 pub fn get_position(
-    env: Env,
     storage: &dyn Storage,
+    position_key: &[u8],
     vamm: &Addr,
     trader: &Addr,
-    side: Side,
+    side: &Side,
+    block_height: u64,
 ) -> StdResult<Position> {
     // read the position for the trader from vamm
-    let mut position = read_position(storage, vamm, trader)?;
+    let mut position = read_position(storage, &position_key)?;
 
     // so if the position returned is None then its new
     if position.vamm.as_str().is_empty() {
@@ -43,7 +56,7 @@ pub fn get_position(
         position.vamm = vamm.clone();
         position.trader = trader.clone();
         position.direction = side_to_direction(side);
-        position.block_number = env.block.height;
+        position.block_number = block_height;
     }
 
     Ok(position)
@@ -149,13 +162,9 @@ pub fn get_margin_ratio_calc_option(
     calc_option: PnlCalcOption,
 ) -> StdResult<Integer> {
     let config = read_config(deps.storage)?;
-
+    let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
     // retrieve the latest position
-    let position = read_position(
-        deps.storage,
-        &deps.api.addr_validate(&vamm)?,
-        &deps.api.addr_validate(&trader)?,
-    )?;
+    let position = read_position(deps.storage, &position_key)?;
 
     if position.size.is_zero() {
         return Ok(Integer::zero());
@@ -393,12 +402,12 @@ pub fn require_insufficient_margin(
 
 pub fn require_not_restriction_mode(
     storage: &dyn Storage,
+    position_key: &[u8],
     vamm: &Addr,
-    trader: &Addr,
     block_height: u64,
 ) -> StdResult<Response> {
-    let vamm_map = read_vamm_map(storage, vamm.clone())?;
-    let position = read_position(storage, vamm, trader)?;
+    let vamm_map = read_vamm_map(storage, vamm)?;
+    let position = read_position(storage, &position_key)?;
 
     if vamm_map.last_restriction_block == block_height && position.block_number == block_height {
         return Err(StdError::generic_err("Only one action allowed"));
@@ -500,7 +509,7 @@ fn read_event(key: String, event: &Event) -> StdResult<String> {
 }
 
 // takes the side (buy|sell) and returns the direction (long|short)
-pub fn side_to_direction(side: Side) -> Direction {
+pub fn side_to_direction(side: &Side) -> Direction {
     match side {
         Side::Buy => Direction::AddToAmm,
         Side::Sell => Direction::RemoveFromAmm,

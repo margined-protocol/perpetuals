@@ -17,7 +17,7 @@ use crate::{
     },
     utils::{
         calc_remain_margin_with_funding_payment, check_base_asset_holding_cap, clear_position,
-        get_position, realize_bad_debt, require_additional_margin, side_to_direction,
+        get_position, keccak_256, realize_bad_debt, require_additional_margin, side_to_direction,
         update_open_interest_notional,
     },
 };
@@ -42,12 +42,15 @@ pub fn update_position_reply(
     let mut swap = read_tmp_swap(deps.storage)?;
     let mut funds = read_sent_funds(deps.storage)?;
 
+    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
+
     let mut position = get_position(
-        env.clone(),
         deps.storage,
+        &position_key,
         &swap.vamm,
         &swap.trader,
-        swap.side.clone(),
+        &swap.side,
+        env.block.height,
     )?;
 
     // depending on the direction the output is positive or negative
@@ -87,7 +90,7 @@ pub fn update_position_reply(
                 .checked_add(Integer::new_positive(swap_margin))?;
 
             margin_delta = Integer::new_positive(swap_margin);
-            new_direction = side_to_direction(swap.side);
+            new_direction = side_to_direction(&swap.side);
             new_notional = position.notional.checked_add(swap.open_notional)?;
         }
         // DECREASE_POSITION_REPLY
@@ -134,7 +137,9 @@ pub fn update_position_reply(
     position.last_updated_premium_fraction = latest_premium_fraction;
     position.block_number = env.block.height;
 
-    store_position(deps.storage, &position)?;
+    let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
+
+    store_position(deps.storage, &position_key, &position)?;
 
     // check the new position doesn't exceed any caps
     check_base_asset_holding_cap(
@@ -232,12 +237,15 @@ pub fn reverse_position_reply(
     let mut swap = read_tmp_swap(deps.storage)?;
     let mut funds = read_sent_funds(deps.storage)?;
 
+    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
+
     let mut position = get_position(
-        env.clone(),
         deps.storage,
+        &position_key,
         &swap.vamm,
         &swap.trader,
-        swap.side.clone(),
+        &swap.side,
+        env.block.height,
     )?;
 
     update_open_interest_notional(
@@ -322,7 +330,8 @@ pub fn reverse_position_reply(
         store_sent_funds(deps.storage, &funds)?;
     }
 
-    store_position(deps.storage, &position)?;
+    let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
+    store_position(deps.storage, &position_key, &position)?;
     store_state(deps.storage, &state)?;
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
@@ -343,12 +352,15 @@ pub fn close_position_reply(
     let mut state = read_state(deps.storage)?;
     let swap = read_tmp_swap(deps.storage)?;
 
+    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
+
     let position = get_position(
-        env.clone(),
         deps.storage,
+        &position_key,
         &swap.vamm.clone(),
         &swap.trader,
-        swap.side.clone(),
+        &swap.side,
+        env.block.height,
     )?;
 
     let margin_delta: Integer = match &position.direction {
@@ -416,7 +428,8 @@ pub fn close_position_reply(
         swap.trader,
     )?;
 
-    remove_position(deps.storage, &position);
+    let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
+    remove_position(deps.storage, &position_key);
 
     store_state(deps.storage, &state)?;
 
@@ -441,13 +454,14 @@ pub fn partial_close_position_reply(
     let mut state: State = read_state(deps.storage)?;
 
     let swap: TmpSwapInfo = read_tmp_swap(deps.storage)?;
-
+    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
     let mut position = get_position(
-        env.clone(),
         deps.storage,
+        &position_key,
         &swap.vamm,
         &swap.trader,
-        swap.side.clone(),
+        &swap.side,
+        env.block.height,
     )?;
 
     update_open_interest_notional(
@@ -499,7 +513,8 @@ pub fn partial_close_position_reply(
     position.last_updated_premium_fraction = latest_premium_fraction;
     position.block_number = env.block.height;
 
-    store_position(deps.storage, &position)?;
+    let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
+    store_position(deps.storage, &position_key, &position)?;
     store_state(deps.storage, &state)?;
 
     // to prevent attacker to leverage the bad debt to withdraw extra token from insurance fund
@@ -534,12 +549,14 @@ pub fn liquidate_reply(
     let swap = read_tmp_swap(deps.storage)?;
     let liquidator = read_tmp_liquidator(deps.storage)?;
 
+    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
     let position = get_position(
-        env.clone(),
         deps.storage,
+        &position_key,
         &swap.vamm,
         &swap.trader,
-        swap.side.clone(),
+        &swap.side,
+        env.block.height,
     )?;
 
     // calculate delta from trade and whether it was profitable or a loss
@@ -604,7 +621,8 @@ pub fn liquidate_reply(
 
     store_state(deps.storage, &state)?;
 
-    remove_position(deps.storage, &position);
+    let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
+    remove_position(deps.storage, &position_key);
     remove_tmp_swap(deps.storage);
     remove_tmp_liquidator(deps.storage);
 
@@ -636,12 +654,15 @@ pub fn partial_liquidation_reply(
 
     let liquidator = read_tmp_liquidator(deps.storage)?;
 
+    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
+
     let mut position = get_position(
-        env.clone(),
         deps.storage,
+        &position_key,
         &swap.vamm,
         &swap.trader,
-        swap.side.clone(),
+        &swap.side,
+        env.block.height,
     )?;
 
     // calculate delta from trade and whether it was profitable or a loss
@@ -708,8 +729,8 @@ pub fn partial_liquidation_reply(
             Uint128::zero(),
         )?);
     }
-
-    store_position(deps.storage, &position)?;
+    let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
+    store_position(deps.storage, &position_key, &position)?;
     store_state(deps.storage, &state)?;
 
     remove_tmp_swap(deps.storage);

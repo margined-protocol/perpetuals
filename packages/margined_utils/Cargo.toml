@@ -13,15 +13,15 @@ description = "Common helpers for margin protocol contracts"
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cw20 = { version = "1.0.1" }
-cw20-base = { version = "1.0.1", features = ["library"] }
 cw-controllers = "1.0.1"
-cosmwasm-schema = { version = "1.1.9" }
-cosmwasm-std = { version = "1.1.9" }
-cosmwasm-storage = { version = "1.1.9" }
+cosmwasm-schema = { workspace = true }
+cosmwasm-std = { workspace = true }
+cosmwasm-storage = { workspace = true }
 margined_common = { version = "0.1.0", path = "../margined_common"}
 margined_perp = { version = "0.1.0", path = "../margined_perp"}
 
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+cw20 = { version = "1.0.1" }
+cw20-base = { version = "1.0.1", features = ["library"] }
 cw-multi-test = "0.16.2"

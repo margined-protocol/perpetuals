@@ -12,8 +12,6 @@ use margined_common::{
 };
 use margined_perp::margined_engine::{Position, Side};
 
-use sha3::{Digest, Sha3_256};
-
 pub static KEY_CONFIG: &[u8] = b"config";
 pub static KEY_POSITION: &[u8] = b"position";
 pub static KEY_STATE: &[u8] = b"state";
@@ -66,47 +64,20 @@ fn position_bucket_read(storage: &dyn Storage) -> ReadonlyBucket<Position> {
     bucket_read(storage, KEY_POSITION)
 }
 
-pub fn store_position(storage: &mut dyn Storage, position: &Position) -> StdResult<()> {
+pub fn store_position(storage: &mut dyn Storage, key: &[u8], position: &Position) -> StdResult<()> {
     // hash the vAMM and trader together to get a unique position key
-    let mut hasher = Sha3_256::new();
-
-    // write input message
-    hasher.update(position.vamm.as_bytes());
-    hasher.update(position.trader.as_bytes());
-
-    // read hash digest
-    let hash = hasher.finalize();
-
-    position_bucket(storage).save(&hash, position)
+    position_bucket(storage).save(key, position)
 }
 
-pub fn remove_position(storage: &mut dyn Storage, position: &Position) {
+pub fn remove_position(storage: &mut dyn Storage, key: &[u8]) {
     // hash the vAMM and trader together to get a unique position key
-    let mut hasher = Sha3_256::new();
-
-    // write input message
-    hasher.update(position.vamm.as_bytes());
-    hasher.update(position.trader.as_bytes());
-
-    // read hash digest
-    let hash = hasher.finalize();
-
-    // remove the position stored under the key
-    position_bucket(storage).remove(&hash)
+    position_bucket(storage).remove(key)
 }
 
-pub fn read_position(storage: &dyn Storage, vamm: &Addr, trader: &Addr) -> StdResult<Position> {
+pub fn read_position(storage: &dyn Storage, key: &[u8]) -> StdResult<Position> {
     // hash the vAMM and trader together to get a unique position key
-    let mut hasher = Sha3_256::new();
-
-    // write input message
-    hasher.update(vamm.as_bytes());
-    hasher.update(trader.as_bytes());
-
-    // read hash digest
-    let hash = hasher.finalize();
     let result = position_bucket_read(storage)
-        .may_load(&hash)?
+        .may_load(key)?
         .unwrap_or_default();
 
     Ok(result)
@@ -210,7 +181,7 @@ pub fn store_vamm_map(storage: &mut dyn Storage, vamm: Addr, vamm_map: &VammMap)
     vamm_map_bucket(storage).save(vamm.as_bytes(), vamm_map)
 }
 
-pub fn read_vamm_map(storage: &dyn Storage, vamm: Addr) -> StdResult<VammMap> {
+pub fn read_vamm_map(storage: &dyn Storage, vamm: &Addr) -> StdResult<VammMap> {
     let result = vamm_map_bucket_read(storage)
         .may_load(vamm.as_bytes())?
         .unwrap_or_default();
@@ -225,7 +196,7 @@ pub fn append_cumulative_premium_fraction(
     vamm: Addr,
     premium_fraction: Integer,
 ) -> StdResult<()> {
-    let mut vamm_map = read_vamm_map(storage, vamm.clone())?;
+    let mut vamm_map = read_vamm_map(storage, &vamm)?;
 
     // we push the first premium fraction to an empty array
     // else we add them together prior to pushing
@@ -248,7 +219,7 @@ pub fn enter_restriction_mode(
     vamm: Addr,
     block_height: u64,
 ) -> StdResult<()> {
-    let mut vamm_map = read_vamm_map(storage, vamm.clone())?;
+    let mut vamm_map = read_vamm_map(storage, &vamm)?;
 
     vamm_map.last_restriction_block = block_height;
 
