@@ -3,10 +3,10 @@ use cosmwasm_std::{
     SubMsg, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
+use margined_utils::contracts::helpers::VammController;
 
 use crate::{
     contract::TRANSFER_FAILURE_REPLY_ID,
-    querier::query_vamm_calc_fee,
     state::{read_config, State},
 };
 
@@ -143,10 +143,12 @@ pub fn transfer_fees(
 ) -> StdResult<TransferResponse> {
     let config = read_config(deps.storage)?;
 
+    let vamm_controller = VammController(vamm);
+
     let CalcFeeResponse {
         spread_fee,
         toll_fee,
-    } = query_vamm_calc_fee(&deps, vamm.into_string(), notional)?;
+    } = vamm_controller.calc_fee(&deps.querier, notional)?;
 
     let mut messages: Vec<SubMsg> = vec![];
 

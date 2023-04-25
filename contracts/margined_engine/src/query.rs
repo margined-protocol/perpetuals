@@ -4,10 +4,10 @@ use margined_perp::margined_engine::{
     ConfigResponse, PauserResponse, PnlCalcOption, Position, PositionUnrealizedPnlResponse,
     StateResponse,
 };
+use margined_utils::contracts::helpers::InsuranceFundController;
 
 use crate::{
     contract::PAUSER,
-    querier::query_insurance_all_vamm,
     state::{read_config, read_position, read_state, read_vamm_map, Config, State},
     utils::{
         calc_funding_payment, calc_remain_margin_with_funding_payment,
@@ -73,7 +73,10 @@ pub fn query_all_positions(deps: Deps, trader: String) -> StdResult<Vec<Position
 
     let vamms = match config.insurance_fund {
         Some(insurance_fund) => {
-            query_insurance_all_vamm(&deps, insurance_fund.to_string(), None)?.vamm_list
+            let insurance_controller = InsuranceFundController(insurance_fund);
+            insurance_controller
+                .all_vamms(&deps.querier, None)?
+                .vamm_list
         }
         None => return Err(StdError::generic_err("insurance fund is not registered")),
     };
@@ -128,7 +131,10 @@ pub fn query_trader_balance_with_funding_payment(deps: Deps, trader: String) -> 
 
     let vamms = match config.insurance_fund {
         Some(insurance_fund) => {
-            query_insurance_all_vamm(&deps, insurance_fund.to_string(), None)?.vamm_list
+            let insurance_controller = InsuranceFundController(insurance_fund);
+            insurance_controller
+                .all_vamms(&deps.querier, None)?
+                .vamm_list
         }
         None => return Err(StdError::generic_err("insurance fund is not registered")),
     };

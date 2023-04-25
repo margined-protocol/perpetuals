@@ -1,9 +1,9 @@
 use cosmwasm_schema::cw_serde;
 use margined_perp::margined_pricefeed::{ConfigResponse, ExecuteMsg, QueryMsg};
 
-use cosmwasm_std::{
-    to_binary, Addr, Coin, CosmosMsg, QuerierWrapper, StdResult, Uint128, WasmMsg, WasmQuery,
-};
+use cosmwasm_std::{Addr, CosmosMsg, QuerierWrapper, StdResult, Uint128};
+
+use super::wasm_execute;
 
 /// PricefeedController is a wrapper around Addr that provides a lot of helpers
 /// for working with this.
@@ -13,16 +13,6 @@ pub struct PricefeedController(pub Addr);
 impl PricefeedController {
     pub fn addr(&self) -> Addr {
         self.0.clone()
-    }
-
-    pub fn call<T: Into<ExecuteMsg>>(&self, msg: T, funds: Vec<Coin>) -> StdResult<CosmosMsg> {
-        let msg = to_binary(&msg.into())?;
-        Ok(WasmMsg::Execute {
-            contract_addr: self.addr().into(),
-            msg,
-            funds,
-        }
-        .into())
     }
 
     pub fn append_price(
@@ -36,7 +26,7 @@ impl PricefeedController {
             price,
             timestamp,
         };
-        self.call(msg, vec![])
+        wasm_execute(&self.0, &msg, vec![])
     }
 
     pub fn append_multiple_price(
@@ -50,31 +40,21 @@ impl PricefeedController {
             prices,
             timestamps,
         };
-        self.call(msg, vec![])
+        wasm_execute(&self.0, &msg, vec![])
     }
 
     /// get margined pricefeed configuration
     pub fn config(&self, querier: &QuerierWrapper) -> StdResult<ConfigResponse> {
         let msg = QueryMsg::Config {};
-        let query = WasmQuery::Smart {
-            contract_addr: self.addr().into(),
-            msg: to_binary(&msg)?,
-        }
-        .into();
 
-        querier.query(&query)
+        querier.query_wasm_smart(&self.0, &msg)
     }
 
     /// get price
     pub fn get_price(&self, querier: &QuerierWrapper, key: String) -> StdResult<Uint128> {
         let msg = QueryMsg::GetPrice { key };
-        let query = WasmQuery::Smart {
-            contract_addr: self.addr().into(),
-            msg: to_binary(&msg)?,
-        }
-        .into();
 
-        querier.query(&query)
+        querier.query_wasm_smart(&self.0, &msg)
     }
 
     /// get previous price
@@ -88,13 +68,8 @@ impl PricefeedController {
             key,
             num_round_back,
         };
-        let query = WasmQuery::Smart {
-            contract_addr: self.addr().into(),
-            msg: to_binary(&msg)?,
-        }
-        .into();
 
-        querier.query(&query)
+        querier.query_wasm_smart(&self.0, &msg)
     }
 
     /// get twap price
@@ -105,12 +80,7 @@ impl PricefeedController {
         interval: u64,
     ) -> StdResult<Uint128> {
         let msg = QueryMsg::GetTwapPrice { key, interval };
-        let query = WasmQuery::Smart {
-            contract_addr: self.addr().into(),
-            msg: to_binary(&msg)?,
-        }
-        .into();
 
-        querier.query(&query)
+        querier.query_wasm_smart(&self.0, &msg)
     }
 }

@@ -1,4 +1,5 @@
 use cosmwasm_std::{DepsMut, Env, Response, StdError, StdResult, SubMsg, Uint128};
+use margined_utils::contracts::helpers::VammController;
 
 use crate::{
     contract::INCREASE_POSITION_REPLY_ID,
@@ -7,7 +8,6 @@ use crate::{
         execute_insurance_fund_withdrawal, execute_transfer, execute_transfer_from,
         execute_transfer_to_insurance_fund, transfer_fees, withdraw,
     },
-    querier::query_vamm_state,
     query::query_margin_ratio,
     state::{
         append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_sent_funds,
@@ -761,8 +761,8 @@ pub fn pay_funding_reply(
     // update the cumulative premium fraction
     append_cumulative_premium_fraction(deps.storage, vamm.clone(), premium_fraction)?;
 
-    let total_position_size =
-        query_vamm_state(&deps.as_ref(), vamm.to_string())?.total_position_size;
+    let vamm_controller = VammController(vamm);
+    let total_position_size = vamm_controller.state(&deps.querier)?.total_position_size;
 
     let funding_payment =
         total_position_size * premium_fraction / Integer::new_positive(config.decimals);

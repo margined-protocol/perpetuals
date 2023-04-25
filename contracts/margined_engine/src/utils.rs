@@ -2,6 +2,7 @@ use cosmwasm_std::{
     Addr, Deps, DepsMut, Env, Event, MessageInfo, Response, StdError, StdResult, Storage, SubMsg,
     SubMsgResponse, Uint128,
 };
+use margined_utils::contracts::helpers::{InsuranceFundController, VammController};
 use sha3::{Digest, Sha3_256};
 
 use std::str::FromStr;
@@ -18,10 +19,6 @@ use margined_perp::margined_vamm::Direction;
 use crate::{
     contract::{PAUSER, WHITELIST},
     messages::execute_insurance_fund_withdrawal,
-    querier::{
-        query_insurance_is_vamm, query_vamm_config, query_vamm_output_amount,
-        query_vamm_output_twap, query_vamm_state, query_vamm_underlying_price,
-    },
     query::query_cumulative_premium_fraction,
     state::{read_config, read_position, read_state, read_vamm_map, store_state, State},
 };
@@ -113,7 +110,10 @@ pub fn update_open_interest_notional(
     amount: Integer,
     trader: Addr,
 ) -> StdResult<Response> {
-    let cap = query_vamm_config(deps, vamm.to_string())?.open_interest_notional_cap;
+    let vamm_controller = VammController(vamm);
+    let cap = vamm_controller
+        .config(&deps.querier)?
+        .open_interest_notional_cap;
 
     let mut updated_open_interest =
         amount.checked_add(Integer::new_positive(state.open_interest_notional))?;
@@ -143,7 +143,10 @@ pub fn check_base_asset_holding_cap(
     size: Uint128,
     trader: Addr,
 ) -> StdResult<Response> {
-    let cap = query_vamm_config(deps, vamm.to_string())?.base_asset_holding_cap;
+    let vamm_controller = VammController(vamm);
+    let cap = vamm_controller
+        .config(&deps.querier)?
+        .base_asset_holding_cap;
 
     // check if the cap has been exceeded - if trader address is in whitelist this bypasses
     if (!cap.is_zero() && size > cap)
@@ -193,27 +196,27 @@ pub fn get_position_notional_unrealized_pnl(
     let mut output_notional = Uint128::zero();
     let mut unrealized_pnl = Integer::zero();
 
+    let vamm_controller = VammController(position.vamm.clone());
+
     if !position.size.is_zero() {
         match calc_option {
             PnlCalcOption::Twap => {
-                output_notional = query_vamm_output_twap(
-                    &deps,
-                    position.vamm.to_string(),
+                output_notional = vamm_controller.output_twap(
+                    &deps.querier,
                     position.direction.clone(),
                     position.size.value,
                 )?;
             }
             PnlCalcOption::SpotPrice => {
-                output_notional = query_vamm_output_amount(
-                    &deps,
-                    position.vamm.to_string(),
+                output_notional = vamm_controller.output_amount(
+                    &deps.querier,
                     position.direction.clone(),
                     position.size.value,
                 )?;
             }
             PnlCalcOption::Oracle => {
                 let config = read_config(deps.storage)?;
-                let oracle_price = query_vamm_underlying_price(&deps, position.vamm.to_string())?;
+                let oracle_price = vamm_controller.underlying_price(&deps.querier)?;
 
                 output_notional = oracle_price
                     .checked_mul(position.size.value)?
@@ -346,13 +349,19 @@ pub fn require_vamm(deps: Deps, insurance: &Option<Addr>, vamm: &Addr) -> StdRes
         None => return Err(StdError::generic_err("insurance fund is not registered")),
     };
 
+    let insurance_controller = InsuranceFundController(insurance.clone());
+
     // check that it is a registered vamm
-    if !query_insurance_is_vamm(&deps, insurance.to_string(), vamm.to_string())?.is_vamm {
+    if !insurance_controller
+        .is_vamm(&deps.querier, vamm.to_string())?
+        .is_vamm
+    {
         return Err(StdError::generic_err("vAMM is not registered"));
     }
 
+    let vamm_controller = VammController(vamm.clone());
     // check that vamm is open
-    if !query_vamm_state(&deps, vamm.to_string())?.open {
+    if !vamm_controller.state(&deps.querier)?.open {
         return Err(StdError::generic_err("vAMM is not open"));
     }
 
@@ -491,7 +500,7 @@ fn read_contract_address(event: &Event) -> StdResult<String> {
     let result = event
         .attributes
         .iter()
-        .find(|&attr| attr.key.eq("_contract_addr") || attr.key.eq("_contract_address"));
+        .find(|&attr| attr.key.eq("_contract_address"));
 
     result
         .ok_or_else(|| StdError::generic_err("No attribute found"))
@@ -517,7 +526,7 @@ pub fn side_to_direction(side: &Side) -> Direction {
 }
 
 // takes the direction (long|short) and returns the side (buy|sell)
-pub fn direction_to_side(direction: Direction) -> Side {
+pub fn direction_to_side(direction: &Direction) -> Side {
     match direction {
         Direction::AddToAmm => Side::Buy,
         Direction::RemoveFromAmm => Side::Sell,

@@ -223,8 +223,7 @@ dependencies = [
 [[package]]
 name = "cw-multi-test"
 version = "0.16.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a18afd2e201221c6d72a57f0886ef2a22151bbc9e6db7af276fde8a91081042"
+source = "git+https://github.com/oraichain/cw-multi-test.git#44f3fcfd31b00002946ffc45c488bcdd5e01401f"
 dependencies = [
  "anyhow",
  "cosmwasm-std",

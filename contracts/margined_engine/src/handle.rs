@@ -2,6 +2,7 @@ use cosmwasm_std::{
     to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError, StdResult,
     SubMsg, Uint128, WasmMsg,
 };
+use margined_utils::contracts::helpers::VammController;
 
 use crate::{
     contract::{
@@ -10,9 +11,6 @@ use crate::{
         PAY_FUNDING_REPLY_ID, REVERSE_POSITION_REPLY_ID,
     },
     messages::{execute_transfer_from, withdraw},
-    querier::{
-        query_is_over_fluctuation_limit, query_vamm_output_amount, query_vamm_over_spread_limit,
-    },
     query::{query_free_collateral, query_margin_ratio},
     state::{
         read_config, read_position, read_state, store_config, store_position, store_sent_funds,
@@ -245,9 +243,9 @@ pub fn close_position(
         Direction::RemoveFromAmm
     };
 
-    let is_over_fluctuation_limit = query_is_over_fluctuation_limit(
-        &deps.as_ref(),
-        vamm.to_string(),
+    let vamm_controller = VammController(vamm.clone());
+    let is_over_fluctuation_limit = vamm_controller.is_over_fluctuation_limit(
+        &deps.querier,
         Direction::RemoveFromAmm,
         position.size.value,
     )?;
@@ -255,59 +253,56 @@ pub fn close_position(
     // check if this position exceed fluctuation limit
     // if over fluctuation limit, then close partial position. Otherwise close all.
     // if partialLiquidationRatio is 1, then close whole position
-    let msg: SubMsg =
-        if is_over_fluctuation_limit && config.partial_liquidation_ratio < config.decimals {
-            let side = position_to_side(position.size);
+    let msg: SubMsg = if is_over_fluctuation_limit
+        && config.partial_liquidation_ratio < config.decimals
+    {
+        let side = position_to_side(position.size);
 
-            let partial_close_amount = position
-                .size
-                .value
-                .checked_mul(config.partial_liquidation_ratio)?
-                .checked_div(config.decimals)?;
+        let partial_close_amount = position
+            .size
+            .value
+            .checked_mul(config.partial_liquidation_ratio)?
+            .checked_div(config.decimals)?;
 
-            let partial_close_notional = query_vamm_output_amount(
-                &deps.as_ref(),
-                vamm.to_string(),
-                base_direction,
-                partial_close_amount,
-            )?;
+        let partial_close_notional =
+            vamm_controller.output_amount(&deps.querier, base_direction, partial_close_amount)?;
 
-            let PositionUnrealizedPnlResponse {
+        let PositionUnrealizedPnlResponse {
+            position_notional,
+            unrealized_pnl,
+        } = get_position_notional_unrealized_pnl(
+            deps.as_ref(),
+            &position,
+            PnlCalcOption::SpotPrice,
+        )?;
+
+        store_tmp_swap(
+            deps.storage,
+            &TmpSwapInfo {
+                vamm: position.vamm.clone(),
+                trader: position.trader.clone(),
+                side: side.clone(),
+                margin_amount: position.size.value,
+                leverage: config.decimals,
+                open_notional: partial_close_notional,
                 position_notional,
                 unrealized_pnl,
-            } = get_position_notional_unrealized_pnl(
-                deps.as_ref(),
-                &position,
-                PnlCalcOption::SpotPrice,
-            )?;
+                margin_to_vault: Integer::zero(),
+                fees_paid: false,
+            },
+        )?;
 
-            store_tmp_swap(
-                deps.storage,
-                &TmpSwapInfo {
-                    vamm: position.vamm.clone(),
-                    trader: position.trader.clone(),
-                    side: side.clone(),
-                    margin_amount: position.size.value,
-                    leverage: config.decimals,
-                    open_notional: partial_close_notional,
-                    position_notional,
-                    unrealized_pnl,
-                    margin_to_vault: Integer::zero(),
-                    fees_paid: false,
-                },
-            )?;
-
-            swap_input(
-                &position.vamm,
-                side,
-                partial_close_notional,
-                Uint128::zero(),
-                true,
-                PARTIAL_CLOSE_POSITION_REPLY_ID,
-            )?
-        } else {
-            internal_close_position(deps, &position, quote_amount_limit, CLOSE_POSITION_REPLY_ID)?
-        };
+        swap_input(
+            &position.vamm,
+            &side,
+            partial_close_notional,
+            Uint128::zero(),
+            true,
+            PARTIAL_CLOSE_POSITION_REPLY_ID,
+        )?
+    } else {
+        internal_close_position(deps, &position, quote_amount_limit, CLOSE_POSITION_REPLY_ID)?
+    };
 
     Ok(Response::new().add_submessage(msg).add_attributes(vec![
         ("action", "close_position"),
@@ -336,7 +331,9 @@ pub fn liquidate(
     // retrieve the existing margin ratio of the position
     let mut margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), trader.to_string())?;
 
-    if query_vamm_over_spread_limit(&deps.as_ref(), vamm.to_string())? {
+    let vamm_controller = VammController(vamm.clone());
+
+    if vamm_controller.is_over_spread_limit(&deps.querier)? {
         let oracle_margin_ratio = get_margin_ratio_calc_option(
             deps.as_ref(),
             vamm.to_string(),
@@ -533,7 +530,7 @@ pub fn internal_increase_position(
 ) -> StdResult<SubMsg> {
     swap_input(
         &vamm,
-        side,
+        &side,
         open_notional,
         base_asset_limit,
         false,
@@ -547,12 +544,13 @@ pub fn internal_close_position(
     quote_asset_limit: Uint128,
     id: u64,
 ) -> StdResult<SubMsg> {
+    let side = direction_to_side(&position.direction);
     store_tmp_swap(
         deps.storage,
         &TmpSwapInfo {
             vamm: position.vamm.clone(),
             trader: position.trader.clone(),
-            side: direction_to_side(position.direction.clone()),
+            side: side.clone(),
             margin_amount: position.size.value,
             leverage: Uint128::zero(),
             open_notional: position.notional,
@@ -564,8 +562,8 @@ pub fn internal_close_position(
     )?;
 
     swap_output(
-        &position.vamm.clone(),
-        direction_to_side(position.direction.clone()),
+        &position.vamm,
+        &side,
         position.size.value,
         quote_asset_limit,
         id,
@@ -596,7 +594,7 @@ fn open_reverse_position(
 
         swap_input(
             &position.vamm,
-            side,
+            &side,
             notional_amount,
             base_asset_limit,
             can_go_over_fluctuation,
@@ -611,7 +609,7 @@ fn open_reverse_position(
 
         swap_output(
             &position.vamm,
-            direction_to_side(position.direction.clone()),
+            &direction_to_side(&position.direction),
             position.size.value,
             Uint128::zero(),
             reply_id,
@@ -642,9 +640,10 @@ fn partial_liquidation(
         .checked_mul(config.partial_liquidation_ratio)?
         .checked_div(config.decimals)?;
 
-    let current_notional = query_vamm_output_amount(
-        &deps.as_ref(),
-        vamm.to_string(),
+    let vamm_controller = VammController(vamm.clone());
+
+    let current_notional = vamm_controller.output_amount(
+        &deps.querier,
         position.direction.clone(),
         partial_position_size,
     )?;
@@ -675,7 +674,7 @@ fn partial_liquidation(
     let msg: SubMsg = if current_notional > position.notional {
         swap_input(
             &vamm,
-            direction_to_side(position.direction.clone()),
+            &direction_to_side(&position.direction),
             position.notional,
             Uint128::zero(),
             true,
@@ -684,7 +683,7 @@ fn partial_liquidation(
     } else {
         swap_output(
             &vamm,
-            direction_to_side(position.direction),
+            &direction_to_side(&position.direction),
             partial_position_size,
             partial_asset_limit,
             PARTIAL_LIQUIDATION_REPLY_ID,
@@ -696,13 +695,13 @@ fn partial_liquidation(
 
 fn swap_input(
     vamm: &Addr,
-    side: Side,
+    side: &Side,
     open_notional: Uint128,
     base_asset_limit: Uint128,
     can_go_over_fluctuation: bool,
     id: u64,
 ) -> StdResult<SubMsg> {
-    let direction: Direction = side_to_direction(&side);
+    let direction: Direction = side_to_direction(side);
 
     let msg = WasmMsg::Execute {
         contract_addr: vamm.to_string(),
@@ -727,12 +726,12 @@ fn swap_input(
 
 fn swap_output(
     vamm: &Addr,
-    side: Side,
+    side: &Side,
     open_notional: Uint128,
     quote_asset_limit: Uint128,
     id: u64,
 ) -> StdResult<SubMsg> {
-    let direction: Direction = side_to_direction(&side);
+    let direction: Direction = side_to_direction(side);
 
     let swap_msg = WasmMsg::Execute {
         contract_addr: vamm.to_string(),

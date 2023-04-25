@@ -3,9 +3,9 @@ use margined_perp::margined_vamm::{
     CalcFeeResponse, ConfigResponse, Direction, ExecuteMsg, QueryMsg, StateResponse,
 };
 
-use cosmwasm_std::{
-    to_binary, Addr, Coin, CosmosMsg, QuerierWrapper, StdResult, Uint128, WasmMsg, WasmQuery,
-};
+use cosmwasm_std::{Addr, CosmosMsg, QuerierWrapper, StdResult, Uint128};
+
+use super::wasm_execute;
 
 /// VammController is a wrapper around Addr that provides a lot of helpers
 /// for working with this.
@@ -15,16 +15,6 @@ pub struct VammController(pub Addr);
 impl VammController {
     pub fn addr(&self) -> Addr {
         self.0.clone()
-    }
-
-    pub fn call<T: Into<ExecuteMsg>>(&self, msg: T, funds: Vec<Coin>) -> StdResult<CosmosMsg> {
-        let msg = to_binary(&msg.into())?;
-        Ok(WasmMsg::Execute {
-            contract_addr: self.addr().into(),
-            msg,
-            funds,
-        }
-        .into())
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -40,23 +30,25 @@ impl VammController {
         pricefeed: Option<String>,
         spot_price_twap_interval: Option<u64>,
     ) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::UpdateConfig {
-            base_asset_holding_cap,
-            open_interest_notional_cap,
-            toll_ratio,
-            spread_ratio,
-            fluctuation_limit_ratio,
-            margin_engine,
-            insurance_fund,
-            pricefeed,
-            spot_price_twap_interval,
-        };
-        self.call(msg, vec![])
+        wasm_execute(
+            &self.0,
+            &ExecuteMsg::UpdateConfig {
+                base_asset_holding_cap,
+                open_interest_notional_cap,
+                toll_ratio,
+                spread_ratio,
+                fluctuation_limit_ratio,
+                margin_engine,
+                insurance_fund,
+                pricefeed,
+                spot_price_twap_interval,
+            },
+            vec![],
+        )
     }
 
     pub fn update_owner(&self, owner: String) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::UpdateOwner { owner };
-        self.call(msg, vec![])
+        wasm_execute(&self.0, &ExecuteMsg::UpdateOwner { owner }, vec![])
     }
 
     pub fn set_toll_ratio(&self, toll_ratio: Uint128) -> StdResult<CosmosMsg> {
@@ -71,7 +63,7 @@ impl VammController {
             pricefeed: None,
             spot_price_twap_interval: None,
         };
-        self.call(msg, vec![])
+        wasm_execute(&self.0, &msg, vec![])
     }
 
     pub fn set_spread_ratio(&self, spread_ratio: Uint128) -> StdResult<CosmosMsg> {
@@ -86,7 +78,7 @@ impl VammController {
             pricefeed: None,
             spot_price_twap_interval: None,
         };
-        self.call(msg, vec![])
+        wasm_execute(&self.0, &msg, vec![])
     }
 
     pub fn set_open_interest_notional_cap(
@@ -104,7 +96,7 @@ impl VammController {
             pricefeed: None,
             spot_price_twap_interval: None,
         };
-        self.call(msg, vec![])
+        wasm_execute(&self.0, &msg, vec![])
     }
 
     pub fn set_base_asset_holding_cap(
@@ -122,7 +114,7 @@ impl VammController {
             pricefeed: None,
             spot_price_twap_interval: None,
         };
-        self.call(msg, vec![])
+        wasm_execute(&self.0, &msg, vec![])
     }
 
     pub fn set_fluctuation_limit_ratio(
@@ -140,12 +132,12 @@ impl VammController {
             pricefeed: None,
             spot_price_twap_interval: None,
         };
-        self.call(msg, vec![])
+        wasm_execute(&self.0, &msg, vec![])
     }
 
     pub fn set_open(&self, open: bool) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::SetOpen { open };
-        self.call(msg, vec![])
+        wasm_execute(&self.0, &msg, vec![])
     }
 
     pub fn swap_input(
@@ -161,7 +153,7 @@ impl VammController {
             base_asset_limit,
             can_go_over_fluctuation,
         };
-        self.call(msg, vec![])
+        wasm_execute(&self.0, &msg, vec![])
     }
 
     pub fn swap_output(
@@ -175,36 +167,22 @@ impl VammController {
             base_asset_amount,
             quote_asset_limit,
         };
-        self.call(msg, vec![])
+        wasm_execute(&self.0, &msg, vec![])
     }
 
     pub fn settle_funding(&self) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::SettleFunding {};
-        self.call(msg, vec![])
+        wasm_execute(&self.0, &msg, vec![])
     }
 
     /// get margin vamm configuration
     pub fn config(&self, querier: &QuerierWrapper) -> StdResult<ConfigResponse> {
-        let msg = QueryMsg::Config {};
-        let query = WasmQuery::Smart {
-            contract_addr: self.addr().into(),
-            msg: to_binary(&msg)?,
-        }
-        .into();
-
-        querier.query(&query)
+        querier.query_wasm_smart(&self.0, &QueryMsg::Config {})
     }
 
     /// get margin vamm state
     pub fn state(&self, querier: &QuerierWrapper) -> StdResult<StateResponse> {
-        let msg = QueryMsg::State {};
-        let query = WasmQuery::Smart {
-            contract_addr: self.addr().into(),
-            msg: to_binary(&msg)?,
-        }
-        .into();
-
-        querier.query(&query)
+        querier.query_wasm_smart(&self.0, &QueryMsg::State {})
     }
 
     /// get output price
@@ -214,38 +192,19 @@ impl VammController {
         direction: Direction,
         amount: Uint128,
     ) -> StdResult<Uint128> {
-        let msg = QueryMsg::OutputPrice { direction, amount };
-        let query = WasmQuery::Smart {
-            contract_addr: self.addr().into(),
-            msg: to_binary(&msg)?,
-        }
-        .into();
-
-        querier.query(&query)
+        querier.query_wasm_smart(&self.0, &QueryMsg::OutputPrice { direction, amount })
     }
 
     /// get spot price
     pub fn spot_price(&self, querier: &QuerierWrapper) -> StdResult<Uint128> {
-        let msg = QueryMsg::SpotPrice {};
-        let query = WasmQuery::Smart {
-            contract_addr: self.addr().into(),
-            msg: to_binary(&msg)?,
-        }
-        .into();
-
-        querier.query(&query)
+        querier.query_wasm_smart(&self.0, &QueryMsg::SpotPrice {})
     }
 
     /// get twap price
     pub fn twap_price(&self, querier: &QuerierWrapper, interval: u64) -> StdResult<Uint128> {
         let msg = QueryMsg::TwapPrice { interval };
-        let query = WasmQuery::Smart {
-            contract_addr: self.addr().into(),
-            msg: to_binary(&msg)?,
-        }
-        .into();
 
-        querier.query(&query)
+        querier.query_wasm_smart(&self.0, &msg)
     }
 
     /// get swap fees
@@ -254,25 +213,54 @@ impl VammController {
         querier: &QuerierWrapper,
         quote_asset_amount: Uint128,
     ) -> StdResult<CalcFeeResponse> {
-        let msg = QueryMsg::CalcFee { quote_asset_amount };
-        let query = WasmQuery::Smart {
-            contract_addr: self.addr().into(),
-            msg: to_binary(&msg)?,
-        }
-        .into();
-
-        querier.query(&query)
+        querier.query_wasm_smart(&self.0, &QueryMsg::CalcFee { quote_asset_amount })
     }
 
-    /// is over spread limit
+    /// returns bool if vamm is over spread limit
     pub fn is_over_spread_limit(&self, querier: &QuerierWrapper) -> StdResult<bool> {
-        let msg = QueryMsg::IsOverSpreadLimit {};
-        let query = WasmQuery::Smart {
-            contract_addr: self.addr().into(),
-            msg: to_binary(&msg)?,
-        }
-        .into();
+        querier.query_wasm_smart(&self.0, &QueryMsg::IsOverSpreadLimit {})
+    }
 
-        querier.query(&query)
+    // returns the state of the request vamm
+    // can be used to calculate the input and outputs
+    pub fn output_amount(
+        &self,
+        querier: &QuerierWrapper,
+        direction: Direction,
+        amount: Uint128,
+    ) -> StdResult<Uint128> {
+        querier.query_wasm_smart(&self.0, &QueryMsg::OutputAmount { direction, amount })
+    }
+
+    // returns the state of the request vamm
+    // can be used to calculate the input and outputs
+    pub fn output_twap(
+        &self,
+        querier: &QuerierWrapper,
+        direction: Direction,
+        amount: Uint128,
+    ) -> StdResult<Uint128> {
+        querier.query_wasm_smart(&self.0, &QueryMsg::OutputTwap { direction, amount })
+    }
+
+    // returns pricefeed price of underlying in vamm
+    pub fn underlying_price(&self, querier: &QuerierWrapper) -> StdResult<Uint128> {
+        querier.query_wasm_smart(&self.0, &QueryMsg::UnderlyingPrice {})
+    }
+
+    // returns bool if swap is over fluctuation limit
+    pub fn is_over_fluctuation_limit(
+        &self,
+        querier: &QuerierWrapper,
+        direction: Direction,
+        base_asset_amount: Uint128,
+    ) -> StdResult<bool> {
+        querier.query_wasm_smart(
+            &self.0,
+            &QueryMsg::IsOverFluctuationLimit {
+                direction,
+                base_asset_amount,
+            },
+        )
     }
 }

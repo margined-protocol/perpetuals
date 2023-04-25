@@ -107,7 +107,7 @@ impl NativeTokenScenario {
                 &InstantiateMsg {
                     pauser: owner.to_string(),
                     insurance_fund: None,
-                    fee_pool: fee_pool.addr().to_string(),
+                    fee_pool: fee_pool.0.to_string(),
                     eligible_collateral: native_denom.to_string(),
                     initial_margin_ratio: Uint128::from(50_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
@@ -136,7 +136,7 @@ impl NativeTokenScenario {
 
         // send insurance fund funds
         let msg = CosmosMsg::Bank(BankMsg::Send {
-            to_address: insurance_fund.addr().to_string(),
+            to_address: insurance_fund.0.to_string(),
             amount: init_funds,
         });
         router.execute(bank.clone(), msg).unwrap();
@@ -148,7 +148,7 @@ impl NativeTokenScenario {
                 engine_addr.clone(),
                 &ExecuteMsg::UpdateConfig {
                     owner: None,
-                    insurance_fund: Some(insurance_fund.addr().to_string()),
+                    insurance_fund: Some(insurance_fund.0.to_string()),
                     fee_pool: None,
                     initial_margin_ratio: None,
                     maintenance_margin_ratio: None,
@@ -189,7 +189,7 @@ impl NativeTokenScenario {
                     fluctuation_limit_ratio: Uint128::zero(),
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: None,
-                    insurance_fund: Some(insurance_fund.addr().to_string()),
+                    insurance_fund: Some(insurance_fund.0.to_string()),
                 },
                 &[],
                 "vamm",
@@ -222,7 +222,7 @@ impl NativeTokenScenario {
         let msg = vamm.set_open(true).unwrap();
         router.execute(owner.clone(), msg).unwrap();
 
-        let msg = insurance_fund.add_vamm(vamm.addr().to_string()).unwrap();
+        let msg = insurance_fund.add_vamm(vamm.0.to_string()).unwrap();
         router.execute(owner.clone(), msg).unwrap();
 
         // append a price to the mock pricefeed
@@ -273,7 +273,7 @@ impl NativeTokenScenario {
             let msg = self
                 .engine
                 .open_position(
-                    self.vamm.addr().to_string(),
+                    self.vamm.0.to_string(),
                     side.clone(),
                     quote_asset_amount,
                     leverage,
@@ -386,8 +386,8 @@ impl SimpleScenario {
                 &InstantiateMsg {
                     pauser: owner.to_string(),
                     insurance_fund: None,
-                    fee_pool: fee_pool.addr().to_string(),
-                    eligible_collateral: usdc.addr().to_string(),
+                    fee_pool: fee_pool.0.to_string(),
+                    eligible_collateral: usdc.0.to_string(),
                     initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
                     liquidation_fee: Uint128::from(50_000_000u128),      // 0.05
@@ -404,7 +404,7 @@ impl SimpleScenario {
                 insurance_fund_id,
                 owner.clone(),
                 &InsuranceFundInstantiateMsg {
-                    engine: engine.addr().to_string(),
+                    engine: engine.0.to_string(),
                 },
                 &[],
                 "insurance_fund",
@@ -417,10 +417,10 @@ impl SimpleScenario {
         router
             .execute_contract(
                 owner.clone(),
-                engine.addr(),
+                engine.0.clone(),
                 &ExecuteMsg::UpdateConfig {
                     owner: None,
-                    insurance_fund: Some(insurance_fund.addr().to_string()),
+                    insurance_fund: Some(insurance_fund.0.to_string()),
                     fee_pool: None,
                     initial_margin_ratio: None,
                     maintenance_margin_ratio: None,
@@ -506,7 +506,7 @@ impl SimpleScenario {
         let msg = vamm.set_open(true).unwrap();
         router.execute(owner.clone(), msg).unwrap();
 
-        let msg = insurance_fund.add_vamm(vamm.addr().to_string()).unwrap();
+        let msg = insurance_fund.add_vamm(vamm.0.to_string()).unwrap();
         router.execute(owner.clone(), msg).unwrap();
 
         // create allowance for alice
@@ -593,7 +593,7 @@ impl SimpleScenario {
             let msg = self
                 .engine
                 .open_position(
-                    self.vamm.addr().to_string(),
+                    self.vamm.0.to_string(),
                     side.clone(),
                     quote_asset_amount,
                     leverage,
@@ -782,7 +782,7 @@ impl ShutdownScenario {
                 insurance_fund_id,
                 owner.clone(),
                 &InsuranceFundInstantiateMsg {
-                    engine: engine.addr().to_string(),
+                    engine: engine.0.to_string(),
                 },
                 &[],
                 "insurance_fund",
@@ -905,7 +905,7 @@ impl ShutdownScenario {
                     fluctuation_limit_ratio: Uint128::from(10_000u128), // 0.01
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
-                    insurance_fund: Some(insurance_fund.addr().to_string()),
+                    insurance_fund: Some(insurance_fund.0.to_string()),
                 },
                 &[],
                 "vamm4",
@@ -920,7 +920,7 @@ impl ShutdownScenario {
         let vamm5_addr = router
             .instantiate_contract(
                 vamm_id,
-                insurance_fund.addr(),
+                insurance_fund.0.clone(),
                 &VammInstantiateMsg {
                     decimals: 7u8, //see here
                     quote_asset: "USD".to_string(),
@@ -933,7 +933,7 @@ impl ShutdownScenario {
                     fluctuation_limit_ratio: Uint128::from(10_000u128), // 0.01
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
-                    insurance_fund: Some(insurance_fund.addr().to_string()),
+                    insurance_fund: Some(insurance_fund.0.to_string()),
                 },
                 &[],
                 "vamm5",

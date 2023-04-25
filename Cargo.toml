@@ -32,7 +32,7 @@ cw-controllers = "1.0.1"
 cw2 = "1.0.1"
 cw20 = { version = "1.0.1" }
 cw20-base = { version = "1.0.1" }
-cw-multi-test = "0.16.2"
+cw-multi-test = { git = "https://github.com/oraichain/cw-multi-test.git" } # fix _contract_address attribute
 cw-utils = "1.0.1"
 
 margined_utils = { path = "./packages/margined_utils" }
