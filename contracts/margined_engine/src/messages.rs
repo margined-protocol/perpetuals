@@ -1,8 +1,5 @@
-use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, Env, ReplyOn, StdError, StdResult, Storage,
-    SubMsg, Uint128, WasmMsg,
-};
-use cw20::Cw20ExecuteMsg;
+use cosmwasm_std::{Addr, Deps, Env, StdError, StdResult, Storage, SubMsg, Uint128};
+
 use margined_utils::contracts::helpers::VammController;
 
 use crate::{
@@ -10,11 +7,10 @@ use crate::{
     state::{read_config, State},
 };
 
-use margined_common::asset::AssetInfo;
+use margined_common::{asset::AssetInfo, messages::wasm_execute};
 use margined_perp::margined_engine::TransferResponse;
 use margined_perp::margined_insurance_fund::ExecuteMsg as InsuranceFundExecuteMessage;
 use margined_perp::margined_vamm::CalcFeeResponse;
-use margined_perp::querier::query_token_balance;
 
 pub fn execute_transfer_from(
     storage: &dyn Storage,
@@ -24,30 +20,13 @@ pub fn execute_transfer_from(
 ) -> StdResult<SubMsg> {
     let config = read_config(storage)?;
 
-    let msg: CosmosMsg = match config.eligible_collateral {
-        AssetInfo::NativeToken { denom } => CosmosMsg::Bank(BankMsg::Send {
-            to_address: receiver.to_string(),
-            amount: vec![Coin { denom, amount }],
-        }),
-        AssetInfo::Token { contract_addr } => CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: contract_addr.to_string(),
-            funds: vec![],
-            msg: to_binary(&Cw20ExecuteMsg::TransferFrom {
-                owner: owner.to_string(),
-                recipient: receiver.to_string(),
-                amount,
-            })?,
-        }),
-    };
+    let msg = config.eligible_collateral.into_msg(
+        receiver.to_string(),
+        amount,
+        Some(owner.to_string()),
+    )?;
 
-    let transfer_msg = SubMsg {
-        msg,
-        gas_limit: None,
-        id: TRANSFER_FAILURE_REPLY_ID,
-        reply_on: ReplyOn::Error,
-    };
-
-    Ok(transfer_msg)
+    Ok(SubMsg::reply_on_error(msg, TRANSFER_FAILURE_REPLY_ID))
 }
 
 pub fn execute_transfer(
@@ -57,29 +36,11 @@ pub fn execute_transfer(
 ) -> StdResult<SubMsg> {
     let config = read_config(storage)?;
 
-    let msg: CosmosMsg = match config.eligible_collateral {
-        AssetInfo::NativeToken { denom } => CosmosMsg::Bank(BankMsg::Send {
-            to_address: receiver.to_string(),
-            amount: vec![Coin { denom, amount }],
-        }),
-        AssetInfo::Token { contract_addr } => CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: contract_addr.to_string(),
-            funds: vec![],
-            msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                recipient: receiver.to_string(),
-                amount,
-            })?,
-        }),
-    };
+    let msg = config
+        .eligible_collateral
+        .into_msg(receiver.to_string(), amount, None)?;
 
-    let transfer_msg = SubMsg {
-        msg,
-        gas_limit: None,
-        id: TRANSFER_FAILURE_REPLY_ID,
-        reply_on: ReplyOn::Error,
-    };
-
-    Ok(transfer_msg)
+    Ok(SubMsg::reply_on_error(msg, TRANSFER_FAILURE_REPLY_ID))
 }
 
 pub fn execute_transfer_to_insurance_fund(
@@ -89,11 +50,9 @@ pub fn execute_transfer_to_insurance_fund(
 ) -> StdResult<SubMsg> {
     let config = read_config(deps.storage)?;
 
-    let token_balance = query_token_balance(
-        deps,
-        config.eligible_collateral.clone(),
-        env.contract.address,
-    )?;
+    let token_balance = config
+        .eligible_collateral
+        .query_balance(&deps.querier, env.contract.address)?;
 
     let amount_to_send = if token_balance < amount {
         token_balance
@@ -115,23 +74,16 @@ pub fn execute_insurance_fund_withdrawal(deps: Deps, amount: Uint128) -> StdResu
         None => return Err(StdError::generic_err("insurance fund is not registered")),
     };
 
-    let msg = WasmMsg::Execute {
-        contract_addr: insurance_fund.to_string(),
-        funds: vec![],
-        msg: to_binary(&InsuranceFundExecuteMessage::Withdraw {
+    let msg = wasm_execute(
+        insurance_fund,
+        &InsuranceFundExecuteMessage::Withdraw {
             token: config.eligible_collateral,
             amount,
-        })?,
-    };
+        },
+        vec![],
+    )?;
 
-    let transfer_msg = SubMsg {
-        msg: CosmosMsg::Wasm(msg),
-        gas_limit: None,
-        id: TRANSFER_FAILURE_REPLY_ID,
-        reply_on: ReplyOn::Error,
-    };
-
-    Ok(transfer_msg)
+    Ok(SubMsg::reply_on_error(msg, TRANSFER_FAILURE_REPLY_ID))
 }
 
 // Transfers the toll and spread fees to the the insurance fund and fee pool
@@ -184,7 +136,7 @@ pub fn withdraw(
     amount: Uint128,
     pre_paid_shortfall: Uint128,
 ) -> StdResult<Vec<SubMsg>> {
-    let token_balance = query_token_balance(deps, eligible_collateral, env.contract.address)?;
+    let token_balance = eligible_collateral.query_balance(&deps.querier, env.contract.address)?;
 
     let mut messages: Vec<SubMsg> = vec![];
 

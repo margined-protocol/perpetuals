@@ -6,7 +6,7 @@ use margined_perp::margined_insurance_fund::{
 
 use cosmwasm_std::{Addr, CosmosMsg, QuerierWrapper, StdResult};
 
-use super::wasm_execute;
+use margined_common::messages::wasm_execute;
 
 /// InsuranceFundController is a wrapper around Addr that provides a lot of helpers
 /// for working with this.

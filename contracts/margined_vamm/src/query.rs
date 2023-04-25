@@ -3,11 +3,11 @@ use margined_common::integer::Integer;
 use margined_perp::margined_vamm::{
     CalcFeeResponse, ConfigResponse, Direction, OwnerResponse, StateResponse,
 };
+use margined_utils::contracts::helpers::PricefeedController;
 
 use crate::{
     contract::OWNER,
     handle::{get_input_price_with_reserves, get_output_price_with_reserves},
-    querier::query_underlying_price,
     state::{read_config, read_reserve_snapshot_counter, read_state, Config, State},
     utils::{
         calc_twap, price_boundaries_of_last_block, TwapCalcOption, TwapInputAsset,
@@ -235,9 +235,10 @@ pub fn query_calc_fee(deps: Deps, quote_asset_amount: Uint128) -> StdResult<Calc
 /// Returns bool to show is spread limit has been exceeded
 pub fn query_is_over_spread_limit(deps: Deps) -> StdResult<bool> {
     let config: Config = read_config(deps.storage)?;
+    let pricefeed_controller = PricefeedController(config.pricefeed);
 
     // get price from the oracle
-    let oracle_price = query_underlying_price(&deps)?;
+    let oracle_price = pricefeed_controller.get_price(&deps.querier, config.base_asset)?;
     if oracle_price.is_zero() {
         return Err(StdError::generic_err("underlying price is 0"));
     }

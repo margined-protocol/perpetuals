@@ -9,7 +9,7 @@ use cosmwasm_std::{Addr, Coin, CosmosMsg, QuerierWrapper, StdResult, Uint128};
 
 use margined_common::integer::Integer;
 
-use super::wasm_execute;
+use margined_common::messages::wasm_execute;
 
 /// EngineController is a wrapper around Addr that provides a lot of helpers
 /// for working with this.

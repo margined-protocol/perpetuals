@@ -1,16 +1,12 @@
-use cosmwasm_std::{
-    to_binary, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError,
-    StdResult, SubMsg, Uint128, WasmMsg,
-};
-use cw20::Cw20ExecuteMsg;
-use margined_common::asset::AssetInfo;
-
 use crate::{
     contract::OWNER,
-    messages::execute_vamm_shutdown,
-    querier::{query_engine_decimals, query_vamm_decimals},
     state::{read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, Config, VAMM_LIMIT},
 };
+use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128};
+
+use margined_common::{asset::AssetInfo, messages::wasm_execute};
+use margined_perp::margined_vamm::ExecuteMsg as VammExecuteMessage;
+use margined_utils::contracts::helpers::{EngineController, VammController};
 
 pub fn update_owner(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {
     // validate the address
@@ -32,10 +28,12 @@ pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Res
     // validate address
     let vamm_valid = deps.api.addr_validate(&vamm)?;
 
+    let vamm_controller = VammController(vamm_valid.clone());
+    let engine_controller = EngineController(config.engine);
+
     // check decimals are consistent
-    let engine_decimals: Uint128 =
-        query_engine_decimals(&deps.as_ref(), config.engine.to_string())?;
-    let vamm_decimals: Uint128 = query_vamm_decimals(&deps.as_ref(), vamm)?;
+    let engine_decimals = engine_controller.config(&deps.querier)?.decimals;
+    let vamm_decimals = vamm_controller.config(&deps.querier)?.decimals;
 
     if engine_decimals != vamm_decimals {
         return Err(StdError::generic_err(
@@ -77,10 +75,11 @@ pub fn shutdown_all_vamm(deps: DepsMut, env: Env, info: MessageInfo) -> StdResul
     let keys = read_vammlist(deps.as_ref(), VAMM_LIMIT)?;
 
     for vamm in keys.iter() {
-        msgs.push(execute_vamm_shutdown(vamm.clone())?);
+        let msg = wasm_execute(vamm, &VammExecuteMessage::SetOpen { open: false }, vec![])?;
+        msgs.push(msg);
     }
 
-    Ok(Response::default().add_submessages(msgs))
+    Ok(Response::default().add_messages(msgs))
 }
 
 pub fn withdraw(
@@ -97,30 +96,10 @@ pub fn withdraw(
     }
 
     // send tokens if native or cw20
-    let msg: CosmosMsg = match token {
-        AssetInfo::NativeToken { denom } => CosmosMsg::Bank(BankMsg::Send {
-            to_address: config.engine.to_string(),
-            amount: vec![Coin { denom, amount }],
-        }),
-        AssetInfo::Token { contract_addr } => CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: contract_addr.to_string(),
-            funds: vec![],
-            msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                recipient: config.engine.to_string(),
-                amount,
-            })?,
-        }),
-    };
-
-    let transfer_msg = SubMsg {
-        msg,
-        gas_limit: None, // probably should set a limit in the config
-        id: 0u64,
-        reply_on: ReplyOn::Never,
-    };
+    let transfer_msg = token.into_msg(config.engine.to_string(), amount, None)?;
 
     Ok(Response::default()
-        .add_submessage(transfer_msg)
+        .add_message(transfer_msg)
         .add_attributes(vec![
             ("action", "insurance_withdraw"),
             ("amount", &amount.to_string()),

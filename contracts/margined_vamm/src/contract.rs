@@ -10,9 +10,9 @@ use margined_common::{
     validate::{validate_assets, validate_decimal_places, validate_non_fraction, validate_ratio},
 };
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use margined_utils::contracts::helpers::PricefeedController;
 
-use crate::error::ContractError;
-use crate::querier::{query_underlying_price, query_underlying_twap_price};
+use crate::{error::ContractError, state::read_config};
 use crate::{
     handle::{set_open, settle_funding, swap_input, swap_output, update_config, update_owner},
     query::{
@@ -197,9 +197,19 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::OutputTwap { direction, amount } => {
             to_binary(&query_output_twap(deps, env, direction, amount)?)
         }
-        QueryMsg::UnderlyingPrice {} => to_binary(&query_underlying_price(&deps)?),
+        QueryMsg::UnderlyingPrice {} => {
+            let config = read_config(deps.storage)?;
+            let pricefeed_controller = PricefeedController(config.pricefeed);
+            to_binary(&pricefeed_controller.get_price(&deps.querier, config.base_asset)?)
+        }
         QueryMsg::UnderlyingTwapPrice { interval } => {
-            to_binary(&query_underlying_twap_price(&deps, interval)?)
+            let config = read_config(deps.storage)?;
+            let pricefeed_controller = PricefeedController(config.pricefeed);
+            to_binary(&pricefeed_controller.twap_price(
+                &deps.querier,
+                config.base_asset,
+                interval,
+            )?)
         }
         QueryMsg::CalcFee { quote_asset_amount } => {
             to_binary(&query_calc_fee(deps, quote_asset_amount)?)

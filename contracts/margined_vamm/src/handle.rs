@@ -4,12 +4,12 @@ use cosmwasm_std::{
 
 use margined_common::{integer::Integer, validate::validate_ratio};
 use margined_perp::margined_vamm::Direction;
+use margined_utils::contracts::helpers::PricefeedController;
 
 use crate::{
     contract::{
         ONE_DAY_IN_SECONDS, ONE_HOUR_IN_SECONDS, ONE_MINUTE_IN_SECONDS, ONE_WEEK_IN_SECONDS, OWNER,
     },
-    querier::query_underlying_twap_price,
     query::query_twap_price,
     state::{read_config, read_state, store_config, store_state, Config, State},
     utils::{
@@ -276,9 +276,14 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
         return Err(StdError::generic_err("settle funding called too early"));
     }
 
+    let pricefeed_controller = PricefeedController(config.pricefeed);
+
     // twap price from oracle
-    let underlying_price: Uint128 =
-        query_underlying_twap_price(&deps.as_ref(), config.spot_price_twap_interval)?;
+    let underlying_price: Uint128 = pricefeed_controller.twap_price(
+        &deps.querier,
+        config.base_asset,
+        config.spot_price_twap_interval,
+    )?;
 
     // twap price from here, i.e. the amm
     let index_price: Uint128 =

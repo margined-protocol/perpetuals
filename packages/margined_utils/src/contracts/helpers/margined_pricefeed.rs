@@ -3,7 +3,7 @@ use margined_perp::margined_pricefeed::{ConfigResponse, ExecuteMsg, QueryMsg};
 
 use cosmwasm_std::{Addr, CosmosMsg, QuerierWrapper, StdResult, Uint128};
 
-use super::wasm_execute;
+use margined_common::messages::wasm_execute;
 
 /// PricefeedController is a wrapper around Addr that provides a lot of helpers
 /// for working with this.

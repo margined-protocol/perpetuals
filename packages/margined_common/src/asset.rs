@@ -2,11 +2,12 @@ use cosmwasm_schema::cw_serde;
 use std::fmt;
 
 use cosmwasm_std::{
-    to_binary, Addr, Api, BankMsg, Coin, CosmosMsg, Deps, MessageInfo, QuerierWrapper,
-    QueryRequest, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
+    Addr, Api, BankMsg, Coin, CosmosMsg, MessageInfo, QuerierWrapper, StdError, StdResult, Uint128,
 };
 use cw20::{Cw20ExecuteMsg, Cw20QueryMsg, TokenInfoResponse};
 use cw_utils::must_pay;
+
+use crate::messages::wasm_execute;
 
 pub const ORAI_DENOM: &str = "orai";
 
@@ -34,38 +35,8 @@ impl Asset {
         self.info.is_native_token()
     }
 
-    /// Returns a message of type [`CosmosMsg`].
-    ///
-    /// For native tokens of type [`AssetInfo`] uses the default method [`BankMsg::Send`] to send a token amount to a recipient.
-    /// Before the token is sent, we need to deduct a tax.
-    ///
-    /// For a token of type [`AssetInfo`] we use the default method [`Cw20ExecuteMsg::Transfer`] and so there's no need to deduct any other tax.
-    /// ## Params
-    /// * **self** is the type of the caller object.
-    ///
-    /// * **querier** is an object of type [`QuerierWrapper`]
-    ///
-    /// * **recipient** is the address where the funds will be sent.
-    pub fn into_msg(self, _querier: &QuerierWrapper, recipient: Addr) -> StdResult<CosmosMsg> {
-        let amount = self.amount;
-
-        match &self.info {
-            AssetInfo::Token { contract_addr } => Ok(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract_addr.to_string(),
-                msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                    recipient: recipient.to_string(),
-                    amount,
-                })?,
-                funds: vec![],
-            })),
-            AssetInfo::NativeToken { denom, .. } => Ok(CosmosMsg::Bank(BankMsg::Send {
-                to_address: recipient.to_string(),
-                amount: vec![Coin {
-                    denom: denom.to_string(),
-                    amount,
-                }],
-            })),
-        }
+    pub fn into_msg(self, recipient: String, sender: Option<String>) -> StdResult<CosmosMsg> {
+        self.info.into_msg(recipient, self.amount, sender)
     }
 
     /// Validates an amount of native tokens being sent. Returns [`Ok`] if successful, otherwise returns [`Err`].
@@ -183,7 +154,7 @@ impl AssetInfo {
 
     /// returns the decimal places used by the token, places some assumption that native tokens
     /// use the `utoken` convention, will fail if native token does not follow this
-    pub fn get_decimals(&self, deps: Deps) -> StdResult<u8> {
+    pub fn get_decimals(&self, querier: &QuerierWrapper) -> StdResult<u8> {
         match &self {
             AssetInfo::NativeToken { denom } => {
                 // orai is 6 decimals
@@ -204,14 +175,77 @@ impl AssetInfo {
             AssetInfo::Token { contract_addr } => {
                 // query the CW20 contract for its decimals
                 let response: TokenInfoResponse =
-                    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                        contract_addr: contract_addr.to_string(),
-                        msg: to_binary(&Cw20QueryMsg::TokenInfo {})?,
-                    }))?;
+                    querier.query_wasm_smart(contract_addr, &Cw20QueryMsg::TokenInfo {})?;
 
                 Ok(response.decimals)
             }
         }
+    }
+
+    /// Returns a message of type [`CosmosMsg`].
+    ///
+    /// For native tokens of type [`AssetInfo`] uses the default method [`BankMsg::Send`] to send a token amount to a recipient.
+    /// Before the token is sent, we need to deduct a tax.
+    ///
+    /// For a token of type [`AssetInfo`] we use the default method [`Cw20ExecuteMsg::Transfer`] and so there's no need to deduct any other tax.
+    /// ## Params
+    /// * **self** is the type of the caller object.
+    ///
+    /// * **querier** is an object of type [`QuerierWrapper`]
+    ///
+    /// * **recipient** is the address where the funds will be sent.
+    pub fn into_msg(
+        self,
+        recipient: String,
+        amount: Uint128,
+        sender: Option<String>,
+    ) -> StdResult<CosmosMsg> {
+        match &self {
+            AssetInfo::Token { contract_addr } => wasm_execute(
+                contract_addr,
+                &match sender {
+                    Some(owner) => Cw20ExecuteMsg::TransferFrom {
+                        owner,
+                        recipient,
+                        amount,
+                    },
+                    None => Cw20ExecuteMsg::Transfer { recipient, amount },
+                },
+                vec![],
+            ),
+            AssetInfo::NativeToken { denom, .. } => Ok(CosmosMsg::Bank(BankMsg::Send {
+                to_address: recipient,
+                amount: vec![Coin {
+                    denom: denom.to_string(),
+                    amount,
+                }],
+            })),
+        }
+    }
+
+    pub fn query_balance(
+        &self,
+        querier: &QuerierWrapper,
+        account_addr: Addr,
+    ) -> StdResult<Uint128> {
+        let balance: Uint128 = match self {
+            AssetInfo::NativeToken { denom } => {
+                let res = querier.query_balance(account_addr, denom)?;
+                res.amount
+            }
+            AssetInfo::Token { contract_addr } => {
+                let res: cw20::BalanceResponse = querier.query_wasm_smart(
+                    contract_addr,
+                    &Cw20QueryMsg::Balance {
+                        address: account_addr.to_string(),
+                    },
+                )?;
+
+                res.balance
+            }
+        };
+
+        Ok(balance)
     }
 }
 
@@ -266,23 +300,23 @@ mod test {
         let utoken = AssetInfo::NativeToken {
             denom: "uwasm".to_string(),
         };
-        assert_eq!(utoken.get_decimals(deps.as_ref()).unwrap(), 6u8);
+        assert_eq!(utoken.get_decimals(&deps.as_ref().querier).unwrap(), 6u8);
 
         let ntoken = AssetInfo::NativeToken {
             denom: "nwasm".to_string(),
         };
-        assert_eq!(ntoken.get_decimals(deps.as_ref()).unwrap(), 9u8);
+        assert_eq!(ntoken.get_decimals(&deps.as_ref().querier).unwrap(), 9u8);
 
         let ptoken = AssetInfo::NativeToken {
             denom: "pwasm".to_string(),
         };
-        assert_eq!(ptoken.get_decimals(deps.as_ref()).unwrap(), 12u8);
+        assert_eq!(ptoken.get_decimals(&deps.as_ref().querier).unwrap(), 12u8);
 
         let token = AssetInfo::NativeToken {
             denom: "wasm".to_string(),
         };
 
-        let err = token.get_decimals(deps.as_ref()).unwrap_err();
+        let err = token.get_decimals(&deps.as_ref().querier).unwrap_err();
         assert_eq!(
             StdError::GenericErr {
                 msg: "Native token does not follow prefix standards".to_string()

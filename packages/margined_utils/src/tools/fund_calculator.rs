@@ -1,13 +1,10 @@
-use cosmwasm_std::{
-    to_binary, Addr, Coin, QuerierWrapper, QueryRequest, StdResult, Uint128, WasmQuery,
-};
+use cosmwasm_std::{Addr, Coin, QuerierWrapper, StdResult, Uint128};
 use margined_common::asset::ORAI_DENOM;
 use margined_common::integer::Integer;
-use margined_perp::margined_engine::QueryMsg as EngineQueryMsg;
-use margined_perp::margined_engine::{
-    PnlCalcOption, Position, PositionUnrealizedPnlResponse, Side,
-};
-use margined_perp::margined_vamm::{CalcFeeResponse, Direction, QueryMsg as VammQueryMsg};
+use margined_perp::margined_engine::{PnlCalcOption, Side};
+use margined_perp::margined_vamm::Direction;
+
+use crate::contracts::helpers::{EngineController, VammController};
 
 //////////////////////////////////////////////////////////////////////////
 /// This is a tool for calculating the total funds needed when we want
@@ -34,27 +31,28 @@ pub fn calculate_funds_needed(
         .checked_mul(leverage)?
         .checked_div(SIX_D_P)?;
 
+    let vamm_controller = VammController(vamm.clone());
+
     // pull the fees for the vamm that the position will be taken on; note that this will be shifted however many digits
-    let fee_amount: Uint128 = query_vamm_fees(querier, vamm.to_string(), new_notional)?;
+    let fee_amount: Uint128 = vamm_controller.calc_fee(querier, new_notional)?.toll_fee;
+
+    let engine_controller = EngineController(engine);
 
     // check if they have an existing position so we can calculate if someone owes margin
-    let position: Position = query_existing_position(
-        querier,
-        engine.to_string(),
-        vamm.to_string(),
-        trader.to_string(),
-    )?;
+    let position = engine_controller
+        .position(querier, vamm.to_string(), trader.to_string())
+        .unwrap_or_default();
 
     // Check the unrealised PnL and add it to: (existing position + margin)
-    let unrealized_pnl = query_existing_position_pnl(
+    let unrealized_pnl = engine_controller.get_unrealized_pnl(
         querier,
-        engine.to_string(),
         vamm.to_string(),
         trader.to_string(),
+        PnlCalcOption::SpotPrice,
     )?;
 
     // First we check if they are increasing the position or not
-    let is_increase: bool = position.direction == Direction::AddToAmm && side == Side::Buy
+    let is_increase = position.direction == Direction::AddToAmm && side == Side::Buy
         || position.direction == Direction::RemoveFromAmm && side == Side::Sell;
 
     let margin_owed: Integer = match is_increase {
@@ -84,50 +82,4 @@ pub fn calculate_funds_needed(
     } else {
         Ok(vec![Coin::new(funds_owed.u128(), ORAI_DENOM)])
     }
-}
-
-// to query the given vamm's fees for use in the fund calculator
-pub fn query_vamm_fees(
-    querier: &QuerierWrapper,
-    vamm_addr: String,
-    quote_asset_amount: Uint128,
-) -> StdResult<Uint128> {
-    querier
-        .query::<CalcFeeResponse>(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: vamm_addr,
-            msg: to_binary(&VammQueryMsg::CalcFee { quote_asset_amount })?,
-        }))
-        .map(|res| res.toll_fee)
-}
-
-// to query the position of the given trader, on the given vamm for use in the fund calculator
-pub fn query_existing_position(
-    querier: &QuerierWrapper,
-    engine: String,
-    vamm: String,
-    trader: String,
-) -> StdResult<Position> {
-    Ok(querier
-        .query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: engine,
-            msg: to_binary(&EngineQueryMsg::Position { vamm, trader })?,
-        }))
-        .unwrap_or_default())
-}
-
-// to query the PnL of the given trader's position on the given vamm, for use in the fund calculator
-pub fn query_existing_position_pnl(
-    querier: &QuerierWrapper,
-    engine: String,
-    vamm: String,
-    trader: String,
-) -> StdResult<PositionUnrealizedPnlResponse> {
-    querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-        contract_addr: engine,
-        msg: to_binary(&EngineQueryMsg::UnrealizedPnl {
-            vamm,
-            trader,
-            calc_option: PnlCalcOption::SpotPrice,
-        })?,
-    }))
 }

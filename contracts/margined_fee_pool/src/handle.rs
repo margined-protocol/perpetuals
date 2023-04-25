@@ -1,10 +1,8 @@
 use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128};
 use margined_common::validate::validate_eligible_collateral as validate_funds;
-use margined_perp::querier::query_token_balance;
 
 use crate::{
     contract::OWNER,
-    messages::execute_transfer,
     state::{is_token, remove_token as remove_token_from_list, save_token},
 };
 
@@ -77,17 +75,15 @@ pub fn send_token(
     };
 
     // query the balance of the given token that this contract holds
-    let balance = query_token_balance(deps, valid_token.clone(), env.contract.address)?;
+    let balance = valid_token.query_balance(&deps.querier, env.contract.address)?;
 
     // check that the balance is sufficient to pay the amount
     if balance < amount {
         return Err(StdError::generic_err("Insufficient funds"));
     }
-    Ok(
-        Response::default().add_submessage(execute_transfer(
-            valid_token,
-            &valid_recipient,
-            amount,
-        )?),
-    )
+    Ok(Response::default().add_message(valid_token.into_msg(
+        valid_recipient.to_string(),
+        amount,
+        None,
+    )?))
 }

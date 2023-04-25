@@ -5,7 +5,7 @@ use margined_perp::margined_vamm::{
 
 use cosmwasm_std::{Addr, CosmosMsg, QuerierWrapper, StdResult, Uint128};
 
-use super::wasm_execute;
+use margined_common::messages::wasm_execute;
 
 /// VammController is a wrapper around Addr that provides a lot of helpers
 /// for working with this.

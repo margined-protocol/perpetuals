@@ -5,7 +5,7 @@ use margined_perp::margined_fee_pool::{
 
 use cosmwasm_std::{Addr, CosmosMsg, QuerierWrapper, StdResult, Uint128};
 
-use super::wasm_execute;
+use margined_common::messages::wasm_execute;
 
 /// FeePoolController is a wrapper around Addr that provides a lot of helpers
 /// for working with this.

@@ -1,6 +1,5 @@
 use cosmwasm_std::{
-    to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError, StdResult,
-    SubMsg, Uint128, WasmMsg,
+    Addr, DepsMut, Env, MessageInfo, Response, StdError, StdResult, SubMsg, Uint128,
 };
 use margined_utils::contracts::helpers::VammController;
 
@@ -27,6 +26,7 @@ use crate::{
 use margined_common::{
     asset::{Asset, AssetInfo},
     integer::Integer,
+    messages::wasm_execute,
     validate::{validate_margin_ratios, validate_ratio},
 };
 use margined_perp::margined_engine::{
@@ -253,9 +253,7 @@ pub fn close_position(
     // check if this position exceed fluctuation limit
     // if over fluctuation limit, then close partial position. Otherwise close all.
     // if partialLiquidationRatio is 1, then close whole position
-    let msg: SubMsg = if is_over_fluctuation_limit
-        && config.partial_liquidation_ratio < config.decimals
-    {
+    let msg = if is_over_fluctuation_limit && config.partial_liquidation_ratio < config.decimals {
         let side = position_to_side(position.size);
 
         let partial_close_amount = position
@@ -387,16 +385,10 @@ pub fn pay_funding(
     // check its a valid vamm
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
 
-    let funding_msg = SubMsg {
-        msg: CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: vamm.to_string(),
-            funds: vec![],
-            msg: to_binary(&ExecuteMsg::SettleFunding {})?,
-        }),
-        gas_limit: None,
-        id: PAY_FUNDING_REPLY_ID,
-        reply_on: ReplyOn::Always,
-    };
+    let funding_msg = SubMsg::reply_always(
+        wasm_execute(vamm, &ExecuteMsg::SettleFunding {}, vec![])?,
+        PAY_FUNDING_REPLY_ID,
+    );
 
     Ok(Response::new()
         .add_submessage(funding_msg)
@@ -433,8 +425,7 @@ pub fn deposit_margin(
         }
 
         AssetInfo::Token { .. } => {
-            let msg: SubMsg =
-                execute_transfer_from(deps.storage, &trader, &env.contract.address, amount)?;
+            let msg = execute_transfer_from(deps.storage, &trader, &env.contract.address, amount)?;
             response = response.clone().add_submessage(msg);
         }
     };
@@ -586,7 +577,7 @@ fn open_reverse_position(
     } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)?;
 
     // reduce position if old position is larger
-    let msg: SubMsg = if position_notional > notional_amount {
+    let msg = if position_notional > notional_amount {
         let reply_id = match reply_id {
             Some(id) => id,
             None => DECREASE_POSITION_REPLY_ID,
@@ -671,7 +662,7 @@ fn partial_liquidation(
         },
     )?;
 
-    let msg: SubMsg = if current_notional > position.notional {
+    let msg = if current_notional > position.notional {
         swap_input(
             &vamm,
             &direction_to_side(&position.direction),
@@ -703,25 +694,18 @@ fn swap_input(
 ) -> StdResult<SubMsg> {
     let direction: Direction = side_to_direction(side);
 
-    let msg = WasmMsg::Execute {
-        contract_addr: vamm.to_string(),
-        funds: vec![],
-        msg: to_binary(&ExecuteMsg::SwapInput {
+    let msg = wasm_execute(
+        vamm,
+        &ExecuteMsg::SwapInput {
             direction,
             quote_asset_amount: open_notional,
             base_asset_limit,
             can_go_over_fluctuation,
-        })?,
-    };
+        },
+        vec![],
+    )?;
 
-    let execute_submsg = SubMsg {
-        msg: CosmosMsg::Wasm(msg),
-        gas_limit: None,
-        id,
-        reply_on: ReplyOn::Always,
-    };
-
-    Ok(execute_submsg)
+    Ok(SubMsg::reply_always(msg, id))
 }
 
 fn swap_output(
@@ -733,22 +717,15 @@ fn swap_output(
 ) -> StdResult<SubMsg> {
     let direction: Direction = side_to_direction(side);
 
-    let swap_msg = WasmMsg::Execute {
-        contract_addr: vamm.to_string(),
-        funds: vec![],
-        msg: to_binary(&ExecuteMsg::SwapOutput {
+    let msg = wasm_execute(
+        vamm,
+        &ExecuteMsg::SwapOutput {
             direction,
             base_asset_amount: open_notional,
             quote_asset_limit,
-        })?,
-    };
+        },
+        vec![],
+    )?;
 
-    let execute_submsg = SubMsg {
-        msg: CosmosMsg::Wasm(swap_msg),
-        gas_limit: None,
-        id,
-        reply_on: ReplyOn::Always,
-    };
-
-    Ok(execute_submsg)
+    Ok(SubMsg::reply_always(msg, id))
 }

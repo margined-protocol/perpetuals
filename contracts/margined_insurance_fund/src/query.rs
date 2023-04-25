@@ -3,10 +3,10 @@ use margined_perp::margined_insurance_fund::{
     AllVammResponse, AllVammStatusResponse, ConfigResponse, OwnerResponse, VammResponse,
     VammStatusResponse,
 };
+use margined_utils::contracts::helpers::VammController;
 
 use crate::{
     contract::OWNER,
-    querier::query_vamm_open,
     state::{is_vamm, read_config, read_vammlist, Config, VAMM_LIMIT},
 };
 
@@ -58,8 +58,10 @@ pub fn query_vamm_status(deps: Deps, vamm: String) -> StdResult<VammStatusRespon
     // validate address
     let vamm_valid = deps.api.addr_validate(&vamm)?;
 
+    let vamm_controller = VammController(vamm_valid);
+
     // query the vamms current status
-    let vamm_bool = query_vamm_open(&deps, vamm_valid.to_string())?;
+    let vamm_bool = vamm_controller.state(&deps.querier)?.open;
 
     Ok(VammStatusResponse {
         vamm_status: vamm_bool,
@@ -76,9 +78,10 @@ pub fn query_status_all_vamm(deps: Deps, limit: Option<u32>) -> StdResult<AllVam
     let mut status_list: Vec<(Addr, bool)> = vec![];
 
     // iterate through the vamm list and query the status one by one
-    for vamm in read_vammlist(deps, limit)?.iter() {
-        let vamm_bool = query_vamm_open(&deps, vamm.to_string())?;
-        status_list.push((vamm.clone(), vamm_bool));
+    for vamm in read_vammlist(deps, limit)? {
+        let vamm_controller = VammController(vamm.clone());
+        let vamm_bool = vamm_controller.state(&deps.querier)?.open;
+        status_list.push((vamm, vamm_bool));
     }
 
     Ok(AllVammStatusResponse {
