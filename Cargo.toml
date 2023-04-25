@@ -31,7 +31,7 @@ thiserror = "1.0.26"
 cw-controllers = "1.0.1"
 cw2 = "1.0.1"
 cw20 = { version = "1.0.1" }
-cw20-base = { version = "1.0.1", features = ["library"] }
+cw20-base = { version = "1.0.1" }
 cw-multi-test = "0.16.2"
 cw-utils = "1.0.1"
 
