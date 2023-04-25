@@ -1,14 +1,11 @@
 [package]
 name = "margined_insurance_fund"
-version = "0.1.0"
-authors = ["Margined Protocol"]
-edition = "2021"
-
-exclude = [
-  # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
-  "contract.wasm",
-  "hash.txt",
-]
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+description = { workspace = true }
+documentation = { workspace = true }
+exclude = { workspace = true }
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -29,14 +26,14 @@ cosmwasm-storage = { workspace = true }
 cosmwasm-schema = { workspace = true }
 thiserror = { workspace = true }
 
-cw-controllers = "1.0.1"
-cw20 = { version = "1.0.1" }
-cw2 = "1.0.1"
-margined_perp = { version = "0.1.0", path = "../../packages/margined_perp" }
-margined_common = { version = "0.1.0", path = "../../packages/margined_common" }
-margined_utils = { version = "0.1.0", path = "../../packages/margined_utils" }
+cw-controllers = { workspace = true }
+cw20 = { workspace = true }
+cw2 = { workspace = true }
+margined_perp = { workspace = true }
+margined_common = { workspace = true }
+margined_utils = { workspace = true }
 
 [dev-dependencies]
-margined_vamm = { version = "0.1.0", path = "../margined_vamm" }
-margined_engine = { version = "0.1.0", path = "../margined_engine" }
-mock_pricefeed = { version = "0.1.0", path = "../mocks/mock_pricefeed" }
+margined_vamm = { workspace = true }
+margined_engine = { workspace = true }
+mock_pricefeed = { workspace = true }

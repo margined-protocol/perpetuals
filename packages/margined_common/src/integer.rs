@@ -1,9 +1,9 @@
-use cosmwasm_schema::schemars::JsonSchema;
 use cosmwasm_std::{
     DivideByZeroError, OverflowError,
     OverflowOperation::{Add, Mul, Sub},
     StdError, Uint128,
 };
+use schemars::JsonSchema;
 use serde::{de, ser, Deserialize, Deserializer, Serialize};
 use std::fmt::Write;
 use std::str::FromStr;

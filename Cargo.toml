@@ -11,12 +11,40 @@ members = [
     "contracts/mocks/*",
 ]
 
+[workspace.package]
+version = "0.1.0"
+authors = ["Margined Protocol", "Oraichain Labs"]
+edition = "2021"
+description = "A decentralized perpetual contract protocol for CosmWasm networks"
+documentation = "https://github.com/oraichain/perpetuals.git"
+exclude = [
+  # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
+  "contract.wasm",
+  "hash.txt",
+]
 
 [workspace.dependencies]
 cosmwasm-schema = { version = "1.1.9" }
 cosmwasm-std = { version = "1.1.9" }
 cosmwasm-storage = { version = "1.1.9" }
 thiserror = "1.0.26"
+cw-controllers = "1.0.1"
+cw2 = "1.0.1"
+cw20 = { version = "1.0.1" }
+cw20-base = { version = "1.0.1", features = ["library"] }
+cw-multi-test = "0.16.2"
+cw-utils = "1.0.1"
+
+margined_utils = { path = "./packages/margined_utils" }
+margined_perp = { path = "./packages/margined_perp" }
+margined_common = { path = "./packages/margined_common" }
+
+margined_fee_pool = { path = "./contracts/margined_fee_pool" }
+margined_vamm = { path = "./contracts/margined_vamm" }
+margined_engine = { path = "./contracts/margined_engine" }
+margined_insurance_fund = { path = "./contracts/margined_insurance_fund" }
+margined_pricefeed = { path = "./contracts/margined_pricefeed" }
+mock_pricefeed = { path = "./contracts/mocks/mock_pricefeed" }
 
 # # override cosmwasm-std for all other packages
 # [patch.crates-io]
