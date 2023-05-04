@@ -46,7 +46,7 @@ Enables a user to open a position for a specific vAMM with leverage. Also allows
 
 If side is buy (direction is 'add_to_amm') then open position (increase)
 
-![Open Position Increase](/docs/diagrams/open-pos-reverse.png)
+![Open Position Increase](/docs/diagrams/open-pos-increase.png)
 
 If old position is larger then reduce position (decrease)
 
