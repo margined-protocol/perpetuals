@@ -1,0 +1,71 @@
+@startuml
+autonumber
+actor User    
+
+box "Margined Protocol" 
+    participant engine    
+    collections vamm     
+    participant "insurance fund" as insurance    
+    participant "fee pool" as pool    
+end box
+
+box "External"
+    collections "Eligible Collateral" as token
+end box
+
+
+title Open Position (Decrease)
+
+== Engine checks ==
+
+User -> engine : open_position(\n\tmargin_amount\n\tleverage\n)
+activate engine
+
+engine -> engine : require(margin_ratio >= initial_margin_ratio)
+
+== Decrease Position ==
+
+Group !is_increase
+
+    alt position notional > notional amount
+        engine -> engine : swap_input(\n\tquote_asset_amount\n)
+        activate vamm
+    else see reverse position diagram
+        ...
+    end
+
+    Group price from reserves
+        vamm -> vamm: get_input_price(\n\tquote_asset_amount\n)
+        vamm -> vamm: update_reserves()
+    end
+    
+    vamm -> engine: return()
+    deactivate vamm
+end
+
+== Process Reply ==
+Group reply
+
+    engine -> engine: update_open_interest_notional()
+    engine -> engine: update_position
+
+    Group transfer_fees()
+        engine -> token : check collateral
+        alt Native
+            token -> token : funds.are_sufficient()
+        else cw20
+            token -> token : transfer required funds
+        end
+        token -> pool : transfer fees
+        token -> insurance : transfer fees
+        token -> engine : margin to vault
+    end 
+
+    engine -> engine: require(margin_ratio >= initial_margin_ratio)
+
+end
+
+engine -> User : Tx Receipt
+deactivate engine
+
+@enduml

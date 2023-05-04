@@ -1,0 +1,27 @@
+@startuml
+
+interface "Token Holders" as holders
+interface "Governance" as gov
+component "Margin Engine" as engine
+component "Insurance Fund" as insurance
+
+Users -down-> [engine]: 1
+gov -down-> [engine]: 2
+gov -down-> [insurance]: 2
+
+/'Insurance Fund '/
+[engine] -> [insurance]: 3
+[engine] <- [insurance]: 4
+[insurance] -> [vAMM]: 5
+
+/'Fee Pool'/
+[engine] --> [Fee Pool]: 6
+[Fee Pool] --> holders: 7
+
+/'vAMM'/
+[engine] <--> [vAMM]: 8
+[Pricefeed] --> [vAMM]: 9
+
+
+
+@enduml

@@ -1,0 +1,67 @@
+@startuml
+autonumber
+actor User    
+
+box "Margined Protocol" 
+    participant engine    
+    collections vamm     
+    participant "insurance fund" as insurance    
+    participant "fee pool" as pool    
+end box
+
+box "External"
+    collections "Eligible Collateral" as token
+end box
+
+
+title Open Position (Reverse)
+
+== Engine checks ==
+
+User -> engine : open_position(\n\tquote_asset_amount\n\tleverage\n)
+activate engine
+
+engine -> engine : require(margin_ratio >= initial_margin_ratio)
+
+== Reverse position ==
+
+Group open_reverse_position()
+    engine -> vamm : swap_output(\n\tposition.size.value\n)
+    activate vamm
+
+    Group price from reserves
+        vamm -> vamm: get_output_price(\n\tquote_asset_amount\n)
+        vamm -> vamm: update_reserves()
+    end
+    
+    vamm -> engine: return()
+    deactivate vamm
+end
+
+== Process Reply ==
+Group reply
+
+    engine -> engine: update_open_interest_notional()
+    engine -> engine: clear_position()
+
+    alt swap.open_notional.div(swap.leverage) == zero
+        Group transfer_fees()
+            engine -> token : check collateral
+            alt Native
+                token -> token : funds.are_sufficient()
+            else cw20
+                token -> token : execute_transfer_from(\n\ttrader\n\tengine\n\tquote_asset_amount\n)
+            end
+            token -> pool : execute_transfer_from(\n\tengine\n\tfee pool\n\ttoll fee\n)
+            token -> insurance : execute_transfer_from(\n\tengine\n\tinsurance fund\n\tspread fee\n)
+            token -> engine : margin to vault
+        end 
+    else
+        engine -> engine: increase_position_internal()
+    end
+end
+
+engine -> User : Tx Receipt
+deactivate engine
+
+@enduml

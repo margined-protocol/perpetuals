@@ -1,0 +1,61 @@
+@startuml
+
+autonumber
+actor User    
+
+participant "Engine" as engine
+collections "vAMM" as vamm
+
+title Remove Margin
+User -> engine : withdraw_margin(\n\tamount\n)
+activate engine
+
+== Check Margin ==
+
+engine -> engine : calc_remain_margin_with_funding_payment()
+
+Group calc_remain_margin_with_funding_payment()
+    engine -> vamm : query_cumulative_premium_fraction()
+    activate vamm
+
+    vamm -> engine : return latest_premium_fraction
+    deactivate vamm
+
+    engine -> engine : calculate remaining margin
+
+    alt remaining_margin.is_negative()
+        engine -> engine : bad_debt = remaining_margin.invert_sign()
+    end
+end
+
+engine -> engine : require(bad_debt == 0)
+
+engine -> engine : query_free_collateral()
+
+Group query_free_collateral()
+    engine -> vamm : query_trader_position_with_funding_payment()
+    activate vamm
+    vamm -> vamm : get_position_unrealized_pnl()
+
+    alt unrealized_pnl > 0
+        vamm -> vamm : minimum_collateral = position_margin
+    else unrealized_pnl < 0
+        vamm -> vamm : minimum_collateral = position_margin + unrealized_pnl
+    end
+
+    vamm -> engine : return free_collateral = minimum_collateral - margin_required
+    deactivate vamm
+end
+
+engine -> engine : require(free_collateral >= amount)
+
+== Withdraw and Update Position ==
+
+engine -> engine : withdraw(\n\ttrader\n\tamount\n)
+
+engine -> engine : store_position()
+
+engine -> User : Tx receipt
+deactivate engine
+
+@enduml

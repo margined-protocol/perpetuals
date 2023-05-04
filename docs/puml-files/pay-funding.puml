@@ -1,0 +1,24 @@
+@startuml liq-pos
+
+actor       trader       
+participant engine
+collections vamm
+participant pricefeed
+actor       liquidator       
+
+participant Participant
+actor       Actor       
+boundary    Boundary    
+control     Control     
+entity      Entity      
+database    Database    
+collections Collections 
+queue       Queue       
+Participant -> Actor : To actor 
+Participant -> Boundary : To boundary
+Participant -> Control : To control
+Participant -> Entity : To entity
+Participant -> Database : To database
+Participant -> Collections : To collections
+Participant -> Queue: To queue
+@enduml

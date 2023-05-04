@@ -1,0 +1,67 @@
+@startuml
+autonumber
+actor user    
+
+box "Margined Protocol" 
+    participant engine    
+    collections vamm     
+    participant "insurance fund" as insurance    
+    participant "fee pool" as pool    
+end box
+
+box "External"
+    collections "Eligible Collateral" as token
+end box
+
+
+title Close Position (Partial)
+user -> engine : close_position()
+activate engine
+
+alt price_over_fluctuation_limit && partial_liquidation_ratio < decimals
+    engine -> engine : calculate partial close notional
+else See Close Position (Whole)
+    ...
+end
+
+== Close position ==
+
+Group open_reverse_position()
+    engine -> vamm : swap_input(\n\tpartial_close_notional\n)
+    activate vamm
+
+    Group price from reserves
+        vamm -> vamm: get_input_price(\n\tpartial_close_notional\n)
+        vamm -> vamm: update_reserves()
+    end
+    
+    vamm -> engine: return()
+    deactivate vamm
+end
+
+== Process Reply ==
+Group reply
+
+    engine -> engine: update_open_interest_notional()
+    engine -> engine: clear_position()
+
+    Group transfer_fees()
+        engine -> token : check collateral
+        alt Native
+            token -> token : funds.are_sufficient()
+        else cw20
+            token -> token : execute_transfer_from(\n\tengine\n\ttrader\n\tquote_asset_amount\n)
+        end
+        token -> pool : execute_transfer_from(\n\tengine\n\tfee pool\n\ttoll fee\n)
+        token -> insurance : execute_transfer_from(\n\tengine\n\tinsurance fund\n\tspread fee\n)
+        token -> engine : margin to vault
+    end 
+
+    engine -> engine: require(margin_ratio >= initial_margin_ratio)
+    
+end
+
+engine -> user : Tx Receipt
+deactivate engine
+
+@enduml

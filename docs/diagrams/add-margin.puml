@@ -1,0 +1,35 @@
+@startuml
+
+autonumber
+actor User    
+
+participant "Engine" as engine
+
+box "External"
+    collections "Eligible Collateral" as token
+end box
+
+
+title Add Margin
+User -> engine : deposit_margin(\n\tamount\n)
+activate engine
+
+== Check Collateral ==
+
+engine -> token : check funds sent
+alt Native
+    token -> token : token.assert_sent_native_token_balance(\n\tmsg.info\n)
+else cw20
+    token -> token : execute_transfer_from(\n\ttrader\n\tengine\n\tquote_asset_amount\n)
+end
+
+token -> engine : add margin to position
+
+== Update Position ==
+
+engine -> engine : store_position()
+
+engine -> User : Tx receipt
+deactivate engine
+
+@enduml

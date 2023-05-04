@@ -1,0 +1,69 @@
+@startuml
+autonumber
+actor liquidator    
+
+box "Margined Protocol" 
+    participant engine    
+    collections vamm     
+    participant "insurance fund" as insurance    
+end box
+
+' box "External"
+'     collections "Eligible Collateral" as token
+' end box
+
+
+title Liquidate Position (Partial)
+
+liquidator -> engine : liquidate(\n\ttrader\n)
+activate engine
+
+== Checks ==
+Group Checks
+    alt vamm_over_spread_limit
+        engine -> vamm : get oracle_margin_ratio
+        activate vamm
+        alt oracle_margin_ratio > margin_ratio
+            vamm -> engine : use oracle_margin_ratio
+            deactivate vamm
+        end
+    else
+        ...
+    end 
+
+    engine -> engine : require(margin_ratio < maintenance_margin_ratio)
+
+    engine -> engine : require(position.size != 0)
+end
+== Liquidation ==
+Group Liquidation in vAMM
+    alt margin_ratio.value > liquidation_fee && partial_liquidation_ratio != 0
+        engine -> engine : calculate partial_position_size
+    else See Liquidation Position (Whole)
+        ...
+    end
+
+    engine -> vamm : query_vamm_output(\n\tpartial_position_size\n)
+    activate vamm
+
+    alt current_notional > position.notional
+        vamm -> vamm : swap_input(\n\tposition.notional\n)
+    else 
+        vamm -> vamm : swap_output(\n\tpartial_position_size\n)
+    end
+
+    vamm -> engine : return()
+    deactivate vamm
+end
+    == Process Reply ==
+Group Distribute Fee
+    engine -> engine : calculate liquidation_fee
+
+    engine -> insurance : execute_transfer(\n\tinsurance fund\n\tliquidation_fee\n)
+    activate insurance
+
+    insurance -> liquidator : withdraw(\n\tliquidator\n\tliquidation_fee\n)
+    deactivate insurance
+end
+
+@enduml
