@@ -2,9 +2,11 @@
 
 This is the internal architecture document for Margined Protocol
 
+[Design Doc](./v1-design.md)
+
 ## Component Diagram:
 
-![Component Diagram](./puml-files/component-diagram.png)
+![Component Diagram](./diagrams/component-diagram.png)
 
 1. Users are able to interact with all public functions, including open/close positions and liquidations
 2. Governance is able to perform config updates and contract migrations for both the insurance fund and margin engine contracts

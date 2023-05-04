@@ -1,12 +1,13 @@
 # Margined Protocol Insurance Fund
 
-Insurance fund contains funds that are used to cover shortfall in funding payments, additionally insurance fund accrues a portion of transaction fees and profits.
+Insurance fund contains funds that are used to cover shortfall(slippage) in funding payments, additionally insurance fund accrues a portion of transaction fees and profits.
 
 ---
 
 ## InstantiateMsg
 
 The instantiation message is empty.
+
 ```json
 {}
 ```
@@ -20,9 +21,9 @@ Enables transfer of contract ownership and the beneficiary of insurance funds. B
 ```json
 {
    "update_config": {
-        "owner": "juno..."
-        "beneficiary": "juno..."
-   } 
+        "owner": "orai..."
+        "beneficiary": "orai..."
+   }
 }
 ```
 
@@ -32,12 +33,11 @@ Append vamm to list of supported vAMMs.
 
 ```json
 {
-   "add_vamm": {
-        "vamm": "juno..."
-   } 
+  "add_vamm": {
+    "vamm": "juno..."
+  }
 }
 ```
-
 
 ### `remove_vamm`
 
@@ -45,12 +45,11 @@ Remove vamm from list of supported vAMMs.
 
 ```json
 {
-   "remove_vamm": {
-        "vamm": "juno..."
-   } 
+  "remove_vamm": {
+    "vamm": "juno..."
+  }
 }
 ```
-
 
 ### `withdraw`
 
@@ -58,10 +57,10 @@ Enables the beneficiary to request contract funds.
 
 ```json
 {
-   "withdraw": {
-        "token": "juno...",
-        "amount": "100",
-   } 
+  "withdraw": {
+    "token": "juno...",
+    "amount": "100"
+  }
 }
 ```
 
@@ -71,7 +70,7 @@ Emergency shutdown function that halts all vAMMs trading.
 
 ```json
 {
-   "shutdown_vamms": {} 
+  "shutdown_vamms": {}
 }
 ```
 
@@ -83,7 +82,7 @@ Returns contract parameters.
 
 ```json
 {
-    "config": {}
+  "config": {}
 }
 ```
 
@@ -93,9 +92,9 @@ Returns bool showing if vamm is supported.
 
 ```json
 {
-    "is_vamm": {
-        "vamm": "juno..."
-    }
+  "is_vamm": {
+    "vamm": "juno..."
+  }
 }
 ```
 
@@ -129,8 +128,8 @@ Returns the status of a specific vAMM.
 
 ```json
 {
-    "get_vamm_status": {
-        "vamm": "juno...",
-    }
+  "get_vamm_status": {
+    "vamm": "juno..."
+  }
 }
 ```

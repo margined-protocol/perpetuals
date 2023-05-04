@@ -13,7 +13,7 @@ The instantiation message takes the oracle hub contract, that would be used in a
 
 ```json
 {
-  "oracle_hub_contract": "juno..."
+  "oracle_hub_contract": "orai..."
 }
 ```
 
@@ -24,7 +24,7 @@ The instantiation message takes the oracle hub contract, that would be used in a
 ```json
 {
   "update_config": {
-    "owner": "juno..."
+    "owner": "orai..."
   }
 }
 ```
@@ -48,7 +48,7 @@ Returns latest price submitted to the contract.
 ```json
 {
   "get_price": {
-    "key": "BTC"
+    "key": "ORAI"
   }
 }
 ```
@@ -60,7 +60,7 @@ Returns a price submitted in a previous round.
 ```json
 {
   "get_previous_price": {
-    "key": "BTC",
+    "key": "ORAI",
     "num_round_back": 9
   }
 }
@@ -73,7 +73,7 @@ Returns a twap of the prices submitted to the contract.
 ```json
 {
   "get_twap_price": {
-    "key": "BTC",
+    "key": "ORAI",
     "interval": 900
   }
 }

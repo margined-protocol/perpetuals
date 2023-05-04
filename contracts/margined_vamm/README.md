@@ -2,7 +2,7 @@
 
 The vAMM is the contract that enables user's to take perpetual positions through its "virtual" automated market maker.
 
-The vAMM also integrates with the price feed contracts for access to market data.
+The vAMM also integrates with the price feed contracts for access to market data, such as Orderbook or AMM on Oraichain and Kucoin.
 
 ---
 
@@ -12,17 +12,17 @@ The instantiation message takes the decimals to be used by the contract, the add
 
 ```json
 {
-    "decimals": 6,
-    "pricefeed": "juno...",
-    "margin_engine": "juno...",
-    "quote_asset": "USDT",
-    "base_asset": "BTC",
-    "quote_asset_reserve": "12000",
-    "base_asset_reserve": "10",
-    "funding_period": "3600",
-    "toll_ratio": "5000",
-    "spread_ratio": "5000" ,
-    "fluctuation_limit_ratio": "5000",
+  "decimals": 6,
+  "pricefeed": "orai...",
+  "margin_engine": "orai...",
+  "quote_asset": "USDT",
+  "base_asset": "ORAI",
+  "quote_asset_reserve": "12000",
+  "base_asset_reserve": "4000",
+  "funding_period": "3600",
+  "toll_ratio": "5000",
+  "spread_ratio": "5000",
+  "fluctuation_limit_ratio": "5000"
 }
 ```
 
@@ -35,14 +35,14 @@ Enables owner to update key contract parameters.
 ```json
 {
     "update_config" {
-        "owner": "juno...",
+        "owner": "orai...",
         "base_asset_holding_cap": "10000000",
         "open_interest_notional_cap": "10000000",
         "toll_ratio": "10000",
         "spread_ratio": "10000",
         "fluctuation_limit_ratio": "10000",
-        "margin_engine": "juno...",
-        "pricefeed": "juno...",
+        "margin_engine": "orai...",
+        "pricefeed": "orai...",
         "spot_price_twap_interval": 6,
     }
 }
@@ -99,7 +99,6 @@ Allows owner to open the vAMM enable positions to be taken.
 }
 ```
 
-
 ## QueryMsg
 
 ### `config`
@@ -108,7 +107,7 @@ Returns contract configuration.
 
 ```json
 {
-    "config": {}
+  "config": {}
 }
 ```
 
@@ -118,7 +117,7 @@ Returns contract state, including liquidity etc.
 
 ```json
 {
-    "state": {}
+  "state": {}
 }
 ```
 
@@ -128,10 +127,10 @@ Returns the average price for a trade of a given size.
 
 ```json
 {
-    "input_price": {
-        "direction": "add_to_amm",
-        "amount": "10000000",
-    }
+  "input_price": {
+    "direction": "add_to_amm",
+    "amount": "10000000"
+  }
 }
 ```
 
@@ -141,10 +140,10 @@ Returns the average price for a trade of a given size.
 
 ```json
 {
-    "output_price": {
-        "direction": "add_to_amm",
-        "amount": "10000000",
-    }
+  "output_price": {
+    "direction": "add_to_amm",
+    "amount": "10000000"
+  }
 }
 ```
 
@@ -154,10 +153,10 @@ Returns the amount for a trade of input with a given size.
 
 ```json
 {
-    "input_amount": {
-        "direction": "add_to_amm",
-        "amount": "10000000",
-    }
+  "input_amount": {
+    "direction": "add_to_amm",
+    "amount": "10000000"
+  }
 }
 ```
 
@@ -167,10 +166,10 @@ Returns the amount for a trade of output with a given size.
 
 ```json
 {
-    "output_amount": {
-        "direction": "add_to_amm",
-        "amount": "10000000",
-    }
+  "output_amount": {
+    "direction": "add_to_amm",
+    "amount": "10000000"
+  }
 }
 ```
 
@@ -178,10 +177,10 @@ Returns the amount for a trade of output with a given size.
 
 ```json
 {
-    "input_twap": {
-        "direction": "add_to_amm",
-        "amount": "10000000",
-    }
+  "input_twap": {
+    "direction": "add_to_amm",
+    "amount": "10000000"
+  }
 }
 ```
 
@@ -189,10 +188,10 @@ Returns the amount for a trade of output with a given size.
 
 ```json
 {
-    "output_twap": {
-        "direction": "add_to_amm",
-        "amount": "10000000",
-    }
+  "output_twap": {
+    "direction": "add_to_amm",
+    "amount": "10000000"
+  }
 }
 ```
 
@@ -200,7 +199,7 @@ Returns the amount for a trade of output with a given size.
 
 ```json
 {
-    "spot_price": {}
+  "spot_price": {}
 }
 ```
 
@@ -208,9 +207,9 @@ Returns the amount for a trade of output with a given size.
 
 ```json
 {
-    "twap_price": {
-        "interval": 900,
-    }
+  "twap_price": {
+    "interval": 900
+  }
 }
 ```
 
@@ -218,9 +217,9 @@ Returns the amount for a trade of output with a given size.
 
 ```json
 {
-    "calc_fee": {
-        "quote_asset_amount": "10000000",
-    }
+  "calc_fee": {
+    "quote_asset_amount": "10000000"
+  }
 }
 ```
 
@@ -228,6 +227,6 @@ Returns the amount for a trade of output with a given size.
 
 ```json
 {
-    "is_over_spread_limit": {}
+  "is_over_spread_limit": {}
 }
 ```

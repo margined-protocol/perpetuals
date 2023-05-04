@@ -10,12 +10,12 @@ The instantiation message takes the addresses of the insurance and fee contracts
 
 ```json
 {
-    "insurance_fund": "juno...",
-    "fee_pool": "juno...",
-    "eligible_collateral": "juno...",
-    "initial_margin_ratio": "10000",
-    "maintenance_margin_ratio": "10000",
-    "liquidation_fee": "10000",
+  "insurance_fund": "orai...",
+  "fee_pool": "orai...",
+  "eligible_collateral": "orai...",
+  "initial_margin_ratio": "10000",
+  "maintenance_margin_ratio": "10000",
+  "liquidation_fee": "10000"
 }
 ```
 
@@ -28,10 +28,10 @@ Enables owner to update key contract parameters.
 ```json
 {
     "update_config" {
-        "owner": "juno...",
-        "insurance_fund": "juno...",
-        "fee_pool": "juno...",
-        "eligible_collateral": "juno...",
+        "owner": "orai...",
+        "insurance_fund": "orai...",
+        "fee_pool": "orai...",
+        "eligible_collateral": "orai...",
         "initial_margin_ratio": "10000",
         "maintenance_margin_ratio": "10000",
         "partial_liquidation_ratio": "10000",
@@ -47,7 +47,7 @@ Enables a user to open a position for a specific vAMM with leverage. Also allows
 ```json
 {
     "open_position" {
-        "vamm": "juno...",
+        "vamm": "orai...",
         "side": "buy",
         "quote_asset_amount": "10",
         "leverage": "1",
@@ -55,7 +55,7 @@ Enables a user to open a position for a specific vAMM with leverage. Also allows
     }
 }
 ```
-    
+
 ### `close_position`
 
 Enables a user to close a position they have for a specific vAMM including slippage limits.
@@ -63,7 +63,7 @@ Enables a user to close a position they have for a specific vAMM including slipp
 ```json
 {
     "close_position" {
-        "vamm": "juno...",
+        "vamm": "orai...",
         "quote_asset_limit": "0",
     }
 }
@@ -76,8 +76,8 @@ Allows third parties to liquidate users positions when they are no longer suffic
 ```json
 {
     "liquidate" {
-        "vamm": "juno...",
-        "trader": "juno...",
+        "vamm": "orai...",
+        "trader": "orai...",
         "quote_asset_limit": "0",
     }
 }
@@ -90,11 +90,10 @@ Allows third parties to trigger funding payments to be processed for a specific 
 ```json
 {
     "pay_funding" {
-        "vamm": "juno...",
+        "vamm": "orai...",
     }
 }
 ```
-    
 
 ### `deposit_margin`
 
@@ -103,7 +102,7 @@ Users can deposit additional margin to their positions to prevent them from beco
 ```json
 {
     "deposit_margin" {
-        "vamm": "juno...",
+        "vamm": "orai...",
         "amount": "250000",
     }
 }
@@ -116,10 +115,10 @@ Users can withdraw excess collateral from their positions if they are over-colla
 ```json
 {
     "withdraw_margin" {
-        "vamm": "juno...",
+        "vamm": "orai...",
         "amount": "250000",
     }
-}   
+}
 }
 ```
 
@@ -156,7 +155,7 @@ Returns the state variables of the contract.
     "state" {}
 }
 ```
-    
+
 ### `position`
 
 Returns a user's position for a specific vAMM.
@@ -164,9 +163,9 @@ Returns a user's position for a specific vAMM.
 ```json
 {
     "position" {
-        "vamm": "juno...",
-        "trader": "juno...",
-    }   
+        "vamm": "orai...",
+        "trader": "orai...",
+    }
 }
 ```
 
@@ -177,10 +176,10 @@ Returns a user's positions for all vAMMs.
 ```json
 {
     "all_positions" {
-        "trader": "juno...",
+        "trader": "orai...",
     }
 }
-```    
+```
 
 ### `unrealized_pnl`
 
@@ -189,13 +188,12 @@ Returns the unrealized PnL (profit and loss) of a user for a specific vAMM using
 ```json
 {
     "unrealized_pnl" {
-        "vamm": "juno...",
-        "trader": "juno...",
+        "vamm": "orai...",
+        "trader": "orai...",
         "calc_option": "spot",
     }
 }
 ```
-    
 
 ### `cumulative_premium_fraction`
 
@@ -204,7 +202,7 @@ Returns the cumulative premium fraction of a vAMM.
 ```json
 {
     "cumulative_premium_fraction" {
-        "vamm": "juno...",
+        "vamm": "orai...",
     }
 }
 ```
@@ -216,9 +214,9 @@ Returns the margin ratio of a user for a vAMM.
 ```json
 {
     "margin_ratio" {
-        "vamm": "juno...",
-        "trader": "juno...",
-    }    
+        "vamm": "orai...",
+        "trader": "orai...",
+    }
 }
 ```
 
@@ -229,10 +227,10 @@ Returns the excess collateral a user has for a vAMM.
 ```json
 {
     "free_collateral" {
-        "vamm": "juno...",
-        "trader": "juno...",
+        "vamm": "orai...",
+        "trader": "orai...",
     }
-  
+
 }
 ```
 
@@ -243,8 +241,8 @@ Returns a user's margin balance across all vAMMs inclusive funding payments.
 ```json
 {
     "balance_with_funding_payment" {
-        "trader": "juno...",
-    }    
+        "trader": "orai...",
+    }
 }
 ```
 
@@ -255,9 +253,8 @@ Returns a user's margin balance inclusive funding payments for a specific vAMM.
 ```json
 {
     "position_with_funding_payment" {
-        "vamm": "juno...",
-        "trader": "juno...",
+        "vamm": "orai...",
+        "trader": "orai...",
     }
 }
 ```
-
