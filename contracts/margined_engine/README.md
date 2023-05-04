@@ -1,4 +1,4 @@
-# Margined Margin Engine
+# Margined Protocol Engine
 
 The margin engine is responsible for managing user positions and collateral. Allows users to take positions in all registered vAMMs.
 
