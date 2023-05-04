@@ -2,8 +2,6 @@
 
 This is the internal architecture document for Margined Protocol
 
-![v1-design](./v1-design.jpg)
-
 ## Component Diagram:
 
 ![Component Diagram](./puml-files/component-diagram.png)
