@@ -2,9 +2,9 @@
 
 This repo contains a the Margined Protocol a decentralized perpetual contract protocol for CosmWasm networks.
 
-## Documentation
+## Overview
 
-Documents are at [doc](./docs/overview.md)
+Overview is at [doc](./docs/overview.md)
 
 ## Contracts
 
