@@ -50,7 +50,7 @@ cw-build ./contracts/*
 cw-gents ./contracts/* -o build
 
 # generate github pages as documents for this build folder
-typedoc --entryPointStrategy expand --name 'Margined Protocol' --readme docs/v1-design.md  build
+typedoc --entryPointStrategy expand --name 'Margined Protocol' --readme docs/v1-design.md  build -o docs
 
 ```
 
