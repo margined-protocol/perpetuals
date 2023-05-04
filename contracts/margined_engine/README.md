@@ -44,6 +44,18 @@ Enables owner to update key contract parameters.
 
 Enables a user to open a position for a specific vAMM with leverage. Also allows order to be placed with slippage limits.
 
+If side is buy (direction is 'add_to_amm') then open position (increase)
+
+![Open Position Increase](/docs/diagrams/open-pos-reverse.png)
+
+If old position is larger then reduce position (decrease)
+
+![Open Position Decrease](/docs/diagrams/open-pos-decrease.png)
+
+Otherwise close position then swap out the entire position (reverse)
+
+![Open Position Reverse](/docs/diagrams/open-pos-reverse.png)
+
 ```json
 {
     "open_position" {
@@ -60,6 +72,12 @@ Enables a user to open a position for a specific vAMM with leverage. Also allows
 
 Enables a user to close a position they have for a specific vAMM including slippage limits.
 
+![Close Position](/docs/diagrams/close-pos-partial.png)
+
+If `partial_liquidation_ratio == 1` then close the whole position
+
+![Close Whole Position](/docs/diagrams/close-pos-whole.png)
+
 ```json
 {
     "close_position" {
@@ -72,6 +90,12 @@ Enables a user to close a position they have for a specific vAMM including slipp
 ### `liquidate`
 
 Allows third parties to liquidate users positions when they are no longer sufficiently collateralised.
+
+![Liquidate Position](/docs/diagrams/liq-pos-partial.png)
+
+If `partial_liquidation_ratio == 0` then liquidate the whole position.
+
+![Liquidate Whole Position](/docs/diagrams/liq-pos-whole.png)
 
 ```json
 {
@@ -87,6 +111,8 @@ Allows third parties to liquidate users positions when they are no longer suffic
 
 Allows third parties to trigger funding payments to be processed for a specific vAMM.
 
+![Pay Funding](/docs/diagrams/pay-funding.png)
+
 ```json
 {
     "pay_funding" {
@@ -98,6 +124,8 @@ Allows third parties to trigger funding payments to be processed for a specific 
 ### `deposit_margin`
 
 Users can deposit additional margin to their positions to prevent them from becoming under-collateralised.
+
+![Deposit Margin](/docs/diagrams/add-margin.png)
 
 ```json
 {
@@ -112,6 +140,8 @@ Users can deposit additional margin to their positions to prevent them from beco
 
 Users can withdraw excess collateral from their positions if they are over-collateralised
 
+![Withdraw Margin](/docs/diagrams/remove-margin.png)
+
 ```json
 {
     "withdraw_margin" {
@@ -119,7 +149,7 @@ Users can withdraw excess collateral from their positions if they are over-colla
         "amount": "250000",
     }
 }
-}
+
 ```
 
 ### `set_pause`
