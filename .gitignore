@@ -12,6 +12,7 @@
 artifacts
 
 .env
+node_modules
 
 # Text file backups
 **/*.rs.bk
