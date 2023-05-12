@@ -27,7 +27,7 @@ async function main() {
 
   const client = await setupNodeLocal(config, mnemonic);
   const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
-    prefix: 'juno'
+    prefix: 'orai'
   });
   let deployConfig: Config;
   const isTestnet = process.env.NETWORK === 'testnet';
@@ -46,21 +46,45 @@ async function main() {
   /// Deploy Fee Pool Contract
   ///
   console.log('Deploying Fee Pool...');
-  const feePoolContractAddress = await deployContract(client, account.address, join(MARGINED_ARTIFACTS_PATH, 'margined_fee_pool.wasm'), 'margined_fee_pool', {}, '150000', {});
+  const feePoolContractAddress = await deployContract(
+    client,
+    account.address,
+    join(MARGINED_ARTIFACTS_PATH, 'margined_fee_pool.wasm'),
+    'margined_fee_pool',
+    {},
+    '150000',
+    {}
+  );
   console.log('Fee Pool Contract Address: ' + feePoolContractAddress);
 
   ///
   /// Deploy Insurance Fund Contract
   ///
   console.log('Deploying Insurance Fund...');
-  const insuranceFundContractAddress = await deployContract(client, account.address, join(MARGINED_ARTIFACTS_PATH, 'margined_insurance_fund.wasm'), 'margined_insurance_fund', {}, '150000', {});
+  const insuranceFundContractAddress = await deployContract(
+    client,
+    account.address,
+    join(MARGINED_ARTIFACTS_PATH, 'margined_insurance_fund.wasm'),
+    'margined_insurance_fund',
+    {},
+    '150000',
+    {}
+  );
   console.log('Insurance Fund Contract Address: ' + insuranceFundContractAddress);
 
   ///
   /// Deploy Mock PriceFeed Contract
   ///
   console.log('Deploying Mock PriceFeed...');
-  const priceFeedAddress = await deployContract(client, account.address, join(MARGINED_ARTIFACTS_PATH, 'margined_pricefeed.wasm'), 'margined_pricefeed', deployConfig.priceFeedInitMsg, '150000', {});
+  const priceFeedAddress = await deployContract(
+    client,
+    account.address,
+    join(MARGINED_ARTIFACTS_PATH, 'margined_pricefeed.wasm'),
+    'margined_pricefeed',
+    deployConfig.priceFeedInitMsg,
+    '150000',
+    {}
+  );
   console.log('Mock PriceFeed Address: ' + priceFeedAddress);
 
   ///
@@ -68,7 +92,15 @@ async function main() {
   ///
   console.log('Deploying ETH:UST vAMM...');
   deployConfig.vammInitMsg.pricefeed = priceFeedAddress;
-  const vammContractAddress = await deployContract(client, account.address, join(MARGINED_ARTIFACTS_PATH, 'margined_vamm.wasm'), 'margined_vamm', deployConfig.vammInitMsg, '300000', {});
+  const vammContractAddress = await deployContract(
+    client,
+    account.address,
+    join(MARGINED_ARTIFACTS_PATH, 'margined_vamm.wasm'),
+    'margined_vamm',
+    deployConfig.vammInitMsg,
+    '300000',
+    {}
+  );
   console.log('ETH:UST vAMM Address: ' + vammContractAddress);
 
   ///
@@ -95,27 +127,27 @@ async function main() {
           amount: '5000000000' // 5,000
         },
         {
-          address: 'juno1w5jfhzm93vkpevpverdgkj33dw3dfus825mfnm',
+          address: 'orai1w5jfhzm93vkpevpverdgkj33dw3dfus825mfnm',
           amount: '1000000000' // 1,000
         },
         {
-          address: 'juno1dedkvygl3kx903axl7ypnrhu0g2p855sflz305',
+          address: 'orai1dedkvygl3kx903axl7ypnrhu0g2p855sflz305',
           amount: '1000000000' // 1,000
         },
         {
-          address: 'juno1evd2a75k42450nkkteatsmpmlq8kzk50vja0n8',
+          address: 'orai1evd2a75k42450nkkteatsmpmlq8kzk50vja0n8',
           amount: '1000000000' // 1,000
         },
         {
-          address: 'juno18da0wya36037qq73whp4vkaf8fw078hl9y2kf5',
+          address: 'orai18da0wya36037qq73whp4vkaf8fw078hl9y2kf5',
           amount: '1000000000' // 1,000
         },
         {
-          address: 'juno1peu2fm3rtuc3hrpaskazzh68qle8g654z68y2w',
+          address: 'orai1peu2fm3rtuc3hrpaskazzh68qle8g654z68y2w',
           amount: '1000000000' // 1,000
         },
         {
-          address: 'juno1qrqw3650zq7md6txk4g3pyt98vr6f02neq0krc',
+          address: 'orai1qrqw3650zq7md6txk4g3pyt98vr6f02neq0krc',
           amount: '1000000000' // 1,000
         }
       ],
@@ -136,7 +168,15 @@ async function main() {
   deployConfig.engineInitMsg.insurance_fund = insuranceFundContractAddress;
   deployConfig.engineInitMsg.fee_pool = feePoolContractAddress;
   deployConfig.engineInitMsg.eligible_collateral = 'orai';
-  const marginEngineContractAddress = await deployContract(client, account.address, join(MARGINED_ARTIFACTS_PATH, 'margined_engine.wasm'), 'margined_engine', deployConfig.engineInitMsg, '300000', {});
+  const marginEngineContractAddress = await deployContract(
+    client,
+    account.address,
+    join(MARGINED_ARTIFACTS_PATH, 'margined_engine.wasm'),
+    'margined_engine',
+    deployConfig.engineInitMsg,
+    '300000',
+    {}
+  );
   console.log('Margin Engine Address: ' + marginEngineContractAddress);
 
   // Define Margin engine address in vAMM
