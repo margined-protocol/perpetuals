@@ -35,25 +35,6 @@ rustup default stable
 rustup target add wasm32-unknown-unknown
 ```
 
-3. Make sure [cw-build](https://github.com/oraichain/cosmwasm-tools) is installed
-
-### Build
-
-Clone this repository and build the source code:
-
-```sh
-git clone https://github.com/oraichain/perpetuals.git
-cd perpetuals
-cw-build ./contracts/*
-
-# generate typescript
-cw-gents ./contracts/* -o build
-
-# generate github pages as documents for this build folder
-typedoc --entryPointStrategy expand --name 'Margined Protocol' --readme docs/v1-design.md  build -o docs
-
-```
-
 ### Unit / Integration Tests
 
 To run the tests after installing pre-requisites do the following:
