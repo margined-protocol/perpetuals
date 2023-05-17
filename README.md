@@ -4,7 +4,7 @@ This repo contains a the Margined Protocol a decentralized perpetual contract pr
 
 ## Overview
 
-Overview is at [doc](./docs/overview.md)
+Overview is at [doc](/doc/overview.md)
 
 ## Contracts
 
