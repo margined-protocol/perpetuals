@@ -15,8 +15,6 @@ use crate::{
     },
 };
 
-const FIFTEEN_MINUTES: u64 = 15 * 60;
-
 /// Queries contract Config
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config: Config = read_config(deps.storage)?;
@@ -153,62 +151,20 @@ pub fn query_spot_price(deps: Deps) -> StdResult<Uint128> {
 }
 
 /// Queries twap price of the vAMM, using the reserve snapshots
-pub fn query_twap_price(deps: Deps, env: Env, interval: u64) -> StdResult<Uint128> {
+pub fn query_twap_price(
+    deps: Deps,
+    env: Env,
+    interval: u64,
+    opt: TwapCalcOption,
+    asset: Option<TwapInputAsset>,
+) -> StdResult<Uint128> {
     let snapshot_index = read_reserve_snapshot_counter(deps.storage)?;
     let params = TwapPriceCalcParams {
-        opt: TwapCalcOption::Reserve,
+        opt,
         snapshot_index,
-        asset: None,
+        asset,
     };
     calc_twap(deps, env, params, interval)
-}
-
-/// Queries twap price of the vAMM, using the reserve snapshots
-pub fn query_input_twap(
-    deps: Deps,
-    env: Env,
-    direction: Direction,
-    amount: Uint128,
-) -> StdResult<Uint128> {
-    let snapshot_index = read_reserve_snapshot_counter(deps.storage)?;
-
-    let asset = TwapInputAsset {
-        direction,
-        amount,
-        quote: true,
-    };
-
-    let params = TwapPriceCalcParams {
-        opt: TwapCalcOption::Input,
-        snapshot_index,
-        asset: Some(asset),
-    };
-
-    calc_twap(deps, env, params, FIFTEEN_MINUTES)
-}
-
-/// Queries twap price of the vAMM, using the reserve snapshots
-pub fn query_output_twap(
-    deps: Deps,
-    env: Env,
-    direction: Direction,
-    amount: Uint128,
-) -> StdResult<Uint128> {
-    let snapshot_index = read_reserve_snapshot_counter(deps.storage)?;
-
-    let asset = TwapInputAsset {
-        direction,
-        amount,
-        quote: false,
-    };
-
-    let params = TwapPriceCalcParams {
-        opt: TwapCalcOption::Input,
-        snapshot_index,
-        asset: Some(asset),
-    };
-
-    calc_twap(deps, env, params, FIFTEEN_MINUTES)
 }
 
 /// Returns the total (i.e. toll + spread) fees for an amount

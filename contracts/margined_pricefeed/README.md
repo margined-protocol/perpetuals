@@ -19,11 +19,13 @@ The instantiation message takes the oracle hub contract, that would be used in a
 
 ## ExecuteMsg
 
-### `update_config`
+### `update_owner`
+
+Transfers the contract owner.
 
 ```json
 {
-  "update_config": {
+  "update_owner": {
     "owner": "orai..."
   }
 }

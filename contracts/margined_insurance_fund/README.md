@@ -14,13 +14,13 @@ The instantiation message is empty.
 
 ## ExecuteMsg
 
-### `update_config`
+### `update_owner`
 
 Enables transfer of contract ownership and the beneficiary of insurance funds. Beneficiary is an address that is able to request funds held by the insurance fund contract.
 
 ```json
 {
-   "update_config": {
+   "update_owner": {
         "owner": "orai..."
         "beneficiary": "orai..."
    }
@@ -34,7 +34,7 @@ Append vamm to list of supported vAMMs.
 ```json
 {
   "add_vamm": {
-    "vamm": "juno..."
+    "vamm": "orai..."
   }
 }
 ```
@@ -46,7 +46,7 @@ Remove vamm from list of supported vAMMs.
 ```json
 {
   "remove_vamm": {
-    "vamm": "juno..."
+    "vamm": "orai..."
   }
 }
 ```
@@ -58,7 +58,7 @@ Enables the beneficiary to request contract funds.
 ```json
 {
   "withdraw": {
-    "token": "juno...",
+    "token": "orai...",
     "amount": "100"
   }
 }
@@ -93,7 +93,7 @@ Returns bool showing if vamm is supported.
 ```json
 {
   "is_vamm": {
-    "vamm": "juno..."
+    "vamm": "orai..."
   }
 }
 ```
@@ -129,7 +129,7 @@ Returns the status of a specific vAMM.
 ```json
 {
   "get_vamm_status": {
-    "vamm": "juno..."
+    "vamm": "orai..."
   }
 }
 ```

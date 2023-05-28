@@ -35,7 +35,6 @@ Enables owner to update key contract parameters.
 ```json
 {
     "update_config" {
-        "owner": "orai...",
         "base_asset_holding_cap": "10000000",
         "open_interest_notional_cap": "10000000",
         "toll_ratio": "10000",
@@ -45,6 +44,18 @@ Enables owner to update key contract parameters.
         "pricefeed": "orai...",
         "spot_price_twap_interval": 6,
     }
+}
+```
+
+### `update_owner`
+
+Transfers the contract owner.
+
+```json
+{
+  "update_owner": {
+    "owner": "orai..."
+  }
 }
 ```
 
@@ -175,6 +186,8 @@ Returns the amount for a trade of output with a given size.
 
 ### `input_twap`
 
+Returns input twap price of the vAMM, using the reserve snapshots, default 15 minutes interval.
+
 ```json
 {
   "input_twap": {
@@ -185,6 +198,8 @@ Returns the amount for a trade of output with a given size.
 ```
 
 ### `output_twap`
+
+Returns output twap price of the vAMM, using the reserve snapshots, default 15 minutes interval.
 
 ```json
 {
@@ -197,6 +212,8 @@ Returns the amount for a trade of output with a given size.
 
 ### `spot_price`
 
+Returns spot price of the vAMM.
+
 ```json
 {
   "spot_price": {}
@@ -204,6 +221,8 @@ Returns the amount for a trade of output with a given size.
 ```
 
 ### `twap_price`
+
+Return twap price of the vAMM, using the reserve snapshots.
 
 ```json
 {
@@ -215,6 +234,8 @@ Returns the amount for a trade of output with a given size.
 
 ### `calc_fee`
 
+Returns the total (i.e. toll + spread) fees for an amount.
+
 ```json
 {
   "calc_fee": {
@@ -224,6 +245,8 @@ Returns the amount for a trade of output with a given size.
 ```
 
 ### `is_over_spread_limit`
+
+Returns bool to show is spread limit has been exceeded.
 
 ```json
 {

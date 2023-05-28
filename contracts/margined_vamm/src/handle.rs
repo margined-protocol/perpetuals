@@ -14,7 +14,7 @@ use crate::{
     state::{read_config, read_state, store_config, store_state, Config, State},
     utils::{
         add_reserve_snapshot, check_is_over_block_fluctuation_limit, modulo, require_margin_engine,
-        require_open,
+        require_open, TwapCalcOption,
     },
 };
 
@@ -286,8 +286,13 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
     )?;
 
     // twap price from here, i.e. the amm
-    let index_price: Uint128 =
-        query_twap_price(deps.as_ref(), env.clone(), config.spot_price_twap_interval)?;
+    let index_price: Uint128 = query_twap_price(
+        deps.as_ref(),
+        env.clone(),
+        config.spot_price_twap_interval,
+        TwapCalcOption::Reserve,
+        None,
+    )?;
 
     let premium =
         Integer::new_positive(index_price).checked_sub(Integer::new_positive(underlying_price))?;

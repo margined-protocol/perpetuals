@@ -12,14 +12,17 @@ use margined_common::{
 use margined_perp::margined_vamm::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use margined_utils::contracts::helpers::PricefeedController;
 
-use crate::{error::ContractError, state::read_config};
+use crate::{
+    error::ContractError,
+    state::read_config,
+    utils::{TwapCalcOption, TwapInputAsset},
+};
 use crate::{
     handle::{set_open, settle_funding, swap_input, swap_output, update_config, update_owner},
     query::{
-        query_calc_fee, query_config, query_input_amount, query_input_price, query_input_twap,
+        query_calc_fee, query_config, query_input_amount, query_input_price,
         query_is_over_fluctuation_limit, query_is_over_spread_limit, query_output_amount,
-        query_output_price, query_output_twap, query_owner, query_spot_price, query_state,
-        query_twap_price,
+        query_output_price, query_owner, query_spot_price, query_state, query_twap_price,
     },
     state::{store_config, store_reserve_snapshot, store_state, Config, ReserveSnapshot, State},
 };
@@ -35,6 +38,8 @@ pub const ONE_MINUTE_IN_SECONDS: u64 = 60;
 pub const ONE_HOUR_IN_SECONDS: u64 = 60 * 60;
 pub const ONE_DAY_IN_SECONDS: u64 = 24 * 60 * 60;
 pub const ONE_WEEK_IN_SECONDS: u64 = 7 * 24 * 60 * 60;
+
+const FIFTEEN_MINUTES: u64 = 15 * 60;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -191,12 +196,28 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::OutputAmount { direction, amount } => {
             to_binary(&query_output_amount(deps, direction, amount)?)
         }
-        QueryMsg::InputTwap { direction, amount } => {
-            to_binary(&query_input_twap(deps, env, direction, amount)?)
-        }
-        QueryMsg::OutputTwap { direction, amount } => {
-            to_binary(&query_output_twap(deps, env, direction, amount)?)
-        }
+        QueryMsg::InputTwap { direction, amount } => to_binary(&query_twap_price(
+            deps,
+            env,
+            FIFTEEN_MINUTES,
+            TwapCalcOption::Input,
+            Some(TwapInputAsset {
+                direction,
+                amount,
+                quote: true,
+            }),
+        )?),
+        QueryMsg::OutputTwap { direction, amount } => to_binary(&query_twap_price(
+            deps,
+            env,
+            FIFTEEN_MINUTES,
+            TwapCalcOption::Input,
+            Some(TwapInputAsset {
+                direction,
+                amount,
+                quote: false,
+            }),
+        )?),
         QueryMsg::UnderlyingPrice {} => {
             let config = read_config(deps.storage)?;
             let pricefeed_controller = PricefeedController(config.pricefeed);
@@ -215,7 +236,13 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_binary(&query_calc_fee(deps, quote_asset_amount)?)
         }
         QueryMsg::SpotPrice {} => to_binary(&query_spot_price(deps)?),
-        QueryMsg::TwapPrice { interval } => to_binary(&query_twap_price(deps, env, interval)?),
+        QueryMsg::TwapPrice { interval } => to_binary(&query_twap_price(
+            deps,
+            env,
+            interval,
+            TwapCalcOption::Reserve,
+            None,
+        )?),
         QueryMsg::IsOverSpreadLimit {} => to_binary(&query_is_over_spread_limit(deps)?),
         QueryMsg::IsOverFluctuationLimit {
             direction,
