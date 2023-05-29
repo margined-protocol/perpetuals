@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    Addr, Deps, DepsMut, Env, Event, MessageInfo, Response, StdError, StdResult, Storage, SubMsg,
+    Addr, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, SubMsg,
     SubMsgResponse, Uint128,
 };
 use margined_utils::contracts::helpers::{InsuranceFundController, VammController};
@@ -10,6 +10,7 @@ use std::str::FromStr;
 use margined_common::{
     asset::{Asset, AssetInfo},
     integer::Integer,
+    messages::{read_event, read_response},
 };
 use margined_perp::margined_engine::{
     PnlCalcOption, Position, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
@@ -443,33 +444,28 @@ pub fn require_non_zero_input(input: Uint128) -> StdResult<Response> {
     Ok(Response::new())
 }
 
-pub fn parse_swap(response: SubMsgResponse) -> StdResult<(Uint128, Uint128)> {
+pub fn parse_swap(response: &SubMsgResponse) -> StdResult<(Uint128, Uint128)> {
     // Find swap inputs and output events
-    let wasm = response
-        .events
-        .iter()
-        .find(|&e| e.ty == "wasm")
-        .ok_or_else(|| StdError::generic_err("No event found"))?;
+    let wasm = read_response("wasm", response)?;
+    let swap = read_event("type", wasm)?;
 
-    let swap = read_event("type".to_string(), wasm)?;
-
-    match swap.as_str() {
+    match swap {
         "input" => {
-            let input_str = read_event("quote_asset_amount".to_string(), wasm)?;
-            let output_str = read_event("base_asset_amount".to_string(), wasm)?;
+            let input_str = read_event("quote_asset_amount", wasm)?;
+            let output_str = read_event("base_asset_amount", wasm)?;
 
             Ok((
-                Uint128::from_str(&input_str)?,
-                Uint128::from_str(&output_str)?,
+                Uint128::from_str(input_str)?,
+                Uint128::from_str(output_str)?,
             ))
         }
         "output" => {
-            let input_str = read_event("base_asset_amount".to_string(), wasm)?;
-            let output_str = read_event("quote_asset_amount".to_string(), wasm)?;
+            let input_str = read_event("base_asset_amount", wasm)?;
+            let output_str = read_event("quote_asset_amount", wasm)?;
 
             Ok((
-                Uint128::from_str(&input_str)?,
-                Uint128::from_str(&output_str)?,
+                Uint128::from_str(input_str)?,
+                Uint128::from_str(output_str)?,
             ))
         }
         _ => {
@@ -478,43 +474,15 @@ pub fn parse_swap(response: SubMsgResponse) -> StdResult<(Uint128, Uint128)> {
     }
 }
 
-pub fn parse_pay_funding(response: SubMsgResponse) -> StdResult<(Integer, String)> {
+pub fn parse_pay_funding<'a>(response: &'a SubMsgResponse) -> StdResult<(Integer, &'a str)> {
     // Find swap inputs and output events
-    let wasm = response
-        .events
-        .iter()
-        .find(|&e| e.ty == "wasm")
-        .ok_or_else(|| StdError::generic_err("No event found"))?;
+    let wasm = read_response("wasm", response)?;
+    let premium_str = read_event("premium_fraction", wasm)?;
+    let premium = Integer::from_str(premium_str)?;
 
-    let premium_str = read_event("premium_fraction".to_string(), wasm)?;
-    let premium: Integer = Integer::from_str(&premium_str)?;
-
-    let sender = read_contract_address(wasm)?;
+    let sender = read_event("_contract_address", wasm)?;
 
     Ok((premium, sender))
-}
-
-// Reads contract address from an event takes into account that there are
-// inconistencies between cosmwasm versions and multitest etc...
-fn read_contract_address(event: &Event) -> StdResult<String> {
-    let result = event
-        .attributes
-        .iter()
-        .find(|&attr| attr.key.eq("_contract_address"));
-
-    result
-        .ok_or_else(|| StdError::generic_err("No attribute found"))
-        .map(|attr| attr.value.to_string())
-}
-
-fn read_event(key: String, event: &Event) -> StdResult<String> {
-    let attr = event
-        .attributes
-        .iter()
-        .find(|&attr| attr.key == key)
-        .ok_or_else(|| StdError::generic_err("No attribute found"))?;
-
-    Ok(attr.value.to_string())
 }
 
 // takes the side (buy|sell) and returns the direction (long|short)

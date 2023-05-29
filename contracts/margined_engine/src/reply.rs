@@ -753,10 +753,10 @@ pub fn pay_funding_reply(
     deps: DepsMut,
     env: Env,
     premium_fraction: Integer,
-    sender: String,
+    sender: &str,
 ) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
-    let vamm = deps.api.addr_validate(&sender)?;
+    let vamm = deps.api.addr_validate(sender)?;
 
     // update the cumulative premium fraction
     append_cumulative_premium_fraction(deps.storage, vamm.clone(), premium_fraction)?;

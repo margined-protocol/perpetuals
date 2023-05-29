@@ -1,5 +1,7 @@
 use cosmwasm_schema::serde::Serialize;
-use cosmwasm_std::{to_binary, Coin, CosmosMsg, StdResult, WasmMsg};
+use cosmwasm_std::{
+    to_binary, Coin, CosmosMsg, Event, StdError, StdResult, SubMsgResponse, WasmMsg,
+};
 
 // util to create Wasm execute message as CosmosMsg
 pub fn wasm_execute<T: Serialize + ?Sized>(
@@ -14,4 +16,23 @@ pub fn wasm_execute<T: Serialize + ?Sized>(
         funds,
     }
     .into())
+}
+
+pub fn read_response<'a>(key: &str, response: &'a SubMsgResponse) -> StdResult<&'a Event> {
+    response
+        .events
+        .iter()
+        .find(|&e| e.ty.eq(key))
+        .ok_or_else(|| StdError::generic_err("No event found"))
+}
+
+// reads attribute from an event by name
+pub fn read_event<'a>(key: &str, event: &'a Event) -> StdResult<&'a str> {
+    let attr = event
+        .attributes
+        .iter()
+        .find(|&attr| attr.key.eq(key))
+        .ok_or_else(|| StdError::generic_err("No attribute found"))?;
+
+    Ok(attr.value.as_str())
 }
