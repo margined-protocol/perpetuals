@@ -8,7 +8,7 @@ use margined_utils::contracts::helpers::InsuranceFundController;
 
 use crate::{
     contract::PAUSER,
-    state::{read_config, read_position, read_state, read_vamm_map, Config, State},
+    state::{read_config, read_position, read_state, read_vamm_map},
     utils::{
         calc_funding_payment, calc_remain_margin_with_funding_payment,
         get_position_notional_unrealized_pnl, keccak_256,
@@ -17,24 +17,12 @@ use crate::{
 
 /// Queries contract Config
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
-    let config: Config = read_config(deps.storage)?;
-
-    Ok(ConfigResponse {
-        owner: config.owner,
-        insurance_fund: config.insurance_fund,
-        fee_pool: config.fee_pool,
-        eligible_collateral: config.eligible_collateral,
-        decimals: config.decimals,
-        initial_margin_ratio: config.initial_margin_ratio,
-        maintenance_margin_ratio: config.maintenance_margin_ratio,
-        partial_liquidation_ratio: config.partial_liquidation_ratio,
-        liquidation_fee: config.liquidation_fee,
-    })
+    read_config(deps.storage)
 }
 
 /// Queries contract State
 pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
-    let state: State = read_state(deps.storage)?;
+    let state = read_state(deps.storage)?;
 
     Ok(StateResponse {
         open_interest_notional: state.open_interest_notional,
@@ -183,7 +171,6 @@ pub fn query_trader_position_with_funding_payment(
 
 /// Queries the margin ratio of a trader
 pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult<Integer> {
-    let config: Config = read_config(deps.storage)?;
     let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
     // retrieve the latest position
     let position = read_position(deps.storage, &position_key)?;
@@ -219,6 +206,7 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
 
     let remain_margin = calc_remain_margin_with_funding_payment(deps, position, unrealized_pnl)?;
 
+    let config = read_config(deps.storage)?;
     let margin_ratio = ((Integer::new_positive(remain_margin.margin)
         - Integer::new_positive(remain_margin.bad_debt))
         * Integer::new_positive(config.decimals))
@@ -229,8 +217,6 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, trader: String) -> StdResult
 
 /// Queries the withdrawable collateral of a trader
 pub fn query_free_collateral(deps: Deps, vamm: String, trader: String) -> StdResult<Integer> {
-    let config: Config = read_config(deps.storage)?;
-
     // retrieve the latest position
     let position = query_trader_position_with_funding_payment(deps, vamm, trader)?;
 
@@ -270,6 +256,8 @@ pub fn query_free_collateral(deps: Deps, vamm: String, trader: String) -> StdRes
     } else {
         account_value
     };
+
+    let config = read_config(deps.storage)?;
 
     let margin_requirement = if position.size.is_positive() {
         position

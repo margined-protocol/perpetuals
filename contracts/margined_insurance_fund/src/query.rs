@@ -7,7 +7,7 @@ use margined_utils::contracts::helpers::VammController;
 
 use crate::{
     contract::OWNER,
-    state::{is_vamm, read_config, read_vammlist, Config, VAMM_LIMIT},
+    state::{is_vamm, read_config, read_vammlist, VAMM_LIMIT},
 };
 
 const DEFAULT_PAGINATION_LIMIT: u32 = 10u32;
@@ -24,11 +24,7 @@ pub fn query_owner(deps: Deps) -> StdResult<OwnerResponse> {
 
 /// Queries contract config
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
-    let config: Config = read_config(deps.storage)?;
-
-    Ok(ConfigResponse {
-        engine: config.engine,
-    })
+    read_config(deps.storage)
 }
 
 /// Queries if the vAMM with given address is already stored

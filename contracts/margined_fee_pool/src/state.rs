@@ -1,15 +1,13 @@
-use cosmwasm_schema::cw_serde;
-
 use cosmwasm_std::{Deps, DepsMut, StdError::GenericErr, StdResult, Storage};
 use cosmwasm_storage::{singleton, singleton_read};
 use margined_common::asset::AssetInfo;
+use margined_perp::margined_fee_pool::ConfigResponse;
 
 pub static KEY_CONFIG: &[u8] = b"config";
 pub const TOKEN_LIST: &[u8] = b"token-list";
 pub const TOKEN_LIMIT: usize = 3usize;
 
-#[cw_serde]
-pub struct Config {}
+pub type Config = ConfigResponse;
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
     singleton(storage, KEY_CONFIG).save(config)

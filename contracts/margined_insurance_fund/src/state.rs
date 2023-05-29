@@ -1,11 +1,12 @@
-use cosmwasm_schema::cw_serde;
-
 use cosmwasm_std::{Addr, Deps, DepsMut, StdError, StdResult, Storage};
 use cosmwasm_storage::{singleton, singleton_read};
+use margined_perp::margined_insurance_fund::ConfigResponse;
 
 pub static KEY_CONFIG: &[u8] = b"config";
 pub const VAMM_LIST: &[u8] = b"vamm-list";
 pub const VAMM_LIMIT: usize = 3usize;
+
+pub type Config = ConfigResponse;
 
 // function checks if an addr is already added and adds it if not
 // We also check that we have not reached the limit of vAMMs here
@@ -79,11 +80,6 @@ pub fn remove_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
 
     // saves the updated vamm_list
     singleton(deps.storage, VAMM_LIST).save(&vamm_list)
-}
-
-#[cw_serde]
-pub struct Config {
-    pub engine: Addr,
 }
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {

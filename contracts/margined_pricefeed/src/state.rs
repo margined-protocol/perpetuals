@@ -1,14 +1,12 @@
-use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{StdResult, Storage, Timestamp, Uint128};
 use cosmwasm_storage::{singleton, Bucket, ReadonlyBucket};
-use margined_perp::margined_pricefeed::PriceData;
+use margined_perp::margined_pricefeed::{ConfigResponse, PriceData};
 
 pub static KEY_CONFIG: &[u8] = b"config";
 
 pub const PRICES: &[u8] = b"prices";
 
-#[cw_serde]
-pub struct Config {}
+pub type Config = ConfigResponse;
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
     singleton(storage, KEY_CONFIG).save(config)

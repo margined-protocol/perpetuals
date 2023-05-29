@@ -93,8 +93,6 @@ pub fn transfer_fees(
     vamm: Addr,
     notional: Uint128,
 ) -> StdResult<TransferResponse> {
-    let config = read_config(deps.storage)?;
-
     let vamm_controller = VammController(vamm);
 
     let CalcFeeResponse {
@@ -104,6 +102,7 @@ pub fn transfer_fees(
 
     let mut messages: Vec<SubMsg> = vec![];
 
+    let config = read_config(deps.storage)?;
     if !spread_fee.is_zero() {
         let msg = match config.insurance_fund {
             Some(insurance_fund) => {

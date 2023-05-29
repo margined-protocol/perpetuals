@@ -13,7 +13,7 @@ use crate::{
     query::{query_free_collateral, query_margin_ratio},
     state::{
         read_config, read_position, read_state, store_config, store_position, store_sent_funds,
-        store_state, store_tmp_liquidator, store_tmp_swap, Config, SentFunds, State, TmpSwapInfo,
+        store_state, store_tmp_liquidator, store_tmp_swap, SentFunds, TmpSwapInfo,
     },
     utils::{
         calc_remain_margin_with_funding_payment, direction_to_side, get_asset,
@@ -113,14 +113,13 @@ pub fn open_position(
     leverage: Uint128,
     base_asset_limit: Uint128,
 ) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-    let state: State = read_state(deps.storage)?;
-
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = info.sender.clone();
 
+    let state = read_state(deps.storage)?;
     require_not_paused(state.pause)?;
+    let config = read_config(deps.storage)?;
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
 
     let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
@@ -151,7 +150,7 @@ pub fn open_position(
     )?;
 
     // if direction and side are same way then increasing else we are reversing
-    let is_increase: bool = position.direction == Direction::AddToAmm && side == Side::Buy
+    let is_increase = position.direction == Direction::AddToAmm && side == Side::Buy
         || position.direction == Direction::RemoveFromAmm && side == Side::Sell;
 
     // calculate the position notional
@@ -219,9 +218,6 @@ pub fn close_position(
     vamm: String,
     quote_amount_limit: Uint128,
 ) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-    let state: State = read_state(deps.storage)?;
-
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = info.sender;
@@ -230,6 +226,7 @@ pub fn close_position(
     let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
     let position = read_position(deps.storage, &position_key)?;
 
+    let state = read_state(deps.storage)?;
     // check the position isn't zero
     require_not_paused(state.pause)?;
     require_position_not_zero(position.size.value)?;
@@ -249,6 +246,8 @@ pub fn close_position(
         Direction::RemoveFromAmm,
         position.size.value,
     )?;
+
+    let config = read_config(deps.storage)?;
 
     // check if this position exceed fluctuation limit
     // if over fluctuation limit, then close partial position. Otherwise close all.
@@ -317,8 +316,6 @@ pub fn liquidate(
     trader: String,
     quote_asset_limit: Uint128,
 ) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = deps.api.addr_validate(&trader)?;
@@ -344,6 +341,7 @@ pub fn liquidate(
         }
     }
 
+    let config = read_config(deps.storage)?;
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
     require_insufficient_margin(margin_ratio, config.maintenance_margin_ratio)?;
 
@@ -377,10 +375,10 @@ pub fn pay_funding(
     _info: MessageInfo,
     vamm: String,
 ) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
+
+    let config = read_config(deps.storage)?;
 
     // check its a valid vamm
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
@@ -403,17 +401,18 @@ pub fn deposit_margin(
     vamm: String,
     amount: Uint128,
 ) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-    let state: State = read_state(deps.storage)?;
-
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = info.sender.clone();
 
+    let state = read_state(deps.storage)?;
     require_not_paused(state.pause)?;
     require_non_zero_input(amount)?;
 
     // first try to execute the transfer
-    let mut response: Response = Response::new();
+    let mut response = Response::new();
+
+    let config = read_config(deps.storage)?;
+
     match config.eligible_collateral.clone() {
         AssetInfo::NativeToken { .. } => {
             let token = Asset {
@@ -426,7 +425,7 @@ pub fn deposit_margin(
 
         AssetInfo::Token { .. } => {
             let msg = execute_transfer_from(deps.storage, &trader, &env.contract.address, amount)?;
-            response = response.clone().add_submessage(msg);
+            response = response.add_submessage(msg);
         }
     };
     let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
@@ -456,14 +455,13 @@ pub fn withdraw_margin(
     vamm: String,
     amount: Uint128,
 ) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-    let mut state: State = read_state(deps.storage)?;
-
     // get and validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = info.sender;
 
+    let config = read_config(deps.storage)?;
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
+    let mut state = read_state(deps.storage)?;
     require_not_paused(state.pause)?;
     require_non_zero_input(amount)?;
 
@@ -617,10 +615,9 @@ fn partial_liquidation(
     trader: Addr,
     quote_asset_limit: Uint128,
 ) -> StdResult<SubMsg> {
-    let config: Config = read_config(deps.storage)?;
     let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
-    let position: Position = read_position(deps.storage, &position_key)?;
-
+    let position = read_position(deps.storage, &position_key)?;
+    let config = read_config(deps.storage)?;
     let partial_position_size = position
         .size
         .value
@@ -692,12 +689,10 @@ fn swap_input(
     can_go_over_fluctuation: bool,
     id: u64,
 ) -> StdResult<SubMsg> {
-    let direction: Direction = side_to_direction(side);
-
     let msg = wasm_execute(
         vamm,
         &ExecuteMsg::SwapInput {
-            direction,
+            direction: side_to_direction(side),
             quote_asset_amount: open_notional,
             base_asset_limit,
             can_go_over_fluctuation,
@@ -715,12 +710,10 @@ fn swap_output(
     quote_asset_limit: Uint128,
     id: u64,
 ) -> StdResult<SubMsg> {
-    let direction: Direction = side_to_direction(side);
-
     let msg = wasm_execute(
         vamm,
         &ExecuteMsg::SwapOutput {
-            direction,
+            direction: side_to_direction(side),
             base_asset_amount: open_notional,
             quote_asset_limit,
         },

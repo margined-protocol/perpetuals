@@ -232,10 +232,7 @@ pub fn reverse_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    let config = read_config(deps.storage)?;
-    let mut state = read_state(deps.storage)?;
     let mut swap = read_tmp_swap(deps.storage)?;
-    let mut funds = read_sent_funds(deps.storage)?;
 
     let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
 
@@ -247,7 +244,7 @@ pub fn reverse_position_reply(
         &swap.side,
         env.block.height,
     )?;
-
+    let mut state = read_state(deps.storage)?;
     update_open_interest_notional(
         &deps.as_ref(),
         &mut state,
@@ -280,6 +277,7 @@ pub fn reverse_position_reply(
     // add the fee transfer messages
     let mut msgs: Vec<SubMsg> = fees.messages;
 
+    let mut funds = read_sent_funds(deps.storage)?;
     // add the total fees (spread + toll) to the required funds counter
     funds.required = funds
         .required
@@ -294,6 +292,7 @@ pub fn reverse_position_reply(
         // create transfer message
         msgs.push(execute_transfer(deps.storage, &swap.trader, margin.value)?);
 
+        let config = read_config(deps.storage)?;
         // check if native tokens are sufficient
         if let AssetInfo::NativeToken { .. } = config.eligible_collateral {
             funds.are_sufficient()?;
@@ -348,8 +347,6 @@ pub fn close_position_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    let config = read_config(deps.storage)?;
-    let mut state = read_state(deps.storage)?;
     let swap = read_tmp_swap(deps.storage)?;
 
     let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
@@ -388,7 +385,9 @@ pub fn close_position_reply(
         return Err(StdError::generic_err("Cannot close position - bad debt"));
     }
 
+    let mut state = read_state(deps.storage)?;
     if !withdraw_amount.is_zero() {
+        let config = read_config(deps.storage)?;
         msgs.append(&mut withdraw(
             deps.as_ref(),
             env,
@@ -451,8 +450,6 @@ pub fn partial_close_position_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    let mut state: State = read_state(deps.storage)?;
-
     let swap: TmpSwapInfo = read_tmp_swap(deps.storage)?;
     let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
     let mut position = get_position(
@@ -464,6 +461,7 @@ pub fn partial_close_position_reply(
         env.block.height,
     )?;
 
+    let mut state: State = read_state(deps.storage)?;
     update_open_interest_notional(
         &deps.as_ref(),
         &mut state,
@@ -543,9 +541,6 @@ pub fn liquidate_reply(
     _input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    let config = read_config(deps.storage)?;
-    let mut state = read_state(deps.storage)?;
-
     let swap = read_tmp_swap(deps.storage)?;
     let liquidator = read_tmp_liquidator(deps.storage)?;
 
@@ -572,6 +567,8 @@ pub fn liquidate_reply(
     let mut remain_margin =
         calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), margin_delta)?;
 
+    let config = read_config(deps.storage)?;
+
     // calculate liquidation penalty and fee for liquidator
     let liquidation_penalty: Uint128 = output
         .checked_mul(config.liquidation_fee)?
@@ -591,6 +588,7 @@ pub fn liquidate_reply(
 
     let mut msgs: Vec<SubMsg> = vec![];
 
+    let mut state = read_state(deps.storage)?;
     let pre_paid_shortfall = if !remain_margin.bad_debt.is_zero() {
         realize_bad_debt(deps.as_ref(), remain_margin.bad_debt, &mut msgs, &mut state)?
     } else {
@@ -647,9 +645,6 @@ pub fn partial_liquidation_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    let config = read_config(deps.storage)?;
-    let mut state = read_state(deps.storage)?;
-
     let swap = read_tmp_swap(deps.storage)?;
 
     let liquidator = read_tmp_liquidator(deps.storage)?;
@@ -664,6 +659,8 @@ pub fn partial_liquidation_reply(
         &swap.side,
         env.block.height,
     )?;
+
+    let config = read_config(deps.storage)?;
 
     // calculate delta from trade and whether it was profitable or a loss
     let realized_pnl = (swap.unrealized_pnl
@@ -706,7 +703,7 @@ pub fn partial_liquidation_reply(
     };
 
     let mut messages: Vec<SubMsg> = vec![];
-
+    let mut state = read_state(deps.storage)?;
     if !liquidation_fee.is_zero() {
         let msg = match config.insurance_fund {
             Some(insurance_fund) => {
@@ -755,7 +752,6 @@ pub fn pay_funding_reply(
     premium_fraction: Integer,
     sender: &str,
 ) -> StdResult<Response> {
-    let config = read_config(deps.storage)?;
     let vamm = deps.api.addr_validate(sender)?;
 
     // update the cumulative premium fraction
@@ -764,6 +760,7 @@ pub fn pay_funding_reply(
     let vamm_controller = VammController(vamm);
     let total_position_size = vamm_controller.state(&deps.querier)?.total_position_size;
 
+    let config = read_config(deps.storage)?;
     let funding_payment =
         total_position_size * premium_fraction / Integer::new_positive(config.decimals);
 

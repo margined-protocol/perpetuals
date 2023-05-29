@@ -18,7 +18,7 @@ pub fn update_owner(deps: DepsMut, info: MessageInfo, owner: String) -> StdResul
 }
 
 pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
+    let config = read_config(deps.storage)?;
 
     // check permission
     if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
@@ -68,12 +68,11 @@ pub fn shutdown_all_vamm(deps: DepsMut, env: Env, info: MessageInfo) -> StdResul
         return Err(StdError::generic_err("unauthorized"));
     }
 
-    // initialise the submsgs vec
-    let mut msgs = vec![];
-
     // construct all the shutdown messages
     let keys = read_vammlist(deps.as_ref(), VAMM_LIMIT)?;
 
+    // initialise the submsgs vec
+    let mut msgs = vec![];
     for vamm in keys.iter() {
         let msg = wasm_execute(vamm, &VammExecuteMessage::SetOpen { open: false }, vec![])?;
         msgs.push(msg);

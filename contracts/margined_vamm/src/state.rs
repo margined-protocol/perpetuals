@@ -1,32 +1,19 @@
 use cosmwasm_schema::cw_serde;
 
-use cosmwasm_std::{Addr, StdResult, Storage, Timestamp, Uint128};
+use cosmwasm_std::{StdResult, Storage, Timestamp, Uint128};
 use cosmwasm_storage::{bucket, bucket_read, singleton, singleton_read};
 
-use margined_perp::margined_vamm::StateResponse;
+use margined_perp::margined_vamm::{ConfigResponse, StateResponse};
 
 pub static KEY_CONFIG: &[u8] = b"config";
 pub static KEY_STATE: &[u8] = b"state";
 pub static KEY_RESERVE_SNAPSHOT: &[u8] = b"reserve_snapshot";
 pub static KEY_RESERVE_SNAPSHOT_COUNTER: &[u8] = b"reserve_snapshot_counter";
 
-#[cw_serde]
-pub struct Config {
-    pub margin_engine: Addr,
-    pub insurance_fund: Addr,
-    pub pricefeed: Addr,
-    pub quote_asset: String,
-    pub base_asset: String,
-    pub base_asset_holding_cap: Uint128,
-    pub open_interest_notional_cap: Uint128,
-    pub decimals: Uint128,
-    pub toll_ratio: Uint128,
-    pub spread_ratio: Uint128,
-    pub fluctuation_limit_ratio: Uint128,
-    pub spot_price_twap_interval: u64,
-    pub funding_period: u64,
-    pub funding_buffer_period: u64,
-}
+// Has the same fields
+pub type State = StateResponse;
+
+pub type Config = ConfigResponse;
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
     singleton(storage, KEY_CONFIG).save(config)
@@ -35,9 +22,6 @@ pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()>
 pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
     singleton_read(storage, KEY_CONFIG).load()
 }
-
-// Has the same fields
-pub type State = StateResponse;
 
 pub fn store_state(storage: &mut dyn Storage, state: &State) -> StdResult<()> {
     singleton(storage, KEY_STATE).save(state)

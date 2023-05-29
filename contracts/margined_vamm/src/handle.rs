@@ -307,15 +307,15 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
         .checked_div(Integer::new_positive(underlying_price))?;
 
     // in order to prevent multiple funding settlement during very short time after network congestion
-    let min_next_funding_time = env.block.time.plus_seconds(config.funding_buffer_period);
+    let block_time_seconds = env.block.time.seconds();
+    let min_next_funding_time = block_time_seconds + config.funding_period / 2;
 
     // floor((nextFundingTime + fundingPeriod) / 3600) * 3600
-    let next_funding_time = (env.block.time.seconds() + config.funding_period)
-        / ONE_HOUR_IN_SECONDS
-        * ONE_HOUR_IN_SECONDS;
+    let next_funding_time =
+        (block_time_seconds + config.funding_period) / ONE_HOUR_IN_SECONDS * ONE_HOUR_IN_SECONDS;
 
     // max(nextFundingTimeOnHourStart, minNextValidFundingTime)
-    state.next_funding_time = next_funding_time.max(min_next_funding_time.seconds());
+    state.next_funding_time = next_funding_time.max(min_next_funding_time);
 
     store_state(deps.storage, &state)?;
 

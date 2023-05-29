@@ -74,7 +74,6 @@ pub fn instantiate(
         decimals,
         spot_price_twap_interval: ONE_HOUR_IN_SECONDS,
         funding_period: msg.funding_period,
-        funding_buffer_period: msg.funding_period / 2u64,
     };
 
     // set and update margin engine

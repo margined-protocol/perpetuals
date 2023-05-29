@@ -6,11 +6,8 @@ use cosmwasm_storage::{
     bucket, bucket_read, singleton, singleton_read, Bucket, ReadonlyBucket, Singleton,
 };
 
-use margined_common::{
-    asset::{Asset, AssetInfo},
-    integer::Integer,
-};
-use margined_perp::margined_engine::{Position, Side};
+use margined_common::{asset::Asset, integer::Integer};
+use margined_perp::margined_engine::{ConfigResponse, Position, Side};
 
 pub static KEY_CONFIG: &[u8] = b"config";
 pub static KEY_POSITION: &[u8] = b"position";
@@ -20,18 +17,7 @@ pub static KEY_TMP_SWAP: &[u8] = b"tmp-swap";
 pub static KEY_TMP_LIQUIDATOR: &[u8] = b"tmp-liquidator";
 pub static KEY_VAMM_MAP: &[u8] = b"vamm-map";
 
-#[cw_serde]
-pub struct Config {
-    pub owner: Addr,
-    pub insurance_fund: Option<Addr>,
-    pub fee_pool: Addr,
-    pub eligible_collateral: AssetInfo,
-    pub decimals: Uint128,
-    pub initial_margin_ratio: Uint128,
-    pub maintenance_margin_ratio: Uint128,
-    pub partial_liquidation_ratio: Uint128,
-    pub liquidation_fee: Uint128,
-}
+pub type Config = ConfigResponse;
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
     singleton(storage, KEY_CONFIG).save(config)

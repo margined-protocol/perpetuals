@@ -17,23 +17,7 @@ use crate::{
 
 /// Queries contract Config
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
-    let config = read_config(deps.storage)?;
-
-    Ok(ConfigResponse {
-        base_asset_holding_cap: config.base_asset_holding_cap,
-        open_interest_notional_cap: config.open_interest_notional_cap,
-        quote_asset: config.quote_asset,
-        base_asset: config.base_asset,
-        toll_ratio: config.toll_ratio,
-        spread_ratio: config.spread_ratio,
-        fluctuation_limit_ratio: config.fluctuation_limit_ratio,
-        decimals: config.decimals,
-        margin_engine: config.margin_engine,
-        insurance_fund: config.insurance_fund,
-        pricefeed: config.pricefeed,
-        funding_period: config.funding_period,
-        spot_price_twap_interval: config.spot_price_twap_interval,
-    })
+    read_config(deps.storage)
 }
 
 /// Queries contract State
