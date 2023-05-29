@@ -29,22 +29,22 @@ pub struct TwapPriceCalcParams {
     pub asset: Option<TwapInputAsset>,
 }
 
-pub fn require_margin_engine(sender: Addr, margin_engine: Addr) -> StdResult<Response> {
+pub fn require_margin_engine(sender: Addr, margin_engine: Addr) -> StdResult<()> {
     // check that sender is the margin engine
     if sender != margin_engine {
         return Err(StdError::generic_err("sender not margin engine"));
     }
 
-    Ok(Response::new())
+    Ok(())
 }
 
-pub fn require_open(open: bool) -> StdResult<Response> {
+pub fn require_open(open: bool) -> StdResult<()> {
     // check that the vamm is open
     if !open {
         return Err(StdError::generic_err("amm is closed"));
     }
 
-    Ok(Response::new())
+    Ok(())
 }
 
 pub fn check_is_over_block_fluctuation_limit(

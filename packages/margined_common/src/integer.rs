@@ -91,143 +91,68 @@ impl Integer {
     /// addition with checks if the value goes out of bounds
     pub fn checked_add(self, other: Self) -> Result<Self, OverflowError> {
         match (self.negative, other.negative) {
-            (false, false) => match self.value.checked_add(other.value) {
-                Ok(v) => Ok(Self::new_positive(v)),
-                Err(_) => Err(OverflowError {
-                    operation: Add,
-                    operand1: self.to_string(),
-                    operand2: other.to_string(),
-                }),
-            },
-            (true, true) => match self.value.checked_add(other.value) {
-                Ok(v) => Ok(Self::new_negative(v)),
-                Err(_) => Err(OverflowError {
-                    operation: Add,
-                    operand1: self.to_string(),
-                    operand2: other.to_string(),
-                }),
-            },
+            (false, false) => self.value.checked_add(other.value).map(Self::new_positive),
+            (true, true) => self.value.checked_add(other.value).map(Self::new_negative),
             (false, true) => {
                 if self.value >= other.value {
-                    match self.value.checked_sub(other.value) {
-                        Ok(v) => Ok(Self::new_positive(v)),
-                        Err(_) => Err(OverflowError {
-                            operation: Add,
-                            operand1: self.to_string(),
-                            operand2: other.to_string(),
-                        }),
-                    }
+                    self.value.checked_sub(other.value).map(Self::new_positive)
                 } else {
-                    match other.value.checked_sub(self.value) {
-                        Ok(v) => Ok(Self::new_negative(v)),
-                        Err(_) => Err(OverflowError {
-                            operation: Add,
-                            operand1: self.to_string(),
-                            operand2: other.to_string(),
-                        }),
-                    }
+                    other.value.checked_sub(self.value).map(Self::new_negative)
                 }
             }
             (true, false) => {
                 if self.value > other.value {
-                    match self.value.checked_sub(other.value) {
-                        Ok(v) => Ok(Self::new_negative(v)),
-                        Err(_) => Err(OverflowError {
-                            operation: Add,
-                            operand1: self.to_string(),
-                            operand2: other.to_string(),
-                        }),
-                    }
+                    self.value.checked_sub(other.value).map(Self::new_negative)
                 } else {
-                    match other.value.checked_sub(self.value) {
-                        Ok(v) => Ok(Self::new_positive(v)),
-                        Err(_) => Err(OverflowError {
-                            operation: Add,
-                            operand1: self.to_string(),
-                            operand2: other.to_string(),
-                        }),
-                    }
+                    other.value.checked_sub(self.value).map(Self::new_positive)
                 }
             }
         }
+        .map_err(|_| OverflowError {
+            operation: Add,
+            operand1: self.to_string(),
+            operand2: other.to_string(),
+        })
     }
 
     /// subtraction with checks if the value goes out of bounds
     pub fn checked_sub(self, other: Self) -> Result<Self, OverflowError> {
         match (self.negative, other.negative) {
-            (false, true) => match self.value.checked_add(other.value) {
-                Ok(v) => Ok(Self::new_positive(v)),
-                Err(_) => Err(OverflowError {
-                    operation: Sub,
-                    operand1: self.to_string(),
-                    operand2: other.to_string(),
-                }),
-            },
-            (true, false) => match self.value.checked_add(other.value) {
-                Ok(v) => Ok(Self::new_negative(v)),
-                Err(_) => Err(OverflowError {
-                    operation: Sub,
-                    operand1: self.to_string(),
-                    operand2: other.to_string(),
-                }),
-            },
+            (false, true) => self.value.checked_add(other.value).map(Self::new_positive),
+            (true, false) => self.value.checked_add(other.value).map(Self::new_negative),
+
             (false, false) => {
                 if self.value >= other.value {
-                    match self.value.checked_sub(other.value) {
-                        Ok(v) => Ok(Self::new_positive(v)),
-                        Err(_) => Err(OverflowError {
-                            operation: Sub,
-                            operand1: self.to_string(),
-                            operand2: other.to_string(),
-                        }),
-                    }
+                    self.value.checked_sub(other.value).map(Self::new_positive)
                 } else {
-                    match other.value.checked_sub(self.value) {
-                        Ok(v) => Ok(Self::new_negative(v)),
-                        Err(_) => Err(OverflowError {
-                            operation: Sub,
-                            operand1: self.to_string(),
-                            operand2: other.to_string(),
-                        }),
-                    }
+                    other.value.checked_sub(self.value).map(Self::new_negative)
                 }
             }
             (true, true) => {
                 if self.value > other.value {
-                    match self.value.checked_sub(other.value) {
-                        Ok(v) => Ok(Self::new_negative(v)),
-                        Err(_) => Err(OverflowError {
-                            operation: Sub,
-                            operand1: self.to_string(),
-                            operand2: other.to_string(),
-                        }),
-                    }
+                    self.value.checked_sub(other.value).map(Self::new_negative)
                 } else {
-                    match other.value.checked_sub(self.value) {
-                        Ok(v) => Ok(Self::new_positive(v)),
-                        Err(_) => Err(OverflowError {
-                            operation: Sub,
-                            operand1: self.to_string(),
-                            operand2: other.to_string(),
-                        }),
-                    }
+                    other.value.checked_sub(self.value).map(Self::new_positive)
                 }
             }
         }
+        .map_err(|_| OverflowError {
+            operation: Sub,
+            operand1: self.to_string(),
+            operand2: other.to_string(),
+        })
     }
 
     /// multiplication with overflow check
     pub fn checked_mul(self, other: Self) -> Result<Self, OverflowError> {
-        let abs_value = match self.value.checked_mul(other.value) {
-            Ok(v) => v,
-            Err(_) => {
-                return Err(OverflowError {
-                    operation: Mul,
-                    operand1: self.to_string(),
-                    operand2: other.to_string(),
-                })
-            }
-        };
+        let abs_value = self
+            .value
+            .checked_mul(other.value)
+            .map_err(|_| OverflowError {
+                operation: Mul,
+                operand1: self.to_string(),
+                operand2: other.to_string(),
+            })?;
 
         match (self.negative, other.negative) {
             (true, true) | (false, false) => Ok(Self::new_positive(abs_value)),

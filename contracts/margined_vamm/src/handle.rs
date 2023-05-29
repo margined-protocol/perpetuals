@@ -102,7 +102,7 @@ pub fn update_owner(deps: DepsMut, info: MessageInfo, owner: String) -> StdResul
 
     OWNER
         .execute_update_admin(deps, info, Some(valid_owner))
-        .map_err(|error| StdError::generic_err(format!("{}", error)))
+        .map_err(|error| StdError::generic_err(error.to_string()))
 }
 
 pub fn set_open(deps: DepsMut, env: Env, info: MessageInfo, open: bool) -> StdResult<Response> {
@@ -214,7 +214,7 @@ pub fn swap_output(
         Direction::RemoveFromAmm => Direction::AddToAmm,
     };
 
-    let quote_asset_amount: Uint128 = if !base_asset_amount.is_zero() {
+    let quote_asset_amount = if !base_asset_amount.is_zero() {
         let quote_asset_amount = get_output_price_with_reserves(
             deps.as_ref(),
             &direction,
@@ -279,14 +279,14 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
     let pricefeed_controller = PricefeedController(config.pricefeed);
 
     // twap price from oracle
-    let underlying_price: Uint128 = pricefeed_controller.twap_price(
+    let underlying_price = pricefeed_controller.twap_price(
         &deps.querier,
         config.base_asset,
         config.spot_price_twap_interval,
     )?;
 
     // twap price from here, i.e. the amm
-    let index_price: Uint128 = query_twap_price(
+    let index_price = query_twap_price(
         deps.as_ref(),
         env.clone(),
         config.spot_price_twap_interval,
@@ -315,11 +315,7 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
         * ONE_HOUR_IN_SECONDS;
 
     // max(nextFundingTimeOnHourStart, minNextValidFundingTime)
-    state.next_funding_time = if next_funding_time > min_next_funding_time.seconds() {
-        next_funding_time
-    } else {
-        min_next_funding_time.seconds()
-    };
+    state.next_funding_time = next_funding_time.max(min_next_funding_time.seconds());
 
     store_state(deps.storage, &state)?;
 
@@ -338,23 +334,23 @@ pub fn get_input_price_with_reserves(
     quote_asset_reserve: Uint128,
     base_asset_reserve: Uint128,
 ) -> StdResult<Uint128> {
-    let config: Config = read_config(deps.storage)?;
-
     if quote_asset_amount == Uint128::zero() {
         return Ok(Uint128::zero());
     }
+
+    let config = read_config(deps.storage)?;
 
     // k = x * y (divided by decimal places)
     let invariant_k = quote_asset_reserve
         .checked_mul(base_asset_reserve)?
         .checked_div(config.decimals)?;
 
-    let quote_asset_after: Uint128 = match direction {
+    let quote_asset_after = match direction {
         Direction::AddToAmm => quote_asset_reserve.checked_add(quote_asset_amount)?,
         Direction::RemoveFromAmm => quote_asset_reserve.checked_sub(quote_asset_amount)?,
     };
 
-    let base_asset_after: Uint128 = invariant_k
+    let base_asset_after = invariant_k
         .checked_mul(config.decimals)?
         .checked_div(quote_asset_after)?;
 
@@ -367,9 +363,9 @@ pub fn get_input_price_with_reserves(
     let remainder = modulo(invariant_k, quote_asset_after, config.decimals)?;
     if remainder != Uint128::zero() {
         if *direction == Direction::AddToAmm {
-            base_asset_bought = base_asset_bought.checked_sub(Uint128::new(1u128))?;
+            base_asset_bought = base_asset_bought.checked_sub(1u128.into())?;
         } else {
-            base_asset_bought = base_asset_bought.checked_add(Uint128::from(1u128))?;
+            base_asset_bought = base_asset_bought.checked_add(1u128.into())?;
         }
     }
 
@@ -383,22 +379,21 @@ pub fn get_output_price_with_reserves(
     quote_asset_reserve: Uint128,
     base_asset_reserve: Uint128,
 ) -> StdResult<Uint128> {
-    let config: Config = read_config(deps.storage)?;
-
     if base_asset_amount == Uint128::zero() {
         return Ok(Uint128::zero());
     }
+    let config = read_config(deps.storage)?;
 
     let invariant_k = quote_asset_reserve
         .checked_mul(base_asset_reserve)?
         .checked_div(config.decimals)?;
 
-    let base_asset_after: Uint128 = match direction {
+    let base_asset_after = match direction {
         Direction::AddToAmm => base_asset_reserve.checked_add(base_asset_amount)?,
         Direction::RemoveFromAmm => base_asset_reserve.checked_sub(base_asset_amount)?,
     };
 
-    let quote_asset_after: Uint128 = invariant_k
+    let quote_asset_after = invariant_k
         .checked_mul(config.decimals)?
         .checked_div(base_asset_after)?;
 
@@ -411,9 +406,9 @@ pub fn get_output_price_with_reserves(
     let remainder = modulo(invariant_k, base_asset_after, config.decimals)?;
     if remainder != Uint128::zero() {
         if *direction == Direction::AddToAmm {
-            quote_asset_sold = quote_asset_sold.checked_sub(Uint128::from(1u128))?;
+            quote_asset_sold = quote_asset_sold.checked_sub(1u128.into())?;
         } else {
-            quote_asset_sold = quote_asset_sold.checked_add(Uint128::new(1u128))?;
+            quote_asset_sold = quote_asset_sold.checked_add(1u128.into())?;
         }
     }
     Ok(quote_asset_sold)
@@ -427,8 +422,6 @@ pub fn update_reserve(
     base_asset_amount: Uint128,
     can_go_over_fluctuation: bool,
 ) -> StdResult<Response> {
-    let mut state: State = read_state(storage)?;
-
     check_is_over_block_fluctuation_limit(
         storage,
         env.clone(),
@@ -437,6 +430,8 @@ pub fn update_reserve(
         base_asset_amount,
         can_go_over_fluctuation,
     )?;
+
+    let mut state = read_state(storage)?;
 
     match direction {
         Direction::AddToAmm => {

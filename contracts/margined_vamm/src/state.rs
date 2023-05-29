@@ -3,7 +3,7 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, StdResult, Storage, Timestamp, Uint128};
 use cosmwasm_storage::{bucket, bucket_read, singleton, singleton_read};
 
-use margined_common::integer::Integer;
+use margined_perp::margined_vamm::StateResponse;
 
 pub static KEY_CONFIG: &[u8] = b"config";
 pub static KEY_STATE: &[u8] = b"state";
@@ -36,15 +36,8 @@ pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
     singleton_read(storage, KEY_CONFIG).load()
 }
 
-#[cw_serde]
-pub struct State {
-    pub open: bool,
-    pub quote_asset_reserve: Uint128,
-    pub base_asset_reserve: Uint128,
-    pub total_position_size: Integer,
-    pub funding_rate: Integer,
-    pub next_funding_time: u64,
-}
+// Has the same fields
+pub type State = StateResponse;
 
 pub fn store_state(storage: &mut dyn Storage, state: &State) -> StdResult<()> {
     singleton(storage, KEY_STATE).save(state)

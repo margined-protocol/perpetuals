@@ -57,12 +57,12 @@ pub fn instantiate(
     validate_ratio(msg.spread_ratio, decimals)?;
     validate_ratio(msg.fluctuation_limit_ratio, decimals)?;
 
-    validate_assets(msg.base_asset.clone())?;
-    validate_assets(msg.quote_asset.clone())?;
+    validate_assets(&msg.base_asset)?;
+    validate_assets(&msg.quote_asset)?;
 
     let mut config = Config {
-        margin_engine: Addr::unchecked("".to_string()), // default to nothing, must be set
-        insurance_fund: Addr::unchecked("".to_string()), // default to nothing, must be set like the engine
+        margin_engine: Addr::unchecked(""), // default to nothing, must be set
+        insurance_fund: Addr::unchecked(""), // default to nothing, must be set like the engine
         quote_asset: msg.quote_asset,
         base_asset: msg.base_asset,
         base_asset_holding_cap: Uint128::zero(),

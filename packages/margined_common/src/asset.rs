@@ -49,7 +49,7 @@ impl Asset {
         let msg_amount = if let AssetInfo::NativeToken { denom } = &self.info {
             // call `must_pay` to ensure its the right denom + funds are sent
             must_pay(message_info, denom)
-                .map_err(|error| StdError::generic_err(format!("{}", error)))?
+                .map_err(|error| StdError::generic_err(error.to_string()))?
         } else {
             // this error occurs if self is of type `AssetInfo::Token`
             return Err(StdError::generic_err("self is not native token"));

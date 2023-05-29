@@ -305,7 +305,7 @@ pub fn update_pauser(deps: DepsMut, info: MessageInfo, pauser: String) -> StdRes
 
     PAUSER
         .execute_update_admin(deps, info, Some(valid_pauser))
-        .map_err(|error| StdError::generic_err(format!("{}", error)))
+        .map_err(|error| StdError::generic_err(error.to_string()))
 }
 
 // Adds an address to the whitelist for base asset holding cap
@@ -315,7 +315,7 @@ pub fn add_whitelist(deps: DepsMut, info: MessageInfo, address: String) -> StdRe
 
     WHITELIST
         .execute_add_hook(&PAUSER, deps, info, valid_addr)
-        .map_err(|error| StdError::generic_err(format!("{}", error)))
+        .map_err(|error| StdError::generic_err(error.to_string()))
 }
 
 // Removes an address to the whitelist for base asset holding cap
@@ -325,7 +325,7 @@ pub fn remove_whitelist(deps: DepsMut, info: MessageInfo, address: String) -> St
 
     WHITELIST
         .execute_remove_hook(&PAUSER, deps, info, valid_addr)
-        .map_err(|error| StdError::generic_err(format!("{}", error)))
+        .map_err(|error| StdError::generic_err(error.to_string()))
 }
 
 pub fn set_pause(deps: DepsMut, _env: Env, info: MessageInfo, pause: bool) -> StdResult<Response> {

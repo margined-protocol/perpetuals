@@ -8,7 +8,7 @@ use margined_utils::contracts::helpers::PricefeedController;
 use crate::{
     contract::OWNER,
     handle::{get_input_price_with_reserves, get_output_price_with_reserves},
-    state::{read_config, read_reserve_snapshot_counter, read_state, Config, State},
+    state::{read_config, read_reserve_snapshot_counter, read_state},
     utils::{
         calc_twap, price_boundaries_of_last_block, TwapCalcOption, TwapInputAsset,
         TwapPriceCalcParams,
@@ -17,7 +17,7 @@ use crate::{
 
 /// Queries contract Config
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
-    let config: Config = read_config(deps.storage)?;
+    let config = read_config(deps.storage)?;
 
     Ok(ConfigResponse {
         base_asset_holding_cap: config.base_asset_holding_cap,
@@ -38,7 +38,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 
 /// Queries contract State
 pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
-    let state: State = read_state(deps.storage)?;
+    let state = read_state(deps.storage)?;
 
     Ok(StateResponse {
         open: state.open,
@@ -61,8 +61,7 @@ pub fn query_owner(deps: Deps) -> StdResult<OwnerResponse> {
 
 /// Queries input price
 pub fn query_input_price(deps: Deps, direction: Direction, amount: Uint128) -> StdResult<Uint128> {
-    let config: Config = read_config(deps.storage)?;
-    let state: State = read_state(deps.storage)?;
+    let state = read_state(deps.storage)?;
 
     let output = get_input_price_with_reserves(
         deps,
@@ -75,7 +74,7 @@ pub fn query_input_price(deps: Deps, direction: Direction, amount: Uint128) -> S
     if output.is_zero() {
         return Ok(Uint128::zero());
     }
-
+    let config = read_config(deps.storage)?;
     let price = amount.checked_mul(config.decimals)?.checked_div(output)?;
 
     Ok(price)
@@ -83,8 +82,7 @@ pub fn query_input_price(deps: Deps, direction: Direction, amount: Uint128) -> S
 
 /// Queries output price
 pub fn query_output_price(deps: Deps, direction: Direction, amount: Uint128) -> StdResult<Uint128> {
-    let config: Config = read_config(deps.storage)?;
-    let state: State = read_state(deps.storage)?;
+    let state = read_state(deps.storage)?;
 
     let output = get_output_price_with_reserves(
         deps,
@@ -98,6 +96,8 @@ pub fn query_output_price(deps: Deps, direction: Direction, amount: Uint128) -> 
         return Ok(Uint128::zero());
     }
 
+    let config = read_config(deps.storage)?;
+
     let price = amount.checked_mul(config.decimals)?.checked_div(output)?;
 
     Ok(price)
@@ -105,7 +105,7 @@ pub fn query_output_price(deps: Deps, direction: Direction, amount: Uint128) -> 
 
 /// Queries input amount
 pub fn query_input_amount(deps: Deps, direction: Direction, amount: Uint128) -> StdResult<Uint128> {
-    let state: State = read_state(deps.storage)?;
+    let state = read_state(deps.storage)?;
 
     let output = get_input_price_with_reserves(
         deps,
@@ -124,7 +124,7 @@ pub fn query_output_amount(
     direction: Direction,
     amount: Uint128,
 ) -> StdResult<Uint128> {
-    let state: State = read_state(deps.storage)?;
+    let state = read_state(deps.storage)?;
 
     let output = get_output_price_with_reserves(
         deps,
@@ -139,8 +139,8 @@ pub fn query_output_amount(
 
 /// Queries spot price of the vAMM
 pub fn query_spot_price(deps: Deps) -> StdResult<Uint128> {
-    let config: Config = read_config(deps.storage)?;
-    let state: State = read_state(deps.storage)?;
+    let config = read_config(deps.storage)?;
+    let state = read_state(deps.storage)?;
 
     let res = state
         .quote_asset_reserve
@@ -175,7 +175,7 @@ pub fn query_calc_fee(deps: Deps, quote_asset_amount: Uint128) -> StdResult<Calc
     };
 
     if quote_asset_amount != Uint128::zero() {
-        let config: Config = read_config(deps.storage)?;
+        let config = read_config(deps.storage)?;
 
         res.toll_fee = quote_asset_amount
             .checked_mul(config.toll_ratio)?
@@ -190,7 +190,7 @@ pub fn query_calc_fee(deps: Deps, quote_asset_amount: Uint128) -> StdResult<Calc
 
 /// Returns bool to show is spread limit has been exceeded
 pub fn query_is_over_spread_limit(deps: Deps) -> StdResult<bool> {
-    let config: Config = read_config(deps.storage)?;
+    let config = read_config(deps.storage)?;
     let pricefeed_controller = PricefeedController(config.pricefeed);
 
     // get price from the oracle
@@ -207,7 +207,7 @@ pub fn query_is_over_spread_limit(deps: Deps) -> StdResult<bool> {
         * Integer::new_positive(config.decimals)
         / Integer::new_positive(oracle_price);
 
-    let max_oracle_spread_ratio: Integer =
+    let max_oracle_spread_ratio =
         Integer::new_positive(config.decimals).checked_div(Integer::from(10u128))?; // 0.1 i.e. 10%
 
     Ok(current_spread_ratio.abs() >= max_oracle_spread_ratio)
@@ -220,8 +220,7 @@ pub fn query_is_over_fluctuation_limit(
     direction: Direction,
     base_asset_amount: Uint128,
 ) -> StdResult<bool> {
-    let config: Config = read_config(deps.storage)?;
-    let state: State = read_state(deps.storage)?;
+    let config = read_config(deps.storage)?;
 
     if config.fluctuation_limit_ratio.is_zero() {
         return Ok(false);
@@ -230,6 +229,8 @@ pub fn query_is_over_fluctuation_limit(
     let (upper_limit, lower_limit) = price_boundaries_of_last_block(deps.storage, env)?;
 
     let quote_asset_amount = query_output_amount(deps, direction.clone(), base_asset_amount)?;
+
+    let state = read_state(deps.storage)?;
 
     let price = if direction == Direction::RemoveFromAmm {
         state
@@ -245,9 +246,5 @@ pub fn query_is_over_fluctuation_limit(
             .checked_div(state.base_asset_reserve.checked_add(base_asset_amount)?)
     }?;
 
-    if price <= upper_limit && price >= lower_limit {
-        return Ok(false);
-    }
-
-    Ok(true)
+    Ok(price > upper_limit || price < lower_limit)
 }

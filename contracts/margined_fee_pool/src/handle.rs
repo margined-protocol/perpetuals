@@ -12,7 +12,7 @@ pub fn update_owner(deps: DepsMut, info: MessageInfo, owner: String) -> StdResul
 
     OWNER
         .execute_update_admin(deps, info, Some(valid_owner))
-        .map_err(|error| StdError::generic_err(format!("{}", error)))
+        .map_err(|error| StdError::generic_err(error.to_string()))
 }
 
 pub fn add_token(deps: DepsMut, info: MessageInfo, token: String) -> StdResult<Response> {
