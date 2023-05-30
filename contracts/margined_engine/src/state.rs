@@ -2,9 +2,7 @@ use cosmwasm_schema::cw_serde;
 use std::cmp::Ordering;
 
 use cosmwasm_std::{Addr, StdError, StdResult, Storage, Uint128};
-use cosmwasm_storage::{
-    bucket, bucket_read, singleton, singleton_read, Bucket, ReadonlyBucket, Singleton,
-};
+use cosmwasm_storage::{bucket, bucket_read, singleton, singleton_read, Bucket, ReadonlyBucket};
 
 use margined_common::{asset::Asset, integer::Integer};
 use margined_perp::margined_engine::{ConfigResponse, Position, Side};
@@ -94,8 +92,7 @@ pub fn store_sent_funds(storage: &mut dyn Storage, funds: &SentFunds) -> StdResu
 }
 
 pub fn remove_sent_funds(storage: &mut dyn Storage) {
-    let mut store: Singleton<SentFunds> = singleton(storage, KEY_SENT_FUNDS);
-    store.remove()
+    storage.remove(KEY_SENT_FUNDS)
 }
 
 pub fn read_sent_funds(storage: &dyn Storage) -> StdResult<SentFunds> {
@@ -123,8 +120,7 @@ pub fn store_tmp_swap(storage: &mut dyn Storage, swap: &TmpSwapInfo) -> StdResul
 }
 
 pub fn remove_tmp_swap(storage: &mut dyn Storage) {
-    let mut store: Singleton<TmpSwapInfo> = singleton(storage, KEY_TMP_SWAP);
-    store.remove()
+    storage.remove(KEY_TMP_SWAP)
 }
 
 pub fn read_tmp_swap(storage: &dyn Storage) -> StdResult<TmpSwapInfo> {
@@ -138,8 +134,7 @@ pub fn store_tmp_liquidator(storage: &mut dyn Storage, liquidator: &Addr) -> Std
 }
 
 pub fn remove_tmp_liquidator(storage: &mut dyn Storage) {
-    let mut store: Singleton<Addr> = singleton(storage, KEY_TMP_LIQUIDATOR);
-    store.remove()
+    storage.remove(KEY_TMP_LIQUIDATOR)
 }
 
 pub fn read_tmp_liquidator(storage: &dyn Storage) -> StdResult<Addr> {

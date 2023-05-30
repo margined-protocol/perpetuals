@@ -28,11 +28,15 @@ pub fn read_response<'a>(key: &str, response: &'a SubMsgResponse) -> StdResult<&
 
 // reads attribute from an event by name
 pub fn read_event<'a>(key: &str, event: &'a Event) -> StdResult<&'a str> {
-    let attr = event
+    event
         .attributes
         .iter()
-        .find(|&attr| attr.key.eq(key))
-        .ok_or_else(|| StdError::generic_err("No attribute found"))?;
-
-    Ok(attr.value.as_str())
+        .find_map(|attr| {
+            if attr.key.eq(key) {
+                Some(attr.value.as_str())
+            } else {
+                None
+            }
+        })
+        .ok_or_else(|| StdError::generic_err("No attribute found"))
 }

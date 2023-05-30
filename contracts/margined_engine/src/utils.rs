@@ -244,11 +244,10 @@ pub fn calc_remain_margin_with_funding_payment(
     position: Position,
     margin_delta: Integer,
 ) -> StdResult<RemainMarginResponse> {
-    let config = read_config(deps.storage)?;
-
     // calculate the funding payment
     let latest_premium_fraction =
         query_cumulative_premium_fraction(deps, position.vamm.to_string())?;
+    let config = read_config(deps.storage)?;
     let funding_payment = (latest_premium_fraction - position.last_updated_premium_fraction)
         * position.size
         / Integer::new_positive(config.decimals);
