@@ -9,7 +9,7 @@ use cw_utils::must_pay;
 
 use crate::messages::wasm_execute;
 
-pub const ORAI_DENOM: &str = "orai";
+pub const NATIVE_DENOM: &str = "orai";
 
 /// ## Description
 /// This enum describes a Cosmos asset (native or CW20).
@@ -158,7 +158,7 @@ impl AssetInfo {
         match self {
             AssetInfo::NativeToken { denom } => {
                 // orai is 6 decimals
-                if denom.eq(ORAI_DENOM) {
+                if denom.eq(NATIVE_DENOM) {
                     return Ok(6);
                 }
                 // prefix must follow -> https://github.com/osmosis-labs/osmosis/pull/2223

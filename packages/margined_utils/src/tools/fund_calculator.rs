@@ -1,5 +1,5 @@
 use cosmwasm_std::{Addr, Coin, QuerierWrapper, StdResult, Uint128};
-use margined_common::asset::ORAI_DENOM;
+use margined_common::asset::NATIVE_DENOM;
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Side};
 use margined_perp::margined_vamm::Direction;
@@ -80,6 +80,6 @@ pub fn calculate_funds_needed(
     if funds_owed.is_zero() {
         Ok(vec![])
     } else {
-        Ok(vec![Coin::new(funds_owed.u128(), ORAI_DENOM)])
+        Ok(vec![Coin::new(funds_owed.u128(), NATIVE_DENOM)])
     }
 }

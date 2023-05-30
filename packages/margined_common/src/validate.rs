@@ -1,4 +1,4 @@
-use crate::asset::{AssetInfo, ORAI_DENOM};
+use crate::asset::{AssetInfo, NATIVE_DENOM};
 use cosmwasm_std::{Deps, StdError, StdResult, Uint128};
 
 /// Validates that the decimals aren't zero and returns the decimal placeholder accordinglys
@@ -59,7 +59,7 @@ pub fn validate_margin_ratios(
 /// Validates that the address used for collateral is native token or cw token and returns as type AssetInfo
 pub fn validate_eligible_collateral(deps: Deps, input: String) -> StdResult<AssetInfo> {
     // verify if the string is any of the native tokens for the deployed network
-    if input.eq(ORAI_DENOM) {
+    if input.eq(NATIVE_DENOM) {
         return Ok(AssetInfo::NativeToken {
             denom: input.to_string(),
         });

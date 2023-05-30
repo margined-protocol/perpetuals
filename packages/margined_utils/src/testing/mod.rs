@@ -5,7 +5,7 @@ use crate::contracts::helpers::{
 };
 use cosmwasm_std::{Addr, BankMsg, Coin, CosmosMsg, Empty, Response, Uint128};
 use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg, MinterResponse};
-use margined_common::asset::ORAI_DENOM;
+use margined_common::asset::NATIVE_DENOM;
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, Side};
 use margined_perp::margined_fee_pool::InstantiateMsg as FeePoolInstantiateMsg;
 use margined_perp::margined_insurance_fund::InstantiateMsg as InsuranceFundInstantiateMsg;
@@ -54,11 +54,10 @@ impl NativeTokenScenario {
         let bob = Addr::unchecked("bob");
         let carol = Addr::unchecked("carol");
         let david = Addr::unchecked("david");
-        let native_denom = ORAI_DENOM;
 
-        let init_funds = vec![Coin::new(5_000u128 * 10u128.pow(6), native_denom)];
+        let init_funds = vec![Coin::new(5_000u128 * 10u128.pow(6), NATIVE_DENOM)];
         let bank_funds = vec![
-            Coin::new(100_000u128 * 10u128.pow(6), native_denom),
+            Coin::new(100_000u128 * 10u128.pow(6), NATIVE_DENOM),
             Coin::new(100_000u128 * 10u128.pow(6), "ucosmos"),
         ];
 
@@ -108,7 +107,7 @@ impl NativeTokenScenario {
                     pauser: owner.to_string(),
                     insurance_fund: None,
                     fee_pool: fee_pool.0.to_string(),
-                    eligible_collateral: native_denom.to_string(),
+                    eligible_collateral: NATIVE_DENOM.to_string(),
                     initial_margin_ratio: Uint128::from(50_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
                     liquidation_fee: Uint128::from(50_000u128),      // 0.05
@@ -267,7 +266,7 @@ impl NativeTokenScenario {
         let funds = if fees == 0u128 {
             vec![]
         } else {
-            vec![Coin::new(fees, ORAI_DENOM)]
+            vec![Coin::new(fees, NATIVE_DENOM)]
         };
         for _ in 0..count {
             let msg = self
@@ -765,7 +764,7 @@ impl ShutdownScenario {
                     pauser: owner.to_string(),
                     insurance_fund: None,
                     fee_pool: "fee_pool".to_string(),
-                    eligible_collateral: ORAI_DENOM.to_string(),
+                    eligible_collateral: NATIVE_DENOM.to_string(),
                     initial_margin_ratio: Uint128::from(50_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
                     liquidation_fee: Uint128::from(50_000u128),      // 0.05
