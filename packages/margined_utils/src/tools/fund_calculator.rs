@@ -55,7 +55,7 @@ pub fn calculate_funds_needed(
     let is_increase = position.direction == Direction::AddToAmm && side == Side::Buy
         || position.direction == Direction::RemoveFromAmm && side == Side::Sell;
 
-    let margin_owed: Integer = match is_increase {
+    let margin_owed = match is_increase {
         true => Integer::new_positive(quote_asset_amount),
         false => {
             if new_notional > unrealized_pnl.position_notional {

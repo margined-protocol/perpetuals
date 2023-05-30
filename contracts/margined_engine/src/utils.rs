@@ -353,10 +353,7 @@ pub fn require_vamm(deps: Deps, insurance: &Option<Addr>, vamm: &Addr) -> StdRes
     let insurance_controller = InsuranceFundController(insurance.clone());
 
     // check that it is a registered vamm
-    if !insurance_controller
-        .is_vamm(&deps.querier, vamm.to_string())?
-        .is_vamm
-    {
+    if !insurance_controller.is_vamm(&deps.querier, vamm.to_string())? {
         return Err(StdError::generic_err("vAMM is not registered"));
     }
 

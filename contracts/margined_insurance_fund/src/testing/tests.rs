@@ -69,10 +69,9 @@ fn test_query_vamm() {
     router.execute(owner, msg).unwrap();
 
     // query if the vamm has been added
-    let res = insurance_fund
+    let is_vamm = insurance_fund
         .is_vamm(&router.wrap(), vamm1.addr().to_string())
         .unwrap();
-    let is_vamm = res.is_vamm;
 
     assert_eq!(is_vamm, true);
 }
@@ -122,10 +121,9 @@ fn test_add_vamm() {
     } = new_shutdown_scenario();
 
     // query the vAMM we want to add
-    let res = insurance_fund
+    let is_vamm = insurance_fund
         .is_vamm(&router.wrap(), vamm1.addr().to_string())
         .unwrap();
-    let is_vamm = res.is_vamm;
 
     assert_eq!(is_vamm, false);
 
@@ -134,10 +132,9 @@ fn test_add_vamm() {
     router.execute(owner, msg).unwrap();
 
     // check for the added vAMM
-    let res = insurance_fund
+    let is_vamm = insurance_fund
         .is_vamm(&router.wrap(), vamm1.addr().to_string())
         .unwrap();
-    let is_vamm = res.is_vamm;
 
     assert_eq!(is_vamm, true);
 }
@@ -188,10 +185,9 @@ fn test_add_second_vamm() {
     router.execute(owner, msg).unwrap();
 
     // check for the second added vAMM
-    let res = insurance_fund
+    let is_vamm = insurance_fund
         .is_vamm(&router.wrap(), vamm2.addr().to_string())
         .unwrap();
-    let is_vamm = res.is_vamm;
 
     assert_eq!(is_vamm, true);
 }
@@ -211,10 +207,9 @@ fn test_remove_vamm() {
     router.execute(owner.clone(), msg).unwrap();
 
     // check to see that there is one vAMM
-    let res = insurance_fund
+    let is_vamm = insurance_fund
         .is_vamm(&router.wrap(), vamm1.addr().to_string())
         .unwrap();
-    let is_vamm = res.is_vamm;
 
     assert_eq!(is_vamm, true);
 
@@ -225,10 +220,9 @@ fn test_remove_vamm() {
     router.execute(owner, msg).unwrap();
 
     // check that there are zero AMMs
-    let res = insurance_fund
+    let is_vamm = insurance_fund
         .is_vamm(&router.wrap(), vamm1.addr().to_string())
         .unwrap();
-    let is_vamm = res.is_vamm;
 
     assert_eq!(is_vamm, false);
 }
@@ -244,10 +238,9 @@ fn test_remove_no_vamms() {
     } = new_shutdown_scenario();
 
     // check to see that there is no vAMM
-    let res = insurance_fund
+    let is_vamm = insurance_fund
         .is_vamm(&router.wrap(), vamm1.addr().to_string())
         .unwrap();
-    let is_vamm = res.is_vamm;
 
     assert_eq!(is_vamm, false);
 
@@ -280,10 +273,9 @@ fn test_remove_non_existed_vamm() {
     router.execute(owner.clone(), msg).unwrap();
 
     // check to see that there is one vAMM
-    let res = insurance_fund
+    let is_vamm = insurance_fund
         .is_vamm(&router.wrap(), vamm1.addr().to_string())
         .unwrap();
-    let is_vamm = res.is_vamm;
 
     assert_eq!(is_vamm, true);
 

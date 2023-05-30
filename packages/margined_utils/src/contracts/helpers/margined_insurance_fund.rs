@@ -86,7 +86,8 @@ impl InsuranceFundController {
     }
 
     /// query if the given vamm is actually stored
-    pub fn is_vamm(&self, querier: &QuerierWrapper, vamm: String) -> StdResult<VammResponse> {
-        querier.query_wasm_smart(&self.0, &QueryMsg::IsVamm { vamm })
+    pub fn is_vamm(&self, querier: &QuerierWrapper, vamm: String) -> StdResult<bool> {
+        let res: VammResponse = querier.query_wasm_smart(&self.0, &QueryMsg::IsVamm { vamm })?;
+        Ok(res.is_vamm)
     }
 }

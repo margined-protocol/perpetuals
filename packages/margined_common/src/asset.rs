@@ -4,7 +4,7 @@ use std::fmt;
 use cosmwasm_std::{
     Addr, Api, BankMsg, Coin, CosmosMsg, MessageInfo, QuerierWrapper, StdError, StdResult, Uint128,
 };
-use cw20::{Cw20ExecuteMsg, Cw20QueryMsg, TokenInfoResponse};
+use cw20::{BalanceResponse, Cw20ExecuteMsg, Cw20QueryMsg, TokenInfoResponse};
 use cw_utils::must_pay;
 
 use crate::messages::wasm_execute;
@@ -155,7 +155,7 @@ impl AssetInfo {
     /// returns the decimal places used by the token, places some assumption that native tokens
     /// use the `utoken` convention, will fail if native token does not follow this
     pub fn get_decimals(&self, querier: &QuerierWrapper) -> StdResult<u8> {
-        match &self {
+        match self {
             AssetInfo::NativeToken { denom } => {
                 // orai is 6 decimals
                 if denom.eq(ORAI_DENOM) {
@@ -195,12 +195,12 @@ impl AssetInfo {
     ///
     /// * **recipient** is the address where the funds will be sent.
     pub fn into_msg(
-        self,
+        &self,
         recipient: String,
         amount: Uint128,
         sender: Option<String>,
     ) -> StdResult<CosmosMsg> {
-        match &self {
+        match self {
             AssetInfo::Token { contract_addr } => wasm_execute(
                 contract_addr,
                 &match sender {
@@ -234,7 +234,7 @@ impl AssetInfo {
                 res.amount
             }
             AssetInfo::Token { contract_addr } => {
-                let res: cw20::BalanceResponse = querier.query_wasm_smart(
+                let res: BalanceResponse = querier.query_wasm_smart(
                     contract_addr,
                     &Cw20QueryMsg::Balance {
                         address: account_addr.to_string(),
@@ -247,44 +247,6 @@ impl AssetInfo {
 
         Ok(balance)
     }
-}
-
-/// Returns an [`Asset`] object representing a native token and an amount of tokens.
-/// ## Params
-/// * **denom** is a [`String`] that represents the native asset denomination.
-///
-/// * **amount** is a [`Uint128`] representing an amount of native assets.
-pub fn native_asset(denom: String, amount: Uint128) -> Asset {
-    Asset {
-        info: AssetInfo::NativeToken { denom },
-        amount,
-    }
-}
-
-/// Returns an [`Asset`] object representing a non-native token and an amount of tokens.
-/// ## Params
-/// * **contract_addr** is a [`Addr`]. It is the address of the token contract.
-///
-/// * **amount** is a [`Uint128`] representing an amount of tokens.
-pub fn token_asset(contract_addr: Addr, amount: Uint128) -> Asset {
-    Asset {
-        info: AssetInfo::Token { contract_addr },
-        amount,
-    }
-}
-
-/// Returns an [`AssetInfo`] object representing the denomination for a Terra native asset.
-/// ## Params
-/// * **denom** is a [`String`] object representing the denomination of the Terra native asset.
-pub fn native_asset_info(denom: String) -> AssetInfo {
-    AssetInfo::NativeToken { denom }
-}
-
-/// Returns an [`AssetInfo`] object representing the address of a token contract.
-/// ## Params
-/// * **contract_addr** is a [`Addr`] object representing the address of a token contract.
-pub fn token_asset_info(contract_addr: Addr) -> AssetInfo {
-    AssetInfo::Token { contract_addr }
 }
 
 #[cfg(test)]
