@@ -1,8 +1,6 @@
 use cosmwasm_schema::cw_serde;
+use cosmwasm_std::{from_slice, to_vec, Addr, StdError, StdResult, Storage, Uint128};
 use std::cmp::Ordering;
-
-use cosmwasm_std::{Addr, StdError, StdResult, Storage, Uint128};
-use cosmwasm_storage::{bucket, bucket_read, singleton, singleton_read, Bucket, ReadonlyBucket};
 
 use margined_common::{asset::Asset, integer::Integer};
 use margined_perp::margined_engine::{ConfigResponse, Position, Side};
@@ -18,11 +16,14 @@ pub static KEY_VAMM_MAP: &[u8] = b"vamm-map";
 pub type Config = ConfigResponse;
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
-    singleton(storage, KEY_CONFIG).save(config)
+    Ok(storage.set(KEY_CONFIG, &to_vec(config)?))
 }
 
 pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
-    singleton_read(storage, KEY_CONFIG).load()
+    match storage.get(KEY_CONFIG) {
+        Some(data) => from_slice(&data),
+        None => Err(StdError::generic_err("Config not found")),
+    }
 }
 
 #[cw_serde]
@@ -33,38 +34,32 @@ pub struct State {
 }
 
 pub fn store_state(storage: &mut dyn Storage, state: &State) -> StdResult<()> {
-    singleton(storage, KEY_STATE).save(state)
+    Ok(storage.set(KEY_STATE, &to_vec(state)?))
 }
 
 pub fn read_state(storage: &dyn Storage) -> StdResult<State> {
-    singleton_read(storage, KEY_STATE).load()
-}
-
-fn position_bucket(storage: &mut dyn Storage) -> Bucket<Position> {
-    bucket(storage, KEY_POSITION)
-}
-
-fn position_bucket_read(storage: &dyn Storage) -> ReadonlyBucket<Position> {
-    bucket_read(storage, KEY_POSITION)
+    match storage.get(KEY_STATE) {
+        Some(data) => from_slice(&data),
+        None => Err(StdError::generic_err("State not found")),
+    }
 }
 
 pub fn store_position(storage: &mut dyn Storage, key: &[u8], position: &Position) -> StdResult<()> {
     // hash the vAMM and trader together to get a unique position key
-    position_bucket(storage).save(key, position)
+    Ok(storage.set(&[KEY_POSITION, key].concat(), &to_vec(position)?))
 }
 
 pub fn remove_position(storage: &mut dyn Storage, key: &[u8]) {
     // hash the vAMM and trader together to get a unique position key
-    position_bucket(storage).remove(key)
+    storage.remove(&[KEY_POSITION, key].concat())
 }
 
 pub fn read_position(storage: &dyn Storage, key: &[u8]) -> StdResult<Position> {
     // hash the vAMM and trader together to get a unique position key
-    let result = position_bucket_read(storage)
-        .may_load(key)?
-        .unwrap_or_default();
-
-    Ok(result)
+    match storage.get(&[KEY_POSITION, key].concat()) {
+        Some(data) => from_slice(&data),
+        None => Ok(Position::default()),
+    }
 }
 
 /// Used to monitor that transferred native tokens are sufficient when opening a
@@ -88,7 +83,7 @@ impl SentFunds {
 }
 
 pub fn store_sent_funds(storage: &mut dyn Storage, funds: &SentFunds) -> StdResult<()> {
-    singleton(storage, KEY_SENT_FUNDS).save(funds)
+    Ok(storage.set(KEY_SENT_FUNDS, &to_vec(funds)?))
 }
 
 pub fn remove_sent_funds(storage: &mut dyn Storage) {
@@ -96,9 +91,10 @@ pub fn remove_sent_funds(storage: &mut dyn Storage) {
 }
 
 pub fn read_sent_funds(storage: &dyn Storage) -> StdResult<SentFunds> {
-    singleton_read(storage, KEY_SENT_FUNDS)
-        .load()
-        .map_err(|_| StdError::generic_err("no sent funds"))
+    match storage.get(KEY_SENT_FUNDS) {
+        Some(data) => from_slice(&data),
+        None => Err(StdError::generic_err("No sent funds are stored")),
+    }
 }
 
 #[cw_serde]
@@ -116,7 +112,7 @@ pub struct TmpSwapInfo {
 }
 
 pub fn store_tmp_swap(storage: &mut dyn Storage, swap: &TmpSwapInfo) -> StdResult<()> {
-    singleton(storage, KEY_TMP_SWAP).save(swap)
+    Ok(storage.set(KEY_TMP_SWAP, &to_vec(swap)?))
 }
 
 pub fn remove_tmp_swap(storage: &mut dyn Storage) {
@@ -124,13 +120,14 @@ pub fn remove_tmp_swap(storage: &mut dyn Storage) {
 }
 
 pub fn read_tmp_swap(storage: &dyn Storage) -> StdResult<TmpSwapInfo> {
-    singleton_read(storage, KEY_TMP_SWAP)
-        .load()
-        .map_err(|_| StdError::generic_err("no temporary position"))
+    match storage.get(KEY_TMP_SWAP) {
+        Some(data) => from_slice(&data),
+        None => Err(StdError::generic_err("Temporary Swap not found")),
+    }
 }
 
 pub fn store_tmp_liquidator(storage: &mut dyn Storage, liquidator: &Addr) -> StdResult<()> {
-    singleton(storage, KEY_TMP_LIQUIDATOR).save(liquidator)
+    Ok(storage.set(KEY_TMP_LIQUIDATOR, &to_vec(liquidator)?))
 }
 
 pub fn remove_tmp_liquidator(storage: &mut dyn Storage) {
@@ -138,9 +135,10 @@ pub fn remove_tmp_liquidator(storage: &mut dyn Storage) {
 }
 
 pub fn read_tmp_liquidator(storage: &dyn Storage) -> StdResult<Addr> {
-    singleton_read(storage, KEY_TMP_LIQUIDATOR)
-        .load()
-        .map_err(|_| StdError::generic_err("no liquidator"))
+    match storage.get(KEY_TMP_LIQUIDATOR) {
+        Some(data) => from_slice(&data),
+        None => Err(StdError::generic_err("Addr not found")),
+    }
 }
 
 #[cw_serde]
@@ -150,24 +148,18 @@ pub struct VammMap {
     pub cumulative_premium_fractions: Vec<Integer>,
 }
 
-fn vamm_map_bucket(storage: &mut dyn Storage) -> Bucket<VammMap> {
-    bucket(storage, KEY_VAMM_MAP)
-}
-
-fn vamm_map_bucket_read(storage: &dyn Storage) -> ReadonlyBucket<VammMap> {
-    bucket_read(storage, KEY_VAMM_MAP)
-}
-
 pub fn store_vamm_map(storage: &mut dyn Storage, vamm: Addr, vamm_map: &VammMap) -> StdResult<()> {
-    vamm_map_bucket(storage).save(vamm.as_bytes(), vamm_map)
+    Ok(storage.set(
+        &[KEY_VAMM_MAP, vamm.as_bytes()].concat(),
+        &to_vec(vamm_map)?,
+    ))
 }
 
 pub fn read_vamm_map(storage: &dyn Storage, vamm: &Addr) -> StdResult<VammMap> {
-    let result = vamm_map_bucket_read(storage)
-        .may_load(vamm.as_bytes())?
-        .unwrap_or_default();
-
-    Ok(result)
+    match storage.get(&[KEY_VAMM_MAP, vamm.as_bytes()].concat()) {
+        Some(data) => from_slice(&data),
+        None => Ok(VammMap::default()),
+    }
 }
 
 /// Accumulates the premium fractions at each settlement payment so that eventually users take

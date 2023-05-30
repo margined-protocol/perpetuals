@@ -46,7 +46,7 @@ pub fn query_all_token(deps: Deps, limit: Option<u32>) -> StdResult<AllTokenResp
         .unwrap_or(DEFAULT_PAGINATION_LIMIT)
         .min(MAX_PAGINATION_LIMIT) as usize;
 
-    let list = read_token_list(deps, limit)?;
+    let list = read_token_list(deps.storage, limit)?;
     Ok(AllTokenResponse { token_list: list })
 }
 
@@ -55,7 +55,7 @@ pub fn query_token_list_length(deps: Deps) -> StdResult<TokenLengthResponse> {
     // set the limit for pagination
     let limit = TOKEN_LIMIT;
 
-    let list_length = read_token_list(deps, limit)?.len();
+    let list_length = read_token_list(deps.storage, limit)?.len();
     Ok(TokenLengthResponse {
         length: list_length,
     })

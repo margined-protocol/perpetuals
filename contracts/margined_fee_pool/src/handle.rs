@@ -25,7 +25,7 @@ pub fn add_token(deps: DepsMut, info: MessageInfo, token: String) -> StdResult<R
     let valid_token = validate_funds(deps.as_ref(), token)?;
 
     // add the token
-    save_token(deps, valid_token)?;
+    save_token(deps.storage, valid_token)?;
 
     Ok(Response::default())
 }
@@ -40,7 +40,7 @@ pub fn remove_token(deps: DepsMut, info: MessageInfo, token: String) -> StdResul
     let valid_token = validate_funds(deps.as_ref(), token)?;
 
     // remove token here
-    remove_token_from_list(deps, valid_token)?;
+    remove_token_from_list(deps.storage, valid_token)?;
 
     Ok(Response::default())
 }

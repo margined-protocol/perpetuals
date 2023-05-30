@@ -1,7 +1,5 @@
 use cosmwasm_schema::cw_serde;
-
-use cosmwasm_std::{StdResult, Storage, Timestamp, Uint128};
-use cosmwasm_storage::{bucket, bucket_read, singleton, singleton_read};
+use cosmwasm_std::{from_slice, to_vec, StdError, StdResult, Storage, Timestamp, Uint128};
 
 use margined_perp::margined_vamm::{ConfigResponse, StateResponse};
 
@@ -16,19 +14,25 @@ pub type State = StateResponse;
 pub type Config = ConfigResponse;
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
-    singleton(storage, KEY_CONFIG).save(config)
+    Ok(storage.set(KEY_CONFIG, &to_vec(config)?))
 }
 
 pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
-    singleton_read(storage, KEY_CONFIG).load()
+    match storage.get(KEY_CONFIG) {
+        Some(data) => from_slice(&data),
+        None => Err(StdError::generic_err("Config not found")),
+    }
 }
 
 pub fn store_state(storage: &mut dyn Storage, state: &State) -> StdResult<()> {
-    singleton(storage, KEY_STATE).save(state)
+    Ok(storage.set(KEY_STATE, &to_vec(state)?))
 }
 
 pub fn read_state(storage: &dyn Storage) -> StdResult<State> {
-    singleton_read(storage, KEY_STATE).load()
+    match storage.get(KEY_STATE) {
+        Some(data) => from_slice(&data),
+        None => Err(StdError::generic_err("State not found")),
+    }
 }
 
 #[cw_serde]
@@ -40,7 +44,10 @@ pub struct ReserveSnapshot {
 }
 
 pub fn read_reserve_snapshot(storage: &dyn Storage, height: u64) -> StdResult<ReserveSnapshot> {
-    bucket_read(storage, KEY_RESERVE_SNAPSHOT).load(&height.to_be_bytes())
+    match storage.get(&[KEY_RESERVE_SNAPSHOT, &height.to_be_bytes()].concat()) {
+        Some(data) => from_slice(&data),
+        None => Err(StdError::generic_err("Reserve snapshot not found")),
+    }
 }
 
 /// Stores a new reserve snapshot
@@ -50,11 +57,7 @@ pub fn store_reserve_snapshot(
 ) -> StdResult<()> {
     increment_reserve_snapshot_counter(storage)?;
 
-    let height = read_reserve_snapshot_counter(storage)?;
-
-    bucket(storage, KEY_RESERVE_SNAPSHOT).save(&height.to_be_bytes(), reserve_snapshot)?;
-
-    Ok(())
+    update_current_reserve_snapshot(storage, reserve_snapshot)
 }
 
 /// Updates the current reserve snapshot
@@ -64,19 +67,21 @@ pub fn update_current_reserve_snapshot(
 ) -> StdResult<()> {
     let height = read_reserve_snapshot_counter(storage)?;
 
-    bucket(storage, KEY_RESERVE_SNAPSHOT).save(&height.to_be_bytes(), reserve_snapshot)?;
-
-    Ok(())
+    Ok(storage.set(
+        &[KEY_RESERVE_SNAPSHOT, &height.to_be_bytes()].concat(),
+        &to_vec(reserve_snapshot)?,
+    ))
 }
 
 pub fn read_reserve_snapshot_counter(storage: &dyn Storage) -> StdResult<u64> {
-    Ok(singleton_read(storage, KEY_RESERVE_SNAPSHOT_COUNTER)
-        .may_load()?
-        .unwrap_or_default())
+    Ok(match storage.get(KEY_RESERVE_SNAPSHOT_COUNTER) {
+        Some(data) => from_slice(&data)?,
+        None => 0,
+    })
 }
 
 pub fn increment_reserve_snapshot_counter(storage: &mut dyn Storage) -> StdResult<()> {
     let val = read_reserve_snapshot_counter(storage)? + 1;
 
-    singleton(storage, KEY_RESERVE_SNAPSHOT_COUNTER).save(&val)
+    Ok(storage.set(KEY_RESERVE_SNAPSHOT_COUNTER, &to_vec(&val)?))
 }

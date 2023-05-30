@@ -26,7 +26,6 @@ exclude = [
 [workspace.dependencies]
 cosmwasm-schema = { version = "1.1.9" }
 cosmwasm-std = { version = "1.1.9" }
-cosmwasm-storage = { version = "1.1.9" }
 thiserror = "1.0.26"
 cw-controllers = "1.0.1"
 cw2 = "1.0.1"

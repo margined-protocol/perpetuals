@@ -45,7 +45,7 @@ pub fn query_all_vamm(deps: Deps, limit: Option<u32>) -> StdResult<AllVammRespon
         .unwrap_or(DEFAULT_PAGINATION_LIMIT)
         .min(MAX_PAGINATION_LIMIT) as usize;
 
-    let list = read_vammlist(deps, limit)?;
+    let list = read_vammlist(deps.storage, limit)?;
     Ok(AllVammResponse { vamm_list: list })
 }
 
@@ -74,7 +74,7 @@ pub fn query_status_all_vamm(deps: Deps, limit: Option<u32>) -> StdResult<AllVam
     let mut status_list: Vec<(Addr, bool)> = vec![];
 
     // iterate through the vamm list and query the status one by one
-    for vamm in read_vammlist(deps, limit)? {
+    for vamm in read_vammlist(deps.storage, limit)? {
         let vamm_controller = VammController(vamm.clone());
         let vamm_bool = vamm_controller.state(&deps.querier)?.open;
         status_list.push((vamm, vamm_bool));

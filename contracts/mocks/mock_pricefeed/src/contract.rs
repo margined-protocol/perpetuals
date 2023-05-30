@@ -1,11 +1,12 @@
 use cosmwasm_schema::cw_serde;
+use cosmwasm_std::{from_slice, to_vec};
+
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
     Storage, Timestamp, Uint128,
 };
-use cosmwasm_storage::{singleton, singleton_read};
 
 pub static KEY_CONFIG: &[u8] = b"config";
 pub static KEY_PRICES: &[u8] = b"prices";
@@ -175,7 +176,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 /// Queries latest price for pair stored with key
 #[cfg(not(tarpaulin_include))]
 pub fn query_get_price(deps: Deps, _key: String) -> StdResult<Uint128> {
-    singleton_read(deps.storage, KEY_PRICES).load()
+    read_price_data(deps.storage, _key)
 }
 
 /// Queries previous price for pair stored with key
@@ -185,7 +186,7 @@ pub fn query_get_previous_price(
     _key: String,
     _num_round_back: Uint128,
 ) -> StdResult<Uint128> {
-    singleton_read(deps.storage, KEY_PRICES).load()
+    read_price_data(deps.storage, _key)
 }
 
 /// Queries contract Config
@@ -196,7 +197,7 @@ pub fn query_get_twap_price(
     _key: String,
     _interval: u64,
 ) -> StdResult<Uint128> {
-    singleton_read(deps.storage, KEY_PRICES).load()
+    read_price_data(deps.storage, _key)
 }
 
 #[cw_serde]
@@ -206,12 +207,15 @@ pub struct Config {
 
 #[cfg(not(tarpaulin_include))]
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
-    singleton(storage, KEY_CONFIG).save(config)
+    Ok(storage.set(KEY_CONFIG, &to_vec(config)?))
 }
 
 #[cfg(not(tarpaulin_include))]
 pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
-    singleton_read(storage, KEY_CONFIG).load()
+    match storage.get(KEY_CONFIG) {
+        Some(data) => from_slice(&data),
+        None => Err(StdError::generic_err("Config not found")),
+    }
 }
 
 #[cw_serde]
@@ -228,10 +232,13 @@ pub fn store_price_data(
     price: Uint128,
     _timestamp: u64,
 ) -> StdResult<()> {
-    singleton(storage, KEY_PRICES).save(&price)
+    Ok(storage.set(KEY_PRICES, &to_vec(&price)?))
 }
 
 #[cfg(not(tarpaulin_include))]
 pub fn read_price_data(storage: &dyn Storage, _key: String) -> StdResult<Uint128> {
-    singleton_read(storage, KEY_PRICES).load()
+    match storage.get(KEY_PRICES) {
+        Some(data) => from_slice(&data),
+        None => Err(StdError::generic_err("Price not found")),
+    }
 }

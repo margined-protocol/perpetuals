@@ -24,7 +24,6 @@ cw20 = { workspace = true }
 cw-controllers = { workspace = true }
 cw2 = { workspace = true }
 cosmwasm-std = { workspace = true }
-cosmwasm-storage = { workspace = true }
 cosmwasm-schema = { workspace = true }
 thiserror = { workspace = true }
 

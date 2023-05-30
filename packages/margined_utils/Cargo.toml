@@ -17,7 +17,6 @@ backtraces = ["cosmwasm-std/backtraces"]
 cw-controllers = { workspace = true }
 cosmwasm-schema = { workspace = true }
 cosmwasm-std = { workspace = true }
-cosmwasm-storage = { workspace = true }
 margined_common = { workspace = true }
 margined_perp = { workspace = true }
 

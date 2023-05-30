@@ -280,9 +280,7 @@ mod test {
 
         let err = token.get_decimals(&deps.as_ref().querier).unwrap_err();
         assert_eq!(
-            StdError::GenericErr {
-                msg: "Native token does not follow prefix standards".to_string()
-            },
+            StdError::generic_err("Native token does not follow prefix standards"),
             err
         );
     }

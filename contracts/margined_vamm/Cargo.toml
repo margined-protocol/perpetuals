@@ -21,7 +21,6 @@ library = []
 
 [dependencies]
 cosmwasm-std = { workspace = true }
-cosmwasm-storage = { workspace = true }
 cosmwasm-schema = { workspace = true }
 thiserror = { workspace = true }
 

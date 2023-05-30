@@ -42,7 +42,7 @@ pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Res
     }
 
     // add the amm
-    save_vamm(deps, vamm_valid)?;
+    save_vamm(deps.storage, vamm_valid)?;
 
     Ok(Response::default())
 }
@@ -57,7 +57,7 @@ pub fn remove_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<
     let vamm_valid = deps.api.addr_validate(&vamm)?;
 
     // remove vamm here
-    remove_amm(deps, vamm_valid)?;
+    remove_amm(deps.storage, vamm_valid)?;
 
     Ok(Response::default())
 }
@@ -69,7 +69,7 @@ pub fn shutdown_all_vamm(deps: DepsMut, env: Env, info: MessageInfo) -> StdResul
     }
 
     // construct all the shutdown messages
-    let keys = read_vammlist(deps.as_ref(), VAMM_LIMIT)?;
+    let keys = read_vammlist(deps.storage, VAMM_LIMIT)?;
 
     // initialise the submsgs vec
     let mut msgs = vec![];

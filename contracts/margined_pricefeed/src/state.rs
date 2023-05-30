@@ -1,5 +1,4 @@
-use cosmwasm_std::{StdResult, Storage, Timestamp, Uint128};
-use cosmwasm_storage::{singleton, Bucket, ReadonlyBucket};
+use cosmwasm_std::{from_slice, to_vec, StdResult, Storage, Timestamp, Uint128};
 use margined_perp::margined_pricefeed::{ConfigResponse, PriceData};
 
 pub static KEY_CONFIG: &[u8] = b"config";
@@ -9,7 +8,7 @@ pub const PRICES: &[u8] = b"prices";
 pub type Config = ConfigResponse;
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
-    singleton(storage, KEY_CONFIG).save(config)
+    Ok(storage.set(KEY_CONFIG, &to_vec(config)?))
 }
 
 pub fn store_price_data(
@@ -29,15 +28,13 @@ pub fn store_price_data(
 
     prices.push(price_data);
 
-    Bucket::new(storage, PRICES).save(key.as_bytes(), &prices)
+    Ok(storage.set(&[PRICES, key.as_bytes()].concat(), &to_vec(&prices)?))
 }
 
 pub fn read_price_data(storage: &dyn Storage, key: String) -> StdResult<Vec<PriceData>> {
     // let prices = ReadonlyBucket::new(storage, PRICES).may_load(key.as_bytes())?;
-    let result = match ReadonlyBucket::new(storage, PRICES).may_load(key.as_bytes())? {
-        None => vec![PriceData::default()],
-        Some(prices) => prices,
-    };
-
-    Ok(result)
+    match storage.get(&[PRICES, key.as_bytes()].concat()) {
+        None => Ok(vec![PriceData::default()]),
+        Some(data) => from_slice(&data),
+    }
 }

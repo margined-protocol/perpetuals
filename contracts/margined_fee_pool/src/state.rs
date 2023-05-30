@@ -1,5 +1,4 @@
-use cosmwasm_std::{Deps, DepsMut, StdError::GenericErr, StdResult, Storage};
-use cosmwasm_storage::{singleton, singleton_read};
+use cosmwasm_std::{from_slice, to_vec, StdError, StdResult, Storage};
 use margined_common::asset::AssetInfo;
 use margined_perp::margined_fee_pool::ConfigResponse;
 
@@ -10,81 +9,76 @@ pub const TOKEN_LIMIT: usize = 3usize;
 pub type Config = ConfigResponse;
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
-    singleton(storage, KEY_CONFIG).save(config)
+    Ok(storage.set(KEY_CONFIG, &to_vec(config)?))
 }
 
 // function checks if an addr is already added and adds it if not
 // We also check that we have not reached the limit of tokens here
-pub fn save_token(deps: DepsMut, input: AssetInfo) -> StdResult<()> {
+pub fn save_token(storage: &mut dyn Storage, input: AssetInfo) -> StdResult<()> {
     // check if the list exists already
-    let mut token_list: Vec<AssetInfo> = singleton_read(deps.storage, TOKEN_LIST)
-        .may_load()?
-        .unwrap_or_default();
+    let mut token_list: Vec<AssetInfo> = match storage.get(TOKEN_LIST) {
+        None => vec![],
+        Some(data) => from_slice(&data)?,
+    };
 
     // check if we already added the token
     if token_list.contains(&input) {
-        return Err(GenericErr {
-            msg: "This token is already added".to_string(),
-        });
+        return Err(StdError::generic_err("This token is already added"));
     };
 
     // check if we have reached the capacity
     if token_list.len() >= TOKEN_LIMIT {
-        return Err(GenericErr {
-            msg: "The token capacity is already reached".to_string(),
-        });
+        return Err(StdError::generic_err(
+            "The token capacity is already reached",
+        ));
     };
 
     // add the token
     token_list.push(input);
 
-    singleton(deps.storage, TOKEN_LIST).save(&token_list)
+    Ok(storage.set(TOKEN_LIST, &to_vec(&token_list)?))
 }
 
 // this function reads Addrs stored in the TOKEN_LIST.
 // note that this function ONLY takes the first TOKEN_LIMIT terms
-pub fn read_token_list(deps: Deps, limit: usize) -> StdResult<Vec<AssetInfo>> {
-    match singleton_read::<Vec<AssetInfo>>(deps.storage, TOKEN_LIST).may_load()? {
-        None => Err(GenericErr {
-            msg: "No tokens are stored".to_string(),
-        }),
-        Some(list) => {
-            let take = limit.min(list.len());
-            Ok(list[..take].to_vec())
+pub fn read_token_list(storage: &dyn Storage, limit: usize) -> StdResult<Vec<AssetInfo>> {
+    match storage.get(TOKEN_LIST) {
+        None => Err(StdError::generic_err("No tokens are stored")),
+        Some(data) => {
+            let mut list: Vec<AssetInfo> = from_slice(&data)?;
+            if limit < list.len() {
+                list.truncate(limit);
+            }
+            Ok(list)
         }
     }
 }
 
 // this function checks whether the token is stored already
 pub fn is_token(storage: &dyn Storage, token: AssetInfo) -> bool {
-    if let Ok(list) = singleton_read::<Vec<AssetInfo>>(storage, TOKEN_LIST).load() {
-        return list.contains(&token);
+    match storage.get(TOKEN_LIST) {
+        None => false,
+        Some(data) => from_slice::<Vec<AssetInfo>>(&data)
+            .map(|list| list.contains(&token))
+            .unwrap_or_default(),
     }
-    false
 }
 
 // this function deletes the entry under the given key
-pub fn remove_token(deps: DepsMut, token: AssetInfo) -> StdResult<()> {
+pub fn remove_token(storage: &mut dyn Storage, token: AssetInfo) -> StdResult<()> {
     // check if the list exists
-    let mut token_list: Vec<AssetInfo> =
-        match singleton_read(deps.storage, TOKEN_LIST).may_load()? {
-            None => {
-                return Err(GenericErr {
-                    msg: "No tokens are stored".to_string(),
-                })
-            }
-            Some(value) => value,
-        };
+    let mut token_list: Vec<AssetInfo> = match storage.get(TOKEN_LIST) {
+        None => return Err(StdError::generic_err("No tokens are stored")),
+        Some(data) => from_slice(&data)?,
+    };
 
     // change token_list
     if let Some(index) = token_list.clone().iter().position(|x| x.eq(&token)) {
         token_list.swap_remove(index);
     } else {
-        return Err(GenericErr {
-            msg: "This token has not been added".to_string(),
-        });
+        return Err(StdError::generic_err("This token has not been added"));
     }
 
     // saves the updated token_list
-    singleton(deps.storage, TOKEN_LIST).save(&token_list)
+    Ok(storage.set(TOKEN_LIST, &to_vec(&token_list)?))
 }

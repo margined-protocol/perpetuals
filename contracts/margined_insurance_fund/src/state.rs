@@ -1,5 +1,4 @@
-use cosmwasm_std::{Addr, Deps, DepsMut, StdError, StdResult, Storage};
-use cosmwasm_storage::{singleton, singleton_read};
+use cosmwasm_std::{from_slice, to_vec, Addr, StdError, StdResult, Storage};
 use margined_perp::margined_insurance_fund::ConfigResponse;
 
 pub static KEY_CONFIG: &[u8] = b"config";
@@ -10,82 +9,81 @@ pub type Config = ConfigResponse;
 
 // function checks if an addr is already added and adds it if not
 // We also check that we have not reached the limit of vAMMs here
-pub fn save_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
+pub fn save_vamm(storage: &mut dyn Storage, input: Addr) -> StdResult<()> {
     // check if there is a vector
-    let mut vamm_list: Vec<Addr> = singleton_read(deps.storage, VAMM_LIST)
-        .may_load()?
-        .unwrap_or_default();
+    let mut vamm_list: Vec<Addr> = match storage.get(VAMM_LIST) {
+        None => vec![],
+        Some(data) => from_slice(&data)?,
+    };
 
     // check if we already added the vamm
     if vamm_list.contains(&input) {
-        return Err(StdError::GenericErr {
-            msg: "This vAMM is already added".to_string(),
-        });
+        return Err(StdError::generic_err("This vAMM is already added"));
     };
 
     // check if we have reached the capacity
     if vamm_list.len() >= VAMM_LIMIT {
-        return Err(StdError::GenericErr {
-            msg: "The vAMM capacity is already reached".to_string(),
-        });
+        return Err(StdError::generic_err(
+            "The vAMM capacity is already reached",
+        ));
     };
 
     // add the vamm to the vector
     vamm_list.push(input);
-    singleton(deps.storage, VAMM_LIST).save(&vamm_list)
+    Ok(storage.set(VAMM_LIST, &to_vec(&vamm_list)?))
 }
 
 // this function reads Addrs stored in the VAMM_LIST.
 // note that this function ONLY takes the first VAMM_LIMIT terms
-pub fn read_vammlist(deps: Deps, limit: usize) -> StdResult<Vec<Addr>> {
-    match singleton_read::<Vec<Addr>>(deps.storage, VAMM_LIST).may_load()? {
-        None => Err(StdError::GenericErr {
-            msg: "No vAMMs are stored".to_string(),
-        }),
-        Some(value) => {
-            let take = limit.min(value.len());
-            Ok(value[..take].to_vec())
+pub fn read_vammlist(storage: &dyn Storage, limit: usize) -> StdResult<Vec<Addr>> {
+    match storage.get(VAMM_LIST) {
+        None => Err(StdError::generic_err("No vAMMs are stored")),
+        Some(data) => {
+            let mut list: Vec<Addr> = from_slice(&data)?;
+            if limit < list.len() {
+                list.truncate(limit);
+            }
+            Ok(list)
         }
     }
 }
 
 // this function checks whether the vamm is stored already
 pub fn is_vamm(storage: &dyn Storage, input: Addr) -> bool {
-    if let Ok(value) = singleton_read::<Vec<Addr>>(storage, VAMM_LIST).load() {
-        return value.contains(&input);
+    match storage.get(VAMM_LIST) {
+        None => false,
+        Some(data) => from_slice::<Vec<Addr>>(&data)
+            .map(|list| list.contains(&input))
+            .unwrap_or_default(),
     }
-    false
 }
 
 // this function deletes the entry under the given key
-pub fn remove_vamm(deps: DepsMut, input: Addr) -> StdResult<()> {
+pub fn remove_vamm(storage: &mut dyn Storage, input: Addr) -> StdResult<()> {
     // check if there are any vamms stored
-    let mut vamm_list = match singleton_read::<Vec<Addr>>(deps.storage, VAMM_LIST).may_load()? {
-        None => {
-            return Err(StdError::GenericErr {
-                msg: "No vAMMs are stored".to_string(),
-            })
-        }
-        Some(value) => value,
+    let mut vamm_list = match storage.get(VAMM_LIST) {
+        None => return Err(StdError::generic_err("No vAMMs are stored")),
+        Some(data) => from_slice::<Vec<Addr>>(&data)?,
     };
 
     // change vamm_list
     if let Some(index) = vamm_list.clone().iter().position(|x| x.eq(&input)) {
         vamm_list.swap_remove(index);
     } else {
-        return Err(StdError::GenericErr {
-            msg: "This vAMM has not been added".to_string(),
-        });
+        return Err(StdError::generic_err("This vAMM has not been added"));
     }
 
     // saves the updated vamm_list
-    singleton(deps.storage, VAMM_LIST).save(&vamm_list)
+    Ok(storage.set(VAMM_LIST, &to_vec(&vamm_list)?))
 }
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
-    singleton(storage, KEY_CONFIG).save(config)
+    Ok(storage.set(KEY_CONFIG, &to_vec(config)?))
 }
 
 pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
-    singleton_read(storage, KEY_CONFIG).load()
+    match storage.get(KEY_CONFIG) {
+        Some(data) => from_slice(&data),
+        None => Err(StdError::generic_err("Config not found")),
+    }
 }
