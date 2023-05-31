@@ -11,7 +11,7 @@ use crate::{
         ONE_DAY_IN_SECONDS, ONE_HOUR_IN_SECONDS, ONE_MINUTE_IN_SECONDS, ONE_WEEK_IN_SECONDS, OWNER,
     },
     query::query_twap_price,
-    state::{read_config, read_state, store_config, store_state, Config, State},
+    state::{read_config, read_state, store_config, store_state, Config},
     utils::{
         add_reserve_snapshot, check_is_over_block_fluctuation_limit, modulo, require_margin_engine,
         require_open, TwapCalcOption,
@@ -106,8 +106,8 @@ pub fn update_owner(deps: DepsMut, info: MessageInfo, owner: String) -> StdResul
 }
 
 pub fn set_open(deps: DepsMut, env: Env, info: MessageInfo, open: bool) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-    let mut state: State = read_state(deps.storage)?;
+    let config = read_config(deps.storage)?;
+    let mut state = read_state(deps.storage)?;
 
     // check permission and if state matches
     if (!OWNER.is_admin(deps.as_ref(), &info.sender)? && info.sender != config.insurance_fund)
@@ -139,13 +139,12 @@ pub fn swap_input(
     base_asset_limit: Uint128,
     can_go_over_fluctuation: bool,
 ) -> StdResult<Response> {
-    let state: State = read_state(deps.storage)?;
-    let config: Config = read_config(deps.storage)?;
-
+    let state = read_state(deps.storage)?;
     require_open(state.open)?;
+    let config = read_config(deps.storage)?;
     require_margin_engine(info.sender, config.margin_engine)?;
 
-    let base_asset_amount: Uint128 = if !quote_asset_amount.is_zero() {
+    let base_asset_amount = if !quote_asset_amount.is_zero() {
         let base_asset_amount = get_input_price_with_reserves(
             deps.as_ref(),
             &direction,
@@ -202,10 +201,9 @@ pub fn swap_output(
     base_asset_amount: Uint128,
     quote_asset_limit: Uint128,
 ) -> StdResult<Response> {
-    let state: State = read_state(deps.storage)?;
-    let config: Config = read_config(deps.storage)?;
-
+    let state = read_state(deps.storage)?;
     require_open(state.open)?;
+    let config = read_config(deps.storage)?;
     require_margin_engine(info.sender, config.margin_engine)?;
 
     // flip direction when updating reserve
@@ -266,10 +264,9 @@ pub fn swap_output(
 }
 
 pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-    let mut state: State = read_state(deps.storage)?;
-
+    let mut state = read_state(deps.storage)?;
     require_open(state.open)?;
+    let config = read_config(deps.storage)?;
     require_margin_engine(info.sender, config.margin_engine)?;
 
     if env.block.time.seconds() < state.next_funding_time {

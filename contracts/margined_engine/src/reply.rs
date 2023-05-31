@@ -13,7 +13,7 @@ use crate::{
         append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_sent_funds,
         read_state, read_tmp_liquidator, read_tmp_swap, remove_position, remove_sent_funds,
         remove_tmp_liquidator, remove_tmp_swap, store_position, store_sent_funds, store_state,
-        store_tmp_swap, Config, State, TmpSwapInfo,
+        store_tmp_swap, State,
     },
     utils::{
         calc_remain_margin_with_funding_payment, check_base_asset_holding_cap, clear_position,
@@ -36,11 +36,7 @@ pub fn update_position_reply(
     output: Uint128,
     reply_id: u64,
 ) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
-    let mut state: State = read_state(deps.storage)?;
-
     let mut swap = read_tmp_swap(deps.storage)?;
-    let mut funds = read_sent_funds(deps.storage)?;
 
     let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
 
@@ -54,10 +50,12 @@ pub fn update_position_reply(
     )?;
 
     // depending on the direction the output is positive or negative
-    let signed_output: Integer = match &swap.side {
+    let signed_output = match &swap.side {
         Side::Buy => Integer::new_positive(output),
         Side::Sell => Integer::new_negative(output),
     };
+
+    let mut state = read_state(deps.storage)?;
 
     update_open_interest_notional(
         &deps.as_ref(),
@@ -71,11 +69,13 @@ pub fn update_position_reply(
         swap.trader.clone(),
     )?;
 
+    let config = read_config(deps.storage)?;
+
     // define variables that differ across increase and decrease scenario
-    let swap_margin: Uint128;
-    let margin_delta: Integer;
-    let new_direction: Direction;
-    let new_notional: Uint128;
+    let swap_margin;
+    let margin_delta;
+    let new_direction;
+    let new_notional;
 
     // calculate margin needed given swap
     match reply_id {
@@ -150,6 +150,7 @@ pub fn update_position_reply(
     )?;
 
     let mut msgs: Vec<SubMsg> = vec![];
+    let mut funds = read_sent_funds(deps.storage)?;
 
     // create transfer messages depending on PnL
     #[allow(clippy::comparison_chain)]
@@ -360,7 +361,7 @@ pub fn close_position_reply(
         env.block.height,
     )?;
 
-    let margin_delta: Integer = match &position.direction {
+    let margin_delta = match &position.direction {
         Direction::AddToAmm => {
             Integer::new_positive(output) - Integer::new_positive(swap.open_notional)
         }
@@ -450,7 +451,7 @@ pub fn partial_close_position_reply(
     input: Uint128,
     output: Uint128,
 ) -> StdResult<Response> {
-    let swap: TmpSwapInfo = read_tmp_swap(deps.storage)?;
+    let swap = read_tmp_swap(deps.storage)?;
     let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
     let mut position = get_position(
         deps.storage,
@@ -471,7 +472,7 @@ pub fn partial_close_position_reply(
     )?;
 
     // depending on the direction the output is positive or negative
-    let signed_output: Integer = match &swap.side {
+    let signed_output = match &swap.side {
         Side::Buy => Integer::new_positive(output),
         Side::Sell => Integer::new_negative(output),
     };
@@ -555,7 +556,7 @@ pub fn liquidate_reply(
     )?;
 
     // calculate delta from trade and whether it was profitable or a loss
-    let margin_delta: Integer = match &position.direction {
+    let margin_delta = match &position.direction {
         Direction::RemoveFromAmm => {
             Integer::new_positive(swap.open_notional) - Integer::new_positive(output)
         }
@@ -570,11 +571,11 @@ pub fn liquidate_reply(
     let config = read_config(deps.storage)?;
 
     // calculate liquidation penalty and fee for liquidator
-    let liquidation_penalty: Uint128 = output
+    let liquidation_penalty = output
         .checked_mul(config.liquidation_fee)?
         .checked_div(config.decimals)?;
 
-    let liquidation_fee: Uint128 = liquidation_penalty.checked_div(Uint128::from(2u64))?;
+    let liquidation_fee = liquidation_penalty.checked_div(Uint128::from(2u64))?;
 
     if liquidation_fee > remain_margin.margin {
         let bad_debt = liquidation_fee.checked_sub(remain_margin.margin)?;
@@ -667,11 +668,11 @@ pub fn partial_liquidation_reply(
         * Integer::new_positive(config.partial_liquidation_ratio))
         / Integer::new_positive(config.decimals);
 
-    let liquidation_penalty: Uint128 = output
+    let liquidation_penalty = output
         .checked_mul(config.liquidation_fee)?
         .checked_div(config.decimals)?;
 
-    let liquidation_fee: Uint128 = liquidation_penalty.checked_div(Uint128::from(2u64))?;
+    let liquidation_fee = liquidation_penalty.checked_div(Uint128::from(2u64))?;
 
     if position.size < Integer::zero() {
         position.size += Integer::new_positive(input);

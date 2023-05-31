@@ -166,11 +166,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 /// Queries contract Config
 #[cfg(not(tarpaulin_include))]
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
-    let config: Config = read_config(deps.storage)?;
-
-    Ok(ConfigResponse {
-        owner: config.owner,
-    })
+    read_config(deps.storage)
 }
 
 /// Queries latest price for pair stored with key
@@ -200,10 +196,7 @@ pub fn query_get_twap_price(
     read_price_data(deps.storage, _key)
 }
 
-#[cw_serde]
-pub struct Config {
-    pub owner: Addr,
-}
+pub type Config = ConfigResponse;
 
 #[cfg(not(tarpaulin_include))]
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {

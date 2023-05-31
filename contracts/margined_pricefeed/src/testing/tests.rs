@@ -237,7 +237,7 @@ fn test_get_twap_price() {
         Uint128::from(410_000_000u128),
     ];
 
-    let timestamps: Vec<u64> = vec![
+    let timestamps = vec![
         env.block.time.seconds(),
         env.block.time.seconds() + 15,
         env.block.time.seconds() + 30,
@@ -320,7 +320,7 @@ fn test_get_twap_variant_price_period() {
         Uint128::from(420_000_000u128),
     ];
 
-    let timestamps: Vec<u64> = vec![
+    let timestamps = vec![
         env.block.time.seconds(),
         env.block.time.seconds() + 15,
         env.block.time.seconds() + 30,
@@ -374,7 +374,7 @@ fn test_get_twap_latest_price_update_is_earlier_than_request() {
         Uint128::from(410_000_000u128),
     ];
 
-    let timestamps: Vec<u64> = vec![
+    let timestamps = vec![
         env.block.time.seconds(),
         env.block.time.seconds() + 15,
         env.block.time.seconds() + 30,
@@ -454,7 +454,7 @@ fn test_get_twap_error_zero_interval() {
         Uint128::from(410_000_000u128),
     ];
 
-    let timestamps: Vec<u64> = vec![
+    let timestamps = vec![
         env.block.time.seconds(),
         env.block.time.seconds() + 15,
         env.block.time.seconds() + 30,

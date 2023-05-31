@@ -5,7 +5,7 @@ use crate::{
     handle::{get_input_price_with_reserves, get_output_price_with_reserves},
     state::{
         read_config, read_reserve_snapshot, read_reserve_snapshot_counter, read_state,
-        store_reserve_snapshot, update_current_reserve_snapshot, Config, ReserveSnapshot,
+        store_reserve_snapshot, update_current_reserve_snapshot,
     },
 };
 
@@ -158,9 +158,8 @@ pub fn get_price_with_specific_snapshot(
     deps: Deps,
     params: TwapPriceCalcParams,
 ) -> StdResult<Uint128> {
-    let config: Config = read_config(deps.storage)?;
-
-    let snapshot: ReserveSnapshot = read_reserve_snapshot(deps.storage, params.snapshot_index)?;
+    let config = read_config(deps.storage)?;
+    let snapshot = read_reserve_snapshot(deps.storage, params.snapshot_index)?;
 
     // RESERVE_ASSET means price comes from quoteAssetReserve/baseAssetReserve
     // INPUT_ASSET means getInput/Output price with snapshot's reserve

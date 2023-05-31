@@ -13,8 +13,8 @@ fn test_settle_funding_delay_before_buffer_period_ends() {
         ..
     } = new_vammscenario();
 
-    let price: Uint128 = Uint128::from(500_000_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let price = Uint128::from(500_000_000u128);
+    let timestamp = 1_000_000_000;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -49,8 +49,8 @@ fn test_settle_funding_delay_after_buffer_period_ends_before_next_funding_time()
         ..
     } = new_vammscenario();
 
-    let price: Uint128 = Uint128::from(500_000_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let price = Uint128::from(500_000_000u128);
+    let timestamp = 1_000_000_000;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -87,8 +87,8 @@ fn test_force_error_caller_is_not_couterparty_or_owner() {
         ..
     } = new_vammscenario();
 
-    let price: Uint128 = Uint128::from(500_000_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let price = Uint128::from(500_000_000u128);
+    let timestamp = 1_000_000_000;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -115,8 +115,8 @@ fn test_cant_settle_funding_multiple_times_at_once_even_settle_funding_delay() {
         ..
     } = new_vammscenario();
 
-    let price: Uint128 = Uint128::from(500_000_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let price = Uint128::from(500_000_000u128);
+    let timestamp = 1_000_000_000;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)

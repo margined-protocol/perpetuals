@@ -26,8 +26,8 @@ fn test_partially_liquidate_long_position() {
     } = new_simple_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
-    let timestamp: u64 = router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000_000u128);
+    let timestamp = router.block_info().time.seconds();
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -160,8 +160,8 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
     } = new_simple_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
-    let timestamp: u64 = router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000_000u128);
+    let timestamp = router.block_info().time.seconds();
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -295,8 +295,8 @@ fn test_partially_liquidate_short_position() {
     } = new_simple_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
-    let timestamp: u64 = router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000_000u128);
+    let timestamp = router.block_info().time.seconds();
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -429,8 +429,8 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
     } = new_simple_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
-    let timestamp: u64 = router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000_000u128);
+    let timestamp = router.block_info().time.seconds();
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -564,8 +564,8 @@ fn test_long_position_complete_liquidation() {
     } = new_simple_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
-    let timestamp: u64 = router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000_000u128);
+    let timestamp = router.block_info().time.seconds();
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -694,8 +694,8 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
     } = new_simple_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
-    let timestamp: u64 = router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000_000u128);
+    let timestamp = router.block_info().time.seconds();
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -825,8 +825,8 @@ fn test_short_position_complete_liquidation() {
     } = new_simple_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
-    let timestamp: u64 = router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000_000u128);
+    let timestamp = router.block_info().time.seconds();
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -955,8 +955,8 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
     } = new_simple_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
-    let timestamp: u64 = router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000_000u128);
+    let timestamp = router.block_info().time.seconds();
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -1134,8 +1134,8 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
     } = new_simple_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
-    let timestamp: u64 = router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000_000u128);
+    let timestamp = router.block_info().time.seconds();
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -1302,8 +1302,8 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
     let mut env = new_simple_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
-    let timestamp: u64 = env.router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000_000u128);
+    let timestamp = env.router.block_info().time.seconds();
 
     let msg = env
         .pricefeed
@@ -1427,8 +1427,8 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
     let mut env = new_simple_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
-    let timestamp: u64 = env.router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000_000u128);
+    let timestamp = env.router.block_info().time.seconds();
 
     let msg = env
         .pricefeed
@@ -1603,8 +1603,8 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
     let mut env = new_simple_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
-    let timestamp: u64 = env.router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000_000u128);
+    let timestamp = env.router.block_info().time.seconds();
 
     let msg = env
         .pricefeed
@@ -1804,8 +1804,8 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
     let mut env = new_simple_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
-    let timestamp: u64 = env.router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000_000u128);
+    let timestamp = env.router.block_info().time.seconds();
 
     let msg = env
         .pricefeed
@@ -2000,8 +2000,8 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
     let mut env = new_simple_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
-    let timestamp: u64 = env.router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000_000u128);
+    let timestamp = env.router.block_info().time.seconds();
 
     let msg = env
         .pricefeed
@@ -2128,8 +2128,8 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
     let mut env = new_simple_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
-    let timestamp: u64 = env.router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000_000u128);
+    let timestamp = env.router.block_info().time.seconds();
 
     let msg = env
         .pricefeed
@@ -2287,8 +2287,8 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
     let mut env = new_simple_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
-    let timestamp: u64 = env.router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000_000u128);
+    let timestamp = env.router.block_info().time.seconds();
 
     let msg = env
         .pricefeed

@@ -573,7 +573,7 @@ fn test_pagination_limit() {
         ..
     } = new_shutdown_scenario();
 
-    let vamms: Vec<String> = vec![
+    let vamms = vec![
         vamm1.addr().to_string(),
         vamm2.addr().to_string(),
         vamm3.addr().to_string(),
@@ -631,7 +631,7 @@ fn test_vamm_capacity() {
     // Test exceeding VAMM_LIMIT by adding a single vAMM //
     ///////////////////////////////////////////////////////
 
-    let vamms: Vec<String> = vec![
+    let vamms = vec![
         vamm1.addr().to_string(),
         vamm2.addr().to_string(),
         vamm3.addr().to_string(),
@@ -669,7 +669,7 @@ fn test_vamm_capacity() {
         ..
     } = new_shutdown_scenario();
 
-    let vamms: Vec<String> = vec![
+    let vamms = vec![
         vamm1.addr().to_string(),
         vamm2.addr().to_string(),
         vamm3.addr().to_string(),

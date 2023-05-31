@@ -26,8 +26,8 @@ fn test_liquidation_fee_100_percent() {
     } = new_simple_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000_000u128);
-    let timestamp: u64 = router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000_000u128);
+    let timestamp = router.block_info().time.seconds();
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
         .unwrap();
@@ -546,7 +546,7 @@ fn test_alice_long_position_underwater_oracle_price_activated_doesnt_get_liquida
 
     // sync amm price to oracle = 25.6
     let price = vamm.spot_price(&router.wrap()).unwrap();
-    let timestamp: u64 = 1_000_000_000;
+    let timestamp = 1_000_000_000;
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
         .unwrap();
@@ -640,7 +640,7 @@ fn test_alice_short_position_underwater_oracle_price_activated_doesnt_get_liquid
 
     // sync amm price to oracle = 25.6
     let price = vamm.spot_price(&router.wrap()).unwrap();
-    let timestamp: u64 = 1_000_000_000;
+    let timestamp = 1_000_000_000;
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
         .unwrap();

@@ -9,8 +9,8 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
     let mut env = new_native_token_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000u128);
-    let timestamp: u64 = env.router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000u128);
+    let timestamp = env.router.block_info().time.seconds();
 
     let msg = env
         .pricefeed
@@ -143,8 +143,8 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
     let mut env = new_native_token_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000u128);
-    let timestamp: u64 = env.router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000u128);
+    let timestamp = env.router.block_info().time.seconds();
 
     let msg = env
         .pricefeed
@@ -283,8 +283,8 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
     let mut env = new_native_token_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000u128);
-    let timestamp: u64 = env.router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000u128);
+    let timestamp = env.router.block_info().time.seconds();
 
     let msg = env
         .pricefeed
@@ -415,8 +415,8 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
     let mut env = new_native_token_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000u128);
-    let timestamp: u64 = env.router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000u128);
+    let timestamp = env.router.block_info().time.seconds();
 
     let msg = env
         .pricefeed
@@ -554,8 +554,8 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
     let mut env = new_native_token_scenario();
 
     // set the latest price
-    let price: Uint128 = Uint128::from(10_000_000u128);
-    let timestamp: u64 = env.router.block_info().time.seconds();
+    let price = Uint128::from(10_000_000u128);
+    let timestamp = env.router.block_info().time.seconds();
 
     let msg = env
         .pricefeed

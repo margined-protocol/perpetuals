@@ -222,8 +222,8 @@ fn test_verify_margin_ratio_funding_payment_positive() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let price: Uint128 = Uint128::from(15_500_000_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let price = Uint128::from(15_500_000_000u128);
+    let timestamp = 1_000_000_000;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -284,8 +284,8 @@ fn test_verify_margin_ratio_funding_payment_negative() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let price: Uint128 = Uint128::from(15_700_000_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let price = Uint128::from(15_700_000_000u128);
+    let timestamp = 1_000_000_000;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -362,8 +362,8 @@ fn test_verify_margin_ratio_with_pnl_funding_payment_positive() {
     router.execute(bob.clone(), msg).unwrap();
 
     // given the underlying twap price: 6.3
-    let price: Uint128 = Uint128::from(6_300_000_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let price = Uint128::from(6_300_000_000u128);
+    let timestamp = 1_000_000_000;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -449,8 +449,8 @@ fn test_verify_margin_ratio_with_pnl_funding_payment_negative() {
     router.execute(bob.clone(), msg).unwrap();
 
     // given the underlying twap price: 6.5
-    let price: Uint128 = Uint128::from(6_500_000_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let price = Uint128::from(6_500_000_000u128);
+    let timestamp = 1_000_000_000;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)

@@ -1,6 +1,6 @@
 use crate::{
     contract::OWNER,
-    state::{read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, Config, VAMM_LIMIT},
+    state::{read_config, read_vammlist, remove_vamm as remove_amm, save_vamm, VAMM_LIMIT},
 };
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128};
 
@@ -87,7 +87,7 @@ pub fn withdraw(
     token: AssetInfo,
     amount: Uint128,
 ) -> StdResult<Response> {
-    let config: Config = read_config(deps.storage)?;
+    let config = read_config(deps.storage)?;
 
     // check permission
     if info.sender != config.engine {

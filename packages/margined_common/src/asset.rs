@@ -228,7 +228,7 @@ impl AssetInfo {
         querier: &QuerierWrapper,
         account_addr: Addr,
     ) -> StdResult<Uint128> {
-        let balance: Uint128 = match self {
+        let balance = match self {
             AssetInfo::NativeToken { denom } => {
                 let res = querier.query_balance(account_addr, denom)?;
                 res.amount

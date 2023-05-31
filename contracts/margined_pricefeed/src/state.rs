@@ -20,7 +20,7 @@ pub fn store_price_data(
     // load the existing data
     let mut prices = read_price_data(storage, key.clone())?;
 
-    let price_data: PriceData = PriceData {
+    let price_data = PriceData {
         round_id: prices.len() as u64,
         price,
         timestamp: Timestamp::from_seconds(timestamp),

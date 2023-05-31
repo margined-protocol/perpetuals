@@ -34,7 +34,7 @@ pub fn calculate_funds_needed(
     let vamm_controller = VammController(vamm.clone());
 
     // pull the fees for the vamm that the position will be taken on; note that this will be shifted however many digits
-    let fee_amount: Uint128 = vamm_controller.calc_fee(querier, new_notional)?.toll_fee;
+    let fee_amount = vamm_controller.calc_fee(querier, new_notional)?.toll_fee;
 
     let engine_controller = EngineController(engine);
 
@@ -43,14 +43,6 @@ pub fn calculate_funds_needed(
         .position(querier, vamm.to_string(), trader.to_string())
         .unwrap_or_default();
 
-    // Check the unrealised PnL and add it to: (existing position + margin)
-    let unrealized_pnl = engine_controller.get_unrealized_pnl(
-        querier,
-        vamm.to_string(),
-        trader.to_string(),
-        PnlCalcOption::SpotPrice,
-    )?;
-
     // First we check if they are increasing the position or not
     let is_increase = position.direction == Direction::AddToAmm && side == Side::Buy
         || position.direction == Direction::RemoveFromAmm && side == Side::Sell;
@@ -58,6 +50,13 @@ pub fn calculate_funds_needed(
     let margin_owed = match is_increase {
         true => Integer::new_positive(quote_asset_amount),
         false => {
+            // Check the unrealised PnL and add it to: (existing position + margin)
+            let unrealized_pnl = engine_controller.get_unrealized_pnl(
+                querier,
+                vamm.to_string(),
+                trader.to_string(),
+                PnlCalcOption::SpotPrice,
+            )?;
             if new_notional > unrealized_pnl.position_notional {
                 Integer::new_positive(
                     (new_notional - unrealized_pnl.position_notional)

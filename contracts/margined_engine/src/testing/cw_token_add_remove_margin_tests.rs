@@ -200,8 +200,8 @@ fn test_remove_margin_after_paying_funding() {
     let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, to_decimals(60u64));
 
-    let price: Uint128 = Uint128::from(25_500_000_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let price = Uint128::from(25_500_000_000u128);
+    let timestamp = 1_000_000_000u64;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)

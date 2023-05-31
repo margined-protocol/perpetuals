@@ -412,7 +412,7 @@ fn test_token_capacity() {
     // Test exceeding TOKEN_LIMIT by adding a single vAMM //
     ////////////////////////////////////////////////////////
 
-    let tokens: Vec<String> = vec![
+    let tokens = vec![
         "token1".to_string(),
         "token2".to_string(),
         "token3".to_string(),
@@ -453,7 +453,7 @@ fn test_token_capacity() {
 
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    let tokens: Vec<String> = vec![
+    let tokens = vec![
         "token1".to_string(),
         "token2".to_string(),
         "token3".to_string(),
@@ -689,7 +689,7 @@ fn test_send_cw20_token() {
     } = new_simple_scenario();
 
     // give funds to the fee pool contract for the test
-    let msg: CosmosMsg = CosmosMsg::Wasm(WasmMsg::Execute {
+    let msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: usdc.addr().to_string(),
         funds: vec![],
         msg: to_binary(&Cw20ExecuteMsg::Mint {
@@ -744,7 +744,7 @@ fn test_send_cw20_token() {
     } = new_simple_scenario();
 
     // give funds to the fee pool contract
-    let msg: CosmosMsg = CosmosMsg::Wasm(WasmMsg::Execute {
+    let msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: usdc.addr().to_string(),
         funds: vec![],
         msg: to_binary(&Cw20ExecuteMsg::Mint {
@@ -785,7 +785,7 @@ fn test_send_cw20_token() {
     } = new_simple_scenario();
 
     // give funds to the fee pool contract for the test
-    let msg: CosmosMsg = CosmosMsg::Wasm(WasmMsg::Execute {
+    let msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: usdc.addr().to_string(),
         funds: vec![],
         msg: to_binary(&Cw20ExecuteMsg::Mint {

@@ -52,8 +52,8 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
         .amount;
     assert_eq!(engine_balance, Uint128::from(1_500_000_000u128));
 
-    let price: Uint128 = Uint128::from(1_590_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let price = Uint128::from(1_590_000u128);
+    let timestamp = 1_000_000_000;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -152,8 +152,8 @@ fn test_will_keep_generating_same_loss_when_funding_rate_is_positive() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let price: Uint128 = Uint128::from(1_590_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let price = Uint128::from(1_590_000u128);
+    let timestamp = 1_000_000_000;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -238,8 +238,8 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let price: Uint128 = Uint128::from(1_590_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let price = Uint128::from(1_590_000u128);
+    let timestamp = 1_000_000_000;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -300,8 +300,8 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
         .unwrap();
     assert_eq!(alice_balance, Uint128::from(299_250_000u128));
 
-    let price: Uint128 = Uint128::from(1_610_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let price = Uint128::from(1_610_000u128);
+    let timestamp = 1_000_000_000;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -368,8 +368,8 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let price: Uint128 = Uint128::from(21_600_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let price = Uint128::from(21_600_000u128);
+    let timestamp = 1_000_000_000;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -455,8 +455,8 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let price: Uint128 = Uint128::from(21_600_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let price = Uint128::from(21_600_000u128);
+    let timestamp = 1_000_000_000;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -530,8 +530,8 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let price: Uint128 = Uint128::from(21_600_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let price = Uint128::from(21_600_000u128);
+    let timestamp = 1_000_000_000;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -616,8 +616,8 @@ fn test_have_huge_funding_payment_margin_zero_cannot_remove_margin() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let price: Uint128 = Uint128::from(21_600_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let price = Uint128::from(21_600_000u128);
+    let timestamp = 1_000_000_000;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -690,8 +690,8 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let price: Uint128 = Uint128::from(21_600_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let price = Uint128::from(21_600_000u128);
+    let timestamp = 1_000_000_000;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
@@ -780,8 +780,8 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    let price: Uint128 = Uint128::from(1_600_000u128);
-    let timestamp: u64 = 1_000_000_000;
+    let price = Uint128::from(1_600_000u128);
+    let timestamp = 1_000_000_000;
 
     let msg = pricefeed
         .append_price("ETH".to_string(), price, timestamp)
