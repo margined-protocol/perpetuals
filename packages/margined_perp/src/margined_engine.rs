@@ -56,10 +56,12 @@ pub enum ExecuteMsg {
     },
     ClosePosition {
         vamm: String,
+        position_id: u64,
         quote_asset_limit: Uint128,
     },
     Liquidate {
         vamm: String,
+        position_id: u64,
         trader: String,
         quote_asset_limit: Uint128,
     },
@@ -68,10 +70,12 @@ pub enum ExecuteMsg {
     },
     DepositMargin {
         vamm: String,
+        position_id: u64,
         amount: Uint128,
     },
     WithdrawMargin {
         vamm: String,
+        position_id: u64,
         amount: Uint128,
     },
     SetPause {
@@ -96,25 +100,26 @@ pub enum QueryMsg {
     #[returns(cw_controllers::HooksResponse)]
     GetWhitelist {},
     #[returns(Position)]
-    Position { vamm: String, trader: String },
+    Position { vamm: String, position_id: u64, trader: String },
     #[returns(Vec<Position>)]
     AllPositions { trader: String },
     #[returns(PositionUnrealizedPnlResponse)]
     UnrealizedPnl {
         vamm: String,
+        position_id: u64,
         trader: String,
         calc_option: PnlCalcOption,
     },
     #[returns(Integer)]
     CumulativePremiumFraction { vamm: String },
     #[returns(Integer)]
-    MarginRatio { vamm: String, trader: String },
+    MarginRatio { vamm: String, position_id: u64, trader: String },
     #[returns(Integer)]
-    FreeCollateral { vamm: String, trader: String },
+    FreeCollateral { vamm: String, position_id: u64, trader: String },
     #[returns(Uint128)]
-    BalanceWithFundingPayment { trader: String },
+    BalanceWithFundingPayment { trader: String, position_id: u64},
     #[returns(Position)]
-    PositionWithFundingPayment { vamm: String, trader: String },
+    PositionWithFundingPayment { vamm: String, position_id: u64, trader: String },
 }
 
 #[cw_serde]
@@ -143,6 +148,7 @@ pub struct PauserResponse {
 
 #[cw_serde]
 pub struct Position {
+    pub position_id: u64,
     pub vamm: Addr,
     pub trader: Addr,
     pub direction: Direction,
@@ -156,6 +162,7 @@ pub struct Position {
 impl Default for Position {
     fn default() -> Position {
         Position {
+            position_id: 0u64,
             vamm: Addr::unchecked(""),
             trader: Addr::unchecked(""),
             direction: Direction::AddToAmm,

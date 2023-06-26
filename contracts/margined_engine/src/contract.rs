@@ -10,6 +10,7 @@ use margined_common::validate::{
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 use crate::error::ContractError;
+use crate::state::init_last_position_id;
 use crate::{
     handle::{
         close_position, deposit_margin, liquidate, open_position, pay_funding, update_config,
@@ -100,6 +101,9 @@ pub fn instantiate(
         liquidation_fee: msg.liquidation_fee,
     };
 
+    // Initialize last position id
+    init_last_position_id(deps.storage)?;
+
     store_config(deps.storage, &config)?;
 
     // store default state
@@ -160,17 +164,19 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         ),
         ExecuteMsg::ClosePosition {
             vamm,
+            position_id,
             quote_asset_limit,
-        } => close_position(deps, env, info, vamm, quote_asset_limit),
+        } => close_position(deps, env, info, vamm, position_id, quote_asset_limit),
         ExecuteMsg::Liquidate {
             vamm,
             trader,
+            position_id,
             quote_asset_limit,
-        } => liquidate(deps, env, info, vamm, trader, quote_asset_limit),
+        } => liquidate(deps, env, info, vamm, position_id, trader, quote_asset_limit),
         ExecuteMsg::PayFunding { vamm } => pay_funding(deps, env, info, vamm),
-        ExecuteMsg::DepositMargin { vamm, amount } => deposit_margin(deps, env, info, vamm, amount),
-        ExecuteMsg::WithdrawMargin { vamm, amount } => {
-            withdraw_margin(deps, env, info, vamm, amount)
+        ExecuteMsg::DepositMargin { vamm, position_id, amount } => deposit_margin(deps, env, info, vamm, position_id, amount),
+        ExecuteMsg::WithdrawMargin { vamm, position_id, amount } => {
+            withdraw_margin(deps, env, info, vamm, position_id, amount)
         }
         ExecuteMsg::SetPause { pause } => set_pause(deps, env, info, pause),
     }
@@ -185,31 +191,33 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::IsWhitelisted { address } => to_binary(&WHITELIST.query_hook(deps, address)?),
         QueryMsg::GetWhitelist {} => to_binary(&WHITELIST.query_hooks(deps)?),
         QueryMsg::AllPositions { trader } => to_binary(&query_all_positions(deps, trader)?),
-        QueryMsg::Position { vamm, trader } => to_binary(&query_position(deps, vamm, trader)?),
-        QueryMsg::MarginRatio { vamm, trader } => {
-            to_binary(&query_margin_ratio(deps, vamm, trader)?)
+        QueryMsg::Position { vamm, position_id, trader } => to_binary(&query_position(deps, vamm, position_id, trader)?),
+        QueryMsg::MarginRatio { vamm, position_id, trader } => {
+            to_binary(&query_margin_ratio(deps, vamm, position_id, trader)?)
         }
         QueryMsg::CumulativePremiumFraction { vamm } => {
             to_binary(&query_cumulative_premium_fraction(deps, vamm)?)
         }
         QueryMsg::UnrealizedPnl {
             vamm,
+            position_id,
             trader,
             calc_option,
         } => to_binary(&query_position_notional_unrealized_pnl(
             deps,
             vamm,
+            position_id,
             trader,
             calc_option,
         )?),
-        QueryMsg::FreeCollateral { vamm, trader } => {
-            to_binary(&query_free_collateral(deps, vamm, trader)?)
+        QueryMsg::FreeCollateral { vamm, position_id, trader } => {
+            to_binary(&query_free_collateral(deps, vamm, position_id, trader)?)
         }
-        QueryMsg::BalanceWithFundingPayment { trader } => {
-            to_binary(&query_trader_balance_with_funding_payment(deps, trader)?)
+        QueryMsg::BalanceWithFundingPayment { trader, position_id} => {
+            to_binary(&query_trader_balance_with_funding_payment(deps, position_id, trader)?)
         }
-        QueryMsg::PositionWithFundingPayment { vamm, trader } => to_binary(
-            &query_trader_position_with_funding_payment(deps, vamm, trader)?,
+        QueryMsg::PositionWithFundingPayment { vamm, position_id, trader } => to_binary(
+            &query_trader_position_with_funding_payment(deps, vamm, position_id, trader)?,
         ),
     }
 }

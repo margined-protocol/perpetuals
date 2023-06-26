@@ -151,9 +151,10 @@ impl EngineController {
         wasm_execute(&self.0, &msg, funds)
     }
 
-    pub fn close_position(&self, vamm: String, quote_asset_limit: Uint128) -> StdResult<CosmosMsg> {
+    pub fn close_position(&self, vamm: String, position_id: u64, quote_asset_limit: Uint128) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::ClosePosition {
             vamm,
+            position_id,
             quote_asset_limit,
         };
         wasm_execute(&self.0, &msg, vec![])
@@ -162,11 +163,13 @@ impl EngineController {
     pub fn liquidate(
         &self,
         vamm: String,
+        position_id: u64,
         trader: String,
         quote_asset_limit: Uint128,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::Liquidate {
             vamm,
+            position_id,
             trader,
             quote_asset_limit,
         };
@@ -181,15 +184,21 @@ impl EngineController {
     pub fn deposit_margin(
         &self,
         vamm: String,
+        position_id: u64,
         amount: Uint128,
         funds: Vec<Coin>,
     ) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::DepositMargin { vamm, amount };
+        let msg = ExecuteMsg::DepositMargin { vamm, position_id, amount };
         wasm_execute(&self.0, &msg, funds)
     }
 
-    pub fn withdraw_margin(&self, vamm: String, amount: Uint128) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::WithdrawMargin { vamm, amount };
+    pub fn withdraw_margin(
+        &self,
+        vamm: String,
+        position_id: u64,
+        amount: Uint128
+    ) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::WithdrawMargin { vamm, position_id, amount };
         wasm_execute(&self.0, &msg, vec![])
     }
 
@@ -222,9 +231,10 @@ impl EngineController {
         &self,
         querier: &QuerierWrapper,
         vamm: String,
+        position_id: u64,
         trader: String,
     ) -> StdResult<Position> {
-        let msg = QueryMsg::Position { vamm, trader };
+        let msg = QueryMsg::Position { vamm, position_id, trader };
 
         querier.query_wasm_smart(&self.0, &msg)
     }
@@ -261,11 +271,13 @@ impl EngineController {
         &self,
         querier: &QuerierWrapper,
         vamm: String,
+        position_id: u64,
         trader: String,
         calc_option: PnlCalcOption,
     ) -> StdResult<PositionUnrealizedPnlResponse> {
         let msg = QueryMsg::UnrealizedPnl {
             vamm,
+            position_id,
             trader,
             calc_option,
         };
@@ -278,9 +290,10 @@ impl EngineController {
         &self,
         querier: &QuerierWrapper,
         vamm: String,
+        position_id: u64,
         trader: String,
     ) -> StdResult<Integer> {
-        let msg = QueryMsg::FreeCollateral { vamm, trader };
+        let msg = QueryMsg::FreeCollateral { vamm, position_id, trader };
 
         querier.query_wasm_smart(&self.0, &msg)
     }
@@ -290,9 +303,10 @@ impl EngineController {
         &self,
         querier: &QuerierWrapper,
         vamm: String,
+        position_id: u64,
         trader: String,
     ) -> StdResult<Integer> {
-        let msg = QueryMsg::MarginRatio { vamm, trader };
+        let msg = QueryMsg::MarginRatio { vamm, position_id, trader };
 
         querier.query_wasm_smart(&self.0, &msg)
     }
@@ -302,8 +316,9 @@ impl EngineController {
         &self,
         querier: &QuerierWrapper,
         trader: String,
+        position_id: u64
     ) -> StdResult<Uint128> {
-        let msg = QueryMsg::BalanceWithFundingPayment { trader };
+        let msg = QueryMsg::BalanceWithFundingPayment { trader, position_id };
 
         querier.query_wasm_smart(&self.0, &msg)
     }
@@ -313,9 +328,10 @@ impl EngineController {
         &self,
         querier: &QuerierWrapper,
         vamm: String,
+        position_id: u64,
         trader: String,
     ) -> StdResult<Position> {
-        let msg = QueryMsg::PositionWithFundingPayment { vamm, trader };
+        let msg = QueryMsg::PositionWithFundingPayment { vamm, position_id, trader };
 
         querier.query_wasm_smart(&self.0, &msg)
     }

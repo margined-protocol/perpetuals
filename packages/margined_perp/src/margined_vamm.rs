@@ -12,6 +12,15 @@ pub enum Direction {
     RemoveFromAmm,
 }
 
+impl Direction {
+    pub fn as_bytes(&self) -> &[u8] {
+        match self {
+            Direction::AddToAmm => &[0u8],
+            Direction::RemoveFromAmm => &[1u8],
+        }
+    }
+}
+
 #[cw_serde]
 pub struct MigrateMsg {}
 

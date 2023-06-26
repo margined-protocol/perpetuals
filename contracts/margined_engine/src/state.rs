@@ -1,17 +1,29 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{from_slice, to_vec, Addr, StdError, StdResult, Storage, Uint128};
+use cosmwasm_std::{Order as OrderBy, from_slice, to_vec, Addr, StdError, StdResult, Storage, Uint128};
+use cosmwasm_storage::{singleton, singleton_read, Bucket, ReadonlyBucket};
 use std::cmp::Ordering;
+use cosmwasm_schema::serde::{de::DeserializeOwned, Serialize};
 
 use margined_common::{asset::Asset, integer::Integer};
 use margined_perp::margined_engine::{ConfigResponse, Position, Side};
 
+use crate::utils::calc_range_start;
+
+// settings for pagination
+pub const MAX_LIMIT: u32 = 100;
+pub const DEFAULT_LIMIT: u32 = 10;
+
 pub static KEY_CONFIG: &[u8] = b"config";
-pub static KEY_POSITION: &[u8] = b"position";
 pub static KEY_STATE: &[u8] = b"state";
 pub static KEY_SENT_FUNDS: &[u8] = b"sent-funds";
 pub static KEY_TMP_SWAP: &[u8] = b"tmp-swap";
 pub static KEY_TMP_LIQUIDATOR: &[u8] = b"tmp-liquidator";
 pub static KEY_VAMM_MAP: &[u8] = b"vamm-map";
+pub static KEY_LAST_POSITION_ID: &[u8] = b"last_order_id";
+
+static PREFIX_POSITION: &[u8] = b"position"; // prefix position
+pub static PREFIX_POSITION_BY_DIRECTION: &[u8] = b"position_by_direction"; // position from the direction
+pub static PREFIX_TICK: &[u8] = b"tick"; // this is tick with value is the total orders
 
 pub type Config = ConfigResponse;
 
@@ -33,6 +45,18 @@ pub struct State {
     pub pause: bool,
 }
 
+pub fn init_last_position_id(storage: &mut dyn Storage) -> StdResult<()> {
+    singleton(storage, KEY_LAST_POSITION_ID).save(&0u64)
+}
+
+pub fn increase_last_position_id(storage: &mut dyn Storage) -> StdResult<u64> {
+    singleton(storage, KEY_LAST_POSITION_ID).update(|v| Ok(v + 1))
+}
+
+pub fn read_last_position_id(storage: &dyn Storage) -> StdResult<u64> {
+    singleton_read(storage, KEY_LAST_POSITION_ID).load()
+}
+
 pub fn store_state(storage: &mut dyn Storage, state: &State) -> StdResult<()> {
     Ok(storage.set(KEY_STATE, &to_vec(state)?))
 }
@@ -44,22 +68,111 @@ pub fn read_state(storage: &dyn Storage) -> StdResult<State> {
     }
 }
 
-pub fn store_position(storage: &mut dyn Storage, key: &[u8], position: &Position) -> StdResult<()> {
-    // hash the vAMM and trader together to get a unique position key
-    Ok(storage.set(&[KEY_POSITION, key].concat(), &to_vec(position)?))
-}
+pub fn store_position(
+    storage: &mut dyn Storage,
+    key: &[u8],
+    postion: &Position,
+    inserted: bool,
+) -> StdResult<u64> {
+    let position_id_key = &postion.position_id.to_be_bytes();
+    Bucket::multilevel(storage, &[PREFIX_POSITION, key]).save(position_id_key, postion)?;
 
-pub fn remove_position(storage: &mut dyn Storage, key: &[u8]) {
-    // hash the vAMM and trader together to get a unique position key
-    storage.remove(&[KEY_POSITION, key].concat())
-}
+    let mut total_tick_orders = 0;
 
-pub fn read_position(storage: &dyn Storage, key: &[u8]) -> StdResult<Position> {
-    // hash the vAMM and trader together to get a unique position key
-    match storage.get(&[KEY_POSITION, key].concat()) {
-        Some(data) => from_slice(&data),
-        None => Ok(Position::default()),
+    if inserted {
+        total_tick_orders += 1;
     }
+
+    Bucket::multilevel(
+        storage,
+        &[
+            PREFIX_POSITION_BY_DIRECTION,
+            key,
+            &postion.direction.as_bytes(),
+        ],
+    )
+    .save(position_id_key, &postion.direction)?;
+
+    Ok(total_tick_orders)
+}
+
+pub fn remove_position(storage: &mut dyn Storage, key: &[u8], position: &Position) -> StdResult<u64> {
+    let position_id_key = &position.position_id.to_be_bytes();
+
+    Bucket::<Position>::multilevel(storage, &[PREFIX_POSITION, key]).remove(position_id_key);
+
+    // not found means total is 0
+    let tick_namespaces = &[PREFIX_TICK, key, position.direction.as_bytes()];
+    let mut total_tick_orders  = 0;
+
+    Bucket::<bool>::multilevel(
+        storage,
+        &[
+            PREFIX_POSITION_BY_DIRECTION,
+            key,
+            &position.direction.as_bytes(),
+        ],
+    )
+    .remove(position_id_key);
+
+    // return total orders belong to the tick
+    Ok(total_tick_orders)
+}
+
+pub fn read_position(storage: &dyn Storage, key: &[u8], order_id: u64) -> StdResult<Position> {
+    ReadonlyBucket::multilevel(storage, &[PREFIX_POSITION, key]).load(&order_id.to_be_bytes())
+}
+
+/// read_positions_with_indexer: namespace is PREFIX + PAIR_KEY + INDEXER
+pub fn read_positions_with_indexer<T: Serialize + DeserializeOwned>(
+    storage: &dyn Storage,
+    namespaces: &[&[u8]],
+    filter: Box<dyn Fn(&T) -> bool>,
+    start_after: Option<u64>,
+    limit: Option<u32>,
+    order_by: Option<OrderBy>,
+) -> StdResult<Vec<Position>> {
+    let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
+    let start_after = start_after.map(|id| id.to_be_bytes().to_vec());
+    let (start, end, order_by) = match order_by {
+        Some(OrderBy::Ascending) => (calc_range_start(start_after), None, OrderBy::Ascending),
+        _ => (None, start_after, OrderBy::Descending),
+    };
+
+    // just get 1 byte of value is ok
+    let position_indexer: ReadonlyBucket<T> = ReadonlyBucket::multilevel(storage, namespaces);
+    let order_bucket = ReadonlyBucket::multilevel(storage, &[PREFIX_POSITION, namespaces[1]]);
+
+    position_indexer
+        .range(start.as_deref(), end.as_deref(), order_by)
+        .filter(|item| item.as_ref().map_or(false, |item| filter(&item.1)))
+        .take(limit)
+        .map(|item| order_bucket.load(&item?.0))
+        .collect()
+}
+
+pub fn read_positions(
+    storage: &dyn Storage,
+    key: &[u8],
+    start_after: Option<u64>,
+    limit: Option<u32>,
+    order_by: Option<OrderBy>,
+) -> StdResult<Vec<Position>> {
+    let position_bucket: ReadonlyBucket<Position> =
+        ReadonlyBucket::multilevel(storage, &[PREFIX_POSITION, key]);
+
+    let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
+    let start_after = start_after.map(|id| id.to_be_bytes().to_vec());
+    let (start, end, order_by) = match order_by {
+        Some(OrderBy::Ascending) => (calc_range_start(start_after), None, OrderBy::Ascending),
+        _ => (None, start_after, OrderBy::Descending),
+    };
+
+    position_bucket
+        .range(start.as_deref(), end.as_deref(), order_by)
+        .take(limit)
+        .map(|item| item.map(|item| item.1))
+        .collect()
 }
 
 /// Used to monitor that transferred native tokens are sufficient when opening a
@@ -99,6 +212,7 @@ pub fn read_sent_funds(storage: &dyn Storage) -> StdResult<SentFunds> {
 
 #[cw_serde]
 pub struct TmpSwapInfo {
+    pub position_id: u64,
     pub vamm: Addr,
     pub trader: Addr,
     pub side: Side,                 // buy or sell
@@ -170,7 +284,6 @@ pub fn append_cumulative_premium_fraction(
     premium_fraction: Integer,
 ) -> StdResult<()> {
     let mut vamm_map = read_vamm_map(storage, &vamm)?;
-
     // we push the first premium fraction to an empty array
     // else we add them together prior to pushing
     match vamm_map.cumulative_premium_fractions.len() {
