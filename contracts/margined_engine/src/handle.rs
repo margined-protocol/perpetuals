@@ -185,7 +185,7 @@ pub fn open_position(
             position_id,
             vamm: vamm.clone(),
             trader: trader.clone(),
-            side,
+            side: side.clone(),
             margin_amount,
             leverage,
             open_notional,
@@ -206,7 +206,8 @@ pub fn open_position(
 
     Ok(Response::new().add_submessage(msg).add_attributes(vec![
         ("action", "open_position"),
-        // ("position_id", &position_id.to_string()),
+        ("position_id", &position_id.to_string()),
+        ("position_side",  &format!("{:?}", side)),
         ("vamm", vamm.as_ref()),
         ("trader", trader.as_ref()),
         ("margin_amount", &margin_amount.to_string()),
