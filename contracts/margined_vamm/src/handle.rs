@@ -135,6 +135,7 @@ pub fn swap_input(
     env: Env,
     info: MessageInfo,
     direction: Direction,
+    position_id: u64,
     quote_asset_amount: Uint128,
     base_asset_limit: Uint128,
     can_go_over_fluctuation: bool,
@@ -187,6 +188,7 @@ pub fn swap_input(
         ("action", "swap"),
         ("type", "input"),
         ("direction", &direction.to_string()),
+        ("position_id", &position_id.to_string()),
         ("quote_asset_amount", &quote_asset_amount.to_string()),
         ("base_asset_amount", &base_asset_amount.to_string()),
     ]))
@@ -198,6 +200,7 @@ pub fn swap_output(
     env: Env,
     info: MessageInfo,
     direction: Direction,
+    position_id: u64,
     base_asset_amount: Uint128,
     quote_asset_limit: Uint128,
 ) -> StdResult<Response> {
@@ -258,6 +261,7 @@ pub fn swap_output(
         ("action", "swap"),
         ("type", "output"),
         ("direction", &direction.to_string()),
+        ("position_id", &position_id.to_string()),
         ("quote_asset_amount", &quote_asset_amount.to_string()),
         ("base_asset_amount", &base_asset_amount.to_string()),
     ]))

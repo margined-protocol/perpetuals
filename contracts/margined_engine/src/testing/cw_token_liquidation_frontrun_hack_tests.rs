@@ -179,6 +179,7 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            2,
             env.alice.to_string(),
             to_decimals(0u64),
         )
@@ -361,6 +362,7 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            2,
             env.alice.to_string(),
             to_decimals(0u64),
         )
@@ -369,7 +371,7 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
 
     let msg = env
         .engine
-        .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(env.vamm.addr().to_string(), 4, to_decimals(0u64))
         .unwrap();
     let err = env.router.execute(env.carol.clone(), msg).unwrap_err();
     assert_eq!(
@@ -508,7 +510,7 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
 
     let msg = env
         .engine
-        .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(env.vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
@@ -541,6 +543,7 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            2,
             env.alice.to_string(),
             to_decimals(0u64),
         )
@@ -549,7 +552,7 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
 
     let msg = env
         .engine
-        .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(env.vamm.addr().to_string(), 3, to_decimals(0u64))
         .unwrap();
     let err = env.router.execute(env.carol.clone(), msg).unwrap_err();
     assert_eq!(
@@ -728,6 +731,7 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            2,
             env.alice.to_string(),
             to_decimals(0u64),
         )
@@ -736,7 +740,7 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
 
     let msg = env
         .engine
-        .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(env.vamm.addr().to_string(), 4, to_decimals(0u64))
         .unwrap();
     let err = env.router.execute(env.carol.clone(), msg).unwrap_err();
     assert_eq!(
@@ -875,7 +879,7 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
 
     let msg = env
         .engine
-        .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(env.vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
@@ -908,6 +912,7 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            2,
             env.alice.to_string(),
             to_decimals(0u64),
         )
@@ -916,7 +921,7 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
 
     let msg = env
         .engine
-        .close_position(env.vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(env.vamm.addr().to_string(), 3, to_decimals(0u64))
         .unwrap();
     let err = env.router.execute(env.carol.clone(), msg).unwrap_err();
     assert_eq!(

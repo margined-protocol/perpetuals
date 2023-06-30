@@ -119,8 +119,8 @@ pub fn remove_position(storage: &mut dyn Storage, key: &[u8], position: &Positio
     Ok(total_tick_orders)
 }
 
-pub fn read_position(storage: &dyn Storage, key: &[u8], order_id: u64) -> StdResult<Position> {
-    ReadonlyBucket::multilevel(storage, &[PREFIX_POSITION, key]).load(&order_id.to_be_bytes())
+pub fn read_position(storage: &dyn Storage, key: &[u8], position_id: u64) -> StdResult<Position> {
+    ReadonlyBucket::multilevel(storage, &[PREFIX_POSITION, key]).load(&position_id.to_be_bytes())
 }
 
 /// read_positions_with_indexer: namespace is PREFIX + PAIR_KEY + INDEXER
@@ -226,18 +226,16 @@ pub struct TmpSwapInfo {
 }
 
 pub fn store_tmp_swap(storage: &mut dyn Storage, swap: &TmpSwapInfo) -> StdResult<()> {
-    Ok(storage.set(KEY_TMP_SWAP, &to_vec(swap)?))
+    let position_id_key = &swap.position_id.to_be_bytes();
+    Ok(Bucket::new(storage, KEY_TMP_SWAP).save(position_id_key, swap)?)
 }
 
-pub fn remove_tmp_swap(storage: &mut dyn Storage) {
-    storage.remove(KEY_TMP_SWAP)
+pub fn remove_tmp_swap<'a>(storage: &'a mut dyn Storage, position_id_key: &[u8]) {
+    Bucket::<'a, TmpSwapInfo>::new(storage, KEY_TMP_SWAP).remove(position_id_key)
 }
 
-pub fn read_tmp_swap(storage: &dyn Storage) -> StdResult<TmpSwapInfo> {
-    match storage.get(KEY_TMP_SWAP) {
-        Some(data) => from_slice(&data),
-        None => Err(StdError::generic_err("Temporary Swap not found")),
-    }
+pub fn read_tmp_swap(storage: &dyn Storage, position_id_key: &[u8]) -> StdResult<TmpSwapInfo> {
+    ReadonlyBucket::new(storage, KEY_TMP_SWAP).load(position_id_key)
 }
 
 pub fn store_tmp_liquidator(storage: &mut dyn Storage, liquidator: &Addr) -> StdResult<()> {

@@ -85,7 +85,7 @@ fn test_margin_engine_should_have_enough_balance_after_close_position() {
     // need to return Bob's margin 20 and PnL 21.951 = 41.951
     // clearingHouse balance: 45 - 41.951 = 3.048...
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
@@ -175,7 +175,7 @@ fn test_margin_engine_does_not_have_enough_balance_after_close_position() {
     // need to return Bob's margin 20 and PnL 21.951 = 41.951
     // clearingHouse balance: 40 - 41.951 = -1.95...
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 

@@ -143,12 +143,14 @@ impl VammController {
     pub fn swap_input(
         &self,
         direction: Direction,
+        position_id: u64,
         quote_asset_amount: Uint128,
         base_asset_limit: Uint128,
         can_go_over_fluctuation: bool,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::SwapInput {
             direction,
+            position_id,
             quote_asset_amount,
             base_asset_limit,
             can_go_over_fluctuation,
@@ -159,11 +161,13 @@ impl VammController {
     pub fn swap_output(
         &self,
         direction: Direction,
+        position_id: u64,
         base_asset_amount: Uint128,
         quote_asset_limit: Uint128,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::SwapOutput {
             direction,
+            position_id,
             base_asset_amount,
             quote_asset_limit,
         };

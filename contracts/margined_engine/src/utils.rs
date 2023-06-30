@@ -169,7 +169,7 @@ pub fn get_margin_ratio_calc_option(
     calc_option: PnlCalcOption,
 ) -> StdResult<Integer> {
     let config = read_config(deps.storage)?;
-    let position_key = keccak_256(&[vamm.as_bytes(),  &position_id.to_be_bytes(), trader.as_bytes()].concat());
+    let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
     // retrieve the latest position
     let position = read_position(deps.storage, &position_key, position_id)?;
 
@@ -442,7 +442,7 @@ pub fn require_non_zero_input(input: Uint128) -> StdResult<Response> {
     Ok(Response::new())
 }
 
-pub fn parse_swap(response: &SubMsgResponse) -> StdResult<(Uint128, Uint128)> {
+pub fn parse_swap(response: &SubMsgResponse) -> StdResult<(Uint128, Uint128, u64)> {
     // Find swap inputs and output events
     let wasm = read_response("wasm", response)?;
     let swap = read_event("type", wasm)?;
@@ -451,19 +451,21 @@ pub fn parse_swap(response: &SubMsgResponse) -> StdResult<(Uint128, Uint128)> {
         "input" => {
             let input_str = read_event("quote_asset_amount", wasm)?;
             let output_str = read_event("base_asset_amount", wasm)?;
-
+            let position_id = read_event("position_id", wasm)?;
             Ok((
                 Uint128::from_str(input_str)?,
                 Uint128::from_str(output_str)?,
+                u64::from_str(position_id).unwrap(),
             ))
         }
         "output" => {
             let input_str = read_event("base_asset_amount", wasm)?;
             let output_str = read_event("quote_asset_amount", wasm)?;
-
+            let position_id = read_event("position_id", wasm)?;
             Ok((
                 Uint128::from_str(input_str)?,
                 Uint128::from_str(output_str)?,
+                u64::from_str(position_id).unwrap(),
             ))
         }
         _ => {

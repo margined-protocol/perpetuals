@@ -9,6 +9,15 @@ pub enum Side {
     Sell,
 }
 
+impl Side {
+    pub fn as_bytes(&self) -> &[u8] {
+        match self {
+            Side::Buy => &[0u8],
+            Side::Sell => &[1u8],
+        }
+    }
+}
+
 #[cw_serde]
 pub enum PnlCalcOption {
     SpotPrice,

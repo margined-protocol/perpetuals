@@ -423,6 +423,7 @@ fn test_swap_input_zero_amount() {
         quote_asset_amount: Uint128::zero(),
         base_asset_limit: Uint128::zero(),
         can_go_over_fluctuation: false,
+        position_id: 0u64
     };
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
@@ -475,6 +476,7 @@ fn test_swap_output_zero_amount() {
     // Swap in USD
     let swap_msg = ExecuteMsg::SwapOutput {
         direction: Direction::RemoveFromAmm,
+        position_id: 0u64,
         base_asset_amount: Uint128::zero(),
         quote_asset_limit: Uint128::zero(),
     };
@@ -532,6 +534,7 @@ fn test_swap_input_long() {
         quote_asset_amount: to_decimals(600),
         base_asset_limit: Uint128::zero(),
         can_go_over_fluctuation: false,
+        position_id: 0u64
     };
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
@@ -587,6 +590,7 @@ fn test_swap_input_short() {
         quote_asset_amount: to_decimals(600),
         base_asset_limit: Uint128::zero(),
         can_go_over_fluctuation: false,
+        position_id: 0u64
     };
 
     let info = mock_info("addr0000", &[]);
@@ -641,6 +645,7 @@ fn test_swap_output_short() {
         direction: Direction::AddToAmm,
         base_asset_amount: to_decimals(150),
         quote_asset_limit: Uint128::zero(),
+        position_id: 0u64
     };
 
     let info = mock_info("addr0000", &[]);
@@ -695,6 +700,7 @@ fn test_swap_output_long() {
         direction: Direction::RemoveFromAmm,
         base_asset_amount: to_decimals(50),
         quote_asset_limit: Uint128::zero(),
+        position_id: 0u64
     };
 
     let info = mock_info("addr0000", &[]);
@@ -750,6 +756,7 @@ fn test_swap_input_short_long() {
         quote_asset_amount: to_decimals(480),
         base_asset_limit: Uint128::zero(),
         can_go_over_fluctuation: false,
+        position_id: 0u64
     };
 
     let info = mock_info("addr0000", &[]);
@@ -775,6 +782,7 @@ fn test_swap_input_short_long() {
         quote_asset_amount: to_decimals(960),
         base_asset_limit: Uint128::zero(),
         can_go_over_fluctuation: false,
+        position_id: 0u64
     };
 
     let info = mock_info("addr0000", &[]);
@@ -829,6 +837,7 @@ fn test_swap_input_short_long_long() {
         quote_asset_amount: to_decimals(200),
         base_asset_limit: Uint128::zero(),
         can_go_over_fluctuation: false,
+        position_id: 0u64
     };
 
     let info = mock_info("addr0000", &[]);
@@ -853,6 +862,7 @@ fn test_swap_input_short_long_long() {
         quote_asset_amount: to_decimals(100),
         base_asset_limit: Uint128::zero(),
         can_go_over_fluctuation: false,
+        position_id: 0u64
     };
 
     let info = mock_info("addr0000", &[]);
@@ -877,6 +887,7 @@ fn test_swap_input_short_long_long() {
         quote_asset_amount: to_decimals(200),
         base_asset_limit: Uint128::zero(),
         can_go_over_fluctuation: false,
+        position_id: 0u64
     };
 
     let info = mock_info("addr0000", &[]);
@@ -932,6 +943,7 @@ fn test_swap_input_short_long_short() {
         quote_asset_amount: to_decimals(200),
         base_asset_limit: Uint128::zero(),
         can_go_over_fluctuation: false,
+        position_id: 0u64
     };
 
     let info = mock_info("addr0000", &[]);
@@ -956,6 +968,7 @@ fn test_swap_input_short_long_short() {
         quote_asset_amount: to_decimals(450),
         base_asset_limit: Uint128::zero(),
         can_go_over_fluctuation: false,
+        position_id: 0u64
     };
 
     let info = mock_info("addr0000", &[]);
@@ -980,6 +993,7 @@ fn test_swap_input_short_long_short() {
         quote_asset_amount: to_decimals(250),
         base_asset_limit: Uint128::zero(),
         can_go_over_fluctuation: false,
+        position_id: 0u64
     };
 
     let info = mock_info("addr0000", &[]);
@@ -1045,6 +1059,7 @@ fn test_swap_output_short_and_indivisable() {
         direction: Direction::AddToAmm,
         base_asset_amount: to_decimals(5),
         quote_asset_limit: Uint128::zero(),
+        position_id: 0u64
     };
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
@@ -1105,6 +1120,7 @@ fn test_swap_output_long_and_indivisable() {
         direction: Direction::RemoveFromAmm,
         base_asset_amount: to_decimals(5),
         quote_asset_limit: Uint128::zero(),
+        position_id: 0u64
     };
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
@@ -1166,6 +1182,7 @@ fn test_swap_output_long_short_same_size_should_get_diff_base_asset_amount() {
         direction: Direction::RemoveFromAmm,
         base_asset_amount: to_decimals(10),
         quote_asset_limit: Uint128::zero(),
+        position_id: 0u64
     };
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
@@ -1230,6 +1247,7 @@ fn test_force_error_swapinput_long_but_less_than_min_base_amount() {
         quote_asset_amount: to_decimals(600),
         base_asset_limit: Uint128::from(37_500_000_000u128),
         can_go_over_fluctuation: false,
+        position_id: 0u64
     };
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap_err();
@@ -1276,6 +1294,7 @@ fn test_force_error_swapinput_short_but_more_than_min_base_amount() {
         quote_asset_amount: to_decimals(600),
         base_asset_limit: to_decimals(150),
         can_go_over_fluctuation: false,
+        position_id: 0u64
     };
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap_err();
@@ -1319,6 +1338,7 @@ fn test_swapoutput_short_slippage_limit() {
         direction: Direction::AddToAmm,
         base_asset_amount: to_decimals(20),
         quote_asset_limit: to_decimals(100),
+        position_id: 0u64
     };
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
@@ -1363,6 +1383,7 @@ fn test_swapoutput_short_at_slippage_limit() {
         direction: Direction::AddToAmm,
         base_asset_amount: to_decimals(20),
         quote_asset_limit: to_decimals(249),
+        position_id: 0u64
     };
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
@@ -1407,6 +1428,7 @@ fn test_swapoutput_short_force_error_min_quote_251() {
         direction: Direction::AddToAmm,
         base_asset_amount: to_decimals(20),
         quote_asset_limit: to_decimals(400),
+        position_id: 0u64
     };
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap_err();
@@ -1450,6 +1472,7 @@ fn test_swapoutput_short_force_error_min_quote_400() {
         direction: Direction::AddToAmm,
         base_asset_amount: to_decimals(20),
         quote_asset_limit: to_decimals(400),
+        position_id: 0u64
     };
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap_err();
@@ -1493,6 +1516,7 @@ fn test_swapoutput_long_slippage_limit() {
         direction: Direction::RemoveFromAmm,
         base_asset_amount: to_decimals(25),
         quote_asset_limit: to_decimals(400),
+        position_id: 0u64
     };
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
@@ -1537,6 +1561,7 @@ fn test_swapoutput_long_at_slippage_limit() {
         direction: Direction::RemoveFromAmm,
         base_asset_amount: to_decimals(25),
         quote_asset_limit: to_decimals(201),
+        position_id: 0u64
     };
     let info = mock_info("addr0000", &[]);
     execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap();
@@ -1581,6 +1606,7 @@ fn test_swapoutput_long_force_error_min_quote_199() {
         direction: Direction::RemoveFromAmm,
         base_asset_amount: to_decimals(25),
         quote_asset_limit: to_decimals(199),
+        position_id: 0u64
     };
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, swap_msg).unwrap_err();
@@ -1624,6 +1650,7 @@ fn test_swapoutput_long_force_error_min_quote_100() {
         direction: Direction::RemoveFromAmm,
         base_asset_amount: to_decimals(25),
         quote_asset_limit: to_decimals(100),
+        position_id: 0u64
     };
 
     let info = mock_info("addr0000", &[]);

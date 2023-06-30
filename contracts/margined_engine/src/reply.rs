@@ -34,11 +34,12 @@ pub fn update_position_reply(
     env: Env,
     input: Uint128,
     output: Uint128,
+    position_id: u64,
     reply_id: u64,
 ) -> StdResult<Response> {
-    let mut swap = read_tmp_swap(deps.storage)?;
-
-    let position_key = keccak_256(&[swap.vamm.as_bytes(), &swap.position_id.to_be_bytes(), swap.trader.as_bytes()].concat());
+    let mut swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
+    println!("update_position_reply - swapinfo: {:?}", swap);
+    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
 
     let mut position = get_position(
         deps.storage,
@@ -49,12 +50,14 @@ pub fn update_position_reply(
         &swap.side,
         env.block.height,
     )?;
+    println!("update_position_reply - position: {:?}", position);
 
     // depending on the direction the output is positive or negative
     let signed_output = match &swap.side {
         Side::Buy => Integer::new_positive(output),
         Side::Sell => Integer::new_negative(output),
     };
+    println!("update_position_reply - signed_output: {:?}", signed_output);
 
     let mut state = read_state(deps.storage)?;
 
@@ -139,7 +142,7 @@ pub fn update_position_reply(
     position.block_number = env.block.height;
 
     let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
-
+    println!("update_position_reply - store position: {:?}", position);
     store_position(deps.storage, &position_key, &position, false)?;
 
     // check the new position doesn't exceed any caps
@@ -218,7 +221,7 @@ pub fn update_position_reply(
 
     store_state(deps.storage, &state)?;
 
-    remove_tmp_swap(deps.storage);
+    remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
     remove_sent_funds(deps.storage);
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
@@ -232,12 +235,13 @@ pub fn update_position_reply(
 pub fn reverse_position_reply(
     deps: DepsMut,
     env: Env,
-    _input: Uint128,
+    input: Uint128,
     output: Uint128,
+    position_id: u64
 ) -> StdResult<Response> {
-    let mut swap = read_tmp_swap(deps.storage)?;
+    let mut swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
 
-    let position_key = keccak_256(&[swap.vamm.as_bytes(), &swap.position_id.to_be_bytes(), swap.trader.as_bytes()].concat());
+    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
 
     let mut position = get_position(
         deps.storage,
@@ -303,7 +307,7 @@ pub fn reverse_position_reply(
         }
 
         remove_sent_funds(deps.storage);
-        remove_tmp_swap(deps.storage);
+        remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
     } else {
         // determine new position
         swap.margin_to_vault = previous_margin.checked_sub(swap.unrealized_pnl)?;
@@ -325,6 +329,7 @@ pub fn reverse_position_reply(
         msgs.push(internal_increase_position(
             swap.vamm.clone(),
             swap.side.clone(),
+            swap.position_id,
             swap.open_notional,
             Uint128::zero(),
         )?);
@@ -348,12 +353,13 @@ pub fn reverse_position_reply(
 pub fn close_position_reply(
     deps: DepsMut,
     env: Env,
-    _input: Uint128,
+    input: Uint128,
     output: Uint128,
+    position_id: u64
 ) -> StdResult<Response> {
-    let swap = read_tmp_swap(deps.storage)?;
+    let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
 
-    let position_key = keccak_256(&[swap.vamm.as_bytes(), &swap.position_id.to_be_bytes(), swap.trader.as_bytes()].concat());
+    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
 
     let position = get_position(
         deps.storage,
@@ -437,7 +443,7 @@ pub fn close_position_reply(
 
     store_state(deps.storage, &state)?;
 
-    remove_tmp_swap(deps.storage);
+    remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "close_position_reply"),
@@ -454,9 +460,10 @@ pub fn partial_close_position_reply(
     env: Env,
     input: Uint128,
     output: Uint128,
+    position_id: u64
 ) -> StdResult<Response> {
-    let swap = read_tmp_swap(deps.storage)?;
-    let position_key = keccak_256(&[swap.vamm.as_bytes(), &swap.position_id.to_be_bytes(), swap.trader.as_bytes()].concat());
+    let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
+    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
     let mut position = get_position(
         deps.storage,
         &position_key,
@@ -518,7 +525,7 @@ pub fn partial_close_position_reply(
     position.block_number = env.block.height;
 
     let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
-    store_position(deps.storage, &position_key, &position, false)?; // &position.position_id.to_be_bytes(),
+    store_position(deps.storage, &position_key, &position, false)?;
     store_state(deps.storage, &state)?;
 
     // to prevent attacker to leverage the bad debt to withdraw extra token from insurance fund
@@ -527,7 +534,7 @@ pub fn partial_close_position_reply(
     }
 
     // remove the tmp position
-    remove_tmp_swap(deps.storage);
+    remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
 
     Ok(Response::new()
         .add_submessages(fees.messages)
@@ -546,11 +553,13 @@ pub fn liquidate_reply(
     env: Env,
     _input: Uint128,
     output: Uint128,
+    position_id: u64
 ) -> StdResult<Response> {
-    let swap = read_tmp_swap(deps.storage)?;
+    let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
+    
     let liquidator = read_tmp_liquidator(deps.storage)?;
 
-    let position_key = keccak_256(&[swap.vamm.as_bytes(), &swap.position_id.to_be_bytes(), swap.trader.as_bytes()].concat());
+    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
     let position = get_position(
         deps.storage,
         &position_key,
@@ -628,7 +637,7 @@ pub fn liquidate_reply(
 
     let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
     remove_position(deps.storage, &position_key, &position);
-    remove_tmp_swap(deps.storage);
+    remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
     remove_tmp_liquidator(deps.storage);
 
     enter_restriction_mode(deps.storage, swap.vamm, env.block.height)?;
@@ -651,12 +660,14 @@ pub fn partial_liquidation_reply(
     env: Env,
     input: Uint128,
     output: Uint128,
+    position_id: u64
 ) -> StdResult<Response> {
-    let swap = read_tmp_swap(deps.storage)?;
-
+    let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
+    println!("partial_liquidation_reply - swapinfo: {:?}", swap);
     let liquidator = read_tmp_liquidator(deps.storage)?;
+    println!("partial_liquidation_reply - liquidator: {:?}", liquidator);
 
-    let position_key = keccak_256(&[swap.vamm.as_bytes(), &swap.position_id.to_be_bytes(), swap.trader.as_bytes()].concat());
+    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
 
     let mut position = get_position(
         deps.storage,
@@ -667,31 +678,40 @@ pub fn partial_liquidation_reply(
         &swap.side,
         env.block.height,
     )?;
+    println!("partial_liquidation_reply - position: {:?}", position);
 
     let config = read_config(deps.storage)?;
 
+    println!("partial_liquidation_reply - swap.unrealized_pnl: {:?}", swap.unrealized_pnl);
+    println!("partial_liquidation_reply - config.partial_liquidation_ratio: {:?}", config.partial_liquidation_ratio);
     // calculate delta from trade and whether it was profitable or a loss
     let realized_pnl = (swap.unrealized_pnl
         * Integer::new_positive(config.partial_liquidation_ratio))
         / Integer::new_positive(config.decimals);
-
+    
+    println!("partial_liquidation_reply - realized_pnl: {:?}", realized_pnl);
     let liquidation_penalty = output
         .checked_mul(config.liquidation_fee)?
         .checked_div(config.decimals)?;
-
+    
+    println!("partial_liquidation_reply - liquidation_penalty: {:?}", liquidation_penalty);
     let liquidation_fee = liquidation_penalty.checked_div(Uint128::from(2u64))?;
+    println!("partial_liquidation_reply - liquidation_fee: {:?}", liquidation_fee);
 
     if position.size < Integer::zero() {
         position.size += Integer::new_positive(input);
     } else {
         position.size += Integer::new_negative(input);
     }
+    println!("partial_liquidation_reply - position.size: {:?}", position.size);
 
     // reduce the traders margin
     position.margin = position
         .margin
         .checked_sub(realized_pnl.value)?
         .checked_sub(liquidation_penalty)?;
+
+    println!("partial_liquidation_reply - position.margin: {:?}", position.margin);
 
     // calculate openNotional (it's different depends on long or short side)
     // long: unrealizedPnl = positionNotional - openNotional => openNotional = positionNotional - unrealizedPnl
@@ -709,6 +729,7 @@ pub fn partial_liquidation_reply(
             .checked_add(position.notional)?
             .checked_sub(swap.open_notional)?,
     };
+    println!("partial_liquidation_reply - position.notional: {:?}", position.notional);
 
     let mut messages: Vec<SubMsg> = vec![];
     let mut state = read_state(deps.storage)?;
@@ -734,11 +755,11 @@ pub fn partial_liquidation_reply(
             Uint128::zero(),
         )?);
     }
-    let position_key = keccak_256(&[position.vamm.as_bytes(),  &position.position_id.to_be_bytes(), position.trader.as_bytes()].concat());
+    let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
     store_position(deps.storage, &position_key, &position, false)?;
     store_state(deps.storage, &state)?;
 
-    remove_tmp_swap(deps.storage);
+    remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
     remove_tmp_liquidator(deps.storage);
 
     enter_restriction_mode(deps.storage, swap.vamm, env.block.height)?;
@@ -766,11 +787,14 @@ pub fn pay_funding_reply(
     append_cumulative_premium_fraction(deps.storage, vamm.clone(), premium_fraction)?;
 
     let vamm_controller = VammController(vamm);
+    println!("pay_funding_reply - vamm_controller: {:?}", vamm_controller);
     let total_position_size = vamm_controller.state(&deps.querier)?.total_position_size;
+    println!("pay_funding_reply - total_position_size: {:?}", total_position_size);
 
     let config = read_config(deps.storage)?;
     let funding_payment =
         total_position_size * premium_fraction / Integer::new_positive(config.decimals);
+    println!("pay_funding_reply - funding_payment: {:?}", funding_payment);
 
     let mut response: Response = Response::new();
 

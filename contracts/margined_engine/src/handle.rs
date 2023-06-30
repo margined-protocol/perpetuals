@@ -72,7 +72,8 @@ pub fn update_config(
     if let Some(initial_margin_ratio) = initial_margin_ratio {
         validate_ratio(initial_margin_ratio, config.decimals)?;
         validate_margin_ratios(initial_margin_ratio, config.maintenance_margin_ratio)?;
-
+        println!("[0] update margined engine - initial_margin_ratio: {}", initial_margin_ratio);
+        println!("[0] update margined engine - maintenance_margin_ratio: {}", config.maintenance_margin_ratio);
         config.initial_margin_ratio = initial_margin_ratio;
     }
 
@@ -80,6 +81,8 @@ pub fn update_config(
     if let Some(maintenance_margin_ratio) = maintenance_margin_ratio {
         validate_ratio(maintenance_margin_ratio, config.decimals)?;
         validate_margin_ratios(config.initial_margin_ratio, maintenance_margin_ratio)?;
+        println!("[1] update margined engine - initial_margin_ratio: {}", config.initial_margin_ratio);
+        println!("[1] update margined engine - maintenance_margin_ratio: {}", maintenance_margin_ratio);
 
         config.maintenance_margin_ratio = maintenance_margin_ratio;
     }
@@ -122,7 +125,7 @@ pub fn open_position(
     let config = read_config(deps.storage)?;
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
     let position_id = increase_last_position_id(deps.storage)?;
-    let position_key = keccak_256(&[vamm.as_bytes(), &position_id.to_be_bytes(), trader.as_bytes()].concat());
+    let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
 
     require_not_restriction_mode(deps.storage, &position_key, &vamm, env.block.height)?;
     require_non_zero_input(margin_amount)?;
@@ -138,6 +141,8 @@ pub fn open_position(
         .checked_mul(config.decimals)?
         .checked_div(leverage)?;
     require_additional_margin(Integer::from(margin_ratio), config.initial_margin_ratio)?;
+    println!("open_position - margin_amount: {}", margin_amount);
+    println!("open_position - margin_ratio: {}", margin_ratio);
     
     // creates a new position
     let position = get_position(
@@ -150,6 +155,7 @@ pub fn open_position(
         env.block.height,
     )?;
 
+    println!("open_position - new position: {:?}", position);
     // if direction and side are same way then increasing else we are reversing
     let is_increase = position.direction == Direction::AddToAmm && side == Side::Buy
         || position.direction == Direction::RemoveFromAmm && side == Side::Sell;
@@ -158,10 +164,11 @@ pub fn open_position(
     let open_notional = margin_amount
         .checked_mul(leverage)?
         .checked_div(config.decimals)?;
-
+    println!("open_position - open_notional: {:?}", open_notional);
+    println!("open_position - is_increase: {:?}", is_increase);
     // check if the position is new or being increased, else position is being reversed
     let msg = if is_increase {
-        internal_increase_position(vamm.clone(), side.clone(), open_notional, base_asset_limit)?
+        internal_increase_position(vamm.clone(), side.clone(), position_id, open_notional, base_asset_limit)?
     } else {
         open_reverse_position(
             &deps,
@@ -178,6 +185,7 @@ pub fn open_position(
         position_notional,
         unrealized_pnl,
     } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)?;
+    println!("open_position - position_notional: {:?}", position_notional);
     
     store_tmp_swap(
         deps.storage,
@@ -193,7 +201,7 @@ pub fn open_position(
             unrealized_pnl,
             margin_to_vault: Integer::zero(),
             fees_paid: false,
-        },
+        }
     )?;
 
     store_sent_funds(
@@ -235,7 +243,7 @@ pub fn close_position(
     // check the position isn't zero
     require_not_paused(state.pause)?;
     require_position_not_zero(position.size.value)?;
-    // let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
+
     require_not_restriction_mode(deps.storage, &position_key, &vamm, env.block.height)?;
 
     // if it is long position, close a position means short it (which means base dir is AddToAmm) and vice versa
@@ -292,12 +300,13 @@ pub fn close_position(
                 unrealized_pnl,
                 margin_to_vault: Integer::zero(),
                 fees_paid: false,
-            },
+            }
         )?;
 
         swap_input(
             &position.vamm,
             &side,
+            position_id,
             partial_close_notional,
             Uint128::zero(),
             true,
@@ -327,14 +336,18 @@ pub fn liquidate(
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = deps.api.addr_validate(&trader)?;
+    println!("liquidate - vamm: {:?}", vamm);
+    println!("liquidate - trader: {:?}", trader);
 
     // store the liquidator
     store_tmp_liquidator(deps.storage, &info.sender)?;
 
     // retrieve the existing margin ratio of the position
     let mut margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), position_id, trader.to_string())?;
+    println!("liquidate - margin_ratio: {:?}", margin_ratio);
 
     let vamm_controller = VammController(vamm.clone());
+    println!("liquidate - vamm_controller: {:?}", vamm_controller);
 
     if vamm_controller.is_over_spread_limit(&deps.querier)? {
         let oracle_margin_ratio = get_margin_ratio_calc_option(
@@ -344,6 +357,7 @@ pub fn liquidate(
             trader.to_string(),
             PnlCalcOption::Oracle,
         )?;
+        println!("liquidate - oracle_margin_ratio: {:?}", oracle_margin_ratio);
 
         if oracle_margin_ratio.checked_sub(margin_ratio)? > Integer::zero() {
             margin_ratio = oracle_margin_ratio
@@ -357,6 +371,7 @@ pub fn liquidate(
     // read the position for the trader from vamm
     let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
     let position = read_position(deps.storage, &position_key, position_id)?;
+    println!("liquidate - position: {:?}", position);
 
     // check the position isn't zero
     require_position_not_zero(position.size.value)?;
@@ -388,7 +403,7 @@ pub fn pay_funding(
     let vamm = deps.api.addr_validate(&vamm)?;
 
     let config = read_config(deps.storage)?;
-
+    println!("pay_funding - config: {:?}", config);
     // check its a valid vamm
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
 
@@ -396,6 +411,7 @@ pub fn pay_funding(
         wasm_execute(vamm, &ExecuteMsg::SettleFunding {}, vec![])?,
         PAY_FUNDING_REPLY_ID,
     );
+    println!("pay_funding - funding_msg: {:?}", funding_msg);
 
     Ok(Response::new()
         .add_submessage(funding_msg)
@@ -525,12 +541,14 @@ pub fn withdraw_margin(
 pub fn internal_increase_position(
     vamm: Addr,
     side: Side,
+    position_id: u64,
     open_notional: Uint128,
     base_asset_limit: Uint128,
 ) -> StdResult<SubMsg> {
     swap_input(
         &vamm,
         &side,
+        position_id,
         open_notional,
         base_asset_limit,
         false,
@@ -559,12 +577,13 @@ pub fn internal_close_position(
             unrealized_pnl: Integer::zero(),
             margin_to_vault: Integer::zero(),
             fees_paid: false,
-        },
+        }
     )?;
 
     swap_output(
         &position.vamm,
         &side,
+        position.position_id,
         position.size.value,
         quote_asset_limit,
         id,
@@ -596,6 +615,7 @@ fn open_reverse_position(
         swap_input(
             &position.vamm,
             &side,
+            position.position_id,
             notional_amount,
             base_asset_limit,
             can_go_over_fluctuation,
@@ -611,6 +631,7 @@ fn open_reverse_position(
         swap_output(
             &position.vamm,
             &direction_to_side(&position.direction),
+            position.position_id,
             position.size.value,
             Uint128::zero(),
             reply_id,
@@ -628,7 +649,7 @@ fn partial_liquidation(
     trader: Addr,
     quote_asset_limit: Uint128,
 ) -> StdResult<SubMsg> {
-    let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat()); // &position_id.to_be_bytes()
+    let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
     let position = read_position(deps.storage, &position_key, position_id)?;
     let config = read_config(deps.storage)?;
     let partial_position_size = position
@@ -636,11 +657,11 @@ fn partial_liquidation(
         .value
         .checked_mul(config.partial_liquidation_ratio)?
         .checked_div(config.decimals)?;
-
+    println!("partial_liquidation - partial_position_size: {:?}", partial_position_size);
     let partial_asset_limit = quote_asset_limit
         .checked_mul(config.partial_liquidation_ratio)?
         .checked_div(config.decimals)?;
-
+    println!("partial_liquidation - quote_asset_limit: {:?}", quote_asset_limit);
     let vamm_controller = VammController(vamm.clone());
 
     let current_notional = vamm_controller.output_amount(
@@ -648,12 +669,13 @@ fn partial_liquidation(
         position.direction.clone(),
         partial_position_size,
     )?;
-
+    println!("partial_liquidation - current_notional: {:?}", current_notional);
     let PositionUnrealizedPnlResponse {
         position_notional: _,
         unrealized_pnl,
     } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)?;
-
+    println!("partial_liquidation - unrealized_pnl: {:?}", unrealized_pnl);
+    println!("partial_liquidation - position.size: {:?}", position.size);
     let side = position_to_side(position.size);
 
     store_tmp_swap(
@@ -670,13 +692,14 @@ fn partial_liquidation(
             unrealized_pnl,
             margin_to_vault: Integer::zero(),
             fees_paid: false,
-        },
+        }
     )?;
 
     let msg = if current_notional > position.notional {
         swap_input(
             &vamm,
             &direction_to_side(&position.direction),
+            position.position_id,
             position.notional,
             Uint128::zero(),
             true,
@@ -686,6 +709,7 @@ fn partial_liquidation(
         swap_output(
             &vamm,
             &direction_to_side(&position.direction),
+            position.position_id,
             partial_position_size,
             partial_asset_limit,
             PARTIAL_LIQUIDATION_REPLY_ID,
@@ -698,6 +722,7 @@ fn partial_liquidation(
 fn swap_input(
     vamm: &Addr,
     side: &Side,
+    position_id: u64,
     open_notional: Uint128,
     base_asset_limit: Uint128,
     can_go_over_fluctuation: bool,
@@ -707,6 +732,7 @@ fn swap_input(
         vamm,
         &ExecuteMsg::SwapInput {
             direction: side_to_direction(side),
+            position_id,
             quote_asset_amount: open_notional,
             base_asset_limit,
             can_go_over_fluctuation,
@@ -720,6 +746,7 @@ fn swap_input(
 fn swap_output(
     vamm: &Addr,
     side: &Side,
+    position_id: u64,
     open_notional: Uint128,
     quote_asset_limit: Uint128,
     id: u64,
@@ -728,6 +755,7 @@ fn swap_output(
         vamm,
         &ExecuteMsg::SwapOutput {
             direction: side_to_direction(side),
+            position_id,
             base_asset_amount: open_notional,
             quote_asset_limit,
         },

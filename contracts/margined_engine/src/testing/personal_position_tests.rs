@@ -49,7 +49,8 @@ fn test_return_zero_margin_when_alices_position_is_underwater() {
             vec![],
         )
         .unwrap();
-    router.execute(alice.clone(), msg).unwrap();
+    let res = router.execute(alice.clone(), msg).unwrap();
+    println!("res: {:?}", res);
 
     // given the underlying twap price is $2.1, and current snapShot price is 400B/250Q = $1.6
     let msg = pricefeed
@@ -84,6 +85,7 @@ fn test_return_zero_margin_when_alices_position_is_underwater() {
         .get_position_with_funding_payment(
             &router.wrap(),
             vamm.addr().to_string(),
+            1u64,
             alice.to_string(),
         )
         .unwrap();
