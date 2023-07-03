@@ -176,7 +176,7 @@ fn test_open_position_long() {
     let position = engine
         .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
         .unwrap();
-    println!("position.notional: {:?}", position.notional);
+    // println!("position.notional: {:?}", position.notional);
     assert_eq!(position.size, Integer::new_positive(37_500_000_000u128)); //37_500_000_000 // 600_000_000_000
     assert_eq!(position.margin, to_decimals(60u64));
 

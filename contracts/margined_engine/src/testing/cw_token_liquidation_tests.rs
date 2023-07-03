@@ -259,7 +259,7 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
         )
         .unwrap();
     let err = router.execute(carol.clone(), msg).unwrap_err();
-    println!("liquidate - err: {:?}", err);
+    // println!("liquidate - err: {:?}", err);
     assert_eq!(
         StdError::GenericErr {
             msg: "partial liquidation failure - reply (id 7)".to_string()

@@ -76,7 +76,7 @@ pub fn instantiate(
 
     // find decimals of asset
     let decimal_response = eligible_collateral.get_decimals(&deps.querier)?;
-    println!("instantiate margined engine - decimal_response: {}", decimal_response);
+    // println!("instantiate margined engine - decimal_response: {}", decimal_response);
 
     // validate decimal places are correct, and return ratio max.
     let decimals = validate_decimal_places(decimal_response)?;
@@ -88,8 +88,8 @@ pub fn instantiate(
 
     // validate that the maintenance margin is not greater than the initial
     validate_margin_ratios(msg.initial_margin_ratio, msg.maintenance_margin_ratio)?;
-    println!("instantiate margined engine - initial_margin_ratio: {}", msg.initial_margin_ratio);
-    println!("instantiate margined engine - maintenance_margin_ratio: {}", msg.maintenance_margin_ratio);
+    // println!("instantiate margined engine - initial_margin_ratio: {}", msg.initial_margin_ratio);
+    // println!("instantiate margined engine - maintenance_margin_ratio: {}", msg.maintenance_margin_ratio);
     // config parameters
     let config = Config {
         owner: info.sender,
@@ -235,45 +235,45 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
         SubMsgResult::Ok(response) => match msg.id {
             INCREASE_POSITION_REPLY_ID => {
                 let (input, output, position_id) = parse_swap(response)?;
-                println!("INCREASE_POSITION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
+                // println!("INCREASE_POSITION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
                 let response =
                     update_position_reply(deps, env, input, output, position_id, INCREASE_POSITION_REPLY_ID)?;
                 Ok(response)
             }
             DECREASE_POSITION_REPLY_ID => {
                 let (input, output, position_id) = parse_swap(response)?;
-                println!("DECREASE_POSITION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
+                // println!("DECREASE_POSITION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
                 let response =
                     update_position_reply(deps, env, input, output, position_id, DECREASE_POSITION_REPLY_ID)?;
                 Ok(response)
             }
             REVERSE_POSITION_REPLY_ID => {
                 let (input, output, position_id) = parse_swap(response)?;
-                println!("REVERSE_POSITION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
+                // println!("REVERSE_POSITION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
                 let response = reverse_position_reply(deps, env, input, output, position_id)?;
                 Ok(response)
             }
             CLOSE_POSITION_REPLY_ID => {
                 let (input, output, position_id) = parse_swap(response)?;
-                println!("CLOSE_POSITION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
+                // println!("CLOSE_POSITION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
                 let response = close_position_reply(deps, env, input, output, position_id)?;
                 Ok(response)
             }
             PARTIAL_CLOSE_POSITION_REPLY_ID => {
                 let (input, output, position_id) = parse_swap(response)?;
-                println!("PARTIAL_CLOSE_POSITION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
+                // println!("PARTIAL_CLOSE_POSITION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
                 let response = partial_close_position_reply(deps, env, input, output, position_id)?;
                 Ok(response)
             }
             LIQUIDATION_REPLY_ID => {
                 let (input, output, position_id) = parse_swap(response)?;
-                println!("LIQUIDATION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
+                // println!("LIQUIDATION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
                 let response = liquidate_reply(deps, env, input, output, position_id)?;
                 Ok(response)
             }
             PARTIAL_LIQUIDATION_REPLY_ID => {
                 let (input, output, position_id) = parse_swap(response)?;
-                println!("PARTIAL_LIQUIDATION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
+                // println!("PARTIAL_LIQUIDATION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
                 let response = partial_liquidation_reply(deps, env, input, output, position_id)?;
                 Ok(response)
             }
