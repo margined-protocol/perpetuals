@@ -111,7 +111,12 @@ pub enum QueryMsg {
     #[returns(Position)]
     Position { vamm: String, position_id: u64, trader: String },
     #[returns(Vec<Position>)]
-    AllPositions { trader: String },
+    AllPositions {
+        trader: String,
+        start_after: Option<u64>,
+        limit: Option<u32>,
+        order_by: Option<i32>,
+    },
     #[returns(PositionUnrealizedPnlResponse)]
     UnrealizedPnl {
         vamm: String,

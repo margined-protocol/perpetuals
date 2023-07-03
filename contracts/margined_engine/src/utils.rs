@@ -411,7 +411,6 @@ pub fn require_insufficient_margin(
 
 pub fn require_not_restriction_mode(
     storage: &dyn Storage,
-    position_key: &[u8],
     vamm: &Addr,
     block_height: u64,
 ) -> StdResult<Response> {

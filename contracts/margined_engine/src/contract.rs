@@ -192,7 +192,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetPauser {} => to_binary(&query_pauser(deps)?),
         QueryMsg::IsWhitelisted { address } => to_binary(&WHITELIST.query_hook(deps, address)?),
         QueryMsg::GetWhitelist {} => to_binary(&WHITELIST.query_hooks(deps)?),
-        QueryMsg::AllPositions { trader } => to_binary(&query_all_positions(deps, trader)?),
+        QueryMsg::AllPositions {
+            trader,
+            start_after,
+            limit,
+            order_by,
+        } => to_binary(&query_all_positions(deps, trader, start_after, limit, order_by)?),
         QueryMsg::Position { vamm, position_id, trader } => to_binary(&query_position(deps, vamm, position_id, trader)?),
         QueryMsg::MarginRatio { vamm, position_id, trader } => {
             to_binary(&query_margin_ratio(deps, vamm, position_id, trader)?)

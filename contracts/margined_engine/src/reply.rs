@@ -235,7 +235,7 @@ pub fn update_position_reply(
 pub fn reverse_position_reply(
     deps: DepsMut,
     env: Env,
-    input: Uint128,
+    _input: Uint128,
     output: Uint128,
     position_id: u64
 ) -> StdResult<Response> {
@@ -353,7 +353,7 @@ pub fn reverse_position_reply(
 pub fn close_position_reply(
     deps: DepsMut,
     env: Env,
-    input: Uint128,
+    _input: Uint128,
     output: Uint128,
     position_id: u64
 ) -> StdResult<Response> {
@@ -439,7 +439,7 @@ pub fn close_position_reply(
     )?;
 
     let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
-    remove_position(deps.storage, &position_key, &position);
+    remove_position(deps.storage, &position_key, &position).unwrap();
 
     store_state(deps.storage, &state)?;
 
@@ -636,7 +636,7 @@ pub fn liquidate_reply(
     store_state(deps.storage, &state)?;
 
     let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
-    remove_position(deps.storage, &position_key, &position);
+    remove_position(deps.storage, &position_key, &position).unwrap();
     remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
     remove_tmp_liquidator(deps.storage);
 

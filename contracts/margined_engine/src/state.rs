@@ -19,11 +19,11 @@ pub static KEY_SENT_FUNDS: &[u8] = b"sent-funds";
 pub static KEY_TMP_SWAP: &[u8] = b"tmp-swap";
 pub static KEY_TMP_LIQUIDATOR: &[u8] = b"tmp-liquidator";
 pub static KEY_VAMM_MAP: &[u8] = b"vamm-map";
-pub static KEY_LAST_POSITION_ID: &[u8] = b"last_order_id";
+pub static KEY_LAST_POSITION_ID: &[u8] = b"last_position_id";
 
 static PREFIX_POSITION: &[u8] = b"position"; // prefix position
 pub static PREFIX_POSITION_BY_DIRECTION: &[u8] = b"position_by_direction"; // position from the direction
-pub static PREFIX_TICK: &[u8] = b"tick"; // this is tick with value is the total orders
+pub static PREFIX_POSITION_BY_TRADER: &[u8] = b"position_by_trader"; // position from a trader
 
 pub type Config = ConfigResponse;
 
@@ -71,27 +71,33 @@ pub fn read_state(storage: &dyn Storage) -> StdResult<State> {
 pub fn store_position(
     storage: &mut dyn Storage,
     key: &[u8],
-    postion: &Position,
-    inserted: bool,
+    position: &Position,
+    _inserted: bool,
 ) -> StdResult<u64> {
-    let position_id_key = &postion.position_id.to_be_bytes();
-    Bucket::multilevel(storage, &[PREFIX_POSITION, key]).save(position_id_key, postion)?;
+    let position_id_key = &position.position_id.to_be_bytes();
+    Bucket::multilevel(storage, &[PREFIX_POSITION, key]).save(position_id_key, position)?;
 
-    let mut total_tick_orders = 0;
+    let total_tick_orders = 0;
 
-    if inserted {
-        total_tick_orders += 1;
-    }
+    Bucket::multilevel(
+        storage,
+        &[
+            PREFIX_POSITION_BY_TRADER,
+            key,
+            position.trader.as_bytes(),
+        ],
+    )
+    .save(position_id_key, &position.direction)?;
 
     Bucket::multilevel(
         storage,
         &[
             PREFIX_POSITION_BY_DIRECTION,
             key,
-            &postion.direction.as_bytes(),
+            &position.direction.as_bytes(),
         ],
     )
-    .save(position_id_key, &postion.direction)?;
+    .save(position_id_key, &position.direction)?;
 
     Ok(total_tick_orders)
 }
@@ -102,8 +108,17 @@ pub fn remove_position(storage: &mut dyn Storage, key: &[u8], position: &Positio
     Bucket::<Position>::multilevel(storage, &[PREFIX_POSITION, key]).remove(position_id_key);
 
     // not found means total is 0
-    let tick_namespaces = &[PREFIX_TICK, key, position.direction.as_bytes()];
-    let mut total_tick_orders  = 0;
+    let total_tick_orders  = 0;
+
+    Bucket::<bool>::multilevel(
+        storage,
+        &[
+            PREFIX_POSITION_BY_TRADER,
+            key,
+            position.trader.as_bytes(),
+        ],
+    )
+    .remove(position_id_key);
 
     Bucket::<bool>::multilevel(
         storage,
@@ -123,7 +138,7 @@ pub fn read_position(storage: &dyn Storage, key: &[u8], position_id: u64) -> Std
     ReadonlyBucket::multilevel(storage, &[PREFIX_POSITION, key]).load(&position_id.to_be_bytes())
 }
 
-/// read_positions_with_indexer: namespace is PREFIX + PAIR_KEY + INDEXER
+/// read_positions_with_indexer: namespace is PREFIX + KEY + INDEXER
 pub fn read_positions_with_indexer<T: Serialize + DeserializeOwned>(
     storage: &dyn Storage,
     namespaces: &[&[u8]],

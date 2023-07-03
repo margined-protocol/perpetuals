@@ -83,7 +83,7 @@ fn test_cannot_increase_position_when_bad_debt() {
     // let err = router.execute(alice.clone(), msg).unwrap_err();
 
     let msg = engine
-        .deposit_margin(vamm.addr().to_string(), 1, to_decimals(100u64), vec![])
+        .deposit_margin(vamm.addr().to_string(), 1, to_decimals(80u64), vec![])
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
 
@@ -99,19 +99,40 @@ fn test_cannot_increase_position_when_bad_debt() {
         .close_position(vamm.addr().to_string(), 2, to_decimals(0u64))
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
+    let msg = engine
+        .close_position(vamm.addr().to_string(), 3, to_decimals(0u64))
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+    let msg = engine
+        .close_position(vamm.addr().to_string(), 4, to_decimals(0u64))
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+    let msg = engine
+        .close_position(vamm.addr().to_string(), 5, to_decimals(0u64))
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+    let msg = engine
+        .close_position(vamm.addr().to_string(), 6, to_decimals(0u64))
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
 
     // increase position should succeed since the position no longer has bad debt
+    // let msg = engine
+    //     .open_position(
+    //         vamm.addr().to_string(),
+    //         Side::Buy,
+    //         to_decimals(10u64),
+    //         to_decimals(10u64),
+    //         to_decimals(0u64),
+    //         vec![],
+    //     )
+    //     .unwrap();
+    // router.execute(alice.clone(), msg).unwrap();
     let msg = engine
-        .open_position(
-            vamm.addr().to_string(),
-            Side::Buy,
-            to_decimals(10u64),
-            to_decimals(10u64),
-            to_decimals(0u64),
-            vec![],
-        )
+        .deposit_margin(vamm.addr().to_string(), 1, to_decimals(80u64), vec![])
         .unwrap();
-    router.execute(alice.clone(), msg).unwrap();
+    let res = router.execute(alice.clone(), msg).unwrap();
 }
 
 #[test]

@@ -244,8 +244,16 @@ impl EngineController {
         &self,
         querier: &QuerierWrapper,
         trader: String,
+        start_after: Option<u64>,
+        limit: Option<u32>,
+        order_by: Option<i32>
     ) -> StdResult<Vec<Position>> {
-        let msg = QueryMsg::AllPositions { trader };
+        let msg = QueryMsg::AllPositions {
+            trader,
+            start_after,
+            limit,
+            order_by,
+        };
 
         querier.query_wasm_smart(&self.0, &msg)
     }

@@ -127,7 +127,7 @@ pub fn open_position(
     let position_id = increase_last_position_id(deps.storage)?;
     let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
 
-    require_not_restriction_mode(deps.storage, &position_key, &vamm, env.block.height)?;
+    require_not_restriction_mode(deps.storage, &vamm, env.block.height)?;
     require_non_zero_input(margin_amount)?;
     require_non_zero_input(leverage)?;
 
@@ -244,7 +244,7 @@ pub fn close_position(
     require_not_paused(state.pause)?;
     require_position_not_zero(position.size.value)?;
 
-    require_not_restriction_mode(deps.storage, &position_key, &vamm, env.block.height)?;
+    require_not_restriction_mode(deps.storage, &vamm, env.block.height)?;
 
     // if it is long position, close a position means short it (which means base dir is AddToAmm) and vice versa
     let base_direction = if position.size > Integer::zero() {
