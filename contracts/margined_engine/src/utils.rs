@@ -117,13 +117,16 @@ pub fn update_open_interest_notional(
     let cap = vamm_controller
         .config(&deps.querier)?
         .open_interest_notional_cap;
-
+    println!("update_open_interest_notional - cap: {}", cap);
     let mut updated_open_interest =
         amount.checked_add(Integer::new_positive(state.open_interest_notional))?;
 
     if updated_open_interest.is_negative() {
         updated_open_interest = Integer::zero();
     }
+
+
+    println!("update_open_interest_notional - updated_open_interest: {}", updated_open_interest);
 
     // check if the cap has been exceeded - if trader address is in whitelist this bypasses
     if (!cap.is_zero()

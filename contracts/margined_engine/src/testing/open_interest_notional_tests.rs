@@ -1,118 +1,118 @@
-// use cosmwasm_std::{StdError, Uint128};
-// use cw20::Cw20ExecuteMsg;
-// use margined_perp::margined_engine::Side;
-// use margined_utils::{
-//     cw_multi_test::Executor,
-//     testing::{to_decimals, SimpleScenario},
-// };
+use cosmwasm_std::{StdError, Uint128};
+use cw20::Cw20ExecuteMsg;
+use margined_perp::margined_engine::Side;
+use margined_utils::{
+    cw_multi_test::Executor,
+    testing::{to_decimals, SimpleScenario},
+};
 
-// use crate::testing::new_simple_scenario;
+use crate::testing::new_simple_scenario;
 
-// #[test]
-// fn test_increase_with_increase_position() {
-//     let SimpleScenario {
-//         mut router,
-//         alice,
-//         owner,
-//         engine,
-//         vamm,
-//         usdc,
-//         ..
-//     } = new_simple_scenario();
+#[test]
+fn test_increase_with_increase_position() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        owner,
+        engine,
+        vamm,
+        usdc,
+        ..
+    } = new_simple_scenario();
 
-//     let msg = vamm
-//         .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
-//         .unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm
+        .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     // reduce the allowance
-//     router
-//         .execute_contract(
-//             alice.clone(),
-//             usdc.addr().clone(),
-//             &Cw20ExecuteMsg::DecreaseAllowance {
-//                 spender: engine.addr().to_string(),
-//                 amount: to_decimals(1400),
-//                 expires: None,
-//             },
-//             &[],
-//         )
-//         .unwrap();
+    // reduce the allowance
+    router
+        .execute_contract(
+            alice.clone(),
+            usdc.addr().clone(),
+            &Cw20ExecuteMsg::DecreaseAllowance {
+                spender: engine.addr().to_string(),
+                amount: to_decimals(1400),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             to_decimals(600u64),
-//             to_decimals(1u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(600u64),
+            to_decimals(1u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let open_interest_notional = engine.state(&router.wrap()).unwrap().open_interest_notional;
-//     assert_eq!(open_interest_notional, to_decimals(600u64));
-// }
+    let open_interest_notional = engine.state(&router.wrap()).unwrap().open_interest_notional;
+    assert_eq!(open_interest_notional, to_decimals(600u64));
+}
 
-// #[test]
-// fn test_reduce_when_position_is_reduced() {
-//     let SimpleScenario {
-//         mut router,
-//         alice,
-//         owner,
-//         engine,
-//         vamm,
-//         usdc,
-//         ..
-//     } = new_simple_scenario();
+#[test]
+fn test_reduce_when_position_is_reduced() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        owner,
+        engine,
+        vamm,
+        usdc,
+        ..
+    } = new_simple_scenario();
 
-//     let msg = vamm
-//         .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
-//         .unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm
+        .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     // reduce the allowance
-//     router
-//         .execute_contract(
-//             alice.clone(),
-//             usdc.addr().clone(),
-//             &Cw20ExecuteMsg::DecreaseAllowance {
-//                 spender: engine.addr().to_string(),
-//                 amount: to_decimals(1400),
-//                 expires: None,
-//             },
-//             &[],
-//         )
-//         .unwrap();
+    // reduce the allowance
+    router
+        .execute_contract(
+            alice.clone(),
+            usdc.addr().clone(),
+            &Cw20ExecuteMsg::DecreaseAllowance {
+                spender: engine.addr().to_string(),
+                amount: to_decimals(1400),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             to_decimals(600u64),
-//             to_decimals(1u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(600u64),
+            to_decimals(1u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             to_decimals(300u64),
-//             to_decimals(1u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(300u64),
+            to_decimals(1u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let open_interest_notional = engine.state(&router.wrap()).unwrap().open_interest_notional;
-//     assert_eq!(open_interest_notional, to_decimals(300u64));
-// }
+    let open_interest_notional = engine.state(&router.wrap()).unwrap().open_interest_notional;
+    assert_eq!(open_interest_notional, to_decimals(300u64));
+}
 
 // #[test]
 // fn test_reduce_when_close_position() {

@@ -76,12 +76,12 @@ pub fn query_all_positions(
     };
 
     for vamm in vamms.iter() {
-        // println!("query_all_positions - vamm: {:?}", vamm);
+        println!("query_all_positions - vamm: {:?}", vamm);
         let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
         let positions = read_positions(deps.storage, &position_key, start_after, limit, order_by).unwrap();
 
         for position in positions {
-            // println!("query_all_positions - position: {:?}", position);
+            println!("query_all_positions - position: {:?}", position);
             // a default is returned if no position found with no trader set
             if position.trader == trader {
                 response.push(position)

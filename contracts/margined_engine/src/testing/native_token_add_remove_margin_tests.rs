@@ -1,469 +1,476 @@
-// use cosmwasm_std::{Addr, BankMsg, Coin, CosmosMsg, MessageInfo, StdError, Uint128};
-// use margined_common::{
-//     asset::{Asset, AssetInfo},
-//     integer::Integer,
-// };
-// use margined_perp::margined_engine::Side;
-// use margined_utils::{cw_multi_test::Executor, testing::NativeTokenScenario};
+use cosmwasm_std::{Addr, BankMsg, Coin, CosmosMsg, MessageInfo, StdError, Uint128};
+use margined_common::{
+    asset::{Asset, AssetInfo},
+    integer::Integer,
+};
+use margined_perp::margined_engine::Side;
+use margined_utils::{cw_multi_test::Executor, testing::NativeTokenScenario};
 
-// use crate::testing::new_native_token_scenario;
+use crate::testing::new_native_token_scenario;
 
-// pub const NEXT_FUNDING_PERIOD_DELTA: u64 = 86_400u64;
+pub const NEXT_FUNDING_PERIOD_DELTA: u64 = 86_400u64;
 
-// #[test]
-// fn test_add_margin() {
-//     let NativeTokenScenario {
-//         mut router,
-//         alice,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_native_token_scenario();
+#[test]
+fn test_add_margin() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = new_native_token_scenario();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             Uint128::from(60_000_000u64),
-//             Uint128::from(10_000_000u64),
-//             Uint128::zero(),
-//             vec![Coin::new(60_000_000u128, "orai")],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(60_000_000u64),
+            Uint128::from(10_000_000u64),
+            Uint128::zero(),
+            vec![Coin::new(60_000_000u128, "orai")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let engine_balance = router
-//         .wrap()
-//         .query_balance(&engine.addr(), "orai")
-//         .unwrap()
-//         .amount;
-//     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
+    let engine_balance = router
+        .wrap()
+        .query_balance(&engine.addr(), "orai")
+        .unwrap()
+        .amount;
+    assert_eq!(engine_balance, Uint128::from(60_000_000u64));
 
-//     let msg = engine
-//         .deposit_margin(
-//             vamm.addr().to_string(),
-//             Uint128::from(80_000_000u64),
-//             vec![Coin::new(80_000_000u128, "orai")],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .deposit_margin(
+            vamm.addr().to_string(),
+            1,
+            Uint128::from(80_000_000u64),
+            vec![Coin::new(80_000_000u128, "orai")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let engine_balance = router
-//         .wrap()
-//         .query_balance(&engine.addr(), "orai")
-//         .unwrap()
-//         .amount;
-//     assert_eq!(engine_balance, Uint128::from(140_000_000u64));
+    let engine_balance = router
+        .wrap()
+        .query_balance(&engine.addr(), "orai")
+        .unwrap()
+        .amount;
+    assert_eq!(engine_balance, Uint128::from(140_000_000u64));
 
-//     let alice_position = engine
-//         .get_position_with_funding_payment(
-//             &router.wrap(),
-//             vamm.addr().to_string(),
-//             alice.to_string(),
-//         )
-//         .unwrap();
-//     assert_eq!(alice_position.margin, Uint128::from(140_000_000u64));
-//     assert_eq!(
-//         engine
-//             .get_balance_with_funding_payment(&router.wrap(), alice.to_string())
-//             .unwrap(),
-//         Uint128::from(140_000_000u64),
-//     );
-// }
+    let alice_position = engine
+        .get_position_with_funding_payment(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            1,
+            alice.to_string(),
+        )
+        .unwrap();
+    assert_eq!(alice_position.margin, Uint128::from(140_000_000u64));
+    assert_eq!(
+        engine
+            .get_balance_with_funding_payment(&router.wrap(), alice.to_string(), 1)
+            .unwrap(),
+        Uint128::from(140_000_000u64),
+    );
+}
 
-// #[test]
-// fn test_force_error_add_incorrect_margin() {
-//     let NativeTokenScenario {
-//         mut router,
-//         alice,
-//         bank,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_native_token_scenario();
+#[test]
+fn test_force_error_add_incorrect_margin() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        bank,
+        engine,
+        vamm,
+        ..
+    } = new_native_token_scenario();
 
-//     // give alice a balance of uwasm
-//     let msg = CosmosMsg::Bank(BankMsg::Send {
-//         to_address: alice.to_string(),
-//         amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "orai")],
-//     });
-//     router.execute(bank.clone(), msg).unwrap();
+    // give alice a balance of uwasm
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: alice.to_string(),
+        amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "orai")],
+    });
+    router.execute(bank.clone(), msg).unwrap();
 
-//     // give alice a balance of ucosmos
-//     let msg = CosmosMsg::Bank(BankMsg::Send {
-//         to_address: alice.to_string(),
-//         amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "ucosmos")],
-//     });
-//     router.execute(bank.clone(), msg).unwrap();
+    // give alice a balance of ucosmos
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: alice.to_string(),
+        amount: vec![Coin::new(5_000u128 * 10u128.pow(6), "ucosmos")],
+    });
+    router.execute(bank.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .deposit_margin(
-//             vamm.addr().to_string(),
-//             Uint128::from(85_000_000u64),
-//             vec![Coin::new(85_000_000u128, "ucosmos")],
-//         )
-//         .unwrap();
-//     let err = router.execute(alice.clone(), msg).unwrap_err();
-//     assert_eq!(
-//         StdError::GenericErr {
-//             msg: "Must send reserve token 'orai'".to_string(),
-//         },
-//         err.downcast().unwrap()
-//     );
-// }
+    let msg = engine
+        .deposit_margin(
+            vamm.addr().to_string(),
+            1,
+            Uint128::from(85_000_000u64),
+            vec![Coin::new(85_000_000u128, "ucosmos")],
+        )
+        .unwrap();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "Must send reserve token 'orai'".to_string(),
+        },
+        err.downcast().unwrap()
+    );
+}
 
-// #[test]
-// fn test_add_margin_no_open_position() {
-//     let NativeTokenScenario {
-//         mut router,
-//         alice,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_native_token_scenario();
+#[test]
+fn test_add_margin_no_open_position() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = new_native_token_scenario();
 
-//     let msg = engine
-//         .deposit_margin(
-//             vamm.addr().to_string(),
-//             Uint128::from(80_000_000u64),
-//             vec![Coin::new(80_000_000u128, "orai")],
-//         )
-//         .unwrap();
-//     let err = router.execute(alice.clone(), msg).unwrap_err();
+    let msg = engine
+        .deposit_margin(
+            vamm.addr().to_string(),
+            1,
+            Uint128::from(80_000_000u64),
+            vec![Coin::new(80_000_000u128, "orai")],
+        )
+        .unwrap();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
 
-//     assert_eq!(
-//         err.source().unwrap().to_string(),
-//         "Generic error: No position found"
-//     );
-// }
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: No position found"
+    );
+}
 
-// #[test]
-// fn test_remove_margin() {
-//     let NativeTokenScenario {
-//         mut router,
-//         alice,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_native_token_scenario();
+#[test]
+fn test_remove_margin() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = new_native_token_scenario();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             Uint128::from(60_000_000u64),
-//             Uint128::from(10_000_000u64),
-//             Uint128::zero(),
-//             vec![Coin::new(60_000_000u128, "orai")],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(60_000_000u64),
+            Uint128::from(10_000_000u64),
+            Uint128::zero(),
+            vec![Coin::new(60_000_000u128, "orai")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let engine_balance = router
-//         .wrap()
-//         .query_balance(&engine.addr(), "orai")
-//         .unwrap()
-//         .amount;
-//     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
+    let engine_balance = router
+        .wrap()
+        .query_balance(&engine.addr(), "orai")
+        .unwrap()
+        .amount;
+    assert_eq!(engine_balance, Uint128::from(60_000_000u64));
 
-//     let msg = engine
-//         .withdraw_margin(vamm.addr().to_string(), Uint128::from(20_000_000u64))
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(20_000_000u64))
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let engine_balance = router
-//         .wrap()
-//         .query_balance(&engine.addr(), "orai")
-//         .unwrap()
-//         .amount;
-//     assert_eq!(engine_balance, Uint128::from(40_000_000u64));
+    let engine_balance = router
+        .wrap()
+        .query_balance(&engine.addr(), "orai")
+        .unwrap()
+        .amount;
+    assert_eq!(engine_balance, Uint128::from(40_000_000u64));
 
-//     let alice_position = engine
-//         .get_position_with_funding_payment(
-//             &router.wrap(),
-//             vamm.addr().to_string(),
-//             alice.to_string(),
-//         )
-//         .unwrap();
-//     assert_eq!(alice_position.margin, Uint128::from(40_000_000u64));
-//     assert_eq!(
-//         engine
-//             .get_balance_with_funding_payment(&router.wrap(), alice.to_string())
-//             .unwrap(),
-//         Uint128::from(40_000_000u64),
-//     );
-// }
+    let alice_position = engine
+        .get_position_with_funding_payment(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            1,
+            alice.to_string(),
+        )
+        .unwrap();
+    assert_eq!(alice_position.margin, Uint128::from(40_000_000u64));
+    assert_eq!(
+        engine
+            .get_balance_with_funding_payment(&router.wrap(), alice.to_string(), 1)
+            .unwrap(),
+        Uint128::from(40_000_000u64),
+    );
+}
 
-// #[test]
-// fn test_remove_margin_after_paying_funding() {
-//     let NativeTokenScenario {
-//         mut router,
-//         alice,
-//         owner,
-//         engine,
-//         vamm,
-//         pricefeed,
-//         ..
-//     } = new_native_token_scenario();
+#[test]
+fn test_remove_margin_after_paying_funding() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        owner,
+        engine,
+        vamm,
+        pricefeed,
+        ..
+    } = new_native_token_scenario();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             Uint128::from(60_000_000u64),
-//             Uint128::from(10_000_000u64),
-//             Uint128::from(0_000_000u64),
-//             vec![Coin::new(60_000_000u128, "orai")],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(60_000_000u64),
+            Uint128::from(10_000_000u64),
+            Uint128::from(0_000_000u64),
+            vec![Coin::new(60_000_000u128, "orai")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let engine_balance = router
-//         .wrap()
-//         .query_balance(&engine.addr(), "orai")
-//         .unwrap()
-//         .amount;
-//     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
+    let engine_balance = router
+        .wrap()
+        .query_balance(&engine.addr(), "orai")
+        .unwrap()
+        .amount;
+    assert_eq!(engine_balance, Uint128::from(60_000_000u64));
 
-//     let price = Uint128::from(25_500_000u128);
-//     let timestamp = 1_000_000;
+    let price = Uint128::from(25_500_000u128);
+    let timestamp = 1_000_000;
 
-//     let msg = pricefeed
-//         .append_price("ETH".to_string(), price, timestamp)
-//         .unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     // move to the next funding time
-//     router.update_block(|block| {
-//         block.time = block.time.plus_seconds(NEXT_FUNDING_PERIOD_DELTA);
-//         block.height += 1;
-//     });
+    // move to the next funding time
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(NEXT_FUNDING_PERIOD_DELTA);
+        block.height += 1;
+    });
 
-//     // funding payment is -3.75
-//     let msg = engine.pay_funding(vamm.addr().to_string()).unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    // funding payment is -3.75
+    let msg = engine.pay_funding(vamm.addr().to_string()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .withdraw_margin(vamm.addr().to_string(), Uint128::from(20_000_000u64))
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(20_000_000u64))
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let engine_balance = router
-//         .wrap()
-//         .query_balance(&engine.addr(), "orai")
-//         .unwrap()
-//         .amount;
-//     assert_eq!(engine_balance, Uint128::from(36_250_000u128));
+    let engine_balance = router
+        .wrap()
+        .query_balance(&engine.addr(), "orai")
+        .unwrap()
+        .amount;
+    assert_eq!(engine_balance, Uint128::from(36_250_000u128));
 
-//     let alice_position = engine
-//         .get_position_with_funding_payment(
-//             &router.wrap(),
-//             vamm.addr().to_string(),
-//             alice.to_string(),
-//         )
-//         .unwrap();
-//     assert_eq!(alice_position.margin, Uint128::from(36_250_000u128),);
-//     assert_eq!(
-//         engine
-//             .get_balance_with_funding_payment(&router.wrap(), alice.to_string())
-//             .unwrap(),
-//         Uint128::from(36_250_000u128),
-//     );
-// }
+    let alice_position = engine
+        .get_position_with_funding_payment(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            1,
+            alice.to_string(),
+        )
+        .unwrap();
+    assert_eq!(alice_position.margin, Uint128::from(36_250_000u128),);
+    assert_eq!(
+        engine
+            .get_balance_with_funding_payment(&router.wrap(), alice.to_string(), 1)
+            .unwrap(),
+        Uint128::from(36_250_000u128),
+    );
+}
 
-// #[test]
-// fn test_remove_margin_insufficient_margin() {
-//     let NativeTokenScenario {
-//         mut router,
-//         alice,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_native_token_scenario();
+#[test]
+fn test_remove_margin_insufficient_margin() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = new_native_token_scenario();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             Uint128::from(60_000_000u64),
-//             Uint128::from(10_000_000u64),
-//             Uint128::from(0_000_000u64),
-//             vec![Coin::new(60_000_000u128, "orai")],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(60_000_000u64),
+            Uint128::from(10_000_000u64),
+            Uint128::from(0_000_000u64),
+            vec![Coin::new(60_000_000u128, "orai")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let engine_balance = router
-//         .wrap()
-//         .query_balance(&engine.addr(), "orai")
-//         .unwrap()
-//         .amount;
-//     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
+    let engine_balance = router
+        .wrap()
+        .query_balance(&engine.addr(), "orai")
+        .unwrap()
+        .amount;
+    assert_eq!(engine_balance, Uint128::from(60_000_000u64));
 
-//     let msg = engine
-//         .withdraw_margin(vamm.addr().to_string(), Uint128::from(61_000_000u64))
-//         .unwrap();
-//     let err = router.execute(alice.clone(), msg).unwrap_err();
-//     assert_eq!(
-//         err.source().unwrap().to_string(),
-//         "Generic error: Insufficient margin"
-//     );
-// }
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(61_000_000u64))
+        .unwrap();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Insufficient margin"
+    );
+}
 
-// #[test]
-// fn test_remove_margin_incorrect_ratio_four_percent() {
-//     let NativeTokenScenario {
-//         mut router,
-//         alice,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_native_token_scenario();
+#[test]
+fn test_remove_margin_incorrect_ratio_four_percent() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = new_native_token_scenario();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             Uint128::from(60_000_000u64),
-//             Uint128::from(10_000_000u64),
-//             Uint128::from(0_000_000u64),
-//             vec![Coin::new(60_000_000u128, "orai")],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(60_000_000u64),
+            Uint128::from(10_000_000u64),
+            Uint128::from(0_000_000u64),
+            vec![Coin::new(60_000_000u128, "orai")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let engine_balance = router
-//         .wrap()
-//         .query_balance(&engine.addr(), "orai")
-//         .unwrap()
-//         .amount;
-//     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
+    let engine_balance = router
+        .wrap()
+        .query_balance(&engine.addr(), "orai")
+        .unwrap()
+        .amount;
+    assert_eq!(engine_balance, Uint128::from(60_000_000u64));
 
-//     let msg = engine
-//         .withdraw_margin(vamm.addr().to_string(), Uint128::from(36_000_000u64))
-//         .unwrap();
-//     let err = router.execute(alice.clone(), msg).unwrap_err();
-//     assert_eq!(
-//         err.source().unwrap().to_string(),
-//         "Generic error: Insufficient collateral"
-//     );
-// }
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(36_000_000u64))
+        .unwrap();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Insufficient collateral"
+    );
+}
 
-// #[test]
-// fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price() {
-//     let NativeTokenScenario {
-//         mut router,
-//         alice,
-//         bob,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_native_token_scenario();
+#[test]
+fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = new_native_token_scenario();
 
-//     // reserve 1000 : 100
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             Uint128::from(60_000_000u64),
-//             Uint128::from(5_000_000u64),
-//             Uint128::from(0_000_000u64),
-//             vec![Coin::new(60_000_000u128, "orai")],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
-//     // reserve 1300 : 76.92, price = 16.9
+    // reserve 1000 : 100
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(60_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0_000_000u64),
+            vec![Coin::new(60_000_000u128, "orai")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+    // reserve 1300 : 76.92, price = 16.9
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             Uint128::from(60_000_000u64),
-//             Uint128::from(5_000_000u64),
-//             Uint128::from(0_000_000u64),
-//             vec![Coin::new(60_000_000u128, "orai")],
-//         )
-//         .unwrap();
-//     router.execute(bob.clone(), msg).unwrap();
-//     // reserve 1600 : 62.5, price = 25.6
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(60_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0_000_000u64),
+            vec![Coin::new(60_000_000u128, "orai")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+    // reserve 1600 : 62.5, price = 25.6
 
-//     let msg = engine
-//         .withdraw_margin(vamm.addr().to_string(), Uint128::from(45_010_000u128))
-//         .unwrap();
-//     let err = router.execute(alice.clone(), msg).unwrap_err();
-//     assert_eq!(
-//         err.source().unwrap().to_string(),
-//         "Generic error: Insufficient collateral"
-//     );
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(45_010_000u128))
+        .unwrap();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Insufficient collateral"
+    );
 
-//     let free_collateral = engine
-//         .get_free_collateral(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
-//     assert_eq!(free_collateral, Integer::new_positive(45_000_000u128));
+    let free_collateral = engine
+        .get_free_collateral(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .unwrap();
+    assert_eq!(free_collateral, Integer::new_positive(45_000_000u128));
 
-//     let msg = engine
-//         .withdraw_margin(vamm.addr().to_string(), Uint128::from(45_000_000u128))
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
-// }
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(45_000_000u128))
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+}
 
-// #[test]
-// fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() {
-//     let NativeTokenScenario {
-//         mut router,
-//         alice,
-//         bob,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_native_token_scenario();
+#[test]
+fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = new_native_token_scenario();
 
-//     // reserve 1000 : 100
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             Uint128::from(60_000_000u64),
-//             Uint128::from(5_000_000u64),
-//             Uint128::from(0u64),
-//             vec![Coin::new(60_000_000u128, "orai")],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
-//     // reserve 1300 : 76.92, price = 16.9
+    // reserve 1000 : 100
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(60_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0u64),
+            vec![Coin::new(60_000_000u128, "orai")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+    // reserve 1300 : 76.92, price = 16.9
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             Uint128::from(10_000_000u64),
-//             Uint128::from(5_000_000u64),
-//             Uint128::from(0u64),
-//             vec![Coin::new(10_000_000u128, "orai")],
-//         )
-//         .unwrap();
-//     router.execute(bob.clone(), msg).unwrap();
-//     // reserve 1250 : 80 price = 15.625
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            Uint128::from(10_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(0u64),
+            vec![Coin::new(10_000_000u128, "orai")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+    // reserve 1250 : 80 price = 15.625
 
-//     let msg = engine
-//         .withdraw_margin(vamm.addr().to_string(), Uint128::from(24_900_000u128))
-//         .unwrap();
-//     let err = router.execute(alice.clone(), msg).unwrap_err();
-//     assert_eq!(
-//         err.source().unwrap().to_string(),
-//         "Generic error: Insufficient collateral"
-//     );
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(24_900_000u128))
+        .unwrap();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Insufficient collateral"
+    );
 
-//     let free_collateral = engine
-//         .get_free_collateral(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
-//     assert_eq!(free_collateral, Integer::new_positive(24_850_742u128));
+    let free_collateral = engine
+        .get_free_collateral(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .unwrap();
+    assert_eq!(free_collateral, Integer::new_positive(24_850_742u128));
 
-//     let msg = engine
-//         .withdraw_margin(vamm.addr().to_string(), Uint128::from(24_850_742u128))
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
-// }
+    let msg = engine
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(24_850_742u128))
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+}
+
 // #[test]
 // fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price() {
 //     let NativeTokenScenario {

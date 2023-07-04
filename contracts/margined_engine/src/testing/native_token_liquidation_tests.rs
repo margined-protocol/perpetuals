@@ -1,113 +1,113 @@
-// use cosmwasm_std::{BankMsg, Coin, CosmosMsg, StdError, Uint128};
-// use margined_common::integer::Integer;
-// use margined_perp::margined_engine::{PnlCalcOption, Side};
-// use margined_utils::{cw_multi_test::Executor, testing::NativeTokenScenario};
+use cosmwasm_std::{BankMsg, Coin, CosmosMsg, StdError, Uint128};
+use margined_common::integer::Integer;
+use margined_perp::margined_engine::{PnlCalcOption, Side};
+use margined_utils::{cw_multi_test::Executor, testing::NativeTokenScenario};
 
-// use crate::testing::new_native_token_scenario;
+use crate::testing::new_native_token_scenario;
 
-// #[test]
-// fn test_partially_liquidate_long_position() {
-//     let NativeTokenScenario {
-//         mut router,
-//         alice,
-//         bob,
-//         carol,
-//         owner,
-//         insurance_fund,
-//         engine,
-//         vamm,
-//         pricefeed,
-//         ..
-//     } = new_native_token_scenario();
+#[test]
+fn test_partially_liquidate_long_position() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        bob,
+        carol,
+        owner,
+        insurance_fund,
+        engine,
+        vamm,
+        pricefeed,
+        ..
+    } = new_native_token_scenario();
 
-//     // set the latest price
-//     let price = Uint128::from(10_000_000u128);
-//     let timestamp = router.block_info().time.seconds();
+    // set the latest price
+    let price = Uint128::from(10_000_000u128);
+    let timestamp = router.block_info().time.seconds();
 
-//     let msg = pricefeed
-//         .append_price("ETH".to_string(), price, timestamp)
-//         .unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     router.update_block(|block| {
-//         block.time = block.time.plus_seconds(900);
-//         block.height += 1;
-//     });
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(900);
+        block.height += 1;
+    });
 
-//     let msg = engine
-//         .set_margin_ratios(Uint128::from(100_000u128))
-//         .unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = engine
+        .set_margin_ratios(Uint128::from(100_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .set_partial_liquidation_ratio(Uint128::from(250_000u128))
-//         .unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = engine
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .set_liquidation_fee(Uint128::from(25_000u128))
-//         .unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = engine
+        .set_liquidation_fee(Uint128::from(25_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     // when alice create a 25 margin * 10x position to get 20 long position
-//     // AMM after: 1250 : 80
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             Uint128::from(25_000_000u64),
-//             Uint128::from(10_000_000u64),
-//             Uint128::zero(),
-//             vec![Coin::new(25_000_000u128, "orai")],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    // when alice create a 25 margin * 10x position to get 20 long position
+    // AMM after: 1250 : 80
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(25_000_000u64),
+            Uint128::from(10_000_000u64),
+            Uint128::zero(),
+            vec![Coin::new(25_000_000u128, "orai")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     router.update_block(|block| {
-//         block.time = block.time.plus_seconds(15);
-//         block.height += 1;
-//     });
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
 
-//     // when bob create a 45.18072289 margin * 1x position to get 3 short position
-//     // AMM after: 1204.819277 : 83
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             Uint128::from(45_180_723u128),
-//             Uint128::from(1_000_000u64),
-//             Uint128::zero(),
-//             vec![Coin::new(45_180_723u128, "orai")],
-//         )
-//         .unwrap();
-//     router.execute(bob.clone(), msg).unwrap();
+    // when bob create a 45.18072289 margin * 1x position to get 3 short position
+    // AMM after: 1204.819277 : 83
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            Uint128::from(45_180_723u128),
+            Uint128::from(1_000_000u64),
+            Uint128::zero(),
+            vec![Coin::new(45_180_723u128, "orai")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .liquidate(vamm.addr().to_string(), alice.to_string(), Uint128::zero())
-//         .unwrap();
-//     router.execute(carol.clone(), msg).unwrap();
+    let msg = engine
+        .liquidate(vamm.addr().to_string(), 1, alice.to_string(), Uint128::zero())
+        .unwrap();
+    router.execute(carol.clone(), msg).unwrap();
 
-//     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
-//     assert_eq!(position.margin, Uint128::from(19_274_982u128));
-//     assert_eq!(position.size, Integer::new_positive(15_000_000u128));
+    let position = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .unwrap();
+    assert_eq!(position.margin, Uint128::from(19_274_982u128));
+    assert_eq!(position.size, Integer::new_positive(15_000_000u128));
 
-//     let margin_ratio = engine
-//         .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
-//     assert_eq!(margin_ratio, Integer::new_positive(43_713u128));
+    let margin_ratio = engine
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .unwrap();
+    assert_eq!(margin_ratio, Integer::new_positive(43_713u128));
 
-//     let carol_balance = router.wrap().query_balance(&carol, "orai").unwrap().amount;
-//     assert_eq!(carol_balance, Uint128::from(855_695u128));
+    let carol_balance = router.wrap().query_balance(&carol, "orai").unwrap().amount;
+    assert_eq!(carol_balance, Uint128::from(855_695u128));
 
-//     let insurance_balance = router
-//         .wrap()
-//         .query_balance(&insurance_fund.addr(), "orai")
-//         .unwrap()
-//         .amount;
-//     assert_eq!(insurance_balance, Uint128::from(5_000_855_695u128));
-// }
+    let insurance_balance = router
+        .wrap()
+        .query_balance(&insurance_fund.addr(), "orai")
+        .unwrap()
+        .amount;
+    assert_eq!(insurance_balance, Uint128::from(5_000_855_695u128));
+}
 
 // #[test]
 // fn test_partially_liquidate_long_position_with_quote_asset_limit() {

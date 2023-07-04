@@ -1,380 +1,384 @@
-// use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Uint128};
-// use margined_common::integer::Integer;
-// use margined_perp::margined_engine::{PnlCalcOption, Side};
-// use margined_utils::tools::fund_calculator::calculate_funds_needed;
+use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Uint128};
+use margined_common::integer::Integer;
+use margined_perp::margined_engine::{PnlCalcOption, Side};
+use margined_utils::tools::fund_calculator::calculate_funds_needed;
 
-// use margined_utils::{cw_multi_test::Executor, testing::NativeTokenScenario};
+use margined_utils::{cw_multi_test::Executor, testing::NativeTokenScenario};
 
-// use crate::testing::new_native_token_scenario;
+use crate::testing::new_native_token_scenario;
 
-// // Note: these tests also verify the 10% fees for the amm are functioning
+// Note: these tests also verify the 10% fees for the amm are functioning
 
-// #[test]
-// fn test_initialization() {
-//     let NativeTokenScenario {
-//         router,
-//         owner,
-//         alice,
-//         bob,
-//         engine,
-//         ..
-//     } = new_native_token_scenario();
+#[test]
+fn test_initialization() {
+    let NativeTokenScenario {
+        router,
+        owner,
+        alice,
+        bob,
+        engine,
+        ..
+    } = new_native_token_scenario();
 
-//     // verfiy the balances
-//     let owner_balance = router.wrap().query_balance(&owner, "orai").unwrap().amount;
-//     assert_eq!(owner_balance, Uint128::zero());
-//     let alice_balance = router.wrap().query_balance(&alice, "orai").unwrap().amount;
-//     assert_eq!(alice_balance, Uint128::new(5_000_000_000));
-//     let bob_balance = router.wrap().query_balance(&bob, "orai").unwrap().amount;
-//     assert_eq!(bob_balance, Uint128::new(5_000_000_000));
-//     let engine_balance = router
-//         .wrap()
-//         .query_balance(&engine.addr(), "orai")
-//         .unwrap()
-//         .amount;
-//     assert_eq!(engine_balance, Uint128::zero());
-// }
+    // verfiy the balances
+    let owner_balance = router.wrap().query_balance(&owner, "orai").unwrap().amount;
+    assert_eq!(owner_balance, Uint128::zero());
+    let alice_balance = router.wrap().query_balance(&alice, "orai").unwrap().amount;
+    assert_eq!(alice_balance, Uint128::new(5_000_000_000));
+    let bob_balance = router.wrap().query_balance(&bob, "orai").unwrap().amount;
+    assert_eq!(bob_balance, Uint128::new(5_000_000_000));
+    let engine_balance = router
+        .wrap()
+        .query_balance(&engine.addr(), "orai")
+        .unwrap()
+        .amount;
+    assert_eq!(engine_balance, Uint128::zero());
+}
 
-// #[test]
-// fn test_force_error_open_position_no_token_sent() {
-//     let NativeTokenScenario {
-//         mut router,
-//         owner,
-//         alice,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_native_token_scenario();
+#[test]
+fn test_force_error_open_position_no_token_sent() {
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = new_native_token_scenario();
 
-//     // 10% fee
-//     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             Uint128::from(60_000_000u64),
-//             Uint128::from(10_000_000u64),
-//             Uint128::from(37_500_000u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     let err = router.execute(alice.clone(), msg).unwrap_err();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(60_000_000u64),
+            Uint128::from(10_000_000u64),
+            Uint128::from(37_500_000u64),
+            vec![],
+        )
+        .unwrap();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
 
-//     assert_eq!(
-//         err.source().unwrap().to_string(),
-//         "Generic error: sent funds are insufficient".to_string()
-//     );
-// }
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: sent funds are insufficient".to_string()
+    );
+}
 
-// #[test]
-// fn test_ten_percent_fee_open_long_position() {
-//     let NativeTokenScenario {
-//         mut router,
-//         owner,
-//         alice,
-//         fee_pool,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_native_token_scenario();
+#[test]
+fn test_ten_percent_fee_open_long_position() {
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        fee_pool,
+        engine,
+        vamm,
+        ..
+    } = new_native_token_scenario();
 
-//     // 10% fee
-//     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     // alice opens long position with 60 margin, 10x leverage
-//     // (1000 + 600) * (100 + baseAssetDelta) = 100k, baseAssetDelta = -37.5
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             Uint128::from(60_000_000u64),
-//             Uint128::from(10_000_000u64),
-//             Uint128::from(37_500_000u64),
-//             calculate_funds_needed(
-//                 &router.wrap(),
-//                 engine.addr(),
-//                 alice.clone(),
-//                 Uint128::from(60_000_000u64),
-//                 Uint128::from(10_000_000u64),
-//                 Side::Buy,
-//                 vamm.addr(),
-//             )
-//             .unwrap(),
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    // alice opens long position with 60 margin, 10x leverage
+    // (1000 + 600) * (100 + baseAssetDelta) = 100k, baseAssetDelta = -37.5
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(60_000_000u64),
+            Uint128::from(10_000_000u64),
+            Uint128::from(37_500_000u64),
+            calculate_funds_needed(
+                &router.wrap(),
+                engine.addr(),
+                alice.clone(),
+                1,
+                Uint128::from(60_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let alice_balance = router.wrap().query_balance(&alice, "orai").unwrap().amount;
-//     assert_eq!(alice_balance, Uint128::new(4_880_000_000));
+    let alice_balance = router.wrap().query_balance(&alice, "orai").unwrap().amount;
+    assert_eq!(alice_balance, Uint128::new(4_880_000_000));
 
-//     // let position = engine
-//     //     .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//     //     .unwrap();
+    let position = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .unwrap();
 
-//     // // transferred margin = margin + fee = 60 + (60 * 10 * 10%) = 120
-//     // assert_eq!(position.size, Integer::new_positive(37_500_000u128));
-//     // assert_eq!(position.margin, Uint128::from(60_000_000u64));
-//     // assert_eq!(position.notional, Uint128::from(600_000_000u64));
+    // transferred margin = margin + fee = 60 + (60 * 10 * 10%) = 120
+    assert_eq!(position.size, Integer::new_positive(37_500_000u128));
+    assert_eq!(position.margin, Uint128::from(60_000_000u64));
+    assert_eq!(position.notional, Uint128::from(600_000_000u64));
 
-//     // let fee_pool_balance = router
-//     //     .wrap()
-//     //     .query_balance(&fee_pool.addr(), "orai")
-//     //     .unwrap()
-//     //     .amount;
-//     // assert_eq!(fee_pool_balance, Uint128::from(60_000_000u64));
-//     // let engine_balance = router
-//     //     .wrap()
-//     //     .query_balance(&engine.addr(), "orai")
-//     //     .unwrap()
-//     //     .amount;
-//     // assert_eq!(engine_balance, Uint128::from(60_000_000u64));
-// }
+    let fee_pool_balance = router
+        .wrap()
+        .query_balance(&fee_pool.addr(), "orai")
+        .unwrap()
+        .amount;
+    assert_eq!(fee_pool_balance, Uint128::from(60_000_000u64));
+    let engine_balance = router
+        .wrap()
+        .query_balance(&engine.addr(), "orai")
+        .unwrap()
+        .amount;
+    assert_eq!(engine_balance, Uint128::from(60_000_000u64));
+}
 
-// #[test]
-// fn test_force_error_insufficient_token_long_position() {
-//     let NativeTokenScenario {
-//         mut router,
-//         owner,
-//         alice,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_native_token_scenario();
+#[test]
+fn test_force_error_insufficient_token_long_position() {
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = new_native_token_scenario();
 
-//     // 10% fee
-//     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             Uint128::from(60_000_000u64),
-//             Uint128::from(10_000_000u64),
-//             Uint128::from(37_500_000u64),
-//             vec![Coin::new(119_000_000u128, "orai")],
-//         )
-//         .unwrap();
-//     let err = router.execute(alice.clone(), msg).unwrap_err();
-//     assert_eq!(
-//         err.source().unwrap().to_string(),
-//         "Generic error: sent funds are insufficient".to_string()
-//     );
-// }
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(60_000_000u64),
+            Uint128::from(10_000_000u64),
+            Uint128::from(37_500_000u64),
+            vec![Coin::new(119_000_000u128, "orai")],
+        )
+        .unwrap();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: sent funds are insufficient".to_string()
+    );
+}
 
-// #[test]
-// fn test_ten_percent_fee_open_short_position() {
-//     let NativeTokenScenario {
-//         mut router,
-//         owner,
-//         alice,
-//         fee_pool,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_native_token_scenario();
+#[test]
+fn test_ten_percent_fee_open_short_position() {
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        fee_pool,
+        engine,
+        vamm,
+        ..
+    } = new_native_token_scenario();
 
-//     // 10% fee
-//     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     // alice opens long position with 60 margin, 10x leverage
-//     // (1000 + 600) * (100 + baseAssetDelta) = 100k, baseAssetDelta = -37.5
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             Uint128::from(60_000_000u64),
-//             Uint128::from(10_000_000u64),
-//             Uint128::from(150_000_000u64),
-//             calculate_funds_needed(
-//                 &router.wrap(),
-//                 engine.addr(),
-//                 alice.clone(),
-//                 Uint128::from(60_000_000u64),
-//                 Uint128::from(10_000_000u64),
-//                 Side::Buy,
-//                 vamm.addr(),
-//             )
-//             .unwrap(),
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    // alice opens long position with 60 margin, 10x leverage
+    // (1000 + 600) * (100 + baseAssetDelta) = 100k, baseAssetDelta = -37.5
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            Uint128::from(60_000_000u64),
+            Uint128::from(10_000_000u64),
+            Uint128::from(150_000_000u64),
+            calculate_funds_needed(
+                &router.wrap(),
+                engine.addr(),
+                alice.clone(),
+                1,
+                Uint128::from(60_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let alice_balance = router.wrap().query_balance(&alice, "orai").unwrap().amount;
-//     assert_eq!(alice_balance, Uint128::new(4_880_000_000));
+    let alice_balance = router.wrap().query_balance(&alice, "orai").unwrap().amount;
+    assert_eq!(alice_balance, Uint128::new(4_880_000_000));
 
-//     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
+    let position = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .unwrap();
 
-//     // transferred margin = margin + fee = 60 + (60 * 10 * 10%) = 120
-//     assert_eq!(position.size, Integer::new_negative(150_000_000u128));
-//     assert_eq!(position.margin, Uint128::from(60_000_000u64));
-//     assert_eq!(position.notional, Uint128::from(600_000_000u64));
+    // transferred margin = margin + fee = 60 + (60 * 10 * 10%) = 120
+    assert_eq!(position.size, Integer::new_negative(150_000_000u128));
+    assert_eq!(position.margin, Uint128::from(60_000_000u64));
+    assert_eq!(position.notional, Uint128::from(600_000_000u64));
 
-//     let fee_pool_balance = router
-//         .wrap()
-//         .query_balance(&fee_pool.addr(), "orai")
-//         .unwrap()
-//         .amount;
-//     assert_eq!(fee_pool_balance, Uint128::from(60_000_000u64));
-//     let engine_balance = router
-//         .wrap()
-//         .query_balance(&engine.addr(), "orai")
-//         .unwrap()
-//         .amount;
-//     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
-// }
+    let fee_pool_balance = router
+        .wrap()
+        .query_balance(&fee_pool.addr(), "orai")
+        .unwrap()
+        .amount;
+    assert_eq!(fee_pool_balance, Uint128::from(60_000_000u64));
+    let engine_balance = router
+        .wrap()
+        .query_balance(&engine.addr(), "orai")
+        .unwrap()
+        .amount;
+    assert_eq!(engine_balance, Uint128::from(60_000_000u64));
+}
 
-// #[test]
-// fn test_force_error_insufficient_token_short_position() {
-//     let NativeTokenScenario {
-//         mut router,
-//         owner,
-//         alice,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_native_token_scenario();
+#[test]
+fn test_force_error_insufficient_token_short_position() {
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = new_native_token_scenario();
 
-//     // 10% fee
-//     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     // alice opens long position with 60 margin, 10x leverage
-//     // (1000 + 600) * (100 + baseAssetDelta) = 100k, baseAssetDelta = -37.5
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             Uint128::from(60_000_000u64),
-//             Uint128::from(10_000_000u64),
-//             Uint128::from(150_000_000u64),
-//             vec![Coin::new(100_000_000u128, "orai")],
-//         )
-//         .unwrap();
-//     let err = router.execute(alice.clone(), msg).unwrap_err();
-//     assert_eq!(
-//         err.source().unwrap().to_string(),
-//         "Generic error: sent funds are insufficient".to_string()
-//     );
-// }
+    // alice opens long position with 60 margin, 10x leverage
+    // (1000 + 600) * (100 + baseAssetDelta) = 100k, baseAssetDelta = -37.5
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            Uint128::from(60_000_000u64),
+            Uint128::from(10_000_000u64),
+            Uint128::from(150_000_000u64),
+            vec![Coin::new(100_000_000u128, "orai")],
+        )
+        .unwrap();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: sent funds are insufficient".to_string()
+    );
+}
 
-// #[test]
-// fn test_ten_percent_fee_long_position_price_remains_long_again() {
-//     let NativeTokenScenario {
-//         mut router,
-//         owner,
-//         alice,
-//         fee_pool,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_native_token_scenario();
+#[test]
+fn test_ten_percent_fee_long_position_price_remains_long_again() {
+    let NativeTokenScenario {
+        mut router,
+        owner,
+        alice,
+        fee_pool,
+        engine,
+        vamm,
+        ..
+    } = new_native_token_scenario();
 
-//     // 10% fee
-//     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     // alice opens long position with 25 margin, 10x leverage
-//     // (1000 + 250) * (100 + baseAssetDelta) = 100k, baseAssetDelta = -20
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             Uint128::from(25_000_000u64),
-//             Uint128::from(10_000_000u64),
-//             Uint128::from(20_000_000u64),
-//             calculate_funds_needed(
-//                 &router.wrap(),
-//                 engine.addr(),
-//                 alice.clone(),
-//                 Uint128::from(25_000_000u64),
-//                 Uint128::from(10_000_000u64),
-//                 Side::Buy,
-//                 vamm.addr(),
-//             )
-//             .unwrap(),
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    // alice opens long position with 25 margin, 10x leverage
+    // (1000 + 250) * (100 + baseAssetDelta) = 100k, baseAssetDelta = -20
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(25_000_000u64),
+            Uint128::from(10_000_000u64),
+            Uint128::from(20_000_000u64),
+            calculate_funds_needed(
+                &router.wrap(),
+                engine.addr(),
+                alice.clone(),
+                1,
+                Uint128::from(25_000_000u64),
+                Uint128::from(10_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let alice_balance_1 = router.wrap().query_balance(&alice, "orai").unwrap().amount;
-//     assert_eq!(alice_balance_1, Uint128::new(4_950_000_000));
+    let alice_balance_1 = router.wrap().query_balance(&alice, "orai").unwrap().amount;
+    assert_eq!(alice_balance_1, Uint128::new(4_950_000_000));
 
-//     // alice opens long position with 175 margin, 2x leverage
-//     // (1250 + 350) * (80 + baseAssetDelta) = 100k, baseAssetDelta = -17.5
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             Uint128::from(175_000_000u64),
-//             Uint128::from(2_000_000u64),
-//             Uint128::from(17_500_000u64),
-//             calculate_funds_needed(
-//                 &router.wrap(),
-//                 engine.addr(),
-//                 alice.clone(),
-//                 Uint128::from(175_000_000u64),
-//                 Uint128::from(2_000_000u64),
-//                 Side::Buy,
-//                 vamm.addr(),
-//             )
-//             .unwrap(),
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    // alice opens long position with 175 margin, 2x leverage
+    // (1250 + 350) * (80 + baseAssetDelta) = 100k, baseAssetDelta = -17.5
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(175_000_000u64),
+            Uint128::from(2_000_000u64),
+            Uint128::from(17_500_000u64),
+            calculate_funds_needed(
+                &router.wrap(),
+                engine.addr(),
+                alice.clone(),
+                2,
+                Uint128::from(175_000_000u64),
+                Uint128::from(2_000_000u64),
+                Side::Buy,
+                vamm.addr(),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let alice_balance_2 = router.wrap().query_balance(&alice, "orai").unwrap().amount;
-//     assert_eq!(
-//         alice_balance_1 - alice_balance_2,
-//         Uint128::from(210_000_000u128)
-//     );
+    let alice_balance_2 = router.wrap().query_balance(&alice, "orai").unwrap().amount;
+    assert_eq!(
+        alice_balance_1 - alice_balance_2,
+        Uint128::from(210_000_000u128)
+    );
 
-//     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
+    let position = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .unwrap();
 
-//     // transferred margin = margin + fee = 60 + (60 * 10 * 10%) = 120
-//     assert_eq!(position.size, Integer::new_positive(37_500_000u128));
-//     assert_eq!(position.margin, Uint128::from(200_000_000u64));
-//     assert_eq!(position.notional, Uint128::from(600_000_000u64));
+    // transferred margin = margin + fee = 60 + (60 * 10 * 10%) = 120
+    assert_eq!(position.size, Integer::new_positive(20_000_000u128));
+    assert_eq!(position.margin, Uint128::from(25_000_000u64));
+    assert_eq!(position.notional, Uint128::from(250_000_000u64));
 
-//     let fee_pool_balance = router
-//         .wrap()
-//         .query_balance(&fee_pool.addr(), "orai")
-//         .unwrap()
-//         .amount;
-//     assert_eq!(fee_pool_balance, Uint128::from(60_000_000u64));
-//     let engine_balance = router
-//         .wrap()
-//         .query_balance(&engine.addr(), "orai")
-//         .unwrap()
-//         .amount;
-//     assert_eq!(engine_balance, Uint128::from(200_000_000u64));
-// }
+    let fee_pool_balance = router
+        .wrap()
+        .query_balance(&fee_pool.addr(), "orai")
+        .unwrap()
+        .amount;
+    assert_eq!(fee_pool_balance, Uint128::from(60_000_000u64));
+    let engine_balance = router
+        .wrap()
+        .query_balance(&engine.addr(), "orai")
+        .unwrap()
+        .amount;
+    assert_eq!(engine_balance, Uint128::from(200_000_000u64));
+}
 
 // #[test]
 // fn test_ten_percent_fee_long_position_price_up_long_again() {

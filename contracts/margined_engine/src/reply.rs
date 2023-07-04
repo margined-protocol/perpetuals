@@ -38,7 +38,7 @@ pub fn update_position_reply(
     reply_id: u64,
 ) -> StdResult<Response> {
     let mut swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
-    // println!("update_position_reply - swapinfo: {:?}", swap);
+    println!("update_position_reply - swapinfo: {:?}", swap);
     let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
 
     let mut position = get_position(
@@ -50,14 +50,14 @@ pub fn update_position_reply(
         &swap.side,
         env.block.height,
     )?;
-    // println!("update_position_reply - position: {:?}", position);
+    println!("update_position_reply - position: {:?}", position);
 
     // depending on the direction the output is positive or negative
     let signed_output = match &swap.side {
         Side::Buy => Integer::new_positive(output),
         Side::Sell => Integer::new_negative(output),
     };
-    // println!("update_position_reply - signed_output: {:?}", signed_output);
+    println!("update_position_reply - signed_output: {:?}", signed_output);
 
     let mut state = read_state(deps.storage)?;
 
@@ -142,7 +142,7 @@ pub fn update_position_reply(
     position.block_number = env.block.height;
 
     let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
-    // println!("update_position_reply - store position: {:?}", position);
+    println!("update_position_reply - store position: {:?}", position);
     store_position(deps.storage, &position_key, &position, false)?;
 
     // check the new position doesn't exceed any caps
@@ -663,9 +663,9 @@ pub fn partial_liquidation_reply(
     position_id: u64
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
-    // println!("partial_liquidation_reply - swapinfo: {:?}", swap);
+    println!("partial_liquidation_reply - swapinfo: {:?}", swap);
     let liquidator = read_tmp_liquidator(deps.storage)?;
-    // println!("partial_liquidation_reply - liquidator: {:?}", liquidator);
+    println!("partial_liquidation_reply - liquidator: {:?}", liquidator);
 
     let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
 
@@ -678,32 +678,32 @@ pub fn partial_liquidation_reply(
         &swap.side,
         env.block.height,
     )?;
-    // println!("partial_liquidation_reply - position: {:?}", position);
+    println!("partial_liquidation_reply - position: {:?}", position);
 
     let config = read_config(deps.storage)?;
 
-    // println!("partial_liquidation_reply - swap.unrealized_pnl: {:?}", swap.unrealized_pnl);
-    // println!("partial_liquidation_reply - config.partial_liquidation_ratio: {:?}", config.partial_liquidation_ratio);
+    println!("partial_liquidation_reply - swap.unrealized_pnl: {:?}", swap.unrealized_pnl);
+    println!("partial_liquidation_reply - config.partial_liquidation_ratio: {:?}", config.partial_liquidation_ratio);
     // calculate delta from trade and whether it was profitable or a loss
     let realized_pnl = (swap.unrealized_pnl
         * Integer::new_positive(config.partial_liquidation_ratio))
         / Integer::new_positive(config.decimals);
     
-    // println!("partial_liquidation_reply - realized_pnl: {:?}", realized_pnl);
+    println!("partial_liquidation_reply - realized_pnl: {:?}", realized_pnl);
     let liquidation_penalty = output
         .checked_mul(config.liquidation_fee)?
         .checked_div(config.decimals)?;
     
-    // println!("partial_liquidation_reply - liquidation_penalty: {:?}", liquidation_penalty);
+    println!("partial_liquidation_reply - liquidation_penalty: {:?}", liquidation_penalty);
     let liquidation_fee = liquidation_penalty.checked_div(Uint128::from(2u64))?;
-    // println!("partial_liquidation_reply - liquidation_fee: {:?}", liquidation_fee);
+    println!("partial_liquidation_reply - liquidation_fee: {:?}", liquidation_fee);
 
     if position.size < Integer::zero() {
         position.size += Integer::new_positive(input);
     } else {
         position.size += Integer::new_negative(input);
     }
-    // println!("partial_liquidation_reply - position.size: {:?}", position.size);
+    println!("partial_liquidation_reply - position.size: {:?}", position.size);
 
     // reduce the traders margin
     position.margin = position
@@ -711,7 +711,7 @@ pub fn partial_liquidation_reply(
         .checked_sub(realized_pnl.value)?
         .checked_sub(liquidation_penalty)?;
 
-    // println!("partial_liquidation_reply - position.margin: {:?}", position.margin);
+    println!("partial_liquidation_reply - position.margin: {:?}", position.margin);
 
     // calculate openNotional (it's different depends on long or short side)
     // long: unrealizedPnl = positionNotional - openNotional => openNotional = positionNotional - unrealizedPnl
@@ -729,7 +729,7 @@ pub fn partial_liquidation_reply(
             .checked_add(position.notional)?
             .checked_sub(swap.open_notional)?,
     };
-    // println!("partial_liquidation_reply - position.notional: {:?}", position.notional);
+    println!("partial_liquidation_reply - position.notional: {:?}", position.notional);
 
     let mut messages: Vec<SubMsg> = vec![];
     let mut state = read_state(deps.storage)?;
@@ -787,14 +787,14 @@ pub fn pay_funding_reply(
     append_cumulative_premium_fraction(deps.storage, vamm.clone(), premium_fraction)?;
 
     let vamm_controller = VammController(vamm);
-    // println!("pay_funding_reply - vamm_controller: {:?}", vamm_controller);
+    println!("pay_funding_reply - vamm_controller: {:?}", vamm_controller);
     let total_position_size = vamm_controller.state(&deps.querier)?.total_position_size;
-    // println!("pay_funding_reply - total_position_size: {:?}", total_position_size);
+    println!("pay_funding_reply - total_position_size: {:?}", total_position_size);
 
     let config = read_config(deps.storage)?;
     let funding_payment =
         total_position_size * premium_fraction / Integer::new_positive(config.decimals);
-    // println!("pay_funding_reply - funding_payment: {:?}", funding_payment);
+    println!("pay_funding_reply - funding_payment: {:?}", funding_payment);
 
     let mut response: Response = Response::new();
 

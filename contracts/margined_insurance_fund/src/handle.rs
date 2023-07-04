@@ -96,7 +96,7 @@ pub fn withdraw(
 
     // send tokens if native or cw20
     let transfer_msg = token.into_msg(config.engine.to_string(), amount, None)?;
-    // println!("withdraw - transfer_msg: {:?}", transfer_msg);
+    println!("withdraw - transfer_msg: {:?}", transfer_msg);
     Ok(Response::default()
         .add_message(transfer_msg)
         .add_attributes(vec![

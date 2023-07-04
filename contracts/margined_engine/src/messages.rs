@@ -39,7 +39,7 @@ pub fn execute_transfer(
     let msg = config
         .eligible_collateral
         .into_msg(receiver.to_string(), amount, None)?;
-    // println!("execute_transfer - msg: {:?}", msg);
+    println!("execute_transfer - msg: {:?}", msg);
 
     Ok(SubMsg::reply_on_error(msg, TRANSFER_FAILURE_REPLY_ID))
 }
@@ -54,14 +54,14 @@ pub fn execute_transfer_to_insurance_fund(
     let token_balance = config
         .eligible_collateral
         .query_balance(&deps.querier, env.contract.address)?;
-    // println!("execute_transfer_to_insurance_fund - token_balance: {:?}", token_balance);
+    println!("execute_transfer_to_insurance_fund - token_balance: {:?}", token_balance);
 
     let amount_to_send = Uint128::min(
         token_balance,
         amount,
     );
 
-    // println!("execute_transfer_to_insurance_fund - amount_to_send: {:?}", amount_to_send);
+    println!("execute_transfer_to_insurance_fund - amount_to_send: {:?}", amount_to_send);
 
     match config.insurance_fund {
         Some(insurance_fund) => execute_transfer(deps.storage, &insurance_fund, amount_to_send),
@@ -85,7 +85,7 @@ pub fn execute_insurance_fund_withdrawal(deps: Deps, amount: Uint128) -> StdResu
         },
         vec![],
     )?;
-    // println!("execute_insurance_fund_withdrawal - msg: {:?}", msg);
+    println!("execute_insurance_fund_withdrawal - msg: {:?}", msg);
 
     Ok(SubMsg::reply_on_error(msg, TRANSFER_FAILURE_REPLY_ID))
 }
