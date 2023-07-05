@@ -237,7 +237,7 @@ pub struct TmpSwapInfo {
     pub position_notional: Uint128, // notional of existing position, inclusing funding
     pub unrealized_pnl: Integer,    // any pnl due
     pub margin_to_vault: Integer,   // margin to be sent to vault
-    pub fees_paid: bool, // true if fees have been paid, used in case of reversing position
+    pub fees_paid: bool,            // true if fees have been paid, used in case of reversing position
 }
 
 pub fn store_tmp_swap(storage: &mut dyn Storage, swap: &TmpSwapInfo) -> StdResult<()> {

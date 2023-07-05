@@ -656,65 +656,85 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
     assert_eq!(position.notional, Uint128::from(200_000_000_000u64));
 }
 
-// #[test]
-// fn test_ten_percent_fee_long_position_price_remains_reduce_position() {
-//     let SimpleScenario {
-//         mut router,
-//         owner,
-//         alice,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_simple_scenario();
+#[test]
+fn test_ten_percent_fee_long_position_price_remains_reduce_position() {
+    let SimpleScenario {
+        mut router,
+        owner,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = new_simple_scenario();
 
-//     // 10% fee
-//     let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             Uint128::from(60_000_000_000u64),
-//             Uint128::from(10_000_000_000u64),
-//             Uint128::from(37_500_000_000u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(60_000_000_000u64),
+            Uint128::from(10_000_000_000u64),
+            Uint128::from(37_500_000_000u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             Uint128::from(350_000_000_000u64),
-//             Uint128::from(1_000_000_000u64),
-//             Uint128::from(17_500_000_000u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            Uint128::from(350_000_000_000u64),
+            Uint128::from(1_000_000_000u64),
+            Uint128::from(17_500_000_000u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
-//     assert_eq!(position.size, Integer::new_positive(20_000_000_000u128));
-//     assert_eq!(position.notional, Uint128::from(250_000_000_000u64));
-//     assert_eq!(position.margin, Uint128::from(60_000_000_000u64));
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .unwrap();
+    assert_eq!(position_1.size, Integer::new_positive(37_500_000_000u128));
+    assert_eq!(position_1.notional, Uint128::from(600_000_000_000u64));
+    assert_eq!(position_1.margin, Uint128::from(60_000_000_000u64));
 
-//     let pnl = engine
-//         .get_unrealized_pnl(
-//             &router.wrap(),
-//             vamm.addr().to_string(),
-//             alice.to_string(),
-//             PnlCalcOption::SpotPrice,
-//         )
-//         .unwrap();
-//     assert_eq!(pnl.unrealized_pnl, Integer::zero());
-// }
+    let position_2 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 2, alice.to_string())
+        .unwrap();
+    assert_eq!(position_2.size, Integer::new_negative(17_500_000_000u128));
+    assert_eq!(position_2.notional, Uint128::from(350_000_000_000u64));
+    assert_eq!(position_2.margin, Uint128::from(350_000_000_000u64));
+
+    let pnl_1 = engine
+        .get_unrealized_pnl(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            1,
+            alice.to_string(),
+            PnlCalcOption::SpotPrice,
+        )
+        .unwrap();
+    assert_eq!(pnl_1.unrealized_pnl, Integer::new_negative(201_063_829_788u128));
+
+
+    let pnl_2 = engine
+        .get_unrealized_pnl(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            2,
+            alice.to_string(),
+            PnlCalcOption::SpotPrice,
+        )
+        .unwrap();
+    assert_eq!(pnl_2.unrealized_pnl, Integer::zero());
+}
 
 // #[test]
 // fn test_ten_percent_fee_reduce_long_position_zero_fee() {
@@ -2159,86 +2179,87 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
 //     assert_eq!(position.margin, Uint128::from(33_333_333_333u64));
 // }
 
-// #[test]
-// fn test_ten_percent_fee_open_long_price_down_liquidation() {
-//     let SimpleScenario {
-//         mut router,
-//         owner,
-//         alice,
-//         bob,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_simple_scenario();
+#[test]
+fn test_ten_percent_fee_open_long_price_down_liquidation() {
+    let SimpleScenario {
+        mut router,
+        owner,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = new_simple_scenario();
 
-//     // 10% fee
-//     let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    // 10% fee
+    let msg = vamm.set_toll_ratio(Uint128::from(100_000u128)).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm.set_spread_ratio(Uint128::zero()).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             Uint128::from(5_000_000_000u64),
-//             Uint128::from(10_000_000_000u64),
-//             Uint128::zero(),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(5_000_000_000u64),
+            Uint128::from(10_000_000_000u64),
+            Uint128::zero(),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             Uint128::from(50_000_000_000u64),
-//             Uint128::from(10_000_000_000u64),
-//             Uint128::zero(),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(bob.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            Uint128::from(50_000_000_000u64),
+            Uint128::from(10_000_000_000u64),
+            Uint128::zero(),
+            vec![],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
 
-//     let pnl = engine
-//         .get_unrealized_pnl(
-//             &router.wrap(),
-//             vamm.addr().to_string(),
-//             alice.to_string(),
-//             PnlCalcOption::SpotPrice,
-//         )
-//         .unwrap();
-//     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(35_962_877_033u64));
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            1,
+            alice.to_string(),
+            PnlCalcOption::SpotPrice,
+        )
+        .unwrap();
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(35_962_877_033u64));
 
-//     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
-//     assert_eq!(position.size, Integer::new_positive(4_761_904_761u64));
-//     assert_eq!(position.notional, Uint128::from(50_000_000_000u64));
-//     assert_eq!(position.margin, Uint128::from(5_000_000_000u64));
+    let position = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::new_positive(4_761_904_761u64));
+    assert_eq!(position.notional, Uint128::from(50_000_000_000u64));
+    assert_eq!(position.margin, Uint128::from(5_000_000_000u64));
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             Uint128::from(60_000_000_000u64),
-//             Uint128::from(1_000_000_000u64),
-//             Uint128::zero(),
-//             vec![],
-//         )
-//         .unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            Uint128::from(60_000_000_000u64),
+            Uint128::from(1_000_000_000u64),
+            Uint128::zero(),
+            vec![],
+        )
+        .unwrap();
 
-//     router.execute(alice.clone(), msg).unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
-//     assert_eq!(position.size, Integer::new_negative(17_501_546_075u64));
-//     assert_eq!(position.notional, Uint128::from(45_962_877_033u64));
-//     assert_eq!(position.margin, Uint128::from(45_962_877_033u64));
-// }
+    let position = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 3, alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::new_negative(22263450836u64));
+    assert_eq!(position.notional, Uint128::from(60000000000u64));
+    assert_eq!(position.margin, Uint128::from(60000000000u64));
+}
 
 // TODO: Find these tests
 #[test]

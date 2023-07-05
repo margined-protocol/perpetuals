@@ -419,203 +419,218 @@ fn test_open_position_equal_size_opposite_side() {
 //     assert_eq!(position.margin, Uint128::zero());
 // }
 
-// #[test]
-// fn test_open_position_short_and_two_longs() {
-//     let SimpleScenario {
-//         mut router,
-//         alice,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_simple_scenario();
+#[test]
+fn test_open_position_short_and_two_longs() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = new_simple_scenario();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             to_decimals(40u64),
-//             to_decimals(5u64),
-//             to_decimals(25u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(40u64),
+            to_decimals(5u64),
+            to_decimals(25u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
-//     assert_eq!(position.size, Integer::new_negative(25_000_000_000u128));
-//     assert_eq!(position.margin, to_decimals(40));
-//     assert_eq!(position.notional, to_decimals(200));
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .unwrap();
+    assert_eq!(position_1.size, Integer::new_negative(25_000_000_000u128));
+    assert_eq!(position_1.margin, to_decimals(40));
+    assert_eq!(position_1.notional, to_decimals(200));
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             to_decimals(20u64),
-//             to_decimals(5u64),
-//             Uint128::from(13_800_000_000u128),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(20u64),
+            to_decimals(5u64),
+            Uint128::from(13_800_000_000u128),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let pnl = engine
-//         .get_unrealized_pnl(
-//             &router.wrap(),
-//             vamm.addr().to_string(),
-//             alice.to_string(),
-//             PnlCalcOption::SpotPrice,
-//         )
-//         .unwrap();
-//     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(8u64));
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            2,
+            alice.to_string(),
+            PnlCalcOption::SpotPrice,
+        )
+        .unwrap();
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(8u64));
 
-//     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
+    let position = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 2, alice.to_string())
+        .unwrap();
 
-//     assert_eq!(position.size, Integer::new_negative(11_111_111_112u128));
-//     assert_eq!(position.notional, to_decimals(100));
-//     assert_eq!(position.margin, Uint128::from(40_000_000_000u128));
+    assert_eq!(position.size, Integer::new_negative(11_111_111_112u128));
+    assert_eq!(position.notional, to_decimals(100));
+    assert_eq!(position.margin, Uint128::from(40_000_000_000u128));
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             to_decimals(10u64),
-//             to_decimals(10u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(10u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     // retrieve the vamm state
-//     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
-//     assert_eq!(position.size, Integer::new_negative(1_u128));
-//     assert_eq!(position.margin, Uint128::from(39_999_999_993u128));
-// }
+    // retrieve the vamm state
+    let position = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 3, alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::new_negative(1_u128));
+    assert_eq!(position.margin, Uint128::from(39_999_999_993u128));
+}
 
-// #[test]
-// fn test_open_position_short_long_short() {
-//     let SimpleScenario {
-//         mut router,
-//         alice,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_simple_scenario();
+#[test]
+fn test_open_position_short_long_short() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = new_simple_scenario();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             to_decimals(20u64),
-//             to_decimals(10u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(20u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             to_decimals(150u64),
-//             to_decimals(3u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(150u64),
+            to_decimals(3u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
-//     assert_eq!(position.size, Integer::new_positive(to_decimals(20u64)));
-//     assert_eq!(position.margin, Uint128::new(83_333_333_333));
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1,  alice.to_string())
+        .unwrap();
+    assert_eq!(position_1.size, Integer::new_negative(to_decimals(25u64)));
+    assert_eq!(position_1.margin, Uint128::new(20_000_000_000));
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             to_decimals(25u64),
-//             to_decimals(10u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let position_2 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 2,  alice.to_string())
+        .unwrap();
+    assert_eq!(position_2.size, Integer::new_positive(to_decimals(45u64)));
+    assert_eq!(position_2.margin, Uint128::new(150_000_000_000));
 
-//     // retrieve the vamm state
-//     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
-//     assert_eq!(position.size, Integer::zero());
-//     assert_eq!(position.margin, Uint128::zero());
-// }
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(25u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-// #[test]
-// fn test_open_position_long_short_long() {
-//     let SimpleScenario {
-//         mut router,
-//         alice,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_simple_scenario();
+    let position_3 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 3,  alice.to_string())
+        .unwrap();
+    assert_eq!(position_3.size, Integer::new_negative(to_decimals(20u64)));
+    assert_eq!(position_3.margin, Uint128::new(25_000_000_000));
+}
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             to_decimals(25u64),
-//             to_decimals(10u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+#[test]
+fn test_open_position_long_short_long() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = new_simple_scenario();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             to_decimals(150u64),
-//             to_decimals(3u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
-//     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
-//     assert_eq!(position.size, Integer::new_negative(to_decimals(25u64)));
-//     assert_eq!(position.margin, Uint128::new(66_666_666_666));
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(25u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             to_decimals(20u64),
-//             to_decimals(10u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(150u64),
+            to_decimals(3u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     // retrieve the vamm state
-//     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
-//     assert_eq!(position.size, Integer::zero());
-//     assert_eq!(position.margin, Uint128::zero());
-// }
+    // position 1
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .unwrap();
+    assert_eq!(position_1.size, Integer::new_positive(to_decimals(20u64)));
+    assert_eq!(position_1.margin, Uint128::new(25_000_000_000));
+    
+    // position 2
+    let position_2 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 2, alice.to_string())
+        .unwrap();
+    assert_eq!(position_2.size, Integer::new_negative(to_decimals(45u64)));
+    assert_eq!(position_2.margin, Uint128::new(150_000_000_000));
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(20u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    // position 3
+    let position_3 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 3, alice.to_string())
+        .unwrap();
+    assert_eq!(position_3.size, Integer::new_positive(to_decimals(25u64)));
+    assert_eq!(position_3.margin, Uint128::new(20_000_000_000)); 
+}
 
 #[test]
 fn test_pnl_zero_no_others_trading() {

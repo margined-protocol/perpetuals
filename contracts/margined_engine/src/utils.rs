@@ -44,7 +44,7 @@ pub fn get_position(
     vamm: &Addr,
     trader: &Addr,
     side: &Side,
-    block_height: u64,
+    block_time: u64,
 ) -> StdResult<Position> {
     // read the position for the trader from vamm
     let mut position = read_position(storage, &position_key, position_id).unwrap_or_default();
@@ -56,7 +56,7 @@ pub fn get_position(
         position.vamm = vamm.clone();
         position.trader = trader.clone();
         position.direction = side_to_direction(side);
-        position.block_number = block_height;
+        position.block_time = block_time;
     }
 
     Ok(position)
@@ -299,7 +299,7 @@ pub fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
     position.margin = Uint128::zero();
     position.notional = Uint128::zero();
     position.last_updated_premium_fraction = Integer::zero();
-    position.block_number = env.block.height;
+    position.block_time = env.block.time.seconds();
 
     Ok(position)
 }

@@ -169,8 +169,9 @@ pub struct Position {
     pub size: Integer,
     pub margin: Uint128,
     pub notional: Uint128,
+    pub entry_price: Uint128,
     pub last_updated_premium_fraction: Integer,
-    pub block_number: u64,
+    pub block_time: u64,
 }
 
 impl Default for Position {
@@ -183,8 +184,9 @@ impl Default for Position {
             size: Integer::zero(),
             margin: Uint128::zero(),
             notional: Uint128::zero(),
+            entry_price: Uint128::zero(),
             last_updated_premium_fraction: Integer::zero(),
-            block_number: 0u64,
+            block_time: 0u64,
         }
     }
 }

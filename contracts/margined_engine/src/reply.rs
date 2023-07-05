@@ -48,7 +48,7 @@ pub fn update_position_reply(
         &swap.vamm,
         &swap.trader,
         &swap.side,
-        env.block.height,
+        env.block.time.seconds(),
     )?;
     println!("update_position_reply - position: {:?}", position);
 
@@ -139,7 +139,14 @@ pub fn update_position_reply(
     position.size += signed_output;
     position.margin = margin;
     position.last_updated_premium_fraction = latest_premium_fraction;
-    position.block_number = env.block.height;
+    position.block_time =  env.block.time.seconds();
+    if position.direction == Direction::AddToAmm {
+        position.entry_price = input.checked_mul(config.decimals)?.checked_div(output)?;
+    } else if position.direction == Direction::RemoveFromAmm {
+        position.entry_price = output.checked_mul(config.decimals)?.checked_div(input)?;
+    }
+    
+    println!("entry_price: {}", position.entry_price);
 
     let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
     println!("update_position_reply - store position: {:?}", position);
@@ -250,7 +257,7 @@ pub fn reverse_position_reply(
         &swap.vamm,
         &swap.trader,
         &swap.side,
-        env.block.height,
+        env.block.time.seconds(),
     )?;
     let mut state = read_state(deps.storage)?;
     update_open_interest_notional(
@@ -368,7 +375,7 @@ pub fn close_position_reply(
         &swap.vamm.clone(),
         &swap.trader,
         &swap.side,
-        env.block.height,
+        env.block.time.seconds(),
     )?;
 
     let margin_delta = match &position.direction {
@@ -471,7 +478,7 @@ pub fn partial_close_position_reply(
         &swap.vamm,
         &swap.trader,
         &swap.side,
-        env.block.height,
+        env.block.time.seconds(),
     )?;
 
     let mut state: State = read_state(deps.storage)?;
@@ -522,7 +529,7 @@ pub fn partial_close_position_reply(
     position.margin = margin;
     position.notional = remaining_notional.value;
     position.last_updated_premium_fraction = latest_premium_fraction;
-    position.block_number = env.block.height;
+    position.block_time = env.block.time.seconds();
 
     let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
     store_position(deps.storage, &position_key, &position, false)?;
@@ -567,7 +574,7 @@ pub fn liquidate_reply(
         &swap.vamm,
         &swap.trader,
         &swap.side,
-        env.block.height,
+        env.block.time.seconds(),
     )?;
 
     // calculate delta from trade and whether it was profitable or a loss
@@ -589,6 +596,7 @@ pub fn liquidate_reply(
     let liquidation_penalty = output
         .checked_mul(config.liquidation_fee)?
         .checked_div(config.decimals)?;
+    println!("liquidation_penalty: {}", liquidation_penalty);
 
     let liquidation_fee = liquidation_penalty.checked_div(Uint128::from(2u64))?;
 
@@ -676,7 +684,7 @@ pub fn partial_liquidation_reply(
         &swap.vamm,
         &swap.trader,
         &swap.side,
-        env.block.height,
+        env.block.time.seconds(),
     )?;
     println!("partial_liquidation_reply - position: {:?}", position);
 

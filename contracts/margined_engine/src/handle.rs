@@ -152,7 +152,7 @@ pub fn open_position(
         &vamm,
         &trader,
         &side,
-        env.block.height,
+        env.block.time.seconds(),
     )?;
 
     println!("open_position - new position: {:?}", position);
