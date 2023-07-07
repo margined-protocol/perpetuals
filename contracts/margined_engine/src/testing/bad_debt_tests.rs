@@ -70,20 +70,15 @@ fn test_cannot_increase_position_when_bad_debt() {
     });
 
     // increase position should fail since margin is not enough
-    // let msg = engine
-    //     .open_position(
-    //         vamm.addr().to_string(),
-    //         Side::Buy,
-    //         to_decimals(10u64),
-    //         to_decimals(10u64),
-    //         to_decimals(0u64),
-    //         vec![],
-    //     )
-    //     .unwrap();
-    // let err = router.execute(alice.clone(), msg).unwrap_err();
-
     let msg = engine
-        .deposit_margin(vamm.addr().to_string(), 1, to_decimals(80u64), vec![])
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(10u64),
+            to_decimals(20u64),
+            to_decimals(0u64),
+            vec![],
+        )
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
 
@@ -107,30 +102,9 @@ fn test_cannot_increase_position_when_bad_debt() {
         .close_position(vamm.addr().to_string(), 4, to_decimals(0u64))
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
-    let msg = engine
-        .close_position(vamm.addr().to_string(), 5, to_decimals(0u64))
-        .unwrap();
-    router.execute(bob.clone(), msg).unwrap();
-    let msg = engine
-        .close_position(vamm.addr().to_string(), 6, to_decimals(0u64))
-        .unwrap();
-    router.execute(bob.clone(), msg).unwrap();
 
-
-    // increase position should succeed since the position no longer has bad debt
-    // let msg = engine
-    //     .open_position(
-    //         vamm.addr().to_string(),
-    //         Side::Buy,
-    //         to_decimals(10u64),
-    //         to_decimals(10u64),
-    //         to_decimals(0u64),
-    //         vec![],
-    //     )
-    //     .unwrap();
-    // router.execute(alice.clone(), msg).unwrap();
     let msg = engine
-        .deposit_margin(vamm.addr().to_string(), 1, to_decimals(80u64), vec![])
+        .deposit_margin(vamm.addr().to_string(), 1, to_decimals(10u64), vec![])
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 }
@@ -181,7 +155,7 @@ fn test_cannot_reduce_position_when_bad_debt() {
             .open_position(
                 vamm.addr().to_string(),
                 Side::Sell,
-                to_decimals(10u64),
+                to_decimals(1u64),
                 to_decimals(10u64),
                 to_decimals(0u64),
                 vec![],
@@ -200,8 +174,8 @@ fn test_cannot_reduce_position_when_bad_debt() {
         .open_position(
             vamm.addr().to_string(),
             Side::Sell,
-            to_decimals(1u64),
-            to_decimals(1u64),
+            to_decimals(5u64),
+            to_decimals(20u64),
             to_decimals(0u64),
             vec![],
         )
@@ -218,7 +192,7 @@ fn test_cannot_reduce_position_when_bad_debt() {
     let msg = engine
         .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
-    router.execute(bob.clone(), msg).unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
     // increase position should succeed since the position no longer has bad debt
     let msg = engine

@@ -902,7 +902,7 @@ fn test_cannot_open_position_even_thought_long_is_underwater_if_still_under_afte
             vamm.addr().to_string(),
             Side::Buy,
             to_decimals(1u64),
-            to_decimals(1u64),
+            to_decimals(21u64),
             to_decimals(0u64),
             vec![],
         )
@@ -918,7 +918,7 @@ fn test_cannot_open_position_even_thought_long_is_underwater_if_still_under_afte
             vamm.addr().to_string(),
             Side::Sell,
             to_decimals(1u64),
-            to_decimals(1u64),
+            to_decimals(21u64),
             to_decimals(0u64),
             vec![],
         )
@@ -970,7 +970,7 @@ fn test_cannot_open_position_even_thought_short_is_underwater_if_still_under_aft
             vamm.addr().to_string(),
             Side::Sell,
             to_decimals(1u64),
-            to_decimals(1u64),
+            to_decimals(21u64),
             to_decimals(0u64),
             vec![],
         )

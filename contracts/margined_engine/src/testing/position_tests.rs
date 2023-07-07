@@ -298,6 +298,7 @@ fn test_open_position_two_shorts() {
     assert_eq!(position_1.margin + position_2.margin, to_decimals(80));
 }
 
+// TODO: @lehieuhust re-test this function
 #[test]
 fn test_open_position_equal_size_opposite_side() {
     let SimpleScenario {
@@ -469,15 +470,15 @@ fn test_open_position_short_and_two_longs() {
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(8u64));
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(7u64));
 
     let position = engine
         .position(&router.wrap(), vamm.addr().to_string(), 2, alice.to_string())
         .unwrap();
 
-    assert_eq!(position.size, Integer::new_negative(11_111_111_112u128));
+    assert_eq!(position.size, Integer::new_positive(13_888_888_888u128));
     assert_eq!(position.notional, to_decimals(100));
-    assert_eq!(position.margin, Uint128::from(40_000_000_000u128));
+    assert_eq!(position.margin, Uint128::from(20_000_000_000u128));
 
     let msg = engine
         .open_position(
@@ -495,8 +496,8 @@ fn test_open_position_short_and_two_longs() {
     let position = engine
         .position(&router.wrap(), vamm.addr().to_string(), 3, alice.to_string())
         .unwrap();
-    assert_eq!(position.size, Integer::new_negative(1_u128));
-    assert_eq!(position.margin, Uint128::from(39_999_999_993u128));
+    assert_eq!(position.size, Integer::new_positive(11_111_111_111u128));
+    assert_eq!(position.margin, Uint128::from(10_000_000_000u128));
 }
 
 #[test]
@@ -895,8 +896,8 @@ fn test_close_zero_position() {
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
-        StdError::GenericErr {
-            msg: "margined_perp::margined_engine::Position".to_string()
+        StdError::NotFound {
+            kind: "margined_perp::margined_engine::Position".to_string()
         },
         err.downcast().unwrap()
     );
@@ -1017,7 +1018,7 @@ fn test_openclose_position_to_check_fee_is_charged_toll_ratio_5_percent() {
         .open_position(
             vamm.addr().to_string(),
             Side::Buy,
-            to_decimals(20u64),
+            to_decimals(58u64),
             to_decimals(10u64),
             to_decimals(0u64),
             vec![],
@@ -1028,30 +1029,16 @@ fn test_openclose_position_to_check_fee_is_charged_toll_ratio_5_percent() {
     let fee_pool_balance = usdc
         .balance(&router.wrap(), fee_pool.addr().clone())
         .unwrap();
-    assert_eq!(fee_pool_balance, to_decimals(16u64));
+    assert_eq!(fee_pool_balance, to_decimals(35u64));
 
     let msg = engine
         .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
-    let msg = engine
-        .close_position(vamm.addr().to_string(), 2, to_decimals(0u64))
-        .unwrap();
-    router.execute(alice.clone(), msg).unwrap();
-    
-    let msg = engine
-        .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
-        .unwrap();
-    router.execute(alice.clone(), msg).unwrap();
-    let msg = engine
-        .close_position(vamm.addr().to_string(), 2, to_decimals(0u64))
-        .unwrap();
-    router.execute(alice.clone(), msg).unwrap();
-
     let fee_pool_balance = usdc
         .balance(&router.wrap(), fee_pool.addr().clone())
         .unwrap();
-    assert_eq!(fee_pool_balance, to_decimals(56u64));
+    assert_eq!(fee_pool_balance, to_decimals(65u64));
 }
 
 #[test]

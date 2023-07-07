@@ -140,9 +140,11 @@ pub fn open_position(
         .decimals
         .checked_mul(config.decimals)?
         .checked_div(leverage)?;
-    require_additional_margin(Integer::from(margin_ratio), config.initial_margin_ratio)?;
+
     println!("open_position - margin_amount: {}", margin_amount);
     println!("open_position - margin_ratio: {}", margin_ratio);
+
+    require_additional_margin(Integer::from(margin_ratio), config.initial_margin_ratio)?;
     
     // creates a new position
     let position = get_position(
