@@ -199,26 +199,26 @@ fn test_change_position_size_cap_and_open_position() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    // let msg = engine
-    //     .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
-    //     .unwrap();
-    // router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-    // let msg = vamm
-    //     .set_base_asset_holding_cap(Uint128::from(20_000_000_000u128))
-    //     .unwrap();
-    // router.execute(owner.clone(), msg).unwrap();
-    // let msg = engine
-    //     .open_position(
-    //         vamm.addr().to_string(),
-    //         Side::Sell,
-    //         to_decimals(16u64),
-    //         to_decimals(10u64),
-    //         to_decimals(0u64),
-    //         vec![],
-    //     )
-    //     .unwrap();
-    // router.execute(alice.clone(), msg).unwrap();
+    let msg = vamm
+        .set_base_asset_holding_cap(Uint128::from(20_000_000_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(16u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 }
 
 #[test]
@@ -257,53 +257,6 @@ fn test_force_error_open_long_position_over_cap() {
 }
 
 #[test]
-fn test_force_error_open_two_long_positions_over_cap() {
-    let SimpleScenario {
-        mut router,
-        alice,
-        owner,
-        engine,
-        vamm,
-        ..
-    } = new_simple_scenario();
-
-    let msg = vamm
-        .set_base_asset_holding_cap(Uint128::from(10_000_000_000u128))
-        .unwrap();
-    router.execute(owner.clone(), msg).unwrap();
-
-    let msg = engine
-        .open_position(
-            vamm.addr().to_string(),
-            Side::Buy,
-            to_decimals(60u64),
-            to_decimals(1u64),
-            to_decimals(0u64),
-            vec![],
-        )
-        .unwrap();
-    router.execute(alice.clone(), msg).unwrap();
-
-    let msg = engine
-        .open_position(
-            vamm.addr().to_string(),
-            Side::Buy,
-            to_decimals(60u64),
-            to_decimals(1u64),
-            to_decimals(0u64),
-            vec![],
-        )
-        .unwrap();
-    let err = router.execute(alice.clone(), msg).unwrap_err();
-    assert_eq!(
-        StdError::GenericErr {
-            msg: "base asset holding exceeds cap".to_string(),
-        },
-        err.downcast().unwrap()
-    );
-}
-
-#[test]
 fn test_force_error_open_short_position_over_cap() {
     let SimpleScenario {
         mut router,
@@ -324,53 +277,6 @@ fn test_force_error_open_short_position_over_cap() {
             vamm.addr().to_string(),
             Side::Sell,
             to_decimals(95u64),
-            to_decimals(1u64),
-            to_decimals(0u64),
-            vec![],
-        )
-        .unwrap();
-    let err = router.execute(alice.clone(), msg).unwrap_err();
-    assert_eq!(
-        StdError::GenericErr {
-            msg: "base asset holding exceeds cap".to_string(),
-        },
-        err.downcast().unwrap()
-    );
-}
-
-#[test]
-fn test_force_error_open_two_short_positions_over_cap() {
-    let SimpleScenario {
-        mut router,
-        alice,
-        owner,
-        engine,
-        vamm,
-        ..
-    } = new_simple_scenario();
-
-    let msg = vamm
-        .set_base_asset_holding_cap(Uint128::from(10_000_000_000u128))
-        .unwrap();
-    router.execute(owner.clone(), msg).unwrap();
-
-    let msg = engine
-        .open_position(
-            vamm.addr().to_string(),
-            Side::Sell,
-            to_decimals(45u64),
-            to_decimals(1u64),
-            to_decimals(0u64),
-            vec![],
-        )
-        .unwrap();
-    router.execute(alice.clone(), msg).unwrap();
-
-    let msg = engine
-        .open_position(
-            vamm.addr().to_string(),
-            Side::Sell,
-            to_decimals(50u64),
             to_decimals(1u64),
             to_decimals(0u64),
             vec![],

@@ -137,7 +137,7 @@ fn test_add_margin_no_open_position() {
 
     assert_eq!(
         err.source().unwrap().to_string(),
-        "Generic error: No position found"
+        "margined_perp::margined_engine::Position not found"
     );
 }
 

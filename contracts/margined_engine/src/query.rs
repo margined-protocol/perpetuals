@@ -119,6 +119,7 @@ pub fn query_cumulative_premium_fraction(deps: Deps, vamm: String) -> StdResult<
         n => vamm_map.cumulative_premium_fractions[n - 1],
     };
 
+    println!("query_cumulative_premium_fraction - result: {}", result);
     Ok(result)
 }
 

@@ -782,398 +782,399 @@ fn test_can_open_same_side_position_even_thought_long_is_underwater_as_long_over
     assert_eq!(pnl_3.position_notional, Uint128::from(99_999_999_990u128));
 }
 
-// #[test]
-// fn test_can_open_same_side_position_even_thought_short_is_underwater_as_long_over_maintenance_ratio_after(
-// ) {
-//     let SimpleScenario {
-//         mut router,
-//         alice,
-//         bob,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_simple_scenario();
+#[test]
+fn test_can_open_same_side_position_even_thought_short_is_underwater_as_long_over_maintenance_ratio_after(
+) {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = new_simple_scenario();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             to_decimals(88u64),
-//             Uint128::from(2_841_000_000u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
-//     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
-//     assert_eq!(position.margin, to_decimals(88u64));
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(88u64),
+            Uint128::from(2_841_000_000u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+    let position = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .unwrap();
+    assert_eq!(position.margin, to_decimals(88u64));
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             to_decimals(250u64),
-//             to_decimals(1u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(bob.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(250u64),
+            to_decimals(1u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
 
-//     // position size = 20
-//     // margin = 88
-//     // positionNotional = 166.67
-//     // openNotional ~= 250
-//     // unrealizedPnl = 166.67 - 250 = -83.33
-//     // marginRatio = (88 + -83.33) / 250 = 1.868%
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             to_decimals(150u64),
-//             to_decimals(1u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    // position size = 20
+    // margin = 88
+    // positionNotional = 166.67
+    // openNotional ~= 250
+    // unrealizedPnl = 166.67 - 250 = -83.33
+    // marginRatio = (88 + -83.33) / 250 = 1.868%
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(150u64),
+            to_decimals(1u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     // AMM after 850 : 117.64705882
-//     // positionNotional = 166.67 - 150 = 16.67
-//     // position size = 20 - 17.64705882 = 2.35
-//     // realizedPnl = -83.33 * (20 - 2.35) / 20 = -73.538725
-//     // margin = 88 -73.538725 ~= 14.4
-//     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
-//     assert_eq!(position.size, Integer::from(2_353_760_434u128));
-//     assert_eq!(position.margin, Uint128::from(14_471_986_128u128));
-//     let pnl = engine
-//         .get_unrealized_pnl(
-//             &router.wrap(),
-//             vamm.addr().to_string(),
-//             alice.to_string(),
-//             PnlCalcOption::SpotPrice,
-//         )
-//         .unwrap();
-//     assert_eq!(pnl.position_notional, Uint128::from(16_672_666_672u128));
-// }
+    // AMM after 850 : 117.64705882
+    // positionNotional = 166.67 - 150 = 16.67
+    // position size = 20 - 17.64705882 = 2.35
+    // realizedPnl = -83.33 * (20 - 2.35) / 20 = -73.538725
+    // margin = 88 -73.538725 ~= 14.4
+    let position = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 3, alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::new_negative(17_646_751_562u128));
+    assert_eq!(position.margin, Uint128::from(150_000_000_000u128));
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            3,
+            alice.to_string(),
+            PnlCalcOption::SpotPrice,
+        )
+        .unwrap();
+    assert_eq!(pnl.position_notional, Uint128::from(150_000_000_006u128));
+}
 
-// #[test]
-// fn test_cannot_open_position_even_thought_long_is_underwater_if_still_under_after_action() {
-//     let SimpleScenario {
-//         mut router,
-//         alice,
-//         bob,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_simple_scenario();
+#[test]
+fn test_cannot_open_position_even_thought_long_is_underwater_if_still_under_after_action() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = new_simple_scenario();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             to_decimals(25u64),
-//             to_decimals(10u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(25u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             to_decimals(250u64),
-//             to_decimals(1u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(bob.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(250u64),
+            to_decimals(1u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             to_decimals(1u64),
-//             to_decimals(1u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     let err = router.execute(alice.clone(), msg).unwrap_err();
-//     assert_eq!(
-//         err.source().unwrap().to_string(),
-//         "Generic error: Position is undercollateralized"
-//     );
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(1u64),
+            to_decimals(1u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Position is undercollateralized"
+    );
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             to_decimals(1u64),
-//             to_decimals(1u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     let err = router.execute(alice.clone(), msg).unwrap_err();
-//     assert_eq!(
-//         err.source().unwrap().to_string(),
-//         "Generic error: Position is undercollateralized"
-//     );
-// }
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(1u64),
+            to_decimals(1u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Position is undercollateralized"
+    );
+}
 
-// #[test]
-// fn test_cannot_open_position_even_thought_short_is_underwater_if_still_under_after_action() {
-//     let SimpleScenario {
-//         mut router,
-//         alice,
-//         bob,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_simple_scenario();
+#[test]
+fn test_cannot_open_position_even_thought_short_is_underwater_if_still_under_after_action() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = new_simple_scenario();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             to_decimals(20u64),
-//             to_decimals(10u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(20u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             to_decimals(250u64),
-//             to_decimals(1u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(bob.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(250u64),
+            to_decimals(1u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             to_decimals(1u64),
-//             to_decimals(1u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     let err = router.execute(alice.clone(), msg).unwrap_err();
-//     assert_eq!(
-//         err.source().unwrap().to_string(),
-//         "Generic error: Position is undercollateralized"
-//     );
-// }
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(1u64),
+            to_decimals(1u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Position is undercollateralized"
+    );
+}
 
-// #[test]
-// fn test_close_partial_position_long_position_when_closing_whole_position_is_over_fluctuation_limit()
-// {
-//     let SimpleScenario {
-//         mut router,
-//         owner,
-//         alice,
-//         engine,
-//         vamm,
-//         usdc,
-//         ..
-//     } = new_simple_scenario();
+#[test]
+fn test_close_partial_position_long_position_when_closing_whole_position_is_over_fluctuation_limit()
+{
+    let SimpleScenario {
+        mut router,
+        owner,
+        alice,
+        engine,
+        vamm,
+        usdc,
+        ..
+    } = new_simple_scenario();
 
-//     let msg = engine
-//         .set_partial_liquidation_ratio(Uint128::from(250_000_000u128))
-//         .unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = engine
+        .set_partial_liquidation_ratio(Uint128::from(250_000_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     router.update_block(|block| {
-//         block.time = block.time.plus_seconds(15);
-//         block.height += 1;
-//     });
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             to_decimals(25u64),
-//             to_decimals(10u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(25u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     router.update_block(|block| {
-//         block.time = block.time.plus_seconds(15);
-//         block.height += 1;
-//     });
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
 
-//     let msg = vamm.set_spread_ratio(Uint128::from(1_000_000u128)).unwrap(); // 0.001
-//     router.execute(owner.clone(), msg).unwrap();
-//     let msg = vamm
-//         .set_fluctuation_limit_ratio(Uint128::from(359_000_000u128))
-//         .unwrap(); // 0.359
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm.set_spread_ratio(Uint128::from(1_000_000u128)).unwrap(); // 0.001
+    router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm
+        .set_fluctuation_limit_ratio(Uint128::from(359_000_000u128))
+        .unwrap(); // 0.359
+    router.execute(owner.clone(), msg).unwrap();
 
-//     // the price will be dropped to 10 if we close whole position
-//     // the price fluctuation will be (15.625 - 10) / 15.625 = 0.36
-//     // only 25% position (20 * 0.25 = 5) will be closed,
-//     // position notional is 73.53
-//     // amm reserves after 1176.47 : 85
-//     let msg = engine
-//         .close_position(vamm.addr().to_string(), 1, Uint128::zero())
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    // the price will be dropped to 10 if we close whole position
+    // the price fluctuation will be (15.625 - 10) / 15.625 = 0.36
+    // only 25% position (20 * 0.25 = 5) will be closed,
+    // position notional is 73.53
+    // amm reserves after 1176.47 : 85
+    let msg = engine
+        .close_position(vamm.addr().to_string(), 1, Uint128::zero())
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
-//     assert_eq!(position.size, Integer::new_positive(15_000_000_000u128));
-//     assert_eq!(position.margin, Uint128::from(25_000_000_000u128));
+    let position = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::new_positive(15_000_000_000u128));
+    assert_eq!(position.margin, Uint128::from(25_000_000_000u128));
 
-//     // 5000 - open pos margin (25) + fee (-73.53 * 0.1%)
-//     let alice_balance = usdc.balance(&router.wrap(), alice.clone()).unwrap();
-//     assert_eq!(alice_balance, Uint128::from(4_974_926_470_589u128));
-// }
+    // 5000 - open pos margin (25) + fee (-73.53 * 0.1%)
+    let alice_balance = usdc.balance(&router.wrap(), alice.clone()).unwrap();
+    assert_eq!(alice_balance, Uint128::from(4_974_926_470_589u128));
+}
 
-// #[test]
-// fn test_close_partial_position_short_position_when_closing_whole_position_is_over_fluctuation_limit(
-// ) {
-//     let SimpleScenario {
-//         mut router,
-//         owner,
-//         alice,
-//         engine,
-//         vamm,
-//         usdc,
-//         ..
-//     } = new_simple_scenario();
+#[test]
+fn test_close_partial_position_short_position_when_closing_whole_position_is_over_fluctuation_limit(
+) {
+    let SimpleScenario {
+        mut router,
+        owner,
+        alice,
+        engine,
+        vamm,
+        usdc,
+        ..
+    } = new_simple_scenario();
 
-//     let msg = engine
-//         .set_partial_liquidation_ratio(Uint128::from(250_000_000u128))
-//         .unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = engine
+        .set_partial_liquidation_ratio(Uint128::from(250_000_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     router.update_block(|block| {
-//         block.time = block.time.plus_seconds(15);
-//         block.height += 1;
-//     });
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             to_decimals(20u64),
-//             to_decimals(10u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(20u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     router.update_block(|block| {
-//         block.time = block.time.plus_seconds(15);
-//         block.height += 1;
-//     });
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
 
-//     let msg = vamm.set_spread_ratio(Uint128::from(1_000_000u128)).unwrap(); // 0.001
-//     router.execute(owner.clone(), msg).unwrap();
-//     let msg = vamm
-//         .set_fluctuation_limit_ratio(Uint128::from(562_400_000u128))
-//         .unwrap(); // 0.5624
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm.set_spread_ratio(Uint128::from(1_000_000u128)).unwrap(); // 0.001
+    router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm
+        .set_fluctuation_limit_ratio(Uint128::from(562_400_000u128))
+        .unwrap(); // 0.5624
+    router.execute(owner.clone(), msg).unwrap();
 
-//     // the price will be dropped to 10 if we close whole position
-//     // the price fluctuation will be (10 - 6.4) / 6.4 = 0.5625
-//     // only 25% position (25 * 0.25 = 6.25) will be closed,
-//     // position notional is 42.11
-//     // amm reserves after 842.11 : 118.75
-//     let msg = engine
-//         .close_position(vamm.addr().to_string(), 1, Uint128::zero())
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    // the price will be dropped to 10 if we close whole position
+    // the price fluctuation will be (10 - 6.4) / 6.4 = 0.5625
+    // only 25% position (25 * 0.25 = 6.25) will be closed,
+    // position notional is 42.11
+    // amm reserves after 842.11 : 118.75
+    let msg = engine
+        .close_position(vamm.addr().to_string(), 1, Uint128::zero())
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap();
-//     assert_eq!(position.size, Integer::new_negative(18_750_000_000u128));
-//     assert_eq!(position.margin, Uint128::from(20_000_000_000u128));
+    let position = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .unwrap();
+    assert_eq!(position.size, Integer::new_negative(18_750_000_000u128));
+    assert_eq!(position.margin, Uint128::from(20_000_000_000u128));
 
-//     // 5000 - open pos margin (25) + fee (-42.11 * 0.1%)
-//     let alice_balance = usdc.balance(&router.wrap(), alice.clone()).unwrap();
-//     assert_eq!(alice_balance, Uint128::from(4_979_957_894_737u128));
-// }
+    // 5000 - open pos margin (25) + fee (-42.11 * 0.1%)
+    let alice_balance = usdc.balance(&router.wrap(), alice.clone()).unwrap();
+    assert_eq!(alice_balance, Uint128::from(4_979_957_894_737u128));
+}
 
-// #[test]
-// fn test_close_whole_partial_position_when_partial_liquidation_ratio_is_one() {
-//     let SimpleScenario {
-//         mut router,
-//         owner,
-//         alice,
-//         engine,
-//         vamm,
-//         ..
-//     } = new_simple_scenario();
+#[test]
+fn test_close_whole_partial_position_when_partial_liquidation_ratio_is_one() {
+    let SimpleScenario {
+        mut router,
+        owner,
+        alice,
+        engine,
+        vamm,
+        ..
+    } = new_simple_scenario();
 
-//     let msg = engine
-//         .set_partial_liquidation_ratio(Uint128::from(1_000_000_000u128))
-//         .unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = engine
+        .set_partial_liquidation_ratio(Uint128::from(1_000_000_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     router.update_block(|block| {
-//         block.time = block.time.plus_seconds(15);
-//         block.height += 1;
-//     });
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
 
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             to_decimals(25u64),
-//             to_decimals(10u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(25u64),
+            to_decimals(10u64),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     router.update_block(|block| {
-//         block.time = block.time.plus_seconds(15);
-//         block.height += 1;
-//     });
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
 
-//     let msg = vamm.set_spread_ratio(Uint128::from(1_000_000u128)).unwrap(); // 0.001
-//     router.execute(owner.clone(), msg).unwrap();
-//     let msg = vamm
-//         .set_fluctuation_limit_ratio(Uint128::from(359_000_000u128))
-//         .unwrap(); // 0.359
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm.set_spread_ratio(Uint128::from(1_000_000u128)).unwrap(); // 0.001
+    router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm
+        .set_fluctuation_limit_ratio(Uint128::from(359_000_000u128))
+        .unwrap(); // 0.359
+    router.execute(owner.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .close_position(vamm.addr().to_string(), 1, Uint128::zero())
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    let msg = engine
+        .close_position(vamm.addr().to_string(), 1, Uint128::zero())
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let err = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-//         .unwrap_err();
-//     assert_eq!(
-//         StdError::GenericErr {
-//             msg: "Querier contract error: Generic error: No position found".to_string()
-//         },
-//         err
-//     );
-// }
+    let err = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "Querier contract error: margined_perp::margined_engine::Position not found".to_string()
+        },
+        err
+    );
+}

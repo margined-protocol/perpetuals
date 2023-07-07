@@ -153,7 +153,8 @@ pub fn check_base_asset_holding_cap(
     let cap = vamm_controller
         .config(&deps.querier)?
         .base_asset_holding_cap;
-
+    println!("check_base_asset_holding_cap - size: {}", size);
+    println!("check_base_asset_holding_cap - cap: {}", cap);
     // check if the cap has been exceeded - if trader address is in whitelist this bypasses
     if (!cap.is_zero() && size > cap)
         && !WHITELIST.query_hook(deps.to_owned(), trader.to_string())?
@@ -257,17 +258,20 @@ pub fn calc_remain_margin_with_funding_payment(
     let funding_payment = (latest_premium_fraction - position.last_updated_premium_fraction)
         * position.size
         / Integer::new_positive(config.decimals);
-
+    println!("calc_remain_margin_with_funding_payment - latest_premium_fraction: {}", latest_premium_fraction);
+    println!("calc_remain_margin_with_funding_payment - position.last_updated_premium_fraction: {}", position.last_updated_premium_fraction);
+    println!("calc_remain_margin_with_funding_payment - position.size: {}", position.size);
+    println!("calc_remain_margin_with_funding_payment - funding_payment: {}", funding_payment);
     // calculate the remaining margin
     let mut remaining_margin: Integer =
         margin_delta - funding_payment + Integer::new_positive(position.margin);
     let mut bad_debt = Integer::zero();
-
+    println!("calc_remain_margin_with_funding_payment - remaining_margin: {}", remaining_margin);
     if remaining_margin.is_negative() {
         bad_debt = remaining_margin.invert_sign();
         remaining_margin = Integer::zero();
     }
-
+    println!("calc_remain_margin_with_funding_payment - bad_debt: {}", bad_debt);
     // if the remain is negative, set it to zero
     // and set the rest to
     Ok(RemainMarginResponse {
@@ -394,6 +398,8 @@ pub fn require_additional_margin(
     margin_ratio: Integer,
     base_margin: Uint128,
 ) -> StdResult<Response> {
+    println!("require_additional_margin - margin_ratio: {:?}", margin_ratio);
+    println!("require_additional_margin - base_margin: {:?}", base_margin);
     if margin_ratio < Integer::new_positive(base_margin) {
         return Err(StdError::generic_err("Position is undercollateralized"));
     }

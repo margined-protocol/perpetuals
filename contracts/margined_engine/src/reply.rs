@@ -50,7 +50,7 @@ pub fn update_position_reply(
         &swap.side,
         env.block.time.seconds(),
     )?;
-    println!("update_position_reply - position: {:?}", position);
+    // println!("update_position_reply - position: {:?}", position);
 
     // depending on the direction the output is positive or negative
     let signed_output = match &swap.side {
@@ -139,12 +139,8 @@ pub fn update_position_reply(
     position.size += signed_output;
     position.margin = margin;
     position.last_updated_premium_fraction = latest_premium_fraction;
+    position.entry_price = position.notional.checked_mul(config.decimals)?.checked_div(position.size.value)?;
     position.block_time =  env.block.time.seconds();
-    if position.direction == Direction::AddToAmm {
-        position.entry_price = input.checked_mul(config.decimals)?.checked_div(output)?;
-    } else if position.direction == Direction::RemoveFromAmm {
-        position.entry_price = output.checked_mul(config.decimals)?.checked_div(input)?;
-    }
     
     println!("entry_price: {}", position.entry_price);
 
@@ -790,7 +786,7 @@ pub fn pay_funding_reply(
     sender: &str,
 ) -> StdResult<Response> {
     let vamm = deps.api.addr_validate(sender)?;
-
+    println!("pay_funding_reply - premium_fraction: {}", premium_fraction);
     // update the cumulative premium fraction
     append_cumulative_premium_fraction(deps.storage, vamm.clone(), premium_fraction)?;
 

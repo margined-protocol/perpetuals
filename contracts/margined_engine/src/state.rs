@@ -304,6 +304,7 @@ pub fn append_cumulative_premium_fraction(
         n => {
             let current_premium_fraction = vamm_map.cumulative_premium_fractions[n - 1];
             let latest_premium_fraction = premium_fraction + current_premium_fraction;
+            println!("append_cumulative_premium_fraction - latest_premium_fraction: {}", latest_premium_fraction);
             vamm_map
                 .cumulative_premium_fractions
                 .push(latest_premium_fraction)

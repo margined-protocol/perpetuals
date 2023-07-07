@@ -155,7 +155,6 @@ pub fn open_position(
         env.block.time.seconds(),
     )?;
 
-    println!("open_position - new position: {:?}", position);
     // if direction and side are same way then increasing else we are reversing
     let is_increase = position.direction == Direction::AddToAmm && side == Side::Buy
         || position.direction == Direction::RemoveFromAmm && side == Side::Sell;
