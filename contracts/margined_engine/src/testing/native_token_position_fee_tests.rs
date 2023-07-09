@@ -2879,6 +2879,7 @@ fn test_ten_percent_fee_long_position_price_remains_long_again() {
 //                 &router.wrap(),
 //                 engine.addr(),
 //                 alice.clone(),
+//                 1,
 //                 Uint128::from(5_000_000u64),
 //                 Uint128::from(10_000_000u64),
 //                 Side::Buy,
@@ -2900,6 +2901,7 @@ fn test_ten_percent_fee_long_position_price_remains_long_again() {
 //                 &router.wrap(),
 //                 engine.addr(),
 //                 bob.clone(),
+//                 2,
 //                 Uint128::from(50_000_000u64),
 //                 Uint128::from(10_000_000u64),
 //                 Side::Sell,
@@ -2914,6 +2916,7 @@ fn test_ten_percent_fee_long_position_price_remains_long_again() {
 //         .get_unrealized_pnl(
 //             &router.wrap(),
 //             vamm.addr().to_string(),
+//             1,
 //             alice.to_string(),
 //             PnlCalcOption::SpotPrice,
 //         )
@@ -2921,7 +2924,7 @@ fn test_ten_percent_fee_long_position_price_remains_long_again() {
 //     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(35_962_880u64));
 
 //     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+//         .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
 //         .unwrap();
 //     assert_eq!(position.size, Integer::new_positive(4_761_904u64));
 //     assert_eq!(position.notional, Uint128::from(50_000_000u64));
@@ -2943,6 +2946,7 @@ fn test_ten_percent_fee_long_position_price_remains_long_again() {
 //             &router.wrap(),
 //             engine.addr(),
 //             alice.clone(),
+//             3,
 //             Uint128::from(60_000_000u64),
 //             Uint128::from(1_000_000u64),
 //             Side::Sell,
@@ -2955,7 +2959,7 @@ fn test_ten_percent_fee_long_position_price_remains_long_again() {
 //     router.execute(alice.clone(), msg).unwrap();
 
 //     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+//         .position(&router.wrap(), vamm.addr().to_string(), 3, alice.to_string())
 //         .unwrap();
 //     assert_eq!(position.size, Integer::new_negative(17_501_548u64));
 //     assert_eq!(position.notional, Uint128::from(45_962_880u64));

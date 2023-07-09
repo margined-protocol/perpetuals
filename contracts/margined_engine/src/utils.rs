@@ -55,6 +55,7 @@ pub fn get_position(
         position.position_id = position_id;
         position.vamm = vamm.clone();
         position.trader = trader.clone();
+        position.side = side.clone();
         position.direction = side_to_direction(side);
         position.block_time = block_time;
     }
