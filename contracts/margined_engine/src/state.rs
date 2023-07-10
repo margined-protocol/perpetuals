@@ -238,6 +238,8 @@ pub struct TmpSwapInfo {
     pub unrealized_pnl: Integer,    // any pnl due
     pub margin_to_vault: Integer,   // margin to be sent to vault
     pub fees_paid: bool,            // true if fees have been paid, used in case of reversing position
+    pub take_profit: Uint128,       // take profit price of position
+    pub stop_loss: Option<Uint128>,       // stop loss price of position
 }
 
 pub fn store_tmp_swap(storage: &mut dyn Storage, swap: &TmpSwapInfo) -> StdResult<()> {

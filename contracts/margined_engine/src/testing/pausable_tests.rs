@@ -1,3 +1,4 @@
+use cosmwasm_std::Uint128;
 use margined_perp::margined_engine::Side;
 use margined_utils::{
     cw_multi_test::Executor,
@@ -26,6 +27,8 @@ fn test_paused_by_admin() {
             Side::Buy,
             to_decimals(1u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -104,6 +107,8 @@ fn test_pause_then_unpause_by_admin() {
             Side::Buy,
             to_decimals(1u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )

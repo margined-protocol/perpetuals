@@ -26,6 +26,8 @@ fn test_get_margin_ratio() {
             Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -56,6 +58,8 @@ fn test_get_margin_ratio_long() {
             Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -73,6 +77,8 @@ fn test_get_margin_ratio_long() {
             Side::Sell,
             to_decimals(15u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -108,6 +114,8 @@ fn test_get_margin_ratio_short() {
             Side::Sell,
             to_decimals(25u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -120,6 +128,8 @@ fn test_get_margin_ratio_short() {
             Side::Buy,
             to_decimals(15u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -156,6 +166,8 @@ fn test_get_margin_higher_twap() {
             Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -173,6 +185,8 @@ fn test_get_margin_higher_twap() {
             Side::Sell,
             to_decimals(15u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -216,6 +230,8 @@ fn test_verify_margin_ratio_funding_payment_positive() {
             Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -278,6 +294,8 @@ fn test_verify_margin_ratio_funding_payment_negative() {
             Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -342,6 +360,8 @@ fn test_verify_margin_ratio_with_pnl_funding_payment_positive() {
             Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(20u64),
             vec![],
         )
@@ -355,6 +375,8 @@ fn test_verify_margin_ratio_with_pnl_funding_payment_positive() {
             Side::Sell,
             to_decimals(45u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(45u64),
             vec![],
         )
@@ -429,6 +451,8 @@ fn test_verify_margin_ratio_with_pnl_funding_payment_negative() {
             Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(20u64),
             vec![],
         )
@@ -442,6 +466,8 @@ fn test_verify_margin_ratio_with_pnl_funding_payment_negative() {
             Side::Sell,
             to_decimals(45u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(45u64),
             vec![],
         )

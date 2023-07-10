@@ -277,6 +277,8 @@ impl NativeTokenScenario {
                     quote_asset_amount,
                     leverage,
                     Uint128::zero(),
+                    Some(Uint128::zero()),
+                    Uint128::zero(),
                     funds.clone(),
                 )
                 .unwrap();
@@ -596,6 +598,8 @@ impl SimpleScenario {
                     side.clone(),
                     quote_asset_amount,
                     leverage,
+                    Uint128::zero(),
+                    Some(Uint128::zero()),
                     Uint128::zero(),
                     vec![],
                 )

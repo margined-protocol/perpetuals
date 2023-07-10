@@ -153,6 +153,8 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             side,
             margin_amount,
             leverage,
+            take_profit,
+            stop_loss,
             base_asset_limit,
         } => open_position(
             deps,
@@ -162,6 +164,8 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             side,
             margin_amount,
             leverage,
+            take_profit,
+            stop_loss,
             base_asset_limit,
         ),
         ExecuteMsg::ClosePosition {

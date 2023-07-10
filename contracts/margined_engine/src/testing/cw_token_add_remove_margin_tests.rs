@@ -26,6 +26,8 @@ fn test_add_margin() {
             Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -77,6 +79,8 @@ fn test_add_margin_insufficent_balance() {
             Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -134,6 +138,8 @@ fn test_remove_margin() {
             Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -193,6 +199,8 @@ fn test_remove_margin_after_paying_funding() {
             Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -262,6 +270,8 @@ fn test_remove_margin_insufficient_margin() {
             Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -298,6 +308,8 @@ fn test_remove_margin_incorrect_ratio_four_percent() {
             Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -335,6 +347,8 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price(
             Side::Buy,
             to_decimals(60u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -348,6 +362,8 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price(
             Side::Buy,
             to_decimals(60u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -393,6 +409,8 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() 
             Side::Buy,
             to_decimals(60u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -406,6 +424,8 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() 
             Side::Sell,
             to_decimals(10u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -451,6 +471,8 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price
             Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -464,6 +486,8 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price
             Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -516,6 +540,8 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_spot_price()
             Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -528,6 +554,8 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_spot_price()
             Side::Buy,
             to_decimals(10u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -573,6 +601,8 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_twap_price(
             Side::Buy,
             to_decimals(60u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -591,6 +621,8 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_twap_price(
             Side::Buy,
             to_decimals(60u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -641,6 +673,8 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() 
             Side::Buy,
             to_decimals(60u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -659,6 +693,8 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() 
             Side::Sell,
             to_decimals(10u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -709,6 +745,8 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price
             Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -727,6 +765,8 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price
             Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -784,6 +824,8 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_twap_price()
             Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -801,6 +843,8 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_twap_price()
             Side::Buy,
             to_decimals(10u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )

@@ -31,6 +31,8 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
             Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -43,6 +45,8 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
             Side::Sell,
             to_decimals(1200u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -134,6 +138,8 @@ fn test_will_keep_generating_same_loss_when_funding_rate_is_positive() {
             Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -146,6 +152,8 @@ fn test_will_keep_generating_same_loss_when_funding_rate_is_positive() {
             Side::Sell,
             to_decimals(1200u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -212,6 +220,8 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
             Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -224,6 +234,8 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
             Side::Sell,
             to_decimals(1200u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -345,6 +357,8 @@ fn test_funding_rate_is_negative_1_percent_then_negative_1_percent() {
             Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -357,6 +371,8 @@ fn test_funding_rate_is_negative_1_percent_then_negative_1_percent() {
             Side::Sell,
             to_decimals(1200u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -491,6 +507,8 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
             Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -503,6 +521,8 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
             Side::Sell,
             to_decimals(1200u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -580,6 +600,8 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
             Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -592,6 +614,8 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
             Side::Sell,
             to_decimals(1200u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -657,6 +681,8 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
             Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -669,6 +695,8 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
             Side::Sell,
             to_decimals(1200u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -732,6 +760,8 @@ fn test_have_huge_funding_payment_loss_margin_zero_cannot_remove_margin() {
             Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -744,6 +774,8 @@ fn test_have_huge_funding_payment_loss_margin_zero_cannot_remove_margin() {
             Side::Sell,
             to_decimals(1200u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -803,6 +835,8 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
             Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -815,6 +849,8 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
             Side::Sell,
             to_decimals(1200u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -886,6 +922,8 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
             Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -898,6 +936,8 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
             Side::Sell,
             to_decimals(1200u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )

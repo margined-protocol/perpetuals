@@ -43,6 +43,8 @@ fn test_cannot_increase_position_when_bad_debt() {
             Side::Buy,
             to_decimals(10u64),
             to_decimals(8u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(4u64),
             vec![],
         )
@@ -57,6 +59,8 @@ fn test_cannot_increase_position_when_bad_debt() {
                 Side::Sell,
                 to_decimals(10u64),
                 to_decimals(10u64),
+                Uint128::zero(),
+                Some(Uint128::zero()),
                 to_decimals(0u64),
                 vec![],
             )
@@ -76,6 +80,8 @@ fn test_cannot_increase_position_when_bad_debt() {
             Side::Buy,
             to_decimals(10u64),
             to_decimals(20u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -143,6 +149,8 @@ fn test_cannot_reduce_position_when_bad_debt() {
             Side::Buy,
             to_decimals(10u64),
             to_decimals(8u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(4u64),
             vec![],
         )
@@ -157,6 +165,8 @@ fn test_cannot_reduce_position_when_bad_debt() {
                 Side::Sell,
                 to_decimals(1u64),
                 to_decimals(10u64),
+                Uint128::zero(),
+                Some(Uint128::zero()),
                 to_decimals(0u64),
                 vec![],
             )
@@ -176,6 +186,8 @@ fn test_cannot_reduce_position_when_bad_debt() {
             Side::Sell,
             to_decimals(5u64),
             to_decimals(20u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -201,6 +213,8 @@ fn test_cannot_reduce_position_when_bad_debt() {
             Side::Sell,
             to_decimals(1u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -242,6 +256,8 @@ fn test_cannot_close_position_when_bad_debt() {
             Side::Buy,
             to_decimals(10u64),
             to_decimals(8u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(4u64),
             vec![],
         )
@@ -269,6 +285,8 @@ fn test_cannot_close_position_when_bad_debt() {
             Side::Sell,
             to_decimals(50u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -343,6 +361,8 @@ fn test_cannot_partial_close_position_when_bad_debt() {
             Side::Buy,
             to_decimals(10u64),
             to_decimals(8u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(4u64),
             vec![],
         )
@@ -357,6 +377,8 @@ fn test_cannot_partial_close_position_when_bad_debt() {
                 Side::Sell,
                 to_decimals(10u64),
                 to_decimals(10u64),
+                Uint128::zero(),
+                Some(Uint128::zero()),
                 to_decimals(0u64),
                 vec![],
             )
@@ -431,6 +453,8 @@ fn test_can_partial_close_position_as_long_as_no_bad_debt_is_incurred() {
             Side::Buy,
             to_decimals(10u64),
             to_decimals(8u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(4u64),
             vec![],
         )
@@ -445,6 +469,8 @@ fn test_can_partial_close_position_as_long_as_no_bad_debt_is_incurred() {
                 Side::Sell,
                 to_decimals(10u64),
                 to_decimals(10u64),
+                Uint128::zero(),
+                Some(Uint128::zero()),
                 to_decimals(0u64),
                 vec![],
             )

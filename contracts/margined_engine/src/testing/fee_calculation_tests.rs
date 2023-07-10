@@ -37,6 +37,8 @@ fn test_open_position_total_fee_ten_percent() {
             Side::Buy,
             Uint128::from(300_000_000_000u64),
             Uint128::from(2_000_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::from(37_500_000_000u64),
             vec![],
         )
@@ -99,6 +101,8 @@ fn test_open_short_position_twice_total_fee_ten_percent() {
             Side::Sell,
             Uint128::from(50_000_000_000u64),
             Uint128::from(2_000_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::from(11_200_000_000u64),
             vec![],
         )
@@ -113,6 +117,8 @@ fn test_open_short_position_twice_total_fee_ten_percent() {
             Side::Sell,
             Uint128::from(50_000_000_000u64),
             Uint128::from(2_000_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::from(139_000_000_000u64),
             vec![],
         )
@@ -171,6 +177,8 @@ fn test_open_and_close_position_fee_ten_percent() {
             Side::Buy,
             Uint128::from(300_000_000_000u64),
             Uint128::from(2_000_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::from(37_500_000_000u64),
             vec![],
         )
@@ -226,6 +234,8 @@ fn test_open_position_close_manually_open_reverse_position_total_fee_ten_percent
             Uint128::from(300_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![],
         )
         .unwrap();
@@ -247,6 +257,8 @@ fn test_open_position_close_manually_open_reverse_position_total_fee_ten_percent
             Side::Sell,
             pnl.position_notional,
             Uint128::from(1_000_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![],
         )
@@ -298,6 +310,8 @@ fn test_open_position_close_manually_open_reverse_position_short_then_long_total
             Uint128::from(300_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![],
         )
         .unwrap();
@@ -319,6 +333,8 @@ fn test_open_position_close_manually_open_reverse_position_short_then_long_total
             Side::Buy,
             pnl.position_notional,
             Uint128::from(1_000_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![],
         )
@@ -370,6 +386,8 @@ fn test_open_position_reduce_position_total_fee_ten_percent() {
             Uint128::from(300_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![],
         )
         .unwrap();
@@ -381,6 +399,8 @@ fn test_open_position_reduce_position_total_fee_ten_percent() {
             Side::Sell,
             Uint128::from(300_000_000_000u64),
             Uint128::from(1_000_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![],
         )
@@ -432,6 +452,8 @@ fn test_open_position_reduce_position_short_then_long_total_fee_ten_percent() {
             Uint128::from(300_000_000_000u64),
             Uint128::from(2_000_000_000u64),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![],
         )
         .unwrap();
@@ -443,6 +465,8 @@ fn test_open_position_reduce_position_short_then_long_total_fee_ten_percent() {
             Side::Buy,
             Uint128::from(300_000_000_000u128),
             Uint128::from(1_000_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![],
         )
@@ -508,6 +532,8 @@ fn test_close_under_collateral_position_total_fee_ten_percent() {
             Uint128::from(20_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![],
         )
         .unwrap();
@@ -519,6 +545,8 @@ fn test_close_under_collateral_position_total_fee_ten_percent() {
             Side::Sell,
             Uint128::from(10_000_000_000u64),
             Uint128::from(10_000_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![],
         )
@@ -577,6 +605,8 @@ fn test_force_error_insufficient_balance_open_position_total_fee_ten_percent() {
             Side::Buy,
             Uint128::from(300_000_000_000u64),
             Uint128::from(2_000_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::from(37_500_000_000u64),
             vec![],
         )
@@ -619,6 +649,8 @@ fn test_has_spread_no_toll() {
             Side::Buy,
             Uint128::from(300_000_000_000u64),
             Uint128::from(2_000_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![],
         )

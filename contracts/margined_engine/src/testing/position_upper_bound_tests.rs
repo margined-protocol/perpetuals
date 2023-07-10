@@ -29,6 +29,8 @@ fn test_open_long_and_short_under_limit() {
             Side::Buy,
             to_decimals(110u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -41,6 +43,8 @@ fn test_open_long_and_short_under_limit() {
             Side::Sell,
             to_decimals(50u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -70,6 +74,8 @@ fn test_open_two_long_positions_under_limit() {
             Side::Buy,
             to_decimals(55u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -82,6 +88,8 @@ fn test_open_two_long_positions_under_limit() {
             Side::Buy,
             to_decimals(55u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -111,6 +119,8 @@ fn test_open_short_and_long_under_limit() {
             Side::Sell,
             to_decimals(90u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -123,6 +133,8 @@ fn test_open_short_and_long_under_limit() {
             Side::Buy,
             to_decimals(50u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -152,6 +164,8 @@ fn test_open_two_short_positions_under_limit() {
             Side::Sell,
             to_decimals(45u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -164,6 +178,8 @@ fn test_open_two_short_positions_under_limit() {
             Side::Sell,
             to_decimals(45u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -193,6 +209,8 @@ fn test_change_position_size_cap_and_open_position() {
             Side::Buy,
             to_decimals(25u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -214,6 +232,8 @@ fn test_change_position_size_cap_and_open_position() {
             Side::Sell,
             to_decimals(16u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -243,6 +263,8 @@ fn test_force_error_open_long_position_over_cap() {
             Side::Buy,
             to_decimals(120u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -278,6 +300,8 @@ fn test_force_error_open_short_position_over_cap() {
             Side::Sell,
             to_decimals(95u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -313,6 +337,8 @@ fn test_force_error_open_long_and_reverse_short_over_cap() {
             Side::Buy,
             to_decimals(10u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -325,6 +351,8 @@ fn test_force_error_open_long_and_reverse_short_over_cap() {
             Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -360,6 +388,8 @@ fn test_force_error_open_short_and_reverse_long_over_cap() {
             Side::Sell,
             to_decimals(9u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -372,6 +402,8 @@ fn test_force_error_open_short_and_reverse_long_over_cap() {
             Side::Buy,
             to_decimals(21u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )

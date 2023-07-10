@@ -47,6 +47,8 @@ fn test_force_error_open_position_exceeds_fluctuation_limit() {
             Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -178,6 +180,8 @@ fn test_close_position_limit_force_error_exceeding_fluctuation_limit_twice_in_sa
             Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -197,6 +201,8 @@ fn test_close_position_limit_force_error_exceeding_fluctuation_limit_twice_in_sa
             Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -287,6 +293,8 @@ fn test_close_position_slippage_limit_originally_long() {
             Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -306,6 +314,8 @@ fn test_close_position_slippage_limit_originally_long() {
             Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -383,6 +393,8 @@ fn test_close_position_slippage_limit_originally_short() {
             Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::from(11_111_111_112u128),
             vec![],
         )
@@ -402,6 +414,8 @@ fn test_close_position_slippage_limit_originally_short() {
             Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::from(13_890_000_000u128),
             vec![],
         )
@@ -477,6 +491,8 @@ fn test_force_error_close_position_slippage_limit_originally_long() {
             Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(9u64),
             vec![],
         )
@@ -494,6 +510,8 @@ fn test_force_error_close_position_slippage_limit_originally_long() {
             Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::from(7_500_000_000u128),
             vec![],
         )
@@ -566,6 +584,8 @@ fn test_force_error_close_position_slippage_limit_originally_short() {
             Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::from(11_111_111_112u128),
             vec![],
         )
@@ -583,6 +603,8 @@ fn test_force_error_close_position_slippage_limit_originally_short() {
             Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::from(13_890_000_000u128),
             vec![],
         )

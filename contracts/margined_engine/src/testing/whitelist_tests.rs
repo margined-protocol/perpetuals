@@ -194,6 +194,8 @@ fn test_whitelist_works_open_short_over_limit() {
             Side::Sell,
             to_decimals(100u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -229,6 +231,8 @@ fn test_whitelist_works_open_long_over_limit() {
             Side::Buy,
             to_decimals(100u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -264,6 +268,8 @@ fn test_whitelist_works_open_short_into_reverse_long() {
             Side::Sell,
             to_decimals(5u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -277,6 +283,8 @@ fn test_whitelist_works_open_short_into_reverse_long() {
             Side::Buy,
             to_decimals(100u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -312,6 +320,8 @@ fn test_whitelist_works_open_long_into_reverse_short() {
             Side::Buy,
             to_decimals(5u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -325,6 +335,8 @@ fn test_whitelist_works_open_long_into_reverse_short() {
             Side::Sell,
             to_decimals(100u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -358,6 +370,8 @@ fn test_whitelist_works_blocks_short_into_reverse_long() {
             Side::Sell,
             to_decimals(9u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -371,6 +385,8 @@ fn test_whitelist_works_blocks_short_into_reverse_long() {
             Side::Buy,
             to_decimals(21u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -407,6 +423,8 @@ fn test_whitelist_blocks_open_long_into_reverse_short() {
             Side::Buy,
             to_decimals(5u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -420,6 +438,8 @@ fn test_whitelist_blocks_open_long_into_reverse_short() {
             Side::Sell,
             to_decimals(100u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -462,6 +482,8 @@ fn test_whitelist_no_limit_notional_cap() {
             Side::Buy,
             to_decimals(100u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -499,6 +521,8 @@ fn test_whitelist_wont_stop_trading_if_reduce_pos() {
             Side::Buy,
             to_decimals(100u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -512,6 +536,8 @@ fn test_whitelist_wont_stop_trading_if_reduce_pos() {
             Side::Sell,
             to_decimals(10u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )

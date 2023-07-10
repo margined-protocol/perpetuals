@@ -1,7 +1,7 @@
 use cosmwasm_std::{Addr, Coin, QuerierWrapper, StdResult, Uint128};
 use margined_common::asset::NATIVE_DENOM;
 use margined_common::integer::Integer;
-use margined_perp::margined_engine::{PnlCalcOption, Side};
+use margined_perp::margined_engine::{PnlCalcOption, Side, Position};
 use margined_perp::margined_vamm::Direction;
 
 use crate::contracts::helpers::{EngineController, VammController};
@@ -48,29 +48,30 @@ pub fn calculate_funds_needed(
     let is_increase = position.direction == Direction::AddToAmm && side == Side::Buy
         || position.direction == Direction::RemoveFromAmm && side == Side::Sell;
 
-    let margin_owed = match is_increase {
-        true => Integer::new_positive(quote_asset_amount),
-        false => {
-            // Check the unrealised PnL and add it to: (existing position + margin)
-            let unrealized_pnl = engine_controller.get_unrealized_pnl(
-                querier,
-                vamm.to_string(),
-                position_id,
-                trader.to_string(),
-                PnlCalcOption::SpotPrice,
-            )?;
-            if new_notional > unrealized_pnl.position_notional {
-                Integer::new_positive(
-                    (new_notional - unrealized_pnl.position_notional)
-                        .checked_mul(SIX_D_P)?
-                        .checked_div(leverage)?,
-                ) - Integer::new_positive(position.margin)
-                    - unrealized_pnl.unrealized_pnl
-            } else {
-                Integer::zero()
-            }
-        }
-    };
+    let margin_owed = Integer::new_positive(quote_asset_amount);
+    // let margin_owed = match is_increase {
+    //     true => Integer::new_positive(quote_asset_amount),
+    //     false => {
+    //         // Check the unrealised PnL and add it to: (existing position + margin)
+    //         let unrealized_pnl = engine_controller.get_unrealized_pnl(
+    //             querier,
+    //             vamm.to_string(),
+    //             position_id,
+    //             trader.to_string(),
+    //             PnlCalcOption::SpotPrice,
+    //         )?;
+    //         if new_notional > unrealized_pnl.position_notional {
+    //             Integer::new_positive(
+    //                 (new_notional - unrealized_pnl.position_notional)
+    //                     .checked_mul(SIX_D_P)?
+    //                     .checked_div(leverage)?,
+    //             ) - Integer::new_positive(position.margin)
+    //                 - unrealized_pnl.unrealized_pnl
+    //         } else {
+    //             Integer::zero()
+    //         }
+    //     }
+    // };
 
     let funds_owed = if margin_owed.is_positive() {
         fee_amount + margin_owed.value

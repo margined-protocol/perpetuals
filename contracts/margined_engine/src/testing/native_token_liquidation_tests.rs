@@ -58,6 +58,8 @@ fn test_partially_liquidate_long_position() {
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![Coin::new(25_000_000u128, "orai")],
         )
         .unwrap();
@@ -76,6 +78,8 @@ fn test_partially_liquidate_long_position() {
             Side::Sell,
             Uint128::from(45_180_723u128),
             Uint128::from(1_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(45_180_723u128, "orai")],
         )
@@ -161,6 +165,8 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![Coin::new(25_000_000u128, "orai")],
         )
         .unwrap();
@@ -179,6 +185,8 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
             Side::Sell,
             Uint128::from(45_180_723u128),
             Uint128::from(1_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(45_180_723u128, "orai")],
         )
@@ -269,6 +277,8 @@ fn test_partially_liquidate_short_position() {
             Uint128::from(20_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
         .unwrap();
@@ -287,6 +297,8 @@ fn test_partially_liquidate_short_position() {
             Side::Buy,
             Uint128::from(19_672_131u128),
             Uint128::from(1_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(19_672_131u128, "orai")],
         )
@@ -372,6 +384,8 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
             Uint128::from(20_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
         .unwrap();
@@ -390,6 +404,8 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
             Side::Buy,
             Uint128::from(19_672_131u128),
             Uint128::from(1_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(19_672_131u128, "orai")],
         )
@@ -480,6 +496,8 @@ fn test_long_position_complete_liquidation() {
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![Coin::new(25_000_000u128, "orai")],
         )
         .unwrap();
@@ -498,6 +516,8 @@ fn test_long_position_complete_liquidation() {
             Side::Sell,
             Uint128::from(73_529_411u128),
             Uint128::from(1_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(73_529_411u128, "orai")],
         )
@@ -583,6 +603,8 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![Coin::new(25_000_000u128, "orai")],
         )
         .unwrap();
@@ -601,6 +623,8 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
             Side::Sell,
             Uint128::from(73_529_411u128),
             Uint128::from(1_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(73_529_411u128, "orai")],
         )
@@ -687,6 +711,8 @@ fn test_short_position_complete_liquidation() {
             Uint128::from(20_000_000u64),
             Uint128::from(10_000_000u64),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
         .unwrap();
@@ -705,6 +731,8 @@ fn test_short_position_complete_liquidation() {
             Side::Buy,
             Uint128::from(40_336_134u128),
             Uint128::from(1_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(40_336_134u128, "orai")],
         )
@@ -737,154 +765,160 @@ fn test_short_position_complete_liquidation() {
     assert_eq!(insurance_balance, Uint128::from(4_993_712_679u128));
 }
 
-// #[test]
-// fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
-//     let NativeTokenScenario {
-//         mut router,
-//         alice,
-//         bob,
-//         carol,
-//         owner,
-//         engine,
-//         vamm,
-//         pricefeed,
-//         ..
-//     } = new_native_token_scenario();
+#[test]
+fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
+    let NativeTokenScenario {
+        mut router,
+        alice,
+        bob,
+        carol,
+        owner,
+        engine,
+        vamm,
+        pricefeed,
+        ..
+    } = new_native_token_scenario();
 
-//     // set the latest price
-//     let price = Uint128::from(10_000_000u128);
-//     let timestamp = router.block_info().time.seconds();
+    // set the latest price
+    let price = Uint128::from(10_000_000u128);
+    let timestamp = router.block_info().time.seconds();
 
-//     let msg = pricefeed
-//         .append_price("ETH".to_string(), price, timestamp)
-//         .unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     router.update_block(|block| {
-//         block.time = block.time.plus_seconds(900);
-//         block.height += 1;
-//     });
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(900);
+        block.height += 1;
+    });
 
-//     let msg = engine
-//         .set_margin_ratios(Uint128::from(100_000u128))
-//         .unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = engine
+        .set_margin_ratios(Uint128::from(100_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .set_partial_liquidation_ratio(Uint128::from(250_000u128))
-//         .unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = engine
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .set_liquidation_fee(Uint128::from(25_000u128))
-//         .unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = engine
+        .set_liquidation_fee(Uint128::from(25_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     // when bob create a 20 margin * 5x long position when 9.0909090909 quoteAsset = 100
-//     // AMM after: 1100 : 90.9090909091
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             Uint128::from(20_000_000u64),
-//             Uint128::from(5_000_000u64),
-//             Uint128::zero(),
-//             vec![Coin::new(20_000_000u128, "orai")],
-//         )
-//         .unwrap();
-//     router.execute(bob.clone(), msg).unwrap();
+    // when bob create a 20 margin * 5x long position when 9.0909090909 quoteAsset = 100
+    // AMM after: 1100 : 90.9090909091
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
+            vec![Coin::new(20_000_000u128, "orai")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
 
-//     router.update_block(|block| {
-//         block.time = block.time.plus_seconds(15);
-//         block.height += 1;
-//     });
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
 
-//     // when alice create a 20 margin * 5x long position when 7.5757575758 quoteAsset = 100
-//     // AMM after: 1200 : 83.3333333333
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             Uint128::from(20_000_000u64),
-//             Uint128::from(5_000_000u64),
-//             Uint128::zero(),
-//             vec![Coin::new(20_000_000u128, "orai")],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    // when alice create a 20 margin * 5x long position when 7.5757575758 quoteAsset = 100
+    // AMM after: 1200 : 83.3333333333
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
+            vec![Coin::new(20_000_000u128, "orai")],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     router.update_block(|block| {
-//         block.time = block.time.plus_seconds(600);
-//         block.height += 1;
-//     });
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(600);
+        block.height += 1;
+    });
 
-//     // when bob sell his position when 7.5757575758 quoteAsset = 100
-//     // AMM after: 1100 : 90.9090909091
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             Uint128::from(20_000_000u64),
-//             Uint128::from(5_000_000u64),
-//             Uint128::zero(),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(bob.clone(), msg).unwrap();
+    // when bob sell his position when 7.5757575758 quoteAsset = 100
+    // AMM after: 1100 : 90.9090909091
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            Uint128::from(20_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
+            vec![Coin::new(20_000_000u128, "orai")],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
 
-//     router.update_block(|block| {
-//         block.time = block.time.plus_seconds(15);
-//         block.height += 1;
-//     });
+    router.update_block(|block| {
+        block.time = block.time.plus_seconds(15);
+        block.height += 1;
+    });
 
-//     // verify alice's openNotional = 100
-//     // spot price PnL = positionValue - openNotional = 84.62 - 100 = -15.38
-//     // TWAP PnL = (70.42 * 270 + 84.62 * 15 + 99.96 * 600 + 84.62 * 15) / 900 - 100 ~= -9.39
-//     // Use TWAP price PnL since -9.39 > -15.38
-//     let position = engine
-//         .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
-//         .unwrap();
-//     assert_eq!(position.notional, Uint128::from(100_000_000u64));
+    // verify alice's openNotional = 100
+    // spot price PnL = positionValue - openNotional = 84.62 - 100 = -15.38
+    // TWAP PnL = (70.42 * 270 + 84.62 * 15 + 99.96 * 600 + 84.62 * 15) / 900 - 100 ~= -9.39
+    // Use TWAP price PnL since -9.39 > -15.38
+    let position = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 2, alice.to_string())
+        .unwrap();
+    assert_eq!(position.notional, Uint128::from(100_000_000u64));
 
-//     let pnl = engine
-//         .get_unrealized_pnl(
-//             &router.wrap(),
-//             vamm.addr().to_string(),
-//             1,
-//             alice.to_string(),
-//             PnlCalcOption::SpotPrice,
-//         )
-//         .unwrap();
-//     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(15_384_623u128));
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            2,
+            alice.to_string(),
+            PnlCalcOption::SpotPrice,
+        )
+        .unwrap();
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(15_384_623u128));
 
-//     let pnl = engine
-//         .get_unrealized_pnl(
-//             &router.wrap(),
-//             vamm.addr().to_string(),
-//             1,
-//             alice.to_string(),
-//             PnlCalcOption::Twap,
-//         )
-//         .unwrap();
-//     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(9_386_068u128));
+    let pnl = engine
+        .get_unrealized_pnl(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            2,
+            alice.to_string(),
+            PnlCalcOption::Twap,
+        )
+        .unwrap();
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(9_386_068u128));
 
-//     let price = vamm.spot_price(&router.wrap()).unwrap();
-//     let msg = pricefeed
-//         .append_price("ETH".to_string(), price, timestamp)
-//         .unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let price = vamm.spot_price(&router.wrap()).unwrap();
+    let msg = pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     let msg = engine
-//         .liquidate(vamm.addr().to_string(), 1, alice.to_string(), Uint128::zero())
-//         .unwrap();
-//     let err = router.execute(carol.clone(), msg).unwrap_err();
-//     assert_eq!(
-//         StdError::GenericErr {
-//             msg: "Position is overcollateralized".to_string(),
-//         },
-//         err.downcast().unwrap()
-//     );
-// }
+    let msg = engine
+        .liquidate(vamm.addr().to_string(), 2, alice.to_string(), Uint128::zero())
+        .unwrap();
+    let err = router.execute(carol.clone(), msg).unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "Position is overcollateralized".to_string(),
+        },
+        err.downcast().unwrap()
+    );
+}
 
 #[test]
 fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
@@ -936,6 +970,8 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
             Side::Buy,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -1035,103 +1071,147 @@ fn test_force_error_empty_position() {
     );
 }
 
-// #[test]
-// fn test_partially_liquidate_one_position_within_fluctuation_limit() {
-//     let mut env = new_native_token_scenario();
+#[test]
+fn test_partially_liquidate_one_position_within_fluctuation_limit() {
+    let mut env = new_native_token_scenario();
 
-//     // set the latest price
-//     let price = Uint128::from(10_000_000u128);
-//     let timestamp = env.router.block_info().time.seconds();
+    // set the latest price
+    let price = Uint128::from(10_000_000u128);
+    let timestamp = env.router.block_info().time.seconds();
 
-//     let msg = env
-//         .pricefeed
-//         .append_price("ETH".to_string(), price, timestamp)
-//         .unwrap();
-//     env.router.execute(env.owner.clone(), msg).unwrap();
+    let msg = env
+        .pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
 
-//     env.router.update_block(|block| {
-//         block.time = block.time.plus_seconds(900);
-//         block.height += 1;
-//     });
+    env.router.update_block(|block| {
+        block.time = block.time.plus_seconds(900);
+        block.height += 1;
+    });
 
-//     let msg = env
-//         .engine
-//         .set_margin_ratios(Uint128::from(100_000u128))
-//         .unwrap();
-//     env.router.execute(env.owner.clone(), msg).unwrap();
+    let msg = env
+        .engine
+        .set_margin_ratios(Uint128::from(100_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
 
-//     let msg = env
-//         .engine
-//         .set_partial_liquidation_ratio(Uint128::from(250_000u128))
-//         .unwrap();
-//     env.router.execute(env.owner.clone(), msg).unwrap();
+    let msg = env
+        .engine
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
 
-//     let msg = env
-//         .engine
-//         .set_liquidation_fee(Uint128::from(25_000u128))
-//         .unwrap();
-//     env.router.execute(env.owner.clone(), msg).unwrap();
+    let msg = env
+        .engine
+        .set_liquidation_fee(Uint128::from(25_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
 
-//     // when bob create a 20 margin * 5x long position when 9.0909090909 quoteAsset = 100
-//     // AMM after: 1100 : 90.9090909091
-//     env.open_small_position(
-//         env.bob.clone(),
-//         Side::Buy,
-//         Uint128::from(4_000_000u64),
-//         Uint128::from(5_000_000u64),
-//         4_000_000u128,
-//         5u64,
-//     );
+    // when bob create a 20 margin * 5x long position when 9.0909090909 quoteAsset = 100
+    // AMM after: 1100 : 90.9090909091
+    env.open_small_position(
+        env.bob.clone(),
+        Side::Buy,
+        Uint128::from(4_000_000u64),
+        Uint128::from(5_000_000u64),
+        4_000_000u128,
+        5u64,
+    );
 
-//     // when alice create a 20 margin * 5x long position when 7.5757575758 quoteAsset = 100
-//     // AMM after: 1200 : 83.3333333333
-//     // alice get: 90.9090909091 - 83.3333333333 = 7.5757575758
-//     env.open_small_position(
-//         env.alice.clone(),
-//         Side::Buy,
-//         Uint128::from(4_000_000u64),
-//         Uint128::from(5_000_000u64),
-//         4_000_000u128,
-//         5u64,
-//     );
+    // when alice create a 20 margin * 5x long position when 7.5757575758 quoteAsset = 100
+    // AMM after: 1200 : 83.3333333333
+    // alice get: 90.9090909091 - 83.3333333333 = 7.5757575758
+    env.open_small_position(
+        env.alice.clone(),
+        Side::Buy,
+        Uint128::from(4_000_000u64),
+        Uint128::from(5_000_000u64),
+        4_000_000u128,
+        5u64,
+    );
 
-//     // AMM after: 1100 : 90.9090909091, price: 12.1
-//     env.open_small_position(
-//         env.bob.clone(),
-//         Side::Sell,
-//         Uint128::from(4_000_000u64),
-//         Uint128::from(5_000_000u64),
-//         0u128,
-//         5u64,
-//     );
+    // AMM after: 1100 : 90.9090909091, price: 12.1
+    env.open_small_position(
+        env.bob.clone(),
+        Side::Sell,
+        Uint128::from(4_000_000u64),
+        Uint128::from(5_000_000u64),
+        4_000_000u128,
+        5u64,
+    );
 
-//     let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
-//     let msg = env
-//         .pricefeed
-//         .append_price("ETH".to_string(), price, timestamp)
-//         .unwrap();
-//     env.router.execute(env.owner.clone(), msg).unwrap();
+    let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
+    let msg = env
+        .pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
 
-//     // liquidate -> return 25% base asset to AMM
-//     // 90.9090909091 + 1.89 = 92.8
-//     // AMM after: 1077.55102 : 92.8, price: 11.61
-//     // fluctuation: (12.1 - 11.61116202) / 12.1 = 0.04039983306
-//     // values can be retrieved with amm.quoteAssetReserve() & amm.baseAssetReserve()
-//     let msg = env
-//         .engine
-//         .liquidate(
-//             env.vamm.addr().to_string(),
-//             1,
-//             env.alice.to_string(),
-//             Uint128::zero(),
-//         )
-//         .unwrap();
-//     env.router.execute(env.carol.clone(), msg).unwrap();
+    // liquidate -> return 25% base asset to AMM
+    // 90.9090909091 + 1.89 = 92.8
+    // AMM after: 1077.55102 : 92.8, price: 11.61
+    // fluctuation: (12.1 - 11.61116202) / 12.1 = 0.04039983306
+    // values can be retrieved with amm.quoteAssetReserve() & amm.baseAssetReserve()
+    let msg = env
+        .engine
+        .liquidate(
+            env.vamm.addr().to_string(),
+            6,
+            env.alice.to_string(),
+            Uint128::zero(),
+        )
+        .unwrap();
+    env.router.execute(env.carol.clone(), msg).unwrap();
 
-//     let state = env.vamm.state(&env.router.wrap()).unwrap();
-//     assert_eq!(state.quote_asset_reserve, Uint128::from(1_077_551_039u128));
-//     assert_eq!(state.base_asset_reserve, Uint128::from(92_803_036u128));
-// }
+    let msg = env
+        .engine
+        .liquidate(
+            env.vamm.addr().to_string(),
+            7,
+            env.alice.to_string(),
+            Uint128::zero(),
+        )
+        .unwrap();
+    env.router.execute(env.carol.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .liquidate(
+            env.vamm.addr().to_string(),
+            8,
+            env.alice.to_string(),
+            Uint128::zero(),
+        )
+        .unwrap();
+    env.router.execute(env.carol.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .liquidate(
+            env.vamm.addr().to_string(),
+            9,
+            env.alice.to_string(),
+            Uint128::zero(),
+        )
+        .unwrap();
+    env.router.execute(env.carol.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .liquidate(
+            env.vamm.addr().to_string(),
+            10,
+            env.alice.to_string(),
+            Uint128::zero(),
+        )
+        .unwrap();
+    env.router.execute(env.carol.clone(), msg).unwrap();
+
+    let state = env.vamm.state(&env.router.wrap()).unwrap();
+    assert_eq!(state.quote_asset_reserve, Uint128::from(1_077_551_039u128));
+    assert_eq!(state.base_asset_reserve, Uint128::from(92_803_036u128));
+}
 
 #[test]
 fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
@@ -1762,139 +1842,142 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
 //     );
 // }
 
-// #[test]
-// fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
-//     let mut env = new_native_token_scenario();
+#[test]
+fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
+    let mut env = new_native_token_scenario();
 
-//     // set the latest price
-//     let price = Uint128::from(10_000_000u128);
-//     let timestamp = env.router.block_info().time.seconds();
+    // set the latest price
+    let price = Uint128::from(10_000_000u128);
+    let timestamp = env.router.block_info().time.seconds();
 
-//     let msg = env
-//         .pricefeed
-//         .append_price("ETH".to_string(), price, timestamp)
-//         .unwrap();
-//     env.router.execute(env.owner.clone(), msg).unwrap();
+    let msg = env
+        .pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
 
-//     env.router.update_block(|block| {
-//         block.time = block.time.plus_seconds(900);
-//         block.height += 1;
-//     });
+    env.router.update_block(|block| {
+        block.time = block.time.plus_seconds(900);
+        block.height += 1;
+    });
 
-//     let msg = env
-//         .vamm
-//         .set_fluctuation_limit_ratio(Uint128::from(500_000u128))
-//         .unwrap();
-//     env.router.execute(env.owner.clone(), msg).unwrap();
+    let msg = env
+        .vamm
+        .set_fluctuation_limit_ratio(Uint128::from(500_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
 
-//     let msg = env
-//         .engine
-//         .set_margin_ratios(Uint128::from(100_000u128))
-//         .unwrap();
-//     env.router.execute(env.owner.clone(), msg).unwrap();
+    let msg = env
+        .engine
+        .set_margin_ratios(Uint128::from(100_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
 
-//     let msg = env
-//         .engine
-//         .set_partial_liquidation_ratio(Uint128::from(250_000u128))
-//         .unwrap();
-//     env.router.execute(env.owner.clone(), msg).unwrap();
+    let msg = env
+        .engine
+        .set_partial_liquidation_ratio(Uint128::from(250_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
 
-//     let msg = env
-//         .engine
-//         .set_liquidation_fee(Uint128::from(25_000u128))
-//         .unwrap();
-//     env.router.execute(env.owner.clone(), msg).unwrap();
+    let msg = env
+        .engine
+        .set_liquidation_fee(Uint128::from(25_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
 
-//     // when bob create a 20 margin * 5x long position when 9.0909090909 quoteAsset = 100
-//     // AMM after: 1100 : 90.9090909091
-//     env.open_small_position(
-//         env.bob.clone(),
-//         Side::Buy,
-//         Uint128::from(4_000_000u64),
-//         Uint128::from(5_000_000u64),
-//         4_000_000u128,
-//         5u64,
-//     );
+    // when bob create a 20 margin * 5x long position when 9.0909090909 quoteAsset = 100
+    // AMM after: 1100 : 90.9090909091
+    env.open_small_position(
+        env.bob.clone(),
+        Side::Buy,
+        Uint128::from(4_000_000u64),
+        Uint128::from(5_000_000u64),
+        4_000_000u128,
+        5u64,
+    );
 
-//     // when alice create a 20 margin * 5x long position when 7.5757575758 quoteAsset = 100
-//     // AMM after: 1200 : 83.3333333333
-//     // alice get: 90.9090909091 - 83.3333333333 = 7.5757575758
-//     env.open_small_position(
-//         env.alice.clone(),
-//         Side::Buy,
-//         Uint128::from(4_000_000u64),
-//         Uint128::from(5_000_000u64),
-//         4_000_000u128,
-//         5u64,
-//     );
+    // when alice create a 20 margin * 5x long position when 7.5757575758 quoteAsset = 100
+    // AMM after: 1200 : 83.3333333333
+    // alice get: 90.9090909091 - 83.3333333333 = 7.5757575758
+    env.open_small_position(
+        env.alice.clone(),
+        Side::Buy,
+        Uint128::from(4_000_000u64),
+        Uint128::from(5_000_000u64),
+        4_000_000u128,
+        5u64,
+    );
 
-//     // AMM after: 1100 : 90.9090909091, price: 12.1
-//     env.open_small_position(
-//         env.bob.clone(),
-//         Side::Sell,
-//         Uint128::from(4_000_000u64),
-//         Uint128::from(5_000_000u64),
-//         0u128,
-//         5u64,
-//     );
+    // AMM after: 1100 : 90.9090909091, price: 12.1
+    env.open_small_position(
+        env.bob.clone(),
+        Side::Sell,
+        Uint128::from(4_000_000u64),
+        Uint128::from(5_000_000u64),
+        4_000_000u128,
+        5u64,
+    );
 
-//     let msg = env
-//         .vamm
-//         .set_fluctuation_limit_ratio(Uint128::from(70_000u128))
-//         .unwrap();
-//     env.router.execute(env.owner.clone(), msg).unwrap();
+    let msg = env
+        .vamm
+        .set_fluctuation_limit_ratio(Uint128::from(70_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
 
-//     let msg = env
-//         .engine
-//         .open_position(
-//             env.vamm.addr().to_string(),
-//             Side::Sell,
-//             Uint128::from(44_000_000u64),
-//             Uint128::from(1_000_000u64),
-//             Uint128::zero(),
-//             vec![Coin::new(25_000_000u128, "orai")],
-//         )
-//         .unwrap();
-//     let err = env.router.execute(env.alice.clone(), msg).unwrap_err();
-//     assert_eq!(
-//         StdError::GenericErr {
-//             msg: "decrease position failure - reply (id 2)".to_string()
-//         },
-//         err.downcast().unwrap()
-//     );
+    let msg = env
+        .engine
+        .open_position(
+            env.vamm.addr().to_string(),
+            Side::Sell,
+            Uint128::from(44_000_000u64),
+            Uint128::from(1_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
+            vec![Coin::new(25_000_000u128, "orai")],
+        )
+        .unwrap();
+    let err = env.router.execute(env.alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "increase position failure - reply (id 1)".to_string()
+        },
+        err.downcast().unwrap()
+    );
 
-//     let msg = env
-//         .engine
-//         .set_margin_ratios(Uint128::from(100_000u128))
-//         .unwrap();
-//     env.router.execute(env.owner.clone(), msg).unwrap();
+    let msg = env
+        .engine
+        .set_margin_ratios(Uint128::from(100_000u128))
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
 
-//     let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
-//     let msg = env
-//         .pricefeed
-//         .append_price("ETH".to_string(), price, timestamp)
-//         .unwrap();
-//     env.router.execute(env.owner.clone(), msg).unwrap();
+    let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
+    let msg = env
+        .pricefeed
+        .append_price("ETH".to_string(), price, timestamp)
+        .unwrap();
+    env.router.execute(env.owner.clone(), msg).unwrap();
 
-//     // liquidate -> return 25% base asset to AMM
-//     // 90.9090909091 + 1.89 = 92.8
-//     // AMM after: 1077.55102 : 92.8, price: 11.61
-//     // fluctuation: (12.1 - 11.61116202) / 12.1 = 0.04039983306
-//     // values can be retrieved with amm.quoteAssetReserve() & amm.baseAssetReserve()
-//     let msg = env
-//         .engine
-//         .liquidate(
-//             env.vamm.addr().to_string(),
-//             env.alice.to_string(),
-//             Uint128::zero(),
-//         )
-//         .unwrap();
-//     let response = env.router.execute(env.carol.clone(), msg).unwrap();
-//     assert_eq!(
-//         response.events[5].attributes[1].value,
-//         "partial_liquidation_reply".to_string()
-//     );
-// }
+    // liquidate -> return 25% base asset to AMM
+    // 90.9090909091 + 1.89 = 92.8
+    // AMM after: 1077.55102 : 92.8, price: 11.61
+    // fluctuation: (12.1 - 11.61116202) / 12.1 = 0.04039983306
+    // values can be retrieved with amm.quoteAssetReserve() & amm.baseAssetReserve()
+    let msg = env
+        .engine
+        .liquidate(
+            env.vamm.addr().to_string(),
+            6,
+            env.alice.to_string(),
+            Uint128::zero(),
+        )
+        .unwrap();
+    let response = env.router.execute(env.carol.clone(), msg).unwrap();
+    assert_eq!(
+        response.events[5].attributes[1].value,
+        "partial_liquidation_reply".to_string()
+    );
+}
 
 #[test]
 fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limit() {

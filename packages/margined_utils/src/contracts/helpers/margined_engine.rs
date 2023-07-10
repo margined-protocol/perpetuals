@@ -138,6 +138,8 @@ impl EngineController {
         side: Side,
         margin_amount: Uint128,
         leverage: Uint128,
+        take_profit: Uint128,
+        stop_loss: Option<Uint128>,
         base_asset_limit: Uint128,
         funds: Vec<Coin>,
     ) -> StdResult<CosmosMsg> {
@@ -147,6 +149,8 @@ impl EngineController {
             margin_amount,
             leverage,
             base_asset_limit,
+            take_profit,
+            stop_loss,
         };
         wasm_execute(&self.0, &msg, funds)
     }

@@ -62,6 +62,8 @@ fn test_liquidation_fee_100_percent() {
             Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -168,6 +170,8 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
             Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -180,6 +184,8 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
             Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -269,6 +275,8 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
             Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -281,6 +289,8 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
             Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -371,6 +381,8 @@ fn test_alice_has_enough_margin_cant_get_liquidated() {
             Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -383,6 +395,8 @@ fn test_alice_has_enough_margin_cant_get_liquidated() {
             Side::Sell,
             to_decimals(500u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -456,6 +470,8 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
             Side::Buy,
             to_decimals(150u64),
             to_decimals(4u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -468,6 +484,8 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
             Side::Sell,
             to_decimals(500u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -541,6 +559,8 @@ fn test_alice_long_position_underwater_oracle_price_activated_doesnt_get_liquida
             Side::Buy,
             to_decimals(150u64),
             to_decimals(4u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -561,6 +581,8 @@ fn test_alice_long_position_underwater_oracle_price_activated_doesnt_get_liquida
             Side::Sell,
             to_decimals(500u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -636,6 +658,8 @@ fn test_alice_short_position_underwater_oracle_price_activated_doesnt_get_liquid
             Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -656,6 +680,8 @@ fn test_alice_short_position_underwater_oracle_price_activated_doesnt_get_liquid
             Side::Sell,
             to_decimals(10u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -705,6 +731,8 @@ fn test_can_open_same_side_position_even_thought_long_is_underwater_as_long_over
             Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -717,6 +745,8 @@ fn test_can_open_same_side_position_even_thought_long_is_underwater_as_long_over
             Side::Sell,
             to_decimals(250u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -735,6 +765,8 @@ fn test_can_open_same_side_position_even_thought_long_is_underwater_as_long_over
             Side::Buy,
             to_decimals(100u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -800,6 +832,8 @@ fn test_can_open_same_side_position_even_thought_short_is_underwater_as_long_ove
             Side::Buy,
             to_decimals(88u64),
             Uint128::from(2_841_000_000u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -816,6 +850,8 @@ fn test_can_open_same_side_position_even_thought_short_is_underwater_as_long_ove
             Side::Sell,
             to_decimals(250u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -834,6 +870,8 @@ fn test_can_open_same_side_position_even_thought_short_is_underwater_as_long_ove
             Side::Sell,
             to_decimals(150u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -879,6 +917,8 @@ fn test_cannot_open_position_even_thought_long_is_underwater_if_still_under_afte
             Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -891,6 +931,8 @@ fn test_cannot_open_position_even_thought_long_is_underwater_if_still_under_afte
             Side::Sell,
             to_decimals(250u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -903,6 +945,8 @@ fn test_cannot_open_position_even_thought_long_is_underwater_if_still_under_afte
             Side::Buy,
             to_decimals(1u64),
             to_decimals(21u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -919,6 +963,8 @@ fn test_cannot_open_position_even_thought_long_is_underwater_if_still_under_afte
             Side::Sell,
             to_decimals(1u64),
             to_decimals(21u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -947,6 +993,8 @@ fn test_cannot_open_position_even_thought_short_is_underwater_if_still_under_aft
             Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -959,6 +1007,8 @@ fn test_cannot_open_position_even_thought_short_is_underwater_if_still_under_aft
             Side::Buy,
             to_decimals(250u64),
             to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -971,6 +1021,8 @@ fn test_cannot_open_position_even_thought_short_is_underwater_if_still_under_aft
             Side::Sell,
             to_decimals(1u64),
             to_decimals(21u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -1011,6 +1063,8 @@ fn test_close_partial_position_long_position_when_closing_whole_position_is_over
             Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -1079,6 +1133,8 @@ fn test_close_partial_position_short_position_when_closing_whole_position_is_ove
             Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -1145,6 +1201,8 @@ fn test_close_whole_partial_position_when_partial_liquidation_ratio_is_one() {
             Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )

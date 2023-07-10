@@ -114,6 +114,8 @@ pub fn open_position(
     side: Side,
     margin_amount: Uint128,
     leverage: Uint128,
+    take_profit: Uint128,
+    stop_loss: Option<Uint128>,
     base_asset_limit: Uint128,
 ) -> StdResult<Response> {
     // validate address inputs
@@ -154,6 +156,8 @@ pub fn open_position(
         &vamm,
         &trader,
         &side,
+        take_profit,
+        stop_loss,
         env.block.time.seconds(),
     )?;
 
@@ -202,6 +206,8 @@ pub fn open_position(
             unrealized_pnl,
             margin_to_vault: Integer::zero(),
             fees_paid: false,
+            take_profit,
+            stop_loss
         }
     )?;
 
@@ -301,6 +307,8 @@ pub fn close_position(
                 unrealized_pnl,
                 margin_to_vault: Integer::zero(),
                 fees_paid: false,
+                take_profit: position.take_profit,
+                stop_loss: position.stop_loss
             }
         )?;
 
@@ -367,6 +375,7 @@ pub fn liquidate(
 
     let config = read_config(deps.storage)?;
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
+    println!("liquidate - config.maintenance_margin_ratio: {:?}", config.maintenance_margin_ratio);
     require_insufficient_margin(margin_ratio, config.maintenance_margin_ratio)?;
 
     // read the position for the trader from vamm
@@ -578,6 +587,8 @@ pub fn internal_close_position(
             unrealized_pnl: Integer::zero(),
             margin_to_vault: Integer::zero(),
             fees_paid: false,
+            take_profit: position.take_profit,
+            stop_loss: position.stop_loss
         }
     )?;
 
@@ -693,6 +704,8 @@ fn partial_liquidation(
             unrealized_pnl,
             margin_to_vault: Integer::zero(),
             fees_paid: false,
+            take_profit: position.take_profit,
+            stop_loss: position.stop_loss
         }
     )?;
 

@@ -48,6 +48,8 @@ pub fn update_position_reply(
         &swap.vamm,
         &swap.trader,
         &swap.side,
+        swap.take_profit,
+        swap.stop_loss,
         env.block.time.seconds(),
     )?;
     // println!("update_position_reply - position: {:?}", position);
@@ -253,6 +255,8 @@ pub fn reverse_position_reply(
         &swap.vamm,
         &swap.trader,
         &swap.side,
+        swap.take_profit,
+        swap.stop_loss,
         env.block.time.seconds(),
     )?;
     let mut state = read_state(deps.storage)?;
@@ -371,6 +375,8 @@ pub fn close_position_reply(
         &swap.vamm.clone(),
         &swap.trader,
         &swap.side,
+        swap.take_profit,
+        swap.stop_loss,
         env.block.time.seconds(),
     )?;
 
@@ -474,6 +480,8 @@ pub fn partial_close_position_reply(
         &swap.vamm,
         &swap.trader,
         &swap.side,
+        swap.take_profit,
+        swap.stop_loss,
         env.block.time.seconds(),
     )?;
 
@@ -570,6 +578,8 @@ pub fn liquidate_reply(
         &swap.vamm,
         &swap.trader,
         &swap.side,
+        swap.take_profit,
+        swap.stop_loss,
         env.block.time.seconds(),
     )?;
 
@@ -680,6 +690,8 @@ pub fn partial_liquidation_reply(
         &swap.vamm,
         &swap.trader,
         &swap.side,
+        swap.take_profit,
+        swap.stop_loss,
         env.block.time.seconds(),
     )?;
     println!("partial_liquidation_reply - position: {:?}", position);

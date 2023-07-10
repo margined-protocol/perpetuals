@@ -56,6 +56,8 @@ fn test_margin_engine_should_have_enough_balance_after_close_position() {
             Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -69,6 +71,8 @@ fn test_margin_engine_should_have_enough_balance_after_close_position() {
             Side::Sell,
             to_decimals(25u64),
             to_decimals(4u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -146,6 +150,8 @@ fn test_margin_engine_does_not_have_enough_balance_after_close_position() {
             Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
@@ -159,6 +165,8 @@ fn test_margin_engine_does_not_have_enough_balance_after_close_position() {
             Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )

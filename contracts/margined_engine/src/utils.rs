@@ -44,6 +44,8 @@ pub fn get_position(
     vamm: &Addr,
     trader: &Addr,
     side: &Side,
+    take_profit: Uint128,
+    stop_loss: Option<Uint128>,
     block_time: u64,
 ) -> StdResult<Position> {
     // read the position for the trader from vamm
@@ -57,6 +59,8 @@ pub fn get_position(
         position.trader = trader.clone();
         position.side = side.clone();
         position.direction = side_to_direction(side);
+        position.take_profit = take_profit;
+        position.stop_loss = stop_loss;
         position.block_time = block_time;
     }
 

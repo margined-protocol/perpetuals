@@ -28,6 +28,8 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
             Uint128::from(300_000_000u128),
             Uint128::from(2_000_000u128),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![Coin::new(300_000_000u128, "orai")],
         )
         .unwrap();
@@ -39,6 +41,8 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
             Side::Sell,
             Uint128::from(1200_000_000u128),
             Uint128::from(1_000_000u128),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(1200_000_000u128, "orai")],
         )
@@ -136,6 +140,8 @@ fn test_will_keep_generating_same_loss_when_funding_rate_is_positive() {
             Uint128::from(300_000_000u128),
             Uint128::from(2_000_000u128),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![Coin::new(300_000_000u128, "orai")],
         )
         .unwrap();
@@ -147,6 +153,8 @@ fn test_will_keep_generating_same_loss_when_funding_rate_is_positive() {
             Side::Sell,
             Uint128::from(1200_000_000u128),
             Uint128::from(1_000_000u128),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(1200_000_000u128, "orai")],
         )
@@ -222,6 +230,8 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
             Uint128::from(300_000_000u128),
             Uint128::from(2_000_000u128),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![Coin::new(300_000_000u128, "orai")],
         )
         .unwrap();
@@ -233,6 +243,8 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
             Side::Sell,
             Uint128::from(1200_000_000u128),
             Uint128::from(1_000_000u128),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(1200_000_000u128, "orai")],
         )
@@ -355,6 +367,8 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
             Uint128::from(300_000_000u128),
             Uint128::from(2_000_000u128),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![Coin::new(300_000_000u128, "orai")],
         )
         .unwrap();
@@ -366,6 +380,8 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
             Side::Sell,
             Uint128::from(1200_000_000u128),
             Uint128::from(1_000_000u128),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(1200_000_000u128, "orai")],
         )
@@ -444,6 +460,8 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
             Uint128::from(300_000_000u128),
             Uint128::from(2_000_000u128),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![Coin::new(300_000_000u128, "orai")],
         )
         .unwrap();
@@ -455,6 +473,8 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
             Side::Sell,
             Uint128::from(1200_000_000u128),
             Uint128::from(1_000_000u128),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(1200_000_000u128, "orai")],
         )
@@ -519,6 +539,8 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
             Uint128::from(300_000_000u128),
             Uint128::from(2_000_000u128),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![Coin::new(300_000_000u128, "orai")],
         )
         .unwrap();
@@ -530,6 +552,8 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
             Side::Sell,
             Uint128::from(1200_000_000u128),
             Uint128::from(1_000_000u128),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(1200_000_000u128, "orai")],
         )
@@ -606,6 +630,8 @@ fn test_have_huge_funding_payment_margin_zero_cannot_remove_margin() {
             Uint128::from(300_000_000u128),
             Uint128::from(2_000_000u128),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![Coin::new(300_000_000u128, "orai")],
         )
         .unwrap();
@@ -617,6 +643,8 @@ fn test_have_huge_funding_payment_margin_zero_cannot_remove_margin() {
             Side::Sell,
             Uint128::from(1200_000_000u128),
             Uint128::from(1_000_000u128),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(1200_000_000u128, "orai")],
         )
@@ -680,6 +708,8 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
             Uint128::from(300_000_000u128),
             Uint128::from(2_000_000u128),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![Coin::new(300_000_000u128, "orai")],
         )
         .unwrap();
@@ -691,6 +721,8 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
             Side::Sell,
             Uint128::from(1200_000_000u128),
             Uint128::from(1_000_000u128),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(1200_000_000u128, "orai")],
         )
@@ -771,6 +803,8 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
             Uint128::from(300_000_000u128),
             Uint128::from(2_000_000u128),
             Uint128::zero(),
+            Some(Uint128::zero()),
+            Uint128::zero(),
             vec![Coin::new(300_000_000u128, "orai")],
         )
         .unwrap();
@@ -782,6 +816,8 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
             Side::Sell,
             Uint128::from(1200_000_000u128),
             Uint128::from(1_000_000u128),
+            Uint128::zero(),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(1200_000_000u128, "orai")],
         )

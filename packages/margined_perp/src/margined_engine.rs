@@ -61,6 +61,8 @@ pub enum ExecuteMsg {
         side: Side,
         margin_amount: Uint128,
         leverage: Uint128,
+        take_profit: Uint128,
+        stop_loss: Option<Uint128>,
         base_asset_limit: Uint128,
     },
     ClosePosition {
@@ -171,6 +173,8 @@ pub struct Position {
     pub margin: Uint128,
     pub notional: Uint128,
     pub entry_price: Uint128,
+    pub take_profit: Uint128,
+    pub stop_loss: Option<Uint128>,
     pub last_updated_premium_fraction: Integer,
     pub block_time: u64,
 }
@@ -187,11 +191,41 @@ impl Default for Position {
             margin: Uint128::zero(),
             notional: Uint128::zero(),
             entry_price: Uint128::zero(),
+            take_profit: Uint128::zero(),
+            stop_loss: Some(Uint128::zero()),
             last_updated_premium_fraction: Integer::zero(),
             block_time: 0u64,
         }
     }
 }
+
+// impl Position {
+//     pub fn new(
+//         position_id: u64,
+//         vamm: Addr,
+//         trader: Addr,
+//         side: Side,
+//         direction: Direction,
+//         size: Integer,
+//         margin: Uint128,
+//         notional: Uint128,
+//         entry_price: Uint128,
+//     ) -> Self {
+//         Position {
+//             position_id,
+//             vamm,
+//             trader,
+//             side,
+//             direction,
+//             size,
+//             margin,
+//             notional,
+//             entry_price,
+//             last_updated_premium_fraction: Integer::zero(),
+//             block_time: 0u64
+//         }
+//     }
+// }
 
 #[cw_serde]
 pub struct SwapResponse {
