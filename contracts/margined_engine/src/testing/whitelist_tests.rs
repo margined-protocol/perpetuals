@@ -22,7 +22,7 @@ fn test_add_remove_whitelist() {
     router.execute(owner.clone(), msg).unwrap();
 
     let whitelist = engine.get_whitelist(&router.wrap()).unwrap();
-
+    println!("whitelist: {:?}", whitelist);
     assert_eq!(whitelist, vec![alice.to_string()]);
 
     // add addr that is already in

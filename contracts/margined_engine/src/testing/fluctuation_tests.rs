@@ -62,71 +62,75 @@ fn test_force_error_open_position_exceeds_fluctuation_limit() {
     );
 }
 
-// #[test]
-// fn test_force_error_reduce_position_exceeds_fluctuation_limit() {
-//     let SimpleScenario {
-//         mut router,
-//         alice,
-//         owner,
-//         engine,
-//         usdc,
-//         vamm,
-//         ..
-//     } = new_simple_scenario();
+#[test]
+fn test_force_error_reduce_position_exceeds_fluctuation_limit() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        owner,
+        engine,
+        usdc,
+        vamm,
+        ..
+    } = new_simple_scenario();
 
-//     // reduce the allowance
-//     router
-//         .execute_contract(
-//             alice.clone(),
-//             usdc.addr().clone(),
-//             &Cw20ExecuteMsg::DecreaseAllowance {
-//                 spender: engine.addr().to_string(),
-//                 amount: to_decimals(1500),
-//                 expires: None,
-//             },
-//             &[],
-//         )
-//         .unwrap();
+    // reduce the allowance
+    router
+        .execute_contract(
+            alice.clone(),
+            usdc.addr().clone(),
+            &Cw20ExecuteMsg::DecreaseAllowance {
+                spender: engine.addr().to_string(),
+                amount: to_decimals(1500),
+                expires: None,
+            },
+            &[],
+        )
+        .unwrap();
 
-//     // alice pays 250 margin * 1x long to get 20 base
-//     // AMM after: 1250 : 80, price: 15.625
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Buy,
-//             to_decimals(250u64),
-//             to_decimals(1u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     router.execute(alice.clone(), msg).unwrap();
+    // alice pays 250 margin * 1x long to get 20 base
+    // AMM after: 1250 : 80, price: 15.625
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(250u64),
+            to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
-//     let msg = vamm
-//         .set_fluctuation_limit_ratio(Uint128::from(78_000_000u128))
-//         .unwrap();
-//     router.execute(owner.clone(), msg).unwrap();
+    let msg = vamm
+        .set_fluctuation_limit_ratio(Uint128::from(78_000_000u128))
+        .unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
-//     // AMM after: 1200 : 83.3333333333, price: 14.4
-//     // price fluctuation: (15.625 - 14.4) / 15.625 = 0.0784
-//     let msg = engine
-//         .open_position(
-//             vamm.addr().to_string(),
-//             Side::Sell,
-//             to_decimals(50u64),
-//             to_decimals(1u64),
-//             to_decimals(0u64),
-//             vec![],
-//         )
-//         .unwrap();
-//     let err = router.execute(alice.clone(), msg).unwrap_err();
-//     assert_eq!(
-//         StdError::GenericErr {
-//             msg: "decrease position failure - reply (id 2)".to_string(),
-//         },
-//         err.downcast().unwrap()
-//     );
-// }
+    // AMM after: 1200 : 83.3333333333, price: 14.4
+    // price fluctuation: (15.625 - 14.4) / 15.625 = 0.0784
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(50u64),
+            to_decimals(1u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "decrease position failure - reply (id 2)".to_string(),
+        },
+        err.downcast().unwrap()
+    );
+}
 
 #[test]
 fn test_close_position_limit_force_error_exceeding_fluctuation_limit_twice_in_same_block() {

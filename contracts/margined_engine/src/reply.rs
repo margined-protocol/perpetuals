@@ -13,7 +13,7 @@ use crate::{
         append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_sent_funds,
         read_state, read_tmp_liquidator, read_tmp_swap, remove_position, remove_sent_funds,
         remove_tmp_liquidator, remove_tmp_swap, store_position, store_sent_funds, store_state,
-        store_tmp_swap, State,
+        store_tmp_swap, State, read_position,
     },
     utils::{
         calc_remain_margin_with_funding_payment, check_base_asset_holding_cap, clear_position,
@@ -24,7 +24,7 @@ use crate::{
 
 use margined_common::{asset::AssetInfo, integer::Integer};
 use margined_perp::{
-    margined_engine::{RemainMarginResponse, Side},
+    margined_engine::{RemainMarginResponse, Side, Position},
     margined_vamm::Direction,
 };
 
@@ -39,20 +39,23 @@ pub fn update_position_reply(
 ) -> StdResult<Response> {
     let mut swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
     println!("update_position_reply - swapinfo: {:?}", swap);
-    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
 
-    let mut position = get_position(
-        deps.storage,
-        &position_key,
-        swap.position_id,
-        &swap.vamm,
-        &swap.trader,
-        &swap.side,
-        swap.take_profit,
-        swap.stop_loss,
-        env.block.time.seconds(),
-    )?;
-    // println!("update_position_reply - position: {:?}", position);
+    let mut position: Position = Position {
+        position_id: swap.position_id,
+        vamm: swap.vamm.clone(),
+        trader: swap.trader.clone(),
+        side: swap.side.clone(),
+        direction: side_to_direction(&swap.side),
+        size: Integer::zero(),
+        margin: Uint128::zero(),
+        notional: Uint128::zero(),
+        entry_price: Uint128::zero(),
+        take_profit: swap.take_profit,
+        stop_loss: swap.stop_loss, 
+        last_updated_premium_fraction: Integer::zero(),
+        block_time: env.block.time.seconds()
+    };
+    println!("update_position_reply - position: {:?}", position);
 
     // depending on the direction the output is positive or negative
     let signed_output = match &swap.side {
@@ -259,6 +262,7 @@ pub fn reverse_position_reply(
         swap.stop_loss,
         env.block.time.seconds(),
     )?;
+    println!("reverse_position_reply - position: {:?}", position);
     let mut state = read_state(deps.storage)?;
     update_open_interest_notional(
         &deps.as_ref(),
@@ -368,17 +372,7 @@ pub fn close_position_reply(
 
     let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
 
-    let position = get_position(
-        deps.storage,
-        &position_key,
-        swap.position_id,
-        &swap.vamm.clone(),
-        &swap.trader,
-        &swap.side,
-        swap.take_profit,
-        swap.stop_loss,
-        env.block.time.seconds(),
-    )?;
+    let position = read_position(deps.storage, &position_key, position_id)?;
 
     let margin_delta = match &position.direction {
         Direction::AddToAmm => {
@@ -473,17 +467,7 @@ pub fn partial_close_position_reply(
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
     let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
-    let mut position = get_position(
-        deps.storage,
-        &position_key,
-        swap.position_id,
-        &swap.vamm,
-        &swap.trader,
-        &swap.side,
-        swap.take_profit,
-        swap.stop_loss,
-        env.block.time.seconds(),
-    )?;
+    let mut position = read_position(deps.storage, &position_key, position_id)?;
 
     let mut state: State = read_state(deps.storage)?;
     update_open_interest_notional(
@@ -571,17 +555,7 @@ pub fn liquidate_reply(
     let liquidator = read_tmp_liquidator(deps.storage)?;
 
     let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
-    let position = get_position(
-        deps.storage,
-        &position_key,
-        swap.position_id,
-        &swap.vamm,
-        &swap.trader,
-        &swap.side,
-        swap.take_profit,
-        swap.stop_loss,
-        env.block.time.seconds(),
-    )?;
+    let position = read_position(deps.storage, &position_key, position_id)?;
 
     // calculate delta from trade and whether it was profitable or a loss
     let margin_delta = match &position.direction {
@@ -682,18 +656,8 @@ pub fn partial_liquidation_reply(
     println!("partial_liquidation_reply - liquidator: {:?}", liquidator);
 
     let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
+    let mut position = read_position(deps.storage, &position_key, position_id)?;
 
-    let mut position = get_position(
-        deps.storage,
-        &position_key,
-        swap.position_id,
-        &swap.vamm,
-        &swap.trader,
-        &swap.side,
-        swap.take_profit,
-        swap.stop_loss,
-        env.block.time.seconds(),
-    )?;
     println!("partial_liquidation_reply - position: {:?}", position);
 
     let config = read_config(deps.storage)?;

@@ -17,7 +17,7 @@ use crate::{
     },
     utils::{
         calc_remain_margin_with_funding_payment, direction_to_side, get_asset,
-        get_margin_ratio_calc_option, get_position, get_position_notional_unrealized_pnl,
+        get_margin_ratio_calc_option, get_position_notional_unrealized_pnl,
         keccak_256, position_to_side, require_additional_margin, require_bad_debt,
         require_insufficient_margin, require_non_zero_input, require_not_paused,
         require_not_restriction_mode, require_position_not_zero, require_vamm, side_to_direction,
@@ -127,7 +127,6 @@ pub fn open_position(
     let config = read_config(deps.storage)?;
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
     let position_id = increase_last_position_id(deps.storage)?;
-    let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
 
     require_not_restriction_mode(deps.storage, &vamm, env.block.height)?;
     require_non_zero_input(margin_amount)?;
@@ -149,17 +148,21 @@ pub fn open_position(
     require_additional_margin(Integer::from(margin_ratio), config.initial_margin_ratio)?;
     
     // creates a new position
-    let position = get_position(
-        deps.storage,
-        &position_key,
+    let position: Position = Position {
         position_id,
-        &vamm,
-        &trader,
-        &side,
-        take_profit,
-        stop_loss,
-        env.block.time.seconds(),
-    )?;
+        vamm: vamm.clone(),
+        trader: trader.clone(),
+        side: side.clone(),
+        direction: side_to_direction(&side),
+        size: Integer::zero(),
+        margin: Uint128::zero(),
+        notional: Uint128::zero(),
+        entry_price: Uint128::zero(),
+        take_profit: Uint128::zero(),
+        stop_loss: Some(Uint128::zero()), 
+        last_updated_premium_fraction: Integer::zero(),
+        block_time: 0u64
+    };
 
     // if direction and side are same way then increasing else we are reversing
     let is_increase = position.direction == Direction::AddToAmm && side == Side::Buy
