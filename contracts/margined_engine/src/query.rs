@@ -40,15 +40,10 @@ pub fn query_pauser(deps: Deps) -> StdResult<PauserResponse> {
 }
 
 /// Queries user position
-pub fn query_position(deps: Deps, vamm: String, position_id: u64,  trader: String) -> StdResult<Position> {
+pub fn query_position(deps: Deps, vamm: String, position_id: u64) -> StdResult<Position> {
     // if vamm and trader are not correct, position_key will throw not found error
-    let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
+    let position_key = keccak_256(&[vamm.as_bytes()].concat());
     let position = read_position(deps.storage, &position_key, position_id)?;
-
-    // a default is returned if no position found with no trader set
-    if position.trader != trader {
-        return Err(StdError::generic_err("No position found"));
-    }
 
     Ok(position)
 }
@@ -77,7 +72,7 @@ pub fn query_all_positions(
 
     for vamm in vamms.iter() {
         println!("query_all_positions - vamm: {:?}", vamm);
-        let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
+        let position_key = keccak_256(&[vamm.as_bytes()].concat());
         let positions = read_positions(deps.storage, &position_key, start_after, limit, order_by).unwrap();
 
         for position in positions {
@@ -97,10 +92,9 @@ pub fn query_position_notional_unrealized_pnl(
     deps: Deps,
     vamm: String,
     position_id: u64,
-    trader: String,
     calc_option: PnlCalcOption,
 ) -> StdResult<PositionUnrealizedPnlResponse> {
-    let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
+    let position_key = keccak_256(&[vamm.as_bytes()].concat());
     // read the msg.senders position
     let position = read_position(deps.storage, &position_key, position_id)?;
 
@@ -124,7 +118,7 @@ pub fn query_cumulative_premium_fraction(deps: Deps, vamm: String) -> StdResult<
 }
 
 /// Queries traders balance across all vamms with funding payment
-pub fn query_trader_balance_with_funding_payment(deps: Deps, position_id: u64, trader: String) -> StdResult<Uint128> {
+pub fn query_trader_balance_with_funding_payment(deps: Deps, position_id: u64) -> StdResult<Uint128> {
     let config = read_config(deps.storage)?;
 
     let mut margin = Uint128::zero();
@@ -141,7 +135,7 @@ pub fn query_trader_balance_with_funding_payment(deps: Deps, position_id: u64, t
 
     for vamm in vamms.iter() {
         let position =
-            query_trader_position_with_funding_payment(deps, vamm.to_string(), position_id, trader.clone())?;
+            query_trader_position_with_funding_payment(deps, vamm.to_string(), position_id)?;
         margin = margin.checked_add(position.margin)?;
     }
 
@@ -153,11 +147,10 @@ pub fn query_trader_position_with_funding_payment(
     deps: Deps,
     vamm: String,
     position_id: u64,
-    trader: String,
 ) -> StdResult<Position> {
     let config = read_config(deps.storage)?;
 
-    let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
+    let position_key = keccak_256(&[vamm.as_bytes()].concat());
 
     // retrieve latest user position
     let mut position = read_position(deps.storage, &position_key, position_id)?;
@@ -183,8 +176,8 @@ pub fn query_trader_position_with_funding_payment(
 }
 
 /// Queries the margin ratio of a trader
-pub fn query_margin_ratio(deps: Deps, vamm: String, position_id: u64, trader: String) -> StdResult<Integer> {
-    let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
+pub fn query_margin_ratio(deps: Deps, vamm: String, position_id: u64) -> StdResult<Integer> {
+    let position_key = keccak_256(&[vamm.as_bytes()].concat());
     // retrieve the latest position
     let position = read_position(deps.storage, &position_key, position_id)?;
 
@@ -229,9 +222,9 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, position_id: u64, trader: St
 }
 
 /// Queries the withdrawable collateral of a trader
-pub fn query_free_collateral(deps: Deps, vamm: String, position_id: u64, trader: String) -> StdResult<Integer> {
+pub fn query_free_collateral(deps: Deps, vamm: String, position_id: u64) -> StdResult<Integer> {
     // retrieve the latest position
-    let position = query_trader_position_with_funding_payment(deps, vamm, position_id, trader)?;
+    let position = query_trader_position_with_funding_payment(deps, vamm, position_id)?;
 
     // get trader's unrealized PnL and choose the least beneficial one for the trader
     let PositionUnrealizedPnlResponse {

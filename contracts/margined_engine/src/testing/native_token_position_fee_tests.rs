@@ -106,7 +106,6 @@ fn test_ten_percent_fee_open_long_position() {
             calculate_funds_needed(
                 &router.wrap(),
                 engine.addr(),
-                alice.clone(),
                 1,
                 Uint128::from(60_000_000u64),
                 Uint128::from(10_000_000u64),
@@ -122,7 +121,7 @@ fn test_ten_percent_fee_open_long_position() {
     assert_eq!(alice_balance, Uint128::new(4_880_000_000));
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
 
     // transferred margin = margin + fee = 60 + (60 * 10 * 10%) = 120
@@ -214,7 +213,6 @@ fn test_ten_percent_fee_open_short_position() {
             calculate_funds_needed(
                 &router.wrap(),
                 engine.addr(),
-                alice.clone(),
                 1,
                 Uint128::from(60_000_000u64),
                 Uint128::from(10_000_000u64),
@@ -230,7 +228,7 @@ fn test_ten_percent_fee_open_short_position() {
     assert_eq!(alice_balance, Uint128::new(4_880_000_000));
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
 
     // transferred margin = margin + fee = 60 + (60 * 10 * 10%) = 120
@@ -324,7 +322,6 @@ fn test_ten_percent_fee_long_position_price_remains_long_again() {
             calculate_funds_needed(
                 &router.wrap(),
                 engine.addr(),
-                alice.clone(),
                 1,
                 Uint128::from(25_000_000u64),
                 Uint128::from(10_000_000u64),
@@ -353,7 +350,6 @@ fn test_ten_percent_fee_long_position_price_remains_long_again() {
             calculate_funds_needed(
                 &router.wrap(),
                 engine.addr(),
-                alice.clone(),
                 2,
                 Uint128::from(175_000_000u64),
                 Uint128::from(2_000_000u64),
@@ -372,7 +368,7 @@ fn test_ten_percent_fee_long_position_price_remains_long_again() {
     );
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
 
     // transferred margin = margin + fee = 60 + (60 * 10 * 10%) = 120

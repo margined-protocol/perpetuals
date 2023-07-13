@@ -21,7 +21,6 @@ pub const SIX_D_P: Uint128 = Uint128::new(1_000_000u128); // this is 6d.p.
 pub fn calculate_funds_needed(
     querier: &QuerierWrapper,
     engine: Addr,
-    trader: Addr,
     position_id: u64,
     quote_asset_amount: Uint128,
     leverage: Uint128,
@@ -41,7 +40,7 @@ pub fn calculate_funds_needed(
 
     // check if they have an existing position so we can calculate if someone owes margin
     let position = engine_controller
-        .position(querier, vamm.to_string(), position_id, trader.to_string())
+        .position(querier, vamm.to_string(), position_id)
         .unwrap_or_default();
 
     // First we check if they are increasing the position or not

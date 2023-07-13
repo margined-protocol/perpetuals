@@ -142,11 +142,10 @@ pub fn get_margin_ratio_calc_option(
     deps: Deps,
     vamm: String,
     position_id: u64,
-    trader: String,
     calc_option: PnlCalcOption,
 ) -> StdResult<Integer> {
     let config = read_config(deps.storage)?;
-    let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
+    let position_key = keccak_256(&[vamm.as_bytes()].concat());
     // retrieve the latest position
     let position = read_position(deps.storage, &position_key, position_id)?;
 

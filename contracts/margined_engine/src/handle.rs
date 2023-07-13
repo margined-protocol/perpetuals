@@ -234,7 +234,7 @@ pub fn update_tp_sl(
     let trader = info.sender;
 
     // read the position for the trader from vamm
-    let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
+    let position_key = keccak_256(&[vamm.as_bytes()].concat());
     let mut position = read_position(deps.storage, &position_key, position_id)?;
 
     let state = read_state(deps.storage)?;
@@ -243,6 +243,10 @@ pub fn update_tp_sl(
 
     if position.trader != trader {
         return Err(StdError::generic_err("Unauthorized"));
+    }
+    
+    if Some(take_profit).is_none() && Some(stop_loss).is_none() {
+        return Err(StdError::generic_err("Both take profit and stop loss are not set"));
     }
 
     match take_profit {
@@ -281,7 +285,7 @@ pub fn close_position(
     let trader = info.sender;
 
     // read the position for the trader from vamm
-    let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
+    let position_key = keccak_256(&[vamm.as_bytes()].concat());
     let position = read_position(deps.storage, &position_key, position_id)?;
 
     let state = read_state(deps.storage)?;
@@ -383,8 +387,31 @@ pub fn tp_sl(
     vamm: String,
     position_id: u64
 ) -> StdResult<Response> {
+    let vamm = deps.api.addr_validate(&vamm)?;
+    let vamm_controller = VammController(vamm.clone());
     
+    // read the position for the trader from vamm
+    let position_key = keccak_256(&[vamm.as_bytes()].concat());
+    let position = read_position(deps.storage, &position_key, position_id)?;
 
+    let state = read_state(deps.storage)?;
+
+    // retrieve the existing margin ratio of the position
+    let mut margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), position_id)?;
+
+    if vamm_controller.is_over_spread_limit(&deps.querier)? {
+        let oracle_margin_ratio = get_margin_ratio_calc_option(
+            deps.as_ref(),
+            vamm.to_string(),
+            position_id,
+            PnlCalcOption::Oracle,
+        )?;
+        println!("liquidate - oracle_margin_ratio: {:?}", oracle_margin_ratio);
+
+        if oracle_margin_ratio.checked_sub(margin_ratio)? > Integer::zero() {
+            margin_ratio = oracle_margin_ratio
+        }
+    }
     Ok(Response::new().add_attributes(vec![
         ("action", "tp or sl"),
         ("vamm", vamm.as_ref()),
@@ -410,7 +437,7 @@ pub fn liquidate(
     store_tmp_liquidator(deps.storage, &info.sender)?;
 
     // retrieve the existing margin ratio of the position
-    let mut margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), position_id, trader.to_string())?;
+    let mut margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), position_id)?;
     println!("liquidate - margin_ratio: {:?}", margin_ratio);
 
     let vamm_controller = VammController(vamm.clone());
@@ -421,7 +448,6 @@ pub fn liquidate(
             deps.as_ref(),
             vamm.to_string(),
             position_id,
-            trader.to_string(),
             PnlCalcOption::Oracle,
         )?;
         println!("liquidate - oracle_margin_ratio: {:?}", oracle_margin_ratio);
@@ -437,7 +463,7 @@ pub fn liquidate(
     require_insufficient_margin(margin_ratio, config.maintenance_margin_ratio)?;
 
     // read the position for the trader from vamm
-    let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
+    let position_key = keccak_256(&[vamm.as_bytes()].concat());
     let position = read_position(deps.storage, &position_key, position_id)?;
     println!("liquidate - position: {:?}", position);
 
@@ -448,7 +474,7 @@ pub fn liquidate(
     let msg = if margin_ratio.value > config.liquidation_fee
         && !config.partial_liquidation_ratio.is_zero()
     {
-        partial_liquidation(deps, env, vamm.clone(), position_id, trader.clone(), quote_asset_limit)?
+        partial_liquidation(deps, env, vamm.clone(), position_id, quote_asset_limit)?
     } else {
         internal_close_position(deps, &position, quote_asset_limit, LIQUIDATION_REPLY_ID)?
     };
@@ -522,7 +548,7 @@ pub fn deposit_margin(
             response = response.add_submessage(msg);
         }
     };
-    let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
+    let position_key = keccak_256(&[vamm.as_bytes()].concat());
     // read the position for the trader from vamm
     let mut position = read_position(deps.storage, &position_key, position_id)?;
 
@@ -561,7 +587,7 @@ pub fn withdraw_margin(
     require_non_zero_input(amount)?;
 
     // read the position for the trader from vamm
-    let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
+    let position_key = keccak_256(&[vamm.as_bytes()].concat());
     let mut position = read_position(deps.storage, &position_key, position_id)?;
 
     if position.trader != trader {
@@ -580,7 +606,7 @@ pub fn withdraw_margin(
 
     // check if margin is sufficient
     let free_collateral =
-        query_free_collateral(deps.as_ref(), vamm.to_string(), position_id, trader.to_string())?;
+        query_free_collateral(deps.as_ref(), vamm.to_string(), position_id)?;
     if free_collateral
         .checked_sub(Integer::new_positive(amount))?
         .is_negative()
@@ -670,10 +696,9 @@ fn partial_liquidation(
     _env: Env,
     vamm: Addr,
     position_id: u64,
-    trader: Addr,
     quote_asset_limit: Uint128,
 ) -> StdResult<SubMsg> {
-    let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
+    let position_key = keccak_256(&[vamm.as_bytes()].concat());
     let position = read_position(deps.storage, &position_key, position_id)?;
     let config = read_config(deps.storage)?;
     let partial_position_size = position

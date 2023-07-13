@@ -210,7 +210,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     // bob loss all his margin (20) and there's 74.12 badDebt
     // which is already prepaid by insurance fund when alice close the position
     let margin_ratio = engine
-        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), 2, bob.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), 2)
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_negative(252_000_000u128));
 
@@ -312,7 +312,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
     // bob loss all his margin (20) and there's 74.12 badDebt
     // which is already prepaid by insurance fund when alice close the position
     let margin_ratio = engine
-        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), 2, bob.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), 2)
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_negative(252_000_000u128));
 
@@ -778,14 +778,14 @@ fn test_can_open_same_side_position_even_thought_long_is_underwater_as_long_over
     // position size = 20
     // margin = 25
     let position_1 = engine
-        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(position_1.margin, to_decimals(25u64));
     assert_eq!(position_1.size, Integer::from(20_000_000_000u128));
     assert_eq!(position_1.notional, Uint128::from(250_000_000_000u128));
 
     let position_3 = engine
-        .position(&router.wrap(), vamm.addr().to_string(), 3, alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 3)
         .unwrap();
     assert_eq!(position_3.margin, to_decimals(100u64));
     assert_eq!(position_3.size, Integer::from(9_090_909_090u128));
@@ -796,7 +796,6 @@ fn test_can_open_same_side_position_even_thought_long_is_underwater_as_long_over
             &router.wrap(),
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -807,7 +806,6 @@ fn test_can_open_same_side_position_even_thought_long_is_underwater_as_long_over
             &router.wrap(),
             vamm.addr().to_string(),
             3,
-            alice.to_string(),
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -840,7 +838,7 @@ fn test_can_open_same_side_position_even_thought_short_is_underwater_as_long_ove
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(position.margin, to_decimals(88u64));
 
@@ -884,7 +882,7 @@ fn test_can_open_same_side_position_even_thought_short_is_underwater_as_long_ove
     // realizedPnl = -83.33 * (20 - 2.35) / 20 = -73.538725
     // margin = 88 -73.538725 ~= 14.4
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), 3, alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 3)
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(17_646_751_562u128));
     assert_eq!(position.margin, Uint128::from(150_000_000_000u128));
@@ -893,7 +891,6 @@ fn test_can_open_same_side_position_even_thought_short_is_underwater_as_long_ove
             &router.wrap(),
             vamm.addr().to_string(),
             3,
-            alice.to_string(),
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -1094,7 +1091,7 @@ fn test_close_partial_position_long_position_when_closing_whole_position_is_over
     router.execute(alice.clone(), msg).unwrap();
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(15_000_000_000u128));
     assert_eq!(position.margin, Uint128::from(25_000_000_000u128));
@@ -1164,7 +1161,7 @@ fn test_close_partial_position_short_position_when_closing_whole_position_is_ove
     router.execute(alice.clone(), msg).unwrap();
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(18_750_000_000u128));
     assert_eq!(position.margin, Uint128::from(20_000_000_000u128));
@@ -1227,7 +1224,7 @@ fn test_close_whole_partial_position_when_partial_liquidation_ratio_is_one() {
     router.execute(alice.clone(), msg).unwrap();
 
     let err = engine
-        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap_err();
     assert_eq!(
         StdError::GenericErr {

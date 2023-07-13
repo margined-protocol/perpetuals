@@ -146,7 +146,7 @@ pub fn update_position_reply(
     
     println!("entry_price: {}", position.entry_price);
 
-    let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
+    let position_key = keccak_256(&[position.vamm.as_bytes()].concat());
     println!("update_position_reply - store position: {:?}", position);
     store_position(deps.storage, &position_key, &position, false)?;
 
@@ -219,7 +219,6 @@ pub fn update_position_reply(
         deps.as_ref(),
         position.vamm.to_string(),
         position.position_id,
-        position.trader.to_string(),
     )?;
 
     require_additional_margin(margin_ratio, config.maintenance_margin_ratio)?;
@@ -246,7 +245,7 @@ pub fn close_position_reply(
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
 
-    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
+    let position_key = keccak_256(&[swap.vamm.as_bytes()].concat());
 
     let position = read_position(deps.storage, &position_key, position_id)?;
 
@@ -317,7 +316,7 @@ pub fn close_position_reply(
         swap.trader,
     )?;
 
-    let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
+    let position_key = keccak_256(&[position.vamm.as_bytes()].concat());
     remove_position(deps.storage, &position_key, &position).unwrap();
 
     store_state(deps.storage, &state)?;
@@ -342,7 +341,7 @@ pub fn partial_close_position_reply(
     position_id: u64
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
-    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
+    let position_key = keccak_256(&[swap.vamm.as_bytes()].concat());
     let mut position = read_position(deps.storage, &position_key, position_id)?;
 
     let mut state: State = read_state(deps.storage)?;
@@ -395,7 +394,7 @@ pub fn partial_close_position_reply(
     position.last_updated_premium_fraction = latest_premium_fraction;
     position.block_time = env.block.time.seconds();
 
-    let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
+    let position_key = keccak_256(&[position.vamm.as_bytes()].concat());
     store_position(deps.storage, &position_key, &position, false)?;
     store_state(deps.storage, &state)?;
 
@@ -430,7 +429,7 @@ pub fn liquidate_reply(
     
     let liquidator = read_tmp_liquidator(deps.storage)?;
 
-    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
+    let position_key = keccak_256(&[swap.vamm.as_bytes()].concat());
     let position = read_position(deps.storage, &position_key, position_id)?;
 
     // calculate delta from trade and whether it was profitable or a loss
@@ -499,7 +498,7 @@ pub fn liquidate_reply(
 
     store_state(deps.storage, &state)?;
 
-    let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
+    let position_key = keccak_256(&[position.vamm.as_bytes()].concat());
     remove_position(deps.storage, &position_key, &position).unwrap();
     remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
     remove_tmp_liquidator(deps.storage);
@@ -531,7 +530,7 @@ pub fn partial_liquidation_reply(
     let liquidator = read_tmp_liquidator(deps.storage)?;
     println!("partial_liquidation_reply - liquidator: {:?}", liquidator);
 
-    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
+    let position_key = keccak_256(&[swap.vamm.as_bytes()].concat());
     let mut position = read_position(deps.storage, &position_key, position_id)?;
 
     println!("partial_liquidation_reply - position: {:?}", position);
@@ -611,7 +610,7 @@ pub fn partial_liquidation_reply(
             Uint128::zero(),
         )?);
     }
-    let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
+    let position_key = keccak_256(&[position.vamm.as_bytes()].concat());-
     store_position(deps.storage, &position_key, &position, false)?;
     store_state(deps.storage, &state)?;
 

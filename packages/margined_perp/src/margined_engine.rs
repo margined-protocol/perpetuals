@@ -121,7 +121,7 @@ pub enum QueryMsg {
     #[returns(cw_controllers::HooksResponse)]
     GetWhitelist {},
     #[returns(Position)]
-    Position { vamm: String, position_id: u64, trader: String },
+    Position { vamm: String, position_id: u64 },
     #[returns(Vec<Position>)]
     AllPositions {
         trader: String,
@@ -133,19 +133,18 @@ pub enum QueryMsg {
     UnrealizedPnl {
         vamm: String,
         position_id: u64,
-        trader: String,
         calc_option: PnlCalcOption,
     },
     #[returns(Integer)]
     CumulativePremiumFraction { vamm: String },
     #[returns(Integer)]
-    MarginRatio { vamm: String, position_id: u64, trader: String },
+    MarginRatio { vamm: String, position_id: u64 },
     #[returns(Integer)]
-    FreeCollateral { vamm: String, position_id: u64, trader: String },
+    FreeCollateral { vamm: String, position_id: u64 },
     #[returns(Uint128)]
-    BalanceWithFundingPayment { trader: String, position_id: u64},
+    BalanceWithFundingPayment { position_id: u64},
     #[returns(Position)]
-    PositionWithFundingPayment { vamm: String, position_id: u64, trader: String },
+    PositionWithFundingPayment { vamm: String, position_id: u64 },
 }
 
 #[cw_serde]

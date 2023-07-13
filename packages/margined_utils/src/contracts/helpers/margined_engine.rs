@@ -235,10 +235,9 @@ impl EngineController {
         &self,
         querier: &QuerierWrapper,
         vamm: String,
-        position_id: u64,
-        trader: String,
+        position_id: u64
     ) -> StdResult<Position> {
-        let msg = QueryMsg::Position { vamm, position_id, trader };
+        let msg = QueryMsg::Position { vamm, position_id };
 
         querier.query_wasm_smart(&self.0, &msg)
     }
@@ -284,13 +283,11 @@ impl EngineController {
         querier: &QuerierWrapper,
         vamm: String,
         position_id: u64,
-        trader: String,
         calc_option: PnlCalcOption,
     ) -> StdResult<PositionUnrealizedPnlResponse> {
         let msg = QueryMsg::UnrealizedPnl {
             vamm,
             position_id,
-            trader,
             calc_option,
         };
 
@@ -303,9 +300,8 @@ impl EngineController {
         querier: &QuerierWrapper,
         vamm: String,
         position_id: u64,
-        trader: String,
     ) -> StdResult<Integer> {
-        let msg = QueryMsg::FreeCollateral { vamm, position_id, trader };
+        let msg = QueryMsg::FreeCollateral { vamm, position_id };
 
         querier.query_wasm_smart(&self.0, &msg)
     }
@@ -316,9 +312,8 @@ impl EngineController {
         querier: &QuerierWrapper,
         vamm: String,
         position_id: u64,
-        trader: String,
     ) -> StdResult<Integer> {
-        let msg = QueryMsg::MarginRatio { vamm, position_id, trader };
+        let msg = QueryMsg::MarginRatio { vamm, position_id };
 
         querier.query_wasm_smart(&self.0, &msg)
     }
@@ -327,10 +322,9 @@ impl EngineController {
     pub fn get_balance_with_funding_payment(
         &self,
         querier: &QuerierWrapper,
-        trader: String,
         position_id: u64
     ) -> StdResult<Uint128> {
-        let msg = QueryMsg::BalanceWithFundingPayment { trader, position_id };
+        let msg = QueryMsg::BalanceWithFundingPayment { position_id };
 
         querier.query_wasm_smart(&self.0, &msg)
     }
@@ -341,9 +335,8 @@ impl EngineController {
         querier: &QuerierWrapper,
         vamm: String,
         position_id: u64,
-        trader: String,
     ) -> StdResult<Position> {
-        let msg = QueryMsg::PositionWithFundingPayment { vamm, position_id, trader };
+        let msg = QueryMsg::PositionWithFundingPayment { vamm, position_id };
 
         querier.query_wasm_smart(&self.0, &msg)
     }

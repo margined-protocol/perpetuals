@@ -209,9 +209,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             limit,
             order_by,
         } => to_binary(&query_all_positions(deps, trader, start_after, limit, order_by)?),
-        QueryMsg::Position { vamm, position_id, trader } => to_binary(&query_position(deps, vamm, position_id, trader)?),
-        QueryMsg::MarginRatio { vamm, position_id, trader } => {
-            to_binary(&query_margin_ratio(deps, vamm, position_id, trader)?)
+        QueryMsg::Position { vamm, position_id } => to_binary(&query_position(deps, vamm, position_id)?),
+        QueryMsg::MarginRatio { vamm, position_id } => {
+            to_binary(&query_margin_ratio(deps, vamm, position_id)?)
         }
         QueryMsg::CumulativePremiumFraction { vamm } => {
             to_binary(&query_cumulative_premium_fraction(deps, vamm)?)
@@ -219,23 +219,21 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::UnrealizedPnl {
             vamm,
             position_id,
-            trader,
             calc_option,
         } => to_binary(&query_position_notional_unrealized_pnl(
             deps,
             vamm,
             position_id,
-            trader,
             calc_option,
         )?),
-        QueryMsg::FreeCollateral { vamm, position_id, trader } => {
-            to_binary(&query_free_collateral(deps, vamm, position_id, trader)?)
+        QueryMsg::FreeCollateral { vamm, position_id } => {
+            to_binary(&query_free_collateral(deps, vamm, position_id)?)
         }
-        QueryMsg::BalanceWithFundingPayment { trader, position_id} => {
-            to_binary(&query_trader_balance_with_funding_payment(deps, position_id, trader)?)
+        QueryMsg::BalanceWithFundingPayment { position_id} => {
+            to_binary(&query_trader_balance_with_funding_payment(deps, position_id)?)
         }
-        QueryMsg::PositionWithFundingPayment { vamm, position_id, trader } => to_binary(
-            &query_trader_position_with_funding_payment(deps, vamm, position_id, trader)?,
+        QueryMsg::PositionWithFundingPayment { vamm, position_id } => to_binary(
+            &query_trader_position_with_funding_payment(deps, vamm, position_id)?,
         ),
     }
 }

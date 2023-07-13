@@ -92,13 +92,13 @@ fn test_partially_liquidate_long_position() {
     router.execute(carol.clone(), msg).unwrap();
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(position.margin, Uint128::from(19_274_982u128));
     assert_eq!(position.size, Integer::new_positive(15_000_000u128));
 
     let margin_ratio = engine
-        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_positive(43_713u128));
 
@@ -311,13 +311,13 @@ fn test_partially_liquidate_short_position() {
     router.execute(carol.clone(), msg).unwrap();
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(position.margin, Uint128::from(16_079_607u128));
     assert_eq!(position.size, Integer::new_negative(18_750_000u128));
 
     let margin_ratio = engine
-        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_positive(45_736u128));
 
@@ -530,7 +530,7 @@ fn test_long_position_complete_liquidation() {
     router.execute(carol.clone(), msg).unwrap();
 
     let err = engine
-        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap_err();
     assert_eq!(
         StdError::GenericErr {
@@ -745,7 +745,7 @@ fn test_short_position_complete_liquidation() {
     router.execute(carol.clone(), msg).unwrap();
 
     let err = engine
-        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap_err();
     assert_eq!(
         StdError::GenericErr {
@@ -876,7 +876,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
     // TWAP PnL = (70.42 * 270 + 84.62 * 15 + 99.96 * 600 + 84.62 * 15) / 900 - 100 ~= -9.39
     // Use TWAP price PnL since -9.39 > -15.38
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), 2, alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 2)
         .unwrap();
     assert_eq!(position.notional, Uint128::from(100_000_000u64));
 
@@ -885,7 +885,6 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             &router.wrap(),
             vamm.addr().to_string(),
             2,
-            alice.to_string(),
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -896,7 +895,6 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             &router.wrap(),
             vamm.addr().to_string(),
             2,
-            alice.to_string(),
             PnlCalcOption::Twap,
         )
         .unwrap();
@@ -988,7 +986,7 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
     // TWAP PnL = (83.3333333333 * 885 + 100 * 15) / 900 - 100 = -16.39
     // Use spot price PnL since 0 > -16.39
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(position.notional, Uint128::from(100_000_000u64));
 
@@ -998,7 +996,6 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
             &router.wrap(),
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -1009,7 +1006,6 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
             &router.wrap(),
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             PnlCalcOption::Twap,
         )
         .unwrap();

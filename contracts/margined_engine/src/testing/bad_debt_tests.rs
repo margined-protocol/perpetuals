@@ -506,7 +506,7 @@ fn test_can_partial_close_position_as_long_as_no_bad_debt_is_incurred() {
     router.execute(alice.clone(), msg).unwrap();
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(6_666_666_667u128));
 }

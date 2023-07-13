@@ -49,8 +49,7 @@ fn test_open_position_total_fee_ten_percent() {
         .get_position_with_funding_payment(
             &router.wrap(),
             vamm.addr().to_string(),
-            1,
-            alice.to_string(),
+            1
         )
         .unwrap();
     assert_eq!(alice_position.margin, Uint128::from(300_000_000_000u64));
@@ -246,7 +245,6 @@ fn test_open_position_close_manually_open_reverse_position_total_fee_ten_percent
             &router.wrap(),
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -322,7 +320,6 @@ fn test_open_position_close_manually_open_reverse_position_short_then_long_total
             &router.wrap(),
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             PnlCalcOption::SpotPrice,
         )
         .unwrap();

@@ -86,8 +86,7 @@ fn test_return_zero_margin_when_alices_position_is_underwater() {
         .get_position_with_funding_payment(
             &router.wrap(),
             vamm.addr().to_string(),
-            1u64,
-            alice.to_string(),
+            1u64
         )
         .unwrap();
     assert_eq!(alice_position.margin, to_decimals(0u64),);

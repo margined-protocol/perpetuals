@@ -88,7 +88,6 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
             &router.wrap(),
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
         )
         .unwrap();
     assert_eq!(
@@ -100,7 +99,7 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
     // then bob will get 1% of his position size as fundingPayment
     // {balance: -187.5, margin: 1200} => {balance: -187.5, margin: 1201.875}
     let bob_position = engine
-        .get_position_with_funding_payment(&router.wrap(), vamm.addr().to_string(), 2, bob.to_string())
+        .get_position_with_funding_payment(&router.wrap(), vamm.addr().to_string(), 2)
         .unwrap();
     assert_eq!(
         bob_position.size,
@@ -274,12 +273,11 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
             &router.wrap(),
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
         )
         .unwrap();
     assert_eq!(alice_position.margin, Uint128::from(299_625_000_000u128));
     let alice_balance = engine
-        .get_balance_with_funding_payment(&router.wrap(), alice.to_string(), 1)
+        .get_balance_with_funding_payment(&router.wrap(), 1)
         .unwrap();
     assert_eq!(alice_balance, Uint128::from(299_625_000_000u128));
 
@@ -297,12 +295,11 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
             &router.wrap(),
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
         )
         .unwrap();
     assert_eq!(alice_position.margin, Uint128::from(299_250_000_000u128));
     let alice_balance = engine
-        .get_balance_with_funding_payment(&router.wrap(), alice.to_string(), 1)
+        .get_balance_with_funding_payment(&router.wrap(), 1)
         .unwrap();
     assert_eq!(alice_balance, Uint128::from(299_250_000_000u128));
 
@@ -328,12 +325,11 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
             &router.wrap(),
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
         )
         .unwrap();
     assert_eq!(alice_position.margin, Uint128::from(299_625_000_000u128));
     let alice_balance = engine
-        .get_balance_with_funding_payment(&router.wrap(), alice.to_string(), 1)
+        .get_balance_with_funding_payment(&router.wrap(), 1)
         .unwrap();
     assert_eq!(alice_balance, Uint128::from(299_625_000_000u128));
 }
@@ -411,12 +407,11 @@ fn test_funding_rate_is_negative_1_percent_then_negative_1_percent() {
             &router.wrap(),
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
         )
         .unwrap();
     assert_eq!(alice_position.margin, Uint128::from(299_625_000_000u128));
     let alice_balance = engine
-        .get_balance_with_funding_payment(&router.wrap(), alice.to_string(), 1)
+        .get_balance_with_funding_payment(&router.wrap(), 1)
         .unwrap();
     assert_eq!(alice_balance, Uint128::from(299_625_000_000u128));
 
@@ -447,12 +442,11 @@ fn test_funding_rate_is_negative_1_percent_then_negative_1_percent() {
             &router.wrap(),
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
         )
         .unwrap();
     assert_eq!(alice_position.margin, Uint128::from(300_000_000_000u128));
     let alice_balance = engine
-        .get_balance_with_funding_payment(&router.wrap(), alice.to_string(), 1)
+        .get_balance_with_funding_payment(&router.wrap(), 1)
         .unwrap();
     assert_eq!(alice_balance, Uint128::from(300_000_000_000u128));
 
@@ -478,12 +472,11 @@ fn test_funding_rate_is_negative_1_percent_then_negative_1_percent() {
             &router.wrap(),
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
         )
         .unwrap();
     assert_eq!(alice_position.margin, Uint128::from(300_375_000_000u128));
     let alice_balance = engine
-        .get_balance_with_funding_payment(&router.wrap(), alice.to_string(), 1)
+        .get_balance_with_funding_payment(&router.wrap(), 1)
         .unwrap();
     assert_eq!(alice_balance, Uint128::from(300_375_000_000u128));
 }
@@ -552,7 +545,6 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
             &router.wrap(),
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
         )
         .unwrap();
     assert_eq!(alice_position.margin, to_decimals(1050u64));
@@ -571,12 +563,11 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
             &router.wrap(),
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
         )
         .unwrap();
     assert_eq!(alice_position.margin, to_decimals(650u64));
     let alice_balance = engine
-        .get_balance_with_funding_payment(&router.wrap(), alice.to_string(), 1)
+        .get_balance_with_funding_payment(&router.wrap(), 1)
         .unwrap();
     assert_eq!(alice_balance, to_decimals(650u64));
 }
@@ -642,7 +633,7 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
     // then bob will get 2000% of his position size as fundingPayment
     // funding payment: -187.5 x 2000% = -3750, margin is 1200 so bad debt = -3750 + 1200 = 2550
     let bob_position = engine
-        .get_position_with_funding_payment(&router.wrap(), vamm.addr().to_string(), 2, bob.to_string())
+        .get_position_with_funding_payment(&router.wrap(), vamm.addr().to_string(), 2)
         .unwrap();
     assert_eq!(bob_position.margin, to_decimals(0u64));
 
@@ -732,7 +723,7 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
     router.execute(bob.clone(), msg).unwrap();
 
     let bob_position = engine
-        .get_position_with_funding_payment(&router.wrap(), vamm.addr().to_string(), 2, bob.to_string())
+        .get_position_with_funding_payment(&router.wrap(), vamm.addr().to_string(), 2)
         .unwrap();
     assert_eq!(bob_position.margin, to_decimals(0u64));
 
@@ -975,8 +966,7 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
         .get_position_with_funding_payment(
             &router.wrap(),
             vamm.addr().to_string(),
-            1,
-            alice.to_string(),
+            1
         )
         .unwrap();
     assert_eq!(
@@ -988,7 +978,7 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
     // then bob's position won't change
     // {balance: -187.5, margin: 1200}
     let bob_position = engine
-        .get_position_with_funding_payment(&router.wrap(), vamm.addr().to_string(), 2, bob.to_string())
+        .get_position_with_funding_payment(&router.wrap(), vamm.addr().to_string(), 2)
         .unwrap();
     assert_eq!(
         bob_position.size,
