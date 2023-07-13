@@ -239,6 +239,7 @@ pub fn update_tp_sl(
 
     let state = read_state(deps.storage)?;
     require_not_paused(state.pause)?;
+    require_position_not_zero(position.size.value)?;
 
     if position.trader != trader {
         return Err(StdError::generic_err("Unauthorized"));
@@ -284,6 +285,11 @@ pub fn close_position(
     let position = read_position(deps.storage, &position_key, position_id)?;
 
     let state = read_state(deps.storage)?;
+
+    if position.trader != trader {
+        return Err(StdError::generic_err("Unauthorized"));
+    }
+
     // check the position isn't zero
     require_not_paused(state.pause)?;
     require_position_not_zero(position.size.value)?;
@@ -367,6 +373,21 @@ pub fn close_position(
         ("action", "close_position"),
         ("vamm", vamm.as_ref()),
         ("trader", trader.as_ref()),
+    ]))
+}
+
+pub fn tp_sl(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    vamm: String,
+    position_id: u64
+) -> StdResult<Response> {
+    
+
+    Ok(Response::new().add_attributes(vec![
+        ("action", "tp or sl"),
+        ("vamm", vamm.as_ref()),
     ]))
 }
 
@@ -509,7 +530,7 @@ pub fn deposit_margin(
         return Err(StdError::generic_err("Unauthorized"));
     }
 
-    position.margin = position.margin.checked_add(amount)?;
+    position.margin = position.margin.checked_add(amount)?; // TODO: @lehieuhust check if leverage is less than 1
 
     store_position(deps.storage, &position_key, &position, false)?;
 

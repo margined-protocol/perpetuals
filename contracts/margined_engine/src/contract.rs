@@ -10,7 +10,7 @@ use margined_common::validate::{
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 use crate::error::ContractError;
-use crate::handle::update_tp_sl;
+use crate::handle::{update_tp_sl, tp_sl};
 use crate::state::init_last_position_id;
 use crate::{
     handle::{
@@ -49,7 +49,8 @@ pub const PARTIAL_CLOSE_POSITION_REPLY_ID: u64 = 3;
 pub const LIQUIDATION_REPLY_ID: u64 = 4;
 pub const PARTIAL_LIQUIDATION_REPLY_ID: u64 = 5;
 pub const PAY_FUNDING_REPLY_ID: u64 = 6;
-
+pub const TAKE_PROFIT_REPLY_ID: u64 = 7;
+pub const STOP_LOSS_REPLY_ID: u64 = 8;
 pub const TRANSFER_FAILURE_REPLY_ID: u64 = 9;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -184,6 +185,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             position_id,
             quote_asset_limit,
         } => liquidate(deps, env, info, vamm, position_id, trader, quote_asset_limit),
+        ExecuteMsg::TpSl { vamm, position_id } => tp_sl(deps, env, info, vamm, position_id),
         ExecuteMsg::PayFunding { vamm } => pay_funding(deps, env, info, vamm),
         ExecuteMsg::DepositMargin { vamm, position_id, amount } => deposit_margin(deps, env, info, vamm, position_id, amount),
         ExecuteMsg::WithdrawMargin { vamm, position_id, amount } => {

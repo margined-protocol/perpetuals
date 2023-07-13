@@ -23,7 +23,7 @@ pub static KEY_LAST_POSITION_ID: &[u8] = b"last_position_id";
 
 static PREFIX_POSITION: &[u8] = b"position"; // prefix position
 pub static PREFIX_POSITION_BY_DIRECTION: &[u8] = b"position_by_direction"; // position from the direction
-pub static PREFIX_POSITION_BY_TRADER: &[u8] = b"position_by_trader"; // position from a trader
+// pub static PREFIX_POSITION_BY_TRADER: &[u8] = b"position_by_trader"; // position from a trader
 
 pub type Config = ConfigResponse;
 
@@ -79,15 +79,15 @@ pub fn store_position(
 
     let total_tick_orders = 0;
 
-    Bucket::multilevel(
-        storage,
-        &[
-            PREFIX_POSITION_BY_TRADER,
-            key,
-            position.trader.as_bytes(),
-        ],
-    )
-    .save(position_id_key, &position.direction)?;
+    // Bucket::multilevel(
+    //     storage,
+    //     &[
+    //         PREFIX_POSITION_BY_TRADER,
+    //         key,
+    //         position.trader.as_bytes(),
+    //     ],
+    // )
+    // .save(position_id_key, &position.direction)?;
 
     Bucket::multilevel(
         storage,
@@ -110,15 +110,15 @@ pub fn remove_position(storage: &mut dyn Storage, key: &[u8], position: &Positio
     // not found means total is 0
     let total_tick_orders  = 0;
 
-    Bucket::<bool>::multilevel(
-        storage,
-        &[
-            PREFIX_POSITION_BY_TRADER,
-            key,
-            position.trader.as_bytes(),
-        ],
-    )
-    .remove(position_id_key);
+    // Bucket::<bool>::multilevel(
+    //     storage,
+    //     &[
+    //         PREFIX_POSITION_BY_TRADER,
+    //         key,
+    //         position.trader.as_bytes(),
+    //     ],
+    // )
+    // .remove(position_id_key);
 
     Bucket::<bool>::multilevel(
         storage,
