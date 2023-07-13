@@ -65,6 +65,12 @@ pub enum ExecuteMsg {
         stop_loss: Option<Uint128>,
         base_asset_limit: Uint128,
     },
+    UpdateTpSl {
+        vamm: String,
+        position_id: u64,
+        take_profit: Option<Uint128>,
+        stop_loss: Option<Uint128>,
+    },
     ClosePosition {
         vamm: String,
         position_id: u64,

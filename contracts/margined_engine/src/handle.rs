@@ -221,6 +221,52 @@ pub fn open_position(
     ]))
 }
 
+pub fn update_tp_sl(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    vamm: String,
+    position_id: u64,
+    take_profit: Option<Uint128>,
+    stop_loss: Option<Uint128>
+) -> StdResult<Response> {
+    let vamm = deps.api.addr_validate(&vamm)?;
+    let trader = info.sender;
+
+    // read the position for the trader from vamm
+    let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
+    let mut position = read_position(deps.storage, &position_key, position_id)?;
+
+    let state = read_state(deps.storage)?;
+    require_not_paused(state.pause)?;
+
+    if position.trader != trader {
+        return Err(StdError::generic_err("Unauthorized"));
+    }
+
+    match take_profit {
+        Some(tp) => {
+            position.take_profit = tp;
+        }
+        None => {},
+    }
+
+    match stop_loss {
+        Some(_) => {
+            position.stop_loss = stop_loss;
+        }
+        None => {},
+    }
+    
+    store_position(deps.storage, &position_key, &position, false)?;
+    
+    Ok(Response::new().add_attributes(vec![
+        ("action", "update_tp_sl"),
+        ("vamm", vamm.as_ref()),
+        ("position_id", &position_id.to_string()),
+    ]))
+}
+
 pub fn close_position(
     deps: DepsMut,
     env: Env,
@@ -460,7 +506,7 @@ pub fn deposit_margin(
     let mut position = read_position(deps.storage, &position_key, position_id)?;
 
     if position.trader != trader {
-        return Err(StdError::generic_err("No position found"));
+        return Err(StdError::generic_err("Unauthorized"));
     }
 
     position.margin = position.margin.checked_add(amount)?;
@@ -496,6 +542,10 @@ pub fn withdraw_margin(
     // read the position for the trader from vamm
     let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
     let mut position = read_position(deps.storage, &position_key, position_id)?;
+
+    if position.trader != trader {
+        return Err(StdError::generic_err("Unauthorized"));
+    }
 
     let remain_margin = calc_remain_margin_with_funding_payment(
         deps.as_ref(),

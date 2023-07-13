@@ -10,6 +10,7 @@ use margined_common::validate::{
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 use crate::error::ContractError;
+use crate::handle::update_tp_sl;
 use crate::state::init_last_position_id;
 use crate::{
     handle::{
@@ -166,6 +167,12 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             stop_loss,
             base_asset_limit,
         ),
+        ExecuteMsg::UpdateTpSl {
+            vamm,
+            position_id,
+            take_profit,
+            stop_loss
+        } => update_tp_sl(deps, env, info, vamm, position_id, take_profit, stop_loss),
         ExecuteMsg::ClosePosition {
             vamm,
             position_id,
