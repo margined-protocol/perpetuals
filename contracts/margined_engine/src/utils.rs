@@ -35,38 +35,6 @@ pub fn keccak_256(input: &[u8]) -> Vec<u8> {
     hasher.finalize().to_vec()
 }
 
-// reads position from storage but also handles the case where there is no
-// previously stored position, i.e. a new position
-pub fn get_position(
-    storage: &dyn Storage,
-    position_key: &[u8],
-    position_id: u64,
-    vamm: &Addr,
-    trader: &Addr,
-    side: &Side,
-    take_profit: Uint128,
-    stop_loss: Option<Uint128>,
-    block_time: u64,
-) -> StdResult<Position> {
-    // read the position for the trader from vamm
-    let mut position = read_position(storage, &position_key, position_id).unwrap_or_default();
-
-    // so if the position returned is None then its new
-    if position.vamm.as_str().is_empty() {
-        // update the default position
-        position.position_id = position_id;
-        position.vamm = vamm.clone();
-        position.trader = trader.clone();
-        position.side = side.clone();
-        position.direction = side_to_direction(side);
-        position.take_profit = take_profit;
-        position.stop_loss = stop_loss;
-        position.block_time = block_time;
-    }
-
-    Ok(position)
-}
-
 // Creates an asset from the eligible collateral and msg sent
 pub fn get_asset(info: MessageInfo, eligible_collateral: AssetInfo) -> Asset {
     match &eligible_collateral {
@@ -236,13 +204,15 @@ pub fn get_position_notional_unrealized_pnl(
                     .checked_div(config.decimals)?;
             }
         }
-
+        println!("get_position_notional_unrealized_pnl - output_notional: {}", output_notional);
+        println!("get_position_notional_unrealized_pnl - position.notional: {}", position.notional);
         // we are short if the size of the position is less than 0
         unrealized_pnl = if position.direction == Direction::AddToAmm {
             Integer::new_positive(output_notional) - Integer::new_positive(position.notional)
         } else {
             Integer::new_positive(position.notional) - Integer::new_positive(output_notional)
         };
+        println!("get_position_notional_unrealized_pnl - unrealized_pnl: {}", unrealized_pnl);
     }
 
     Ok(PositionUnrealizedPnlResponse {
@@ -300,17 +270,6 @@ pub fn calc_funding_payment(
     } else {
         Integer::ZERO
     }
-}
-
-// this resets the main variables of a position
-pub fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
-    position.size = Integer::zero();
-    position.margin = Uint128::zero();
-    position.notional = Uint128::zero();
-    position.last_updated_premium_fraction = Integer::zero();
-    position.block_time = env.block.time.seconds();
-
-    Ok(position)
 }
 
 pub fn update_pauser(deps: DepsMut, info: MessageInfo, pauser: String) -> StdResult<Response> {

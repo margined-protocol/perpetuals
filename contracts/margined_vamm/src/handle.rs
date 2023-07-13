@@ -380,6 +380,7 @@ pub fn get_output_price_with_reserves(
     quote_asset_reserve: Uint128,
     base_asset_reserve: Uint128,
 ) -> StdResult<Uint128> {
+    println!("get_output_price_with_reserves - direction: {:?}", direction);
     if base_asset_amount == Uint128::zero() {
         return Ok(Uint128::zero());
     }
@@ -388,7 +389,8 @@ pub fn get_output_price_with_reserves(
     let invariant_k = quote_asset_reserve
         .checked_mul(base_asset_reserve)?
         .checked_div(config.decimals)?;
-
+    println!("get_output_price_with_reserves - base_asset_reserve: {:?}", base_asset_reserve);
+    println!("get_output_price_with_reserves - base_asset_amount: {:?}", base_asset_amount);
     let base_asset_after = match direction {
         Direction::AddToAmm => base_asset_reserve.checked_add(base_asset_amount)?,
         Direction::RemoveFromAmm => base_asset_reserve.checked_sub(base_asset_amount)?,
@@ -403,6 +405,8 @@ pub fn get_output_price_with_reserves(
     } else {
         quote_asset_reserve - quote_asset_after
     };
+
+    println!("get_output_price_with_reserves - quote_asset_sold: {:?}", quote_asset_sold);
 
     let remainder = modulo(invariant_k, base_asset_after, config.decimals)?;
     if remainder != Uint128::zero() {
@@ -433,7 +437,8 @@ pub fn update_reserve(
     )?;
 
     let mut state = read_state(storage)?;
-
+    println!("update_reserve - direction: {:?}", direction);
+    println!("[BEF] update_reserve - state: {:?}", state);
     match direction {
         Direction::AddToAmm => {
             state.quote_asset_reserve =
@@ -453,6 +458,7 @@ pub fn update_reserve(
 
     store_state(storage, &state)?;
 
+    println!("[AFT] update_reserve - state: {:?}", state);
     add_reserve_snapshot(
         storage,
         env.clone(),

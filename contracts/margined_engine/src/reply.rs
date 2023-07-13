@@ -3,7 +3,6 @@ use margined_utils::contracts::helpers::VammController;
 
 use crate::{
     contract::INCREASE_POSITION_REPLY_ID,
-    handle::internal_increase_position,
     messages::{
         execute_insurance_fund_withdrawal, execute_transfer, execute_transfer_from,
         execute_transfer_to_insurance_fund, transfer_fees, withdraw,
@@ -12,12 +11,10 @@ use crate::{
     state::{
         append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_sent_funds,
         read_state, read_tmp_liquidator, read_tmp_swap, remove_position, remove_sent_funds,
-        remove_tmp_liquidator, remove_tmp_swap, store_position, store_sent_funds, store_state,
-        store_tmp_swap, State, read_position,
+        remove_tmp_liquidator, remove_tmp_swap, store_position, store_state, State, read_position,
     },
     utils::{
-        calc_remain_margin_with_funding_payment, check_base_asset_holding_cap, clear_position,
-        get_position, keccak_256, realize_bad_debt, require_additional_margin, side_to_direction,
+        calc_remain_margin_with_funding_payment, check_base_asset_holding_cap, keccak_256, realize_bad_debt, require_additional_margin, side_to_direction,
         update_open_interest_notional,
     },
 };
@@ -236,127 +233,6 @@ pub fn update_position_reply(
         ("action", "update_position_reply"),
         ("spread_fee", &fees_amount[0].to_string()),
         ("toll_fee", &fees_amount[1].to_string()),
-    ]))
-}
-
-// reverse position after successful execution of the swap
-pub fn reverse_position_reply(
-    deps: DepsMut,
-    env: Env,
-    _input: Uint128,
-    output: Uint128,
-    position_id: u64
-) -> StdResult<Response> {
-    let mut swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
-
-    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
-
-    let mut position = get_position(
-        deps.storage,
-        &position_key,
-        swap.position_id,
-        &swap.vamm,
-        &swap.trader,
-        &swap.side,
-        swap.take_profit,
-        swap.stop_loss,
-        env.block.time.seconds(),
-    )?;
-    println!("reverse_position_reply - position: {:?}", position);
-    let mut state = read_state(deps.storage)?;
-    update_open_interest_notional(
-        &deps.as_ref(),
-        &mut state,
-        swap.vamm.clone(),
-        Integer::new_negative(output),
-        swap.trader.clone(),
-    )?;
-
-    let previous_margin = Integer::new_negative(position.margin);
-
-    // reset the position in order to reverse
-    position = clear_position(env, position)?;
-
-    // now increase the position again if there is additional position
-    let current_open_notional = swap.open_notional;
-    swap.open_notional = if swap.open_notional > output {
-        swap.open_notional.checked_sub(output)?
-    } else {
-        output.checked_sub(swap.open_notional)?
-    };
-
-    // create messages to pay for toll and spread fees
-    let fees = transfer_fees(
-        deps.as_ref(),
-        swap.trader.clone(),
-        swap.vamm.clone(),
-        current_open_notional,
-    )?;
-
-    // add the fee transfer messages
-    let mut msgs: Vec<SubMsg> = fees.messages;
-
-    let mut funds = read_sent_funds(deps.storage)?;
-    // add the total fees (spread + toll) to the required funds counter
-    funds.required = funds
-        .required
-        .checked_add(fees.spread_fee)?
-        .checked_add(fees.toll_fee)?;
-
-    // reduce position if old position is larger
-    if swap.open_notional.checked_div(swap.leverage)? == Uint128::zero() {
-        // latest margin requirements
-        let margin = previous_margin.checked_sub(swap.unrealized_pnl)?;
-
-        // create transfer message
-        msgs.push(execute_transfer(deps.storage, &swap.trader, margin.value)?);
-
-        let config = read_config(deps.storage)?;
-        // check if native tokens are sufficient
-        if let AssetInfo::NativeToken { .. } = config.eligible_collateral {
-            funds.are_sufficient()?;
-        }
-
-        remove_sent_funds(deps.storage);
-        remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
-    } else {
-        // determine new position
-        swap.margin_to_vault = previous_margin.checked_sub(swap.unrealized_pnl)?;
-        swap.unrealized_pnl = Integer::zero();
-
-        // set fees_paid flag to true so they aren't paid twice
-        swap.fees_paid = true;
-
-        // update the funds required
-        funds.required = if swap.margin_to_vault.is_positive() {
-            funds.required.checked_add(swap.margin_to_vault.value)?
-        } else if funds.required > swap.margin_to_vault.value {
-            funds.required.checked_sub(swap.margin_to_vault.value)?
-        } else {
-            // add both fees
-            fees.spread_fee.checked_add(fees.toll_fee)?
-        };
-
-        msgs.push(internal_increase_position(
-            swap.vamm.clone(),
-            swap.side.clone(),
-            swap.position_id,
-            swap.open_notional,
-            Uint128::zero(),
-        )?);
-
-        store_tmp_swap(deps.storage, &swap)?;
-        store_sent_funds(deps.storage, &funds)?;
-    }
-
-    let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
-    store_position(deps.storage, &position_key, &position ,false)?;
-    store_state(deps.storage, &state)?;
-
-    Ok(Response::new().add_submessages(msgs).add_attributes(vec![
-        ("action", "reverse_position_reply"),
-        ("spread_fee", "increase_position_reply"),
-        ("toll_fee", "increase_position_reply"),
     ]))
 }
 

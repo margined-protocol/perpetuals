@@ -1,7 +1,7 @@
 use cosmwasm_std::{Addr, Coin, QuerierWrapper, StdResult, Uint128};
 use margined_common::asset::NATIVE_DENOM;
 use margined_common::integer::Integer;
-use margined_perp::margined_engine::{PnlCalcOption, Side, Position};
+use margined_perp::margined_engine::Side;
 use margined_perp::margined_vamm::Direction;
 
 use crate::contracts::helpers::{EngineController, VammController};
@@ -45,7 +45,7 @@ pub fn calculate_funds_needed(
         .unwrap_or_default();
 
     // First we check if they are increasing the position or not
-    let is_increase = position.direction == Direction::AddToAmm && side == Side::Buy
+    let _is_increase = position.direction == Direction::AddToAmm && side == Side::Buy
         || position.direction == Direction::RemoveFromAmm && side == Side::Sell;
 
     let margin_owed = Integer::new_positive(quote_asset_amount);

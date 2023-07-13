@@ -24,7 +24,7 @@ use crate::{
     },
     reply::{
         close_position_reply, liquidate_reply, partial_close_position_reply,
-        partial_liquidation_reply, pay_funding_reply, reverse_position_reply,
+        partial_liquidation_reply, pay_funding_reply,
         update_position_reply,
     },
     state::{store_config, store_state, Config, State},
@@ -43,13 +43,11 @@ pub const PAUSER: Admin = Admin::new("pauser");
 pub const WHITELIST: Hooks = Hooks::new("whitelist");
 
 pub const INCREASE_POSITION_REPLY_ID: u64 = 1;
-pub const DECREASE_POSITION_REPLY_ID: u64 = 2;
-pub const REVERSE_POSITION_REPLY_ID: u64 = 3;
-pub const CLOSE_POSITION_REPLY_ID: u64 = 4;
-pub const PARTIAL_CLOSE_POSITION_REPLY_ID: u64 = 5;
-pub const LIQUIDATION_REPLY_ID: u64 = 6;
-pub const PARTIAL_LIQUIDATION_REPLY_ID: u64 = 7;
-pub const PAY_FUNDING_REPLY_ID: u64 = 8;
+pub const CLOSE_POSITION_REPLY_ID: u64 = 2;
+pub const PARTIAL_CLOSE_POSITION_REPLY_ID: u64 = 3;
+pub const LIQUIDATION_REPLY_ID: u64 = 4;
+pub const PARTIAL_LIQUIDATION_REPLY_ID: u64 = 5;
+pub const PAY_FUNDING_REPLY_ID: u64 = 6;
 
 pub const TRANSFER_FAILURE_REPLY_ID: u64 = 9;
 
@@ -244,19 +242,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
                     update_position_reply(deps, env, input, output, position_id, INCREASE_POSITION_REPLY_ID)?;
                 Ok(response)
             }
-            DECREASE_POSITION_REPLY_ID => {
-                let (input, output, position_id) = parse_swap(response)?;
-                println!("DECREASE_POSITION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
-                let response =
-                    update_position_reply(deps, env, input, output, position_id, DECREASE_POSITION_REPLY_ID)?;
-                Ok(response)
-            }
-            REVERSE_POSITION_REPLY_ID => {
-                let (input, output, position_id) = parse_swap(response)?;
-                println!("REVERSE_POSITION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
-                let response = reverse_position_reply(deps, env, input, output, position_id)?;
-                Ok(response)
-            }
             CLOSE_POSITION_REPLY_ID => {
                 let (input, output, position_id) = parse_swap(response)?;
                 println!("CLOSE_POSITION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
@@ -299,14 +284,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
             ))),
             INCREASE_POSITION_REPLY_ID => Err(StdError::generic_err(format!(
                 "increase position failure - reply (id {:?})",
-                msg.id
-            ))),
-            DECREASE_POSITION_REPLY_ID => Err(StdError::generic_err(format!(
-                "decrease position failure - reply (id {:?})",
-                msg.id
-            ))),
-            REVERSE_POSITION_REPLY_ID => Err(StdError::generic_err(format!(
-                "reverse position failure - reply (id {:?})",
                 msg.id
             ))),
             CLOSE_POSITION_REPLY_ID => Err(StdError::generic_err(format!(

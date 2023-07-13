@@ -270,7 +270,7 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
     println!("liquidate - err: {:?}", err);
     assert_eq!(
         StdError::GenericErr {
-            msg: "partial liquidation failure - reply (id 7)".to_string()
+            msg: "partial liquidation failure - reply (id 5)".to_string()
         },
         err.downcast().unwrap()
     );
@@ -550,7 +550,7 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
     let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "partial liquidation failure - reply (id 7)".to_string()
+            msg: "partial liquidation failure - reply (id 5)".to_string()
         },
         err.downcast().unwrap()
     );
@@ -822,7 +822,7 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
     let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "liquidation failure - reply (id 6)".to_string(),
+            msg: "liquidation failure - reply (id 4)".to_string(),
         },
         err.downcast().unwrap()
     );
@@ -2655,7 +2655,7 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
     let err = env.router.execute(env.alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "partial liquidation failure - reply (id 7)".to_string()
+            msg: "partial liquidation failure - reply (id 5)".to_string()
         },
         err.downcast().unwrap()
     );

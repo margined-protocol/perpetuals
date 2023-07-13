@@ -109,7 +109,7 @@ pub fn query_output_amount(
     amount: Uint128,
 ) -> StdResult<Uint128> {
     let state = read_state(deps.storage)?;
-
+    println!("query_output_amount - state: {:?}", state);
     let output = get_output_price_with_reserves(
         deps,
         &direction,

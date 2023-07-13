@@ -126,7 +126,7 @@ fn test_force_error_reduce_position_exceeds_fluctuation_limit() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "decrease position failure - reply (id 2)".to_string(),
+            msg: "increase position failure - reply (id 1)".to_string(),
         },
         err.downcast().unwrap()
     );
@@ -240,7 +240,7 @@ fn test_close_position_limit_force_error_exceeding_fluctuation_limit_twice_in_sa
     let err = router.execute(bob.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "close position failure - reply (id 4)".to_string(),
+            msg: "close position failure - reply (id 2)".to_string(),
         },
         err.downcast().unwrap()
     );
@@ -533,7 +533,7 @@ fn test_force_error_close_position_slippage_limit_originally_long() {
     let err = router.execute(bob.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "close position failure - reply (id 4)".to_string(),
+            msg: "close position failure - reply (id 2)".to_string(),
         },
         err.downcast().unwrap()
     );
@@ -626,7 +626,7 @@ fn test_force_error_close_position_slippage_limit_originally_short() {
     let err = router.execute(bob.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "close position failure - reply (id 4)".to_string(),
+            msg: "close position failure - reply (id 2)".to_string(),
         },
         err.downcast().unwrap()
     );

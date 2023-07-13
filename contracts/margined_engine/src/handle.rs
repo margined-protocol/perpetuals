@@ -5,9 +5,9 @@ use margined_utils::contracts::helpers::VammController;
 
 use crate::{
     contract::{
-        CLOSE_POSITION_REPLY_ID, DECREASE_POSITION_REPLY_ID, INCREASE_POSITION_REPLY_ID,
+        CLOSE_POSITION_REPLY_ID, INCREASE_POSITION_REPLY_ID,
         LIQUIDATION_REPLY_ID, PARTIAL_CLOSE_POSITION_REPLY_ID, PARTIAL_LIQUIDATION_REPLY_ID,
-        PAY_FUNDING_REPLY_ID, REVERSE_POSITION_REPLY_ID,
+        PAY_FUNDING_REPLY_ID,
     },
     messages::{execute_transfer_from, withdraw},
     query::{query_free_collateral, query_margin_ratio},
@@ -165,29 +165,17 @@ pub fn open_position(
     };
 
     // if direction and side are same way then increasing else we are reversing
-    let is_increase = position.direction == Direction::AddToAmm && side == Side::Buy
-        || position.direction == Direction::RemoveFromAmm && side == Side::Sell;
+    // let is_increase = position.direction == Direction::AddToAmm && side == Side::Buy
+    //     || position.direction == Direction::RemoveFromAmm && side == Side::Sell;
 
+    println!("open_position - direction: {:?}", position.direction);
+    println!("open_position - side: {:?}", position.side);
     // calculate the position notional
     let open_notional = margin_amount
         .checked_mul(leverage)?
         .checked_div(config.decimals)?;
     println!("open_position - open_notional: {:?}", open_notional);
-    println!("open_position - is_increase: {:?}", is_increase);
-    // check if the position is new or being increased, else position is being reversed
-    let msg = if is_increase {
-        internal_increase_position(vamm.clone(), side.clone(), position_id, open_notional, base_asset_limit)?
-    } else {
-        open_reverse_position(
-            &deps,
-            position.clone(),
-            side.clone(),
-            open_notional,
-            base_asset_limit,
-            false,
-            None,
-        )?
-    };
+    let msg = internal_increase_position(vamm.clone(), side.clone(), position_id, open_notional, base_asset_limit)?;
 
     let PositionUnrealizedPnlResponse {
         position_notional,
@@ -558,6 +546,7 @@ pub fn internal_increase_position(
     open_notional: Uint128,
     base_asset_limit: Uint128,
 ) -> StdResult<SubMsg> {
+    println!("internal_increase_position - open_notional: {}", open_notional);
     swap_input(
         &vamm,
         &side,
@@ -603,57 +592,6 @@ pub fn internal_close_position(
         quote_asset_limit,
         id,
     )
-}
-
-#[allow(clippy::too_many_arguments)]
-fn open_reverse_position(
-    deps: &DepsMut,
-    position: Position,
-    side: Side,
-    notional_amount: Uint128,
-    base_asset_limit: Uint128,
-    can_go_over_fluctuation: bool,
-    reply_id: Option<u64>,
-) -> StdResult<SubMsg> {
-    let PositionUnrealizedPnlResponse {
-        position_notional,
-        unrealized_pnl: _,
-    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)?;
-
-    // reduce position if old position is larger
-    let msg = if position_notional > notional_amount {
-        let reply_id = match reply_id {
-            Some(id) => id,
-            None => DECREASE_POSITION_REPLY_ID,
-        };
-
-        swap_input(
-            &position.vamm,
-            &side,
-            position.position_id,
-            notional_amount,
-            base_asset_limit,
-            can_go_over_fluctuation,
-            reply_id,
-        )?
-    } else {
-        // first close position swap out the entire position
-        let reply_id = match reply_id {
-            Some(id) => id,
-            None => REVERSE_POSITION_REPLY_ID,
-        };
-
-        swap_output(
-            &position.vamm,
-            &direction_to_side(&position.direction),
-            position.position_id,
-            position.size.value,
-            Uint128::zero(),
-            reply_id,
-        )?
-    };
-
-    Ok(msg)
 }
 
 fn partial_liquidation(
