@@ -610,7 +610,7 @@ pub fn partial_liquidation_reply(
             Uint128::zero(),
         )?);
     }
-    let position_key = keccak_256(&[position.vamm.as_bytes()].concat());-
+    let position_key = keccak_256(&[position.vamm.as_bytes()].concat());
     store_position(deps.storage, &position_key, &position, false)?;
     store_state(deps.storage, &state)?;
 
