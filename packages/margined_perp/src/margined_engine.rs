@@ -79,6 +79,7 @@ pub enum ExecuteMsg {
     TpSl {
         vamm: String,
         position_id: u64,
+        quote_asset_limit: Uint128,
     },
     Liquidate {
         vamm: String,

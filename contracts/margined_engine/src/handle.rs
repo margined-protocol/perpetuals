@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    Addr, DepsMut, Env, MessageInfo, Response, StdError, StdResult, SubMsg, Uint128,
+    Addr, DepsMut, Env, MessageInfo, Response, StdError, StdResult, SubMsg, Uint128, QuerierWrapper,
 };
 use margined_utils::contracts::helpers::VammController;
 
@@ -32,7 +32,7 @@ use margined_common::{
 use margined_perp::margined_engine::{
     PnlCalcOption, Position, PositionUnrealizedPnlResponse, Side,
 };
-use margined_perp::margined_vamm::{Direction, ExecuteMsg};
+use margined_perp::margined_vamm::{Direction, ExecuteMsg, QueryMsg};
 
 #[allow(clippy::too_many_arguments)]
 pub fn update_config(
@@ -382,19 +382,16 @@ pub fn close_position(
 
 pub fn tp_sl(
     deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
+    _env: Env,
+    _info: MessageInfo,
     vamm: String,
-    position_id: u64
+    position_id: u64,
+    quote_asset_limit: Uint128
 ) -> StdResult<Response> {
     let vamm = deps.api.addr_validate(&vamm)?;
     let vamm_controller = VammController(vamm.clone());
-    
-    // read the position for the trader from vamm
-    let position_key = keccak_256(&[vamm.as_bytes()].concat());
-    let position = read_position(deps.storage, &position_key, position_id)?;
 
-    let state = read_state(deps.storage)?;
+    // let state = read_state(deps.storage)?;
 
     // retrieve the existing margin ratio of the position
     let mut margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), position_id)?;
@@ -406,14 +403,40 @@ pub fn tp_sl(
             position_id,
             PnlCalcOption::Oracle,
         )?;
-        println!("liquidate - oracle_margin_ratio: {:?}", oracle_margin_ratio);
+        println!("tp_sl - oracle_margin_ratio: {:?}", oracle_margin_ratio);
 
         if oracle_margin_ratio.checked_sub(margin_ratio)? > Integer::zero() {
             margin_ratio = oracle_margin_ratio
         }
     }
+
+    let config = read_config(deps.storage)?;
+    require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
+    println!("tp_sl - config.maintenance_margin_ratio: {:?}", config.maintenance_margin_ratio);
+    require_insufficient_margin(margin_ratio, config.maintenance_margin_ratio)?;
+
+    // read the position for the trader from vamm
+    let position_key = keccak_256(&[vamm.as_bytes()].concat());
+    let position = read_position(deps.storage, &position_key, position_id)?;
+    println!("tp_sl - position: {:?}", position);
+
+    // check the position isn't zero
+    require_position_not_zero(position.size.value)?;
+
+    let spot_price = get_spot_price(&deps.querier, &vamm)?;
+
+    let stop_loss = position.stop_loss.unwrap_or_default();
+    
+    // if spot_price is ~ take_profit or stop_loss, close position
+    if spot_price <= position.take_profit && 
+        position.take_profit.checked_sub(spot_price)? < Uint128::from(10u128) ||
+        stop_loss > Uint128::zero() && 
+        spot_price >= stop_loss && spot_price.checked_sub(stop_loss)? < Uint128::from(10u128){
+        internal_close_position(deps, &position, quote_asset_limit, LIQUIDATION_REPLY_ID)?;
+    };
+
     Ok(Response::new().add_attributes(vec![
-        ("action", "tp or sl"),
+        ("action", "tp_sl"),
         ("vamm", vamm.as_ref()),
     ]))
 }
@@ -814,4 +837,11 @@ fn swap_output(
     )?;
 
     Ok(SubMsg::reply_always(msg, id))
+}
+
+fn get_spot_price(
+    querier: &QuerierWrapper,
+    vamm: &Addr,
+) -> StdResult<Uint128> {
+    querier.query_wasm_smart(vamm, &QueryMsg::SpotPrice {})
 }

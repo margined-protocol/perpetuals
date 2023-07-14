@@ -185,7 +185,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             position_id,
             quote_asset_limit,
         } => liquidate(deps, env, info, vamm, position_id, trader, quote_asset_limit),
-        ExecuteMsg::TpSl { vamm, position_id } => tp_sl(deps, env, info, vamm, position_id),
+        ExecuteMsg::TpSl { vamm, position_id, quote_asset_limit } => tp_sl(deps, env, info, vamm, position_id, quote_asset_limit),
         ExecuteMsg::PayFunding { vamm } => pay_funding(deps, env, info, vamm),
         ExecuteMsg::DepositMargin { vamm, position_id, amount } => deposit_margin(deps, env, info, vamm, position_id, amount),
         ExecuteMsg::WithdrawMargin { vamm, position_id, amount } => {
