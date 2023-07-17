@@ -1,7 +1,7 @@
-use cosmwasm_std::{StdError, Uint128};
-use cw20::Cw20ExecuteMsg;
-use margined_common::integer::Integer;
-use margined_perp::margined_engine::{PnlCalcOption, Side};
+use cosmwasm_std::Uint128;
+
+
+use margined_perp::margined_engine::Side;
 use margined_utils::{
     cw_multi_test::Executor,
     testing::{to_decimals, SimpleScenario},
@@ -116,26 +116,29 @@ fn test_trigger_tp_sl() {
         .unwrap();
     assert_eq!(position.take_profit, to_decimals(27));
     assert_eq!(position.stop_loss, Some(to_decimals(24)));
-
-    let price = vamm.spot_price(&router.wrap()).unwrap();
-    println!("[HIEU_LOG] 1 spot price: {:?}", price);
     
+    let price = vamm.spot_price(&router.wrap()).unwrap();
+    println!("[LOG] [1] spot price: {:?}", price);
+
+    // Price decrease to 24,087
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
             Side::Sell,
             to_decimals(6u64),
             to_decimals(8u64),
-            Uint128::from(27_000_000_000u128),
-            Some(Uint128::from(24_000_000_000u128)),
+            Uint128::from(6_000_000_000u128),
+            Some(Uint128::from(10_000_000_000u128)),
             to_decimals(0u64),
             vec![],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
-
+    
     let price = vamm.spot_price(&router.wrap()).unwrap();
-    println!("[HIEU_LOG] 2 spot price: {:?}", price);
+    println!("[LOG] [2] spot price: {:?}", price);
+
+    // Stop loss trigger
     let msg = engine
         .trigger_tp_sl(
             vamm.addr().to_string(),
@@ -144,4 +147,35 @@ fn test_trigger_tp_sl() {
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
+    
+    let price = vamm.spot_price(&router.wrap()).unwrap();
+    println!("[LOG] [3] spot price: {:?}", price);
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(21u64),
+            to_decimals(10u64),
+            Uint128::from(27_000_000_000u128),
+            Some(Uint128::from(24_000_000_000u128)),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+    
+    let price = vamm.spot_price(&router.wrap()).unwrap();
+    println!("[LOG] [4] spot price: {:?}", price);
+
+    // Take profit trigger
+    let msg = engine
+        .trigger_tp_sl(
+            vamm.addr().to_string(),
+            2,
+            to_decimals(0u64),
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
 }

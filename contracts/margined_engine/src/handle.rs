@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    Addr, DepsMut, Env, MessageInfo, Response, StdError, StdResult, SubMsg, Uint128, QuerierWrapper, CosmosMsg,
+    Addr, DepsMut, Env, MessageInfo, Response, StdError, StdResult, SubMsg, Uint128, QuerierWrapper,
 };
 use margined_utils::contracts::helpers::VammController;
 
@@ -424,15 +424,34 @@ pub fn trigger_tp_sl(
     let mut msgs: Vec<SubMsg> = vec![];
 
     // if spot_price is ~ take_profit or stop_loss, close position
-    if spot_price <= position.take_profit && 
-        position.take_profit.checked_mul(5u128.into())?.checked_div(1000u128.into())? 
-        >= position.take_profit.checked_sub(spot_price)? {
-        msgs.push(internal_close_position(deps, &position, quote_asset_limit, TAKE_PROFIT_REPLY_ID)?);
-    } else if stop_loss > Uint128::zero() && 
-        spot_price >= stop_loss && spot_price.checked_sub(stop_loss)? 
-        <= stop_loss.checked_mul(5u128.into())?.checked_div(1000u128.into())? {
-        msgs.push(internal_close_position(deps, &position, quote_asset_limit, STOP_LOSS_REPLY_ID)?);
-    };
+    if position.side == Side::Buy {
+        println!("tp_sl - position.side: {:?}", position.side);
+        if spot_price <= position.take_profit && 
+            position.take_profit.checked_mul(5u128.into())?.checked_div(1000u128.into())? 
+            >= position.take_profit.checked_sub(spot_price)? ||
+            spot_price > position.take_profit {
+            msgs.push(internal_close_position(deps, &position, quote_asset_limit, TAKE_PROFIT_REPLY_ID)?);
+        } else if stop_loss > Uint128::zero() && 
+            spot_price >= stop_loss && spot_price.checked_sub(stop_loss)? 
+            <= stop_loss.checked_mul(5u128.into())?.checked_div(1000u128.into())? ||
+            spot_price < position.take_profit {
+            println!("tp_sl - spot_price: {:?}", spot_price);
+            msgs.push(internal_close_position(deps, &position, quote_asset_limit, STOP_LOSS_REPLY_ID)?);
+        };
+    } else if position.side == Side::Sell {
+        println!("tp_sl - position.side: {:?}", position.side);
+        if spot_price >= position.take_profit && 
+            position.take_profit.checked_mul(5u128.into())?.checked_div(1000u128.into())? 
+            >= spot_price.checked_sub(position.take_profit)? ||
+            spot_price < position.take_profit {
+            msgs.push(internal_close_position(deps, &position, quote_asset_limit, TAKE_PROFIT_REPLY_ID)?);
+        } else if stop_loss > Uint128::zero() && 
+            spot_price <= stop_loss && stop_loss.checked_sub(spot_price)? 
+            <= stop_loss.checked_mul(5u128.into())?.checked_div(1000u128.into())? ||
+            spot_price > position.take_profit {
+            msgs.push(internal_close_position(deps, &position, quote_asset_limit, STOP_LOSS_REPLY_ID)?);
+        };
+    }
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "tp_sl"),
@@ -683,7 +702,6 @@ pub fn internal_close_position(
     quote_asset_limit: Uint128,
     id: u64,
 ) -> StdResult<SubMsg> {
-    println!("internal_close_position - position: {:?}", position);
     let side = direction_to_side(&position.direction);
     store_tmp_swap(
         deps.storage,
