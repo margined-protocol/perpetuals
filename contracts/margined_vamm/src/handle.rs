@@ -141,6 +141,7 @@ pub fn swap_input(
     can_go_over_fluctuation: bool,
 ) -> StdResult<Response> {
     let state = read_state(deps.storage)?;
+    // println!("swap_input - state: {:?}", state);
     require_open(state.open)?;
     let config = read_config(deps.storage)?;
     require_margin_engine(info.sender, config.margin_engine)?;
@@ -153,17 +154,20 @@ pub fn swap_input(
             state.quote_asset_reserve,
             state.base_asset_reserve,
         )?;
-
+        // println!("swap_input - base_asset_amount: {:?}", base_asset_amount);
+        // println!("swap_input - base_asset_limit: {:?}", base_asset_limit);
         // If AddToAmm, exchanged base amount should be more than base_asset_limit,
         // otherwise(RemoveFromAmm), exchanged base amount should be less than base_asset_limit.
         // In RemoveFromAmm case, more position means more debt so should not be larger than base_asset_limit
         if !base_asset_limit.is_zero() {
             if direction == Direction::AddToAmm && base_asset_amount < base_asset_limit {
+                // println!("swap_input - TOACCCC 1");
                 return Err(StdError::generic_err(
                     "Less than minimum base asset amount limit",
                 ));
             } else if direction == Direction::RemoveFromAmm && base_asset_amount > base_asset_limit
-            {
+            {   
+                // println!("swap_input - TOACCCC 2");
                 return Err(StdError::generic_err(
                     "Greater than maximum base asset amount limit",
                 ));
@@ -174,7 +178,7 @@ pub fn swap_input(
     } else {
         Uint128::zero()
     };
-    println!("swap_input - base_asset_amount: {:?}", base_asset_amount);
+    // println!("swap_input - base_asset_amount: {:?}", base_asset_amount);
     let response = update_reserve(
         deps.storage,
         env,
@@ -204,7 +208,7 @@ pub fn swap_output(
     base_asset_amount: Uint128,
     quote_asset_limit: Uint128,
 ) -> StdResult<Response> {
-    println!("swap_output - position_id: {:?}", position_id);
+    // println!("swap_output - position_id: {:?}", position_id);
     let state = read_state(deps.storage)?;
     require_open(state.open)?;
     let config = read_config(deps.storage)?;
@@ -381,7 +385,7 @@ pub fn get_output_price_with_reserves(
     quote_asset_reserve: Uint128,
     base_asset_reserve: Uint128,
 ) -> StdResult<Uint128> {
-    println!("get_output_price_with_reserves - direction: {:?}", direction);
+    // println!("get_output_price_with_reserves - direction: {:?}", direction);
     if base_asset_amount == Uint128::zero() {
         return Ok(Uint128::zero());
     }
@@ -390,8 +394,8 @@ pub fn get_output_price_with_reserves(
     let invariant_k = quote_asset_reserve
         .checked_mul(base_asset_reserve)?
         .checked_div(config.decimals)?;
-    println!("get_output_price_with_reserves - base_asset_reserve: {:?}", base_asset_reserve);
-    println!("get_output_price_with_reserves - base_asset_amount: {:?}", base_asset_amount);
+    // println!("get_output_price_with_reserves - base_asset_reserve: {:?}", base_asset_reserve);
+    // println!("get_output_price_with_reserves - base_asset_amount: {:?}", base_asset_amount);
     let base_asset_after = match direction {
         Direction::AddToAmm => base_asset_reserve.checked_add(base_asset_amount)?,
         Direction::RemoveFromAmm => base_asset_reserve.checked_sub(base_asset_amount)?,
@@ -407,7 +411,7 @@ pub fn get_output_price_with_reserves(
         quote_asset_reserve - quote_asset_after
     };
 
-    println!("get_output_price_with_reserves - quote_asset_sold: {:?}", quote_asset_sold);
+    // println!("get_output_price_with_reserves - quote_asset_sold: {:?}", quote_asset_sold);
 
     let remainder = modulo(invariant_k, base_asset_after, config.decimals)?;
     if remainder != Uint128::zero() {
@@ -438,8 +442,8 @@ pub fn update_reserve(
     )?;
 
     let mut state = read_state(storage)?;
-    println!("update_reserve - direction: {:?}", direction);
-    println!("[BEF] update_reserve - state: {:?}", state);
+    // println!("update_reserve - direction: {:?}", direction);
+    // println!("[BEF] update_reserve - state: {:?}", state);
     match direction {
         Direction::AddToAmm => {
             state.quote_asset_reserve =
@@ -459,7 +463,7 @@ pub fn update_reserve(
 
     store_state(storage, &state)?;
 
-    println!("[AFT] update_reserve - state: {:?}", state);
+    // println!("[AFT] update_reserve - state: {:?}", state);
     add_reserve_snapshot(
         storage,
         env.clone(),

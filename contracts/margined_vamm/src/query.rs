@@ -109,7 +109,7 @@ pub fn query_output_amount(
     amount: Uint128,
 ) -> StdResult<Uint128> {
     let state = read_state(deps.storage)?;
-    println!("query_output_amount - state: {:?}", state);
+    // println!("query_output_amount - state: {:?}", state);
     let output = get_output_price_with_reserves(
         deps,
         &direction,
@@ -179,24 +179,24 @@ pub fn query_is_over_spread_limit(deps: Deps) -> StdResult<bool> {
 
     // get price from the oracle
     let oracle_price = pricefeed_controller.get_price(&deps.querier, config.base_asset)?;
-    println!("query_is_over_spread_limit - oracle_price: {:?}", oracle_price);
+    // println!("query_is_over_spread_limit - oracle_price: {:?}", oracle_price);
     if oracle_price.is_zero() {
         return Err(StdError::generic_err("underlying price is 0"));
     }
 
     // get the local market price of the vamm
     let market_price = query_spot_price(deps)?;
-    println!("query_is_over_spread_limit - market_price: {:?}", market_price);
+    // println!("query_is_over_spread_limit - market_price: {:?}", market_price);
 
     let current_spread_ratio = (Integer::new_positive(market_price)
         - Integer::new_positive(oracle_price))
         * Integer::new_positive(config.decimals)
         / Integer::new_positive(oracle_price);
-    println!("query_is_over_spread_limit - current_spread_ratio: {:?}", current_spread_ratio);
+    // println!("query_is_over_spread_limit - current_spread_ratio: {:?}", current_spread_ratio);
 
     let max_oracle_spread_ratio =
         Integer::new_positive(config.decimals).checked_div(Integer::from(10u128))?; // 0.1 i.e. 10%
-    println!("query_is_over_spread_limit - max_oracle_spread_ratio: {:?}", max_oracle_spread_ratio);
+    // println!("query_is_over_spread_limit - max_oracle_spread_ratio: {:?}", max_oracle_spread_ratio);
     Ok(current_spread_ratio.abs() >= max_oracle_spread_ratio)
 }
 
