@@ -1236,8 +1236,10 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
+
     let price = vamm.spot_price(&router.wrap()).unwrap();
     println!("[LOG] [1] spot price: {:?}", price);
+
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
@@ -1257,8 +1259,10 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
+
     let price = vamm.spot_price(&router.wrap()).unwrap();
     println!("[LOG] [2] spot price: {:?}", price);
+    
     let pnl = engine
         .get_unrealized_pnl(
             &router.wrap(),
