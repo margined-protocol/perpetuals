@@ -174,7 +174,7 @@ pub fn swap_input(
     } else {
         Uint128::zero()
     };
-
+    println!("swap_input - base_asset_amount: {:?}", base_asset_amount);
     let response = update_reserve(
         deps.storage,
         env,
@@ -204,6 +204,7 @@ pub fn swap_output(
     base_asset_amount: Uint128,
     quote_asset_limit: Uint128,
 ) -> StdResult<Response> {
+    println!("swap_output - position_id: {:?}", position_id);
     let state = read_state(deps.storage)?;
     require_open(state.open)?;
     let config = read_config(deps.storage)?;

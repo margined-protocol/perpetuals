@@ -37,7 +37,6 @@ fn test_change_tp_sl() {
     let SimpleScenario {
         mut router,
         alice,
-        usdc,
         engine,
         vamm,
         ..
@@ -56,22 +55,93 @@ fn test_change_tp_sl() {
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
-
-    // expect to be 60
-    let margin = engine
-        .get_balance_with_funding_payment(&router.wrap(), alice.to_string(), 1)
-        .unwrap();
-    assert_eq!(margin, to_decimals(60));
-
-    // personal position should be 37.5
+    
+    // take_profit and stop_loss is not set
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), 1, alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    println!("position.notional: {:?}", position.notional);
-    assert_eq!(position.size, Integer::new_positive(37_500_000_000u128)); //37_500_000_000 // 600_000_000_000
-    assert_eq!(position.margin, to_decimals(60u64));
+    assert_eq!(position.take_profit, to_decimals(0));
+    assert_eq!(position.stop_loss, Some(to_decimals(0)));
 
-    // clearing house token balance should be 60
-    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
-    assert_eq!(engine_balance, to_decimals(60));
+    let msg = engine
+        .update_tp_sl(
+            vamm.addr().to_string(),
+            1,
+            Some(to_decimals(2)),
+            Some(to_decimals(1)),
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    // take_profit = 2 and stop_loss = 1
+    let position = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
+        .unwrap();
+    assert_eq!(position.take_profit, to_decimals(2));
+    assert_eq!(position.stop_loss, Some(to_decimals(1)));
+
+    let msg = engine
+        .close_position(vamm.addr().to_string(), 1, to_decimals(0)).unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+}
+
+#[test]
+fn test_trigger_tp_sl() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        engine,
+        vamm,
+        ..
+    } = new_simple_scenario();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(60u64),
+            to_decimals(10u64),
+            Uint128::from(27_000_000_000u128),
+            Some(Uint128::from(24_000_000_000u128)),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+    
+    // take_profit and stop_loss is not set
+    let position = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
+        .unwrap();
+    assert_eq!(position.take_profit, to_decimals(27));
+    assert_eq!(position.stop_loss, Some(to_decimals(24)));
+
+    let price = vamm.spot_price(&router.wrap()).unwrap();
+    println!("[HIEU_LOG] 1 spot price: {:?}", price);
+    
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(6u64),
+            to_decimals(8u64),
+            Uint128::from(27_000_000_000u128),
+            Some(Uint128::from(24_000_000_000u128)),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    let price = vamm.spot_price(&router.wrap()).unwrap();
+    println!("[HIEU_LOG] 2 spot price: {:?}", price);
+    let msg = engine
+        .trigger_tp_sl(
+            vamm.addr().to_string(),
+            1,
+            to_decimals(0u64),
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 }

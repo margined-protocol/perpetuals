@@ -211,6 +211,7 @@ impl SentFunds {
 }
 
 pub fn store_sent_funds(storage: &mut dyn Storage, funds: &SentFunds) -> StdResult<()> {
+    println!("store_sent_funds");
     Ok(storage.set(KEY_SENT_FUNDS, &to_vec(funds)?))
 }
 
@@ -243,6 +244,7 @@ pub struct TmpSwapInfo {
 }
 
 pub fn store_tmp_swap(storage: &mut dyn Storage, swap: &TmpSwapInfo) -> StdResult<()> {
+    println!("store_tmp_swap");
     let position_id_key = &swap.position_id.to_be_bytes();
     Ok(Bucket::new(storage, KEY_TMP_SWAP).save(position_id_key, swap)?)
 }

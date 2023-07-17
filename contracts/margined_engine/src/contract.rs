@@ -10,7 +10,7 @@ use margined_common::validate::{
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 use crate::error::ContractError;
-use crate::handle::{update_tp_sl, tp_sl};
+use crate::handle::{update_tp_sl, trigger_tp_sl};
 use crate::state::init_last_position_id;
 use crate::{
     handle::{
@@ -185,7 +185,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             position_id,
             quote_asset_limit,
         } => liquidate(deps, env, info, vamm, position_id, trader, quote_asset_limit),
-        ExecuteMsg::TpSl { vamm, position_id, quote_asset_limit } => tp_sl(deps, env, info, vamm, position_id, quote_asset_limit),
+        ExecuteMsg::TriggerTpSl { vamm, position_id, quote_asset_limit } => trigger_tp_sl(deps, env, info, vamm, position_id, quote_asset_limit),
         ExecuteMsg::PayFunding { vamm } => pay_funding(deps, env, info, vamm),
         ExecuteMsg::DepositMargin { vamm, position_id, amount } => deposit_margin(deps, env, info, vamm, position_id, amount),
         ExecuteMsg::WithdrawMargin { vamm, position_id, amount } => {
@@ -279,6 +279,18 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
                 let response = pay_funding_reply(deps, env, premium_fraction, sender)?;
                 Ok(response)
             }
+            TAKE_PROFIT_REPLY_ID => {
+                let (input, output, position_id) = parse_swap(response)?;
+                println!("TAKE_PROFIT_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
+                let response = close_position_reply(deps, env, input, output, position_id)?;
+                Ok(response)
+            }
+            STOP_LOSS_REPLY_ID => {
+                let (input, output, position_id) = parse_swap(response)?;
+                println!("STOP_LOSS_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
+                let response = close_position_reply(deps, env, input, output, position_id)?;
+                Ok(response)
+            }
             _ => Err(StdError::generic_err(format!(
                 "reply (id {:?}) invalid",
                 msg.id
@@ -311,6 +323,14 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
             ))),
             PAY_FUNDING_REPLY_ID => Err(StdError::generic_err(format!(
                 "funding payment failure - reply (id {:?})",
+                msg.id
+            ))),
+            TAKE_PROFIT_REPLY_ID => Err(StdError::generic_err(format!(
+                "take profit failure - reply (id {:?})",
+                msg.id
+            ))),
+            STOP_LOSS_REPLY_ID => Err(StdError::generic_err(format!(
+                "stop loss failure - reply (id {:?})",
                 msg.id
             ))),
             _ => Err(StdError::generic_err(format!(

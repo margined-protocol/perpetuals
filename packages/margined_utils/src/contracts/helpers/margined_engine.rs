@@ -206,6 +206,27 @@ impl EngineController {
         wasm_execute(&self.0, &msg, vec![])
     }
 
+    pub fn update_tp_sl(
+        &self,
+        vamm: String,
+        position_id: u64,
+        take_profit: Option<Uint128>,
+        stop_loss: Option<Uint128>
+    ) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::UpdateTpSl { vamm, position_id, take_profit, stop_loss };
+        wasm_execute(&self.0, &msg, vec![])
+    }
+
+    pub fn trigger_tp_sl(
+        &self,
+        vamm: String,
+        position_id: u64,
+        quote_asset_limit: Uint128,
+    ) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::TriggerTpSl { vamm, position_id, quote_asset_limit };
+        wasm_execute(&self.0, &msg, vec![])
+    }
+
     pub fn add_whitelist(&self, address: String) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::AddWhitelist { address };
         wasm_execute(&self.0, &msg, vec![])

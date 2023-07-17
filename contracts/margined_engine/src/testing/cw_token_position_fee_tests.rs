@@ -855,6 +855,7 @@ fn test_ten_percent_fee_short_position_price_remains_reduce_position() {
         mut router,
         owner,
         alice,
+        bob,
         engine,
         vamm,
         ..
@@ -871,11 +872,11 @@ fn test_ten_percent_fee_short_position_price_remains_reduce_position() {
         .open_position(
             vamm.addr().to_string(),
             Side::Sell,
-            Uint128::from(60_000_000_000u64),
+            Uint128::from(6_000_000_000u64),
             Uint128::from(10_000_000_000u64),
             Uint128::zero(),
             Some(Uint128::zero()),
-            Uint128::from(150_000_000_000u64),
+            Uint128::from(15_000_000_000u64),
             vec![],
         )
         .unwrap();
@@ -885,15 +886,15 @@ fn test_ten_percent_fee_short_position_price_remains_reduce_position() {
         .open_position(
             vamm.addr().to_string(),
             Side::Buy,
-            Uint128::from(400_000_000_000u64),
+            Uint128::from(40_000_000_000u64),
             Uint128::from(1_000_000_000u64),
             Uint128::zero(),
             Some(Uint128::zero()),
-            Uint128::from(125_000_000_000u64),
+            Uint128::from(12_500_000_000u64),
             vec![],
         )
         .unwrap();
-    router.execute(alice.clone(), msg).unwrap();
+    router.execute(bob.clone(), msg).unwrap();
 
     let position_1 = engine
         .position(&router.wrap(), vamm.addr().to_string(), 1)
@@ -910,7 +911,7 @@ fn test_ten_percent_fee_short_position_price_remains_reduce_position() {
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    // assert_eq!(pnl.unrealized_pnl, Integer::zero());
+    assert_eq!(pnl.unrealized_pnl, Integer::zero());
 }
 
 // #[test]

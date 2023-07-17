@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    Addr, DepsMut, Env, MessageInfo, Response, StdError, StdResult, SubMsg, Uint128, QuerierWrapper,
+    Addr, DepsMut, Env, MessageInfo, Response, StdError, StdResult, SubMsg, Uint128, QuerierWrapper, CosmosMsg,
 };
 use margined_utils::contracts::helpers::VammController;
 
@@ -7,7 +7,7 @@ use crate::{
     contract::{
         CLOSE_POSITION_REPLY_ID, INCREASE_POSITION_REPLY_ID,
         LIQUIDATION_REPLY_ID, PARTIAL_CLOSE_POSITION_REPLY_ID, PARTIAL_LIQUIDATION_REPLY_ID,
-        PAY_FUNDING_REPLY_ID,
+        PAY_FUNDING_REPLY_ID, TAKE_PROFIT_REPLY_ID, STOP_LOSS_REPLY_ID,
     },
     messages::{execute_transfer_from, withdraw},
     query::{query_free_collateral, query_margin_ratio},
@@ -163,10 +163,6 @@ pub fn open_position(
         last_updated_premium_fraction: Integer::zero(),
         block_time: 0u64
     };
-
-    // if direction and side are same way then increasing else we are reversing
-    // let is_increase = position.direction == Direction::AddToAmm && side == Side::Buy
-    //     || position.direction == Direction::RemoveFromAmm && side == Side::Sell;
 
     println!("open_position - direction: {:?}", position.direction);
     println!("open_position - side: {:?}", position.side);
@@ -380,7 +376,7 @@ pub fn close_position(
     ]))
 }
 
-pub fn tp_sl(
+pub fn trigger_tp_sl(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
@@ -390,8 +386,6 @@ pub fn tp_sl(
 ) -> StdResult<Response> {
     let vamm = deps.api.addr_validate(&vamm)?;
     let vamm_controller = VammController(vamm.clone());
-
-    // let state = read_state(deps.storage)?;
 
     // retrieve the existing margin ratio of the position
     let mut margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), position_id)?;
@@ -413,7 +407,8 @@ pub fn tp_sl(
     let config = read_config(deps.storage)?;
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
     println!("tp_sl - config.maintenance_margin_ratio: {:?}", config.maintenance_margin_ratio);
-    require_insufficient_margin(margin_ratio, config.maintenance_margin_ratio)?;
+    println!("tp_sl - margin_ratio: {:?}", margin_ratio);
+    // require_insufficient_margin(margin_ratio, config.maintenance_margin_ratio)?;
 
     // read the position for the trader from vamm
     let position_key = keccak_256(&[vamm.as_bytes()].concat());
@@ -424,18 +419,22 @@ pub fn tp_sl(
     require_position_not_zero(position.size.value)?;
 
     let spot_price = get_spot_price(&deps.querier, &vamm)?;
-
+    println!("tp_sl - spot_price: {:?}", spot_price);
     let stop_loss = position.stop_loss.unwrap_or_default();
-    
+    let mut msgs: Vec<SubMsg> = vec![];
+
     // if spot_price is ~ take_profit or stop_loss, close position
     if spot_price <= position.take_profit && 
-        position.take_profit.checked_sub(spot_price)? < Uint128::from(10u128) ||
-        stop_loss > Uint128::zero() && 
-        spot_price >= stop_loss && spot_price.checked_sub(stop_loss)? < Uint128::from(10u128){
-        internal_close_position(deps, &position, quote_asset_limit, LIQUIDATION_REPLY_ID)?;
+        position.take_profit.checked_mul(5u128.into())?.checked_div(1000u128.into())? 
+        >= position.take_profit.checked_sub(spot_price)? {
+        msgs.push(internal_close_position(deps, &position, quote_asset_limit, TAKE_PROFIT_REPLY_ID)?);
+    } else if stop_loss > Uint128::zero() && 
+        spot_price >= stop_loss && spot_price.checked_sub(stop_loss)? 
+        <= stop_loss.checked_mul(5u128.into())?.checked_div(1000u128.into())? {
+        msgs.push(internal_close_position(deps, &position, quote_asset_limit, STOP_LOSS_REPLY_ID)?);
     };
 
-    Ok(Response::new().add_attributes(vec![
+    Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "tp_sl"),
         ("vamm", vamm.as_ref()),
     ]))
@@ -684,6 +683,7 @@ pub fn internal_close_position(
     quote_asset_limit: Uint128,
     id: u64,
 ) -> StdResult<SubMsg> {
+    println!("internal_close_position - position: {:?}", position);
     let side = direction_to_side(&position.direction);
     store_tmp_swap(
         deps.storage,
@@ -835,6 +835,7 @@ fn swap_output(
         },
         vec![],
     )?;
+    println!("[HIEU_LOG] swap_output: {:?}, id: {:?}", msg, id);
 
     Ok(SubMsg::reply_always(msg, id))
 }

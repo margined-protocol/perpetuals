@@ -232,20 +232,20 @@ pub fn calc_remain_margin_with_funding_payment(
     let funding_payment = (latest_premium_fraction - position.last_updated_premium_fraction)
         * position.size
         / Integer::new_positive(config.decimals);
-    println!("calc_remain_margin_with_funding_payment - latest_premium_fraction: {}", latest_premium_fraction);
-    println!("calc_remain_margin_with_funding_payment - position.last_updated_premium_fraction: {}", position.last_updated_premium_fraction);
-    println!("calc_remain_margin_with_funding_payment - position.size: {}", position.size);
-    println!("calc_remain_margin_with_funding_payment - funding_payment: {}", funding_payment);
+    // println!("calc_remain_margin_with_funding_payment - latest_premium_fraction: {}", latest_premium_fraction);
+    // println!("calc_remain_margin_with_funding_payment - position.last_updated_premium_fraction: {}", position.last_updated_premium_fraction);
+    // println!("calc_remain_margin_with_funding_payment - position.size: {}", position.size);
+    // println!("calc_remain_margin_with_funding_payment - funding_payment: {}", funding_payment);
     // calculate the remaining margin
     let mut remaining_margin: Integer =
         margin_delta - funding_payment + Integer::new_positive(position.margin);
     let mut bad_debt = Integer::zero();
-    println!("calc_remain_margin_with_funding_payment - remaining_margin: {}", remaining_margin);
+    // println!("calc_remain_margin_with_funding_payment - remaining_margin: {}", remaining_margin);
     if remaining_margin.is_negative() {
         bad_debt = remaining_margin.invert_sign();
         remaining_margin = Integer::zero();
     }
-    println!("calc_remain_margin_with_funding_payment - bad_debt: {}", bad_debt);
+    // println!("calc_remain_margin_with_funding_payment - bad_debt: {}", bad_debt);
     // if the remain is negative, set it to zero
     // and set the rest to
     Ok(RemainMarginResponse {
@@ -417,7 +417,7 @@ pub fn parse_swap(response: &SubMsgResponse) -> StdResult<(Uint128, Uint128, u64
     // Find swap inputs and output events
     let wasm = read_response("wasm", response)?;
     let swap = read_event("type", wasm)?;
-
+    println!("parse_swap - swap: {:?}", swap);
     match swap {
         "input" => {
             let input_str = read_event("quote_asset_amount", wasm)?;
