@@ -72,8 +72,6 @@ pub fn update_config(
     if let Some(initial_margin_ratio) = initial_margin_ratio {
         validate_ratio(initial_margin_ratio, config.decimals)?;
         validate_margin_ratios(initial_margin_ratio, config.maintenance_margin_ratio)?;
-        // println!("[0] update margined engine - initial_margin_ratio: {}", initial_margin_ratio);
-        // println!("[0] update margined engine - maintenance_margin_ratio: {}", config.maintenance_margin_ratio);
         config.initial_margin_ratio = initial_margin_ratio;
     }
 
@@ -81,9 +79,6 @@ pub fn update_config(
     if let Some(maintenance_margin_ratio) = maintenance_margin_ratio {
         validate_ratio(maintenance_margin_ratio, config.decimals)?;
         validate_margin_ratios(config.initial_margin_ratio, maintenance_margin_ratio)?;
-        // println!("[1] update margined engine - initial_margin_ratio: {}", config.initial_margin_ratio);
-        // println!("[1] update margined engine - maintenance_margin_ratio: {}", maintenance_margin_ratio);
-
         config.maintenance_margin_ratio = maintenance_margin_ratio;
     }
 
@@ -142,9 +137,6 @@ pub fn open_position(
         .checked_mul(config.decimals)?
         .checked_div(leverage)?;
 
-    // println!("open_position - margin_amount: {}", margin_amount);
-    // println!("open_position - margin_ratio: {}", margin_ratio);
-
     require_additional_margin(Integer::from(margin_ratio), config.initial_margin_ratio)?;
     
     // creates a new position
@@ -164,20 +156,17 @@ pub fn open_position(
         block_time: 0u64
     };
 
-    // println!("open_position - direction: {:?}", position.direction);
-    // println!("open_position - side: {:?}", position.side);
     // calculate the position notional
     let open_notional = margin_amount
         .checked_mul(leverage)?
         .checked_div(config.decimals)?;
-    // println!("open_position - open_notional: {:?}", open_notional);
+
     let msg = internal_increase_position(vamm.clone(), side.clone(), position_id, open_notional, base_asset_limit)?;
 
     let PositionUnrealizedPnlResponse {
         position_notional,
         unrealized_pnl,
     } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)?;
-    // println!("open_position - position_notional: {:?}", position_notional);
     
     store_tmp_swap(
         deps.storage,
@@ -385,47 +374,23 @@ pub fn trigger_tp_sl(
     quote_asset_limit: Uint128
 ) -> StdResult<Response> {
     let vamm = deps.api.addr_validate(&vamm)?;
-    let vamm_controller = VammController(vamm.clone());
-
-    // retrieve the existing margin ratio of the position
-    let mut margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), position_id)?;
-
-    if vamm_controller.is_over_spread_limit(&deps.querier)? {
-        let oracle_margin_ratio = get_margin_ratio_calc_option(
-            deps.as_ref(),
-            vamm.to_string(),
-            position_id,
-            PnlCalcOption::Oracle,
-        )?;
-        // println!("tp_sl - oracle_margin_ratio: {:?}", oracle_margin_ratio);
-
-        if oracle_margin_ratio.checked_sub(margin_ratio)? > Integer::zero() {
-            margin_ratio = oracle_margin_ratio
-        }
-    }
 
     let config = read_config(deps.storage)?;
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
-    // println!("tp_sl - config.maintenance_margin_ratio: {:?}", config.maintenance_margin_ratio);
-    // println!("tp_sl - margin_ratio: {:?}", margin_ratio);
-    // require_insufficient_margin(margin_ratio, config.maintenance_margin_ratio)?;
 
     // read the position for the trader from vamm
     let position_key = keccak_256(&[vamm.as_bytes()].concat());
     let position = read_position(deps.storage, &position_key, position_id)?;
-    // println!("tp_sl - position: {:?}", position);
 
     // check the position isn't zero
     require_position_not_zero(position.size.value)?;
 
     let spot_price = get_spot_price(&deps.querier, &vamm)?;
-    // println!("tp_sl - spot_price: {:?}", spot_price);
     let stop_loss = position.stop_loss.unwrap_or_default();
     let mut msgs: Vec<SubMsg> = vec![];
 
     // if spot_price is ~ take_profit or stop_loss, close position
     if position.side == Side::Buy {
-        // println!("tp_sl - position.side: {:?}", position.side);
         if spot_price <= position.take_profit && 
             position.take_profit.checked_mul(5u128.into())?.checked_div(1000u128.into())? 
             >= position.take_profit.checked_sub(spot_price)? ||
@@ -435,11 +400,9 @@ pub fn trigger_tp_sl(
             spot_price >= stop_loss && spot_price.checked_sub(stop_loss)? 
             <= stop_loss.checked_mul(5u128.into())?.checked_div(1000u128.into())? ||
             spot_price < position.take_profit {
-            // println!("tp_sl - spot_price: {:?}", spot_price);
             msgs.push(internal_close_position(deps, &position, quote_asset_limit, STOP_LOSS_REPLY_ID)?);
         };
     } else if position.side == Side::Sell {
-        // println!("tp_sl - position.side: {:?}", position.side);
         if spot_price >= position.take_profit && 
             position.take_profit.checked_mul(5u128.into())?.checked_div(1000u128.into())? 
             >= spot_price.checked_sub(position.take_profit)? ||
@@ -471,18 +434,14 @@ pub fn liquidate(
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = deps.api.addr_validate(&trader)?;
-    // println!("liquidate - vamm: {:?}", vamm);
-    // println!("liquidate - trader: {:?}", trader);
 
     // store the liquidator
     store_tmp_liquidator(deps.storage, &info.sender)?;
 
     // retrieve the existing margin ratio of the position
     let mut margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), position_id)?;
-    // println!("liquidate - margin_ratio: {:?}", margin_ratio);
 
     let vamm_controller = VammController(vamm.clone());
-    // println!("liquidate - vamm_controller: {:?}", vamm_controller);
 
     if vamm_controller.is_over_spread_limit(&deps.querier)? {
         let oracle_margin_ratio = get_margin_ratio_calc_option(
@@ -491,7 +450,6 @@ pub fn liquidate(
             position_id,
             PnlCalcOption::Oracle,
         )?;
-        // println!("liquidate - oracle_margin_ratio: {:?}", oracle_margin_ratio);
 
         if oracle_margin_ratio.checked_sub(margin_ratio)? > Integer::zero() {
             margin_ratio = oracle_margin_ratio
@@ -500,13 +458,11 @@ pub fn liquidate(
 
     let config = read_config(deps.storage)?;
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
-    // println!("liquidate - config.maintenance_margin_ratio: {:?}", config.maintenance_margin_ratio);
     require_insufficient_margin(margin_ratio, config.maintenance_margin_ratio)?;
 
     // read the position for the trader from vamm
     let position_key = keccak_256(&[vamm.as_bytes()].concat());
     let position = read_position(deps.storage, &position_key, position_id)?;
-    // println!("liquidate - position: {:?}", position);
 
     // check the position isn't zero
     require_position_not_zero(position.size.value)?;
@@ -538,7 +494,6 @@ pub fn pay_funding(
     let vamm = deps.api.addr_validate(&vamm)?;
 
     let config = read_config(deps.storage)?;
-    // println!("pay_funding - config: {:?}", config);
     // check its a valid vamm
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
 
@@ -546,7 +501,6 @@ pub fn pay_funding(
         wasm_execute(vamm, &ExecuteMsg::SettleFunding {}, vec![])?,
         PAY_FUNDING_REPLY_ID,
     );
-    // println!("pay_funding - funding_msg: {:?}", funding_msg);
 
     Ok(Response::new()
         .add_submessage(funding_msg)
@@ -684,7 +638,6 @@ pub fn internal_increase_position(
     open_notional: Uint128,
     base_asset_limit: Uint128,
 ) -> StdResult<SubMsg> {
-    // println!("internal_increase_position - open_notional: {}", open_notional);
     swap_input(
         &vamm,
         &side,
@@ -747,11 +700,11 @@ fn partial_liquidation(
         .value
         .checked_mul(config.partial_liquidation_ratio)?
         .checked_div(config.decimals)?;
-    // println!("partial_liquidation - partial_position_size: {:?}", partial_position_size);
+
     let partial_asset_limit = quote_asset_limit
         .checked_mul(config.partial_liquidation_ratio)?
         .checked_div(config.decimals)?;
-    // println!("partial_liquidation - quote_asset_limit: {:?}", quote_asset_limit);
+
     let vamm_controller = VammController(vamm.clone());
 
     let current_notional = vamm_controller.output_amount(
@@ -759,13 +712,12 @@ fn partial_liquidation(
         position.direction.clone(),
         partial_position_size,
     )?;
-    // println!("partial_liquidation - current_notional: {:?}", current_notional);
+
     let PositionUnrealizedPnlResponse {
         position_notional: _,
         unrealized_pnl,
     } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)?;
-    // println!("partial_liquidation - unrealized_pnl: {:?}", unrealized_pnl);
-    // println!("partial_liquidation - position.size: {:?}", position.size);
+
     let side = position_to_side(position.size);
 
     store_tmp_swap(
@@ -853,7 +805,6 @@ fn swap_output(
         },
         vec![],
     )?;
-    // println!("[HIEU_LOG] swap_output: {:?}, id: {:?}", msg, id);
 
     Ok(SubMsg::reply_always(msg, id))
 }

@@ -76,7 +76,6 @@ pub fn instantiate(
 
     // find decimals of asset
     let decimal_response = eligible_collateral.get_decimals(&deps.querier)?;
-    // println!("instantiate margined engine - decimal_response: {}", decimal_response);
 
     // validate decimal places are correct, and return ratio max.
     let decimals = validate_decimal_places(decimal_response)?;
@@ -88,8 +87,7 @@ pub fn instantiate(
 
     // validate that the maintenance margin is not greater than the initial
     validate_margin_ratios(msg.initial_margin_ratio, msg.maintenance_margin_ratio)?;
-    // println!("instantiate margined engine - initial_margin_ratio: {}", msg.initial_margin_ratio);
-    // println!("instantiate margined engine - maintenance_margin_ratio: {}", msg.maintenance_margin_ratio);
+
     // config parameters
     let config = Config {
         owner: info.sender,
@@ -244,50 +242,42 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
         SubMsgResult::Ok(response) => match msg.id {
             INCREASE_POSITION_REPLY_ID => {
                 let (input, output, position_id) = parse_swap(response)?;
-                // println!("INCREASE_POSITION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
                 let response =
                     update_position_reply(deps, env, input, output, position_id, INCREASE_POSITION_REPLY_ID)?;
                 Ok(response)
             }
             CLOSE_POSITION_REPLY_ID => {
                 let (input, output, position_id) = parse_swap(response)?;
-                // println!("CLOSE_POSITION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
                 let response = close_position_reply(deps, env, input, output, position_id)?;
                 Ok(response)
             }
             PARTIAL_CLOSE_POSITION_REPLY_ID => {
                 let (input, output, position_id) = parse_swap(response)?;
-                // println!("PARTIAL_CLOSE_POSITION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
                 let response = partial_close_position_reply(deps, env, input, output, position_id)?;
                 Ok(response)
             }
             LIQUIDATION_REPLY_ID => {
                 let (input, output, position_id) = parse_swap(response)?;
-                // println!("LIQUIDATION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
                 let response = liquidate_reply(deps, env, input, output, position_id)?;
                 Ok(response)
             }
             PARTIAL_LIQUIDATION_REPLY_ID => {
                 let (input, output, position_id) = parse_swap(response)?;
-                // println!("PARTIAL_LIQUIDATION_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
                 let response = partial_liquidation_reply(deps, env, input, output, position_id)?;
                 Ok(response)
             }
             PAY_FUNDING_REPLY_ID => {
                 let (premium_fraction, sender) = parse_pay_funding(response)?;
-                // println!("PAY_FUNDING_REPLY_ID - premium_fraction {:?}", premium_fraction);
                 let response = pay_funding_reply(deps, env, premium_fraction, sender)?;
                 Ok(response)
             }
             TAKE_PROFIT_REPLY_ID => {
                 let (input, output, position_id) = parse_swap(response)?;
-                // println!("TAKE_PROFIT_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
                 let response = close_position_reply(deps, env, input, output, position_id)?;
                 Ok(response)
             }
             STOP_LOSS_REPLY_ID => {
                 let (input, output, position_id) = parse_swap(response)?;
-                // println!("STOP_LOSS_REPLY_ID - input: {:?} output: {:?} position_id: {:?}", input, output, position_id);
                 let response = close_position_reply(deps, env, input, output, position_id)?;
                 Ok(response)
             }
