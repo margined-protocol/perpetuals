@@ -209,34 +209,6 @@ impl Default for Position {
     }
 }
 
-// impl Position {
-//     pub fn new(
-//         position_id: u64,
-//         vamm: Addr,
-//         trader: Addr,
-//         side: Side,
-//         direction: Direction,
-//         size: Integer,
-//         margin: Uint128,
-//         notional: Uint128,
-//         entry_price: Uint128,
-//     ) -> Self {
-//         Position {
-//             position_id,
-//             vamm,
-//             trader,
-//             side,
-//             direction,
-//             size,
-//             margin,
-//             notional,
-//             entry_price,
-//             last_updated_premium_fraction: Integer::zero(),
-//             block_time: 0u64
-//         }
-//     }
-// }
-
 #[cw_serde]
 pub struct SwapResponse {
     pub vamm: String,
