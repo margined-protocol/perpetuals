@@ -57,21 +57,26 @@ pub fn check_is_over_block_fluctuation_limit(
 ) -> StdResult<Response> {
     let config = read_config(storage)?;
     let state = read_state(storage)?;
+    // println!("check_is_over_block_fluctuation_limit - state: {:?}", state);
 
     if config.fluctuation_limit_ratio.is_zero() {
+        // println!("check_is_over_block_fluctuation_limit - TOAC");
         return Ok(Response::new());
     }
 
     let (upper_limit, lower_limit) = price_boundaries_of_last_block(storage, env)?;
+    // println!("check_is_over_block_fluctuation_limit - upper_limit: {}, lower_limit: {}", upper_limit, lower_limit);
 
     let current_price = state
         .quote_asset_reserve
         .checked_mul(config.decimals)?
         .checked_div(state.base_asset_reserve)?;
 
+    // println!("check_is_over_block_fluctuation_limit - current_price: {:?}", current_price);
     // ensure that the latest price isn't over the limit which would restrict any further
     // swaps from occurring in this block
     if current_price > upper_limit || current_price < lower_limit {
+        // println!("check_is_over_block_fluctuation_limit - TOAC 2222");
         return Err(StdError::generic_err(
             "price is already over fluctuation limit",
         ));
@@ -91,7 +96,9 @@ pub fn check_is_over_block_fluctuation_limit(
                 .checked_mul(config.decimals)?
                 .checked_div(state.base_asset_reserve.checked_add(base_asset_amount)?)
         }?;
+        // println!("check_is_over_block_fluctuation_limit - price: {}", price);
         if price > upper_limit || price < lower_limit {
+            // println!("check_is_over_block_fluctuation_limit - TOAC 3333");
             return Err(StdError::generic_err("price is over fluctuation limit"));
         }
     }

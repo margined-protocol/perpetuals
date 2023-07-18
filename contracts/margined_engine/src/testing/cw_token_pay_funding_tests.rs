@@ -640,7 +640,7 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
     let msg = engine
         .liquidate(vamm.addr().to_string(), 2, bob.to_string(), to_decimals(0u64))
         .unwrap();
-    println!("[HIEU_LOG] msg: {:?}", msg);
+
     let response = router.execute(bob.clone(), msg).unwrap();
     assert_eq!(
         response.events[5].attributes[4].value,

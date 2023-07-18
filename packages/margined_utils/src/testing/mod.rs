@@ -3,6 +3,7 @@ use crate::contracts::helpers::{
     margined_insurance_fund::InsuranceFundController, margined_pricefeed::PricefeedController,
     margined_vamm::VammController,
 };
+use crate::tools::fund_calculator::calculate_funds_needed;
 use cosmwasm_std::{Addr, BankMsg, Coin, CosmosMsg, Empty, Response, Uint128};
 use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg, MinterResponse};
 use margined_common::asset::NATIVE_DENOM;
@@ -260,14 +261,14 @@ impl NativeTokenScenario {
         side: Side,
         quote_asset_amount: Uint128,
         leverage: Uint128,
-        fees: u128,
         count: u64,
     ) {
-        let funds = if fees == 0u128 {
-            vec![]
-        } else {
-            vec![Coin::new(fees, NATIVE_DENOM)]
-        };
+        let funds = calculate_funds_needed(
+            &self.router.wrap(),
+            quote_asset_amount,
+            leverage,
+            self.vamm.addr()
+        ).unwrap();
         for _ in 0..count {
             let msg = self
                 .engine
