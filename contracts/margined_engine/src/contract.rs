@@ -11,6 +11,7 @@ use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, MigrateMsg, Que
 
 use crate::error::ContractError;
 use crate::handle::{update_tp_sl, trigger_tp_sl};
+use crate::query::{query_last_position_id, query_positions};
 use crate::state::init_last_position_id;
 use crate::{
     handle::{
@@ -207,6 +208,14 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             limit,
             order_by,
         } => to_binary(&query_all_positions(deps, trader, start_after, limit, order_by)?),
+        QueryMsg::Positions {
+            vamm,
+            filter,
+            side,
+            start_after,
+            limit,
+            order_by,
+        } => to_binary(&query_positions(deps, vamm, side, filter, start_after, limit, order_by)?),
         QueryMsg::Position { vamm, position_id } => to_binary(&query_position(deps, vamm, position_id)?),
         QueryMsg::MarginRatio { vamm, position_id } => {
             to_binary(&query_margin_ratio(deps, vamm, position_id)?)
@@ -233,6 +242,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::PositionWithFundingPayment { vamm, position_id } => to_binary(
             &query_trader_position_with_funding_payment(deps, vamm, position_id)?,
         ),
+        QueryMsg::LastPositionId {} => to_binary(&query_last_position_id(deps)?),
     }
 }
 

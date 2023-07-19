@@ -2,7 +2,7 @@ use cosmwasm_schema::cw_serde;
 use cw_controllers::HooksResponse;
 use margined_perp::margined_engine::{
     ConfigResponse, ExecuteMsg, PnlCalcOption, Position, PositionUnrealizedPnlResponse, QueryMsg,
-    Side, StateResponse,
+    Side, StateResponse, PositionFilter,
 };
 
 use cosmwasm_std::{Addr, Coin, CosmosMsg, QuerierWrapper, StdResult, Uint128};
@@ -277,6 +277,29 @@ impl EngineController {
             start_after,
             limit,
             order_by,
+        };
+
+        querier.query_wasm_smart(&self.0, &msg)
+    }
+
+    /// get positions from vamm
+    pub fn get_positions(
+        &self,
+        querier: &QuerierWrapper,
+        vamm: String,
+        filter: PositionFilter, 
+        side: Option<Side>,
+        start_after: Option<u64>,
+        limit: Option<u32>,
+        order_by: Option<i32>
+    ) -> StdResult<Vec<Position>> {
+        let msg = QueryMsg::Positions {
+            vamm,
+            filter,
+            side,
+            start_after,
+            limit,
+            order_by
         };
 
         querier.query_wasm_smart(&self.0, &msg)

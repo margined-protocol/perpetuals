@@ -17,6 +17,9 @@ node_modules
 # Text file backups
 **/*.rs.bk
 
+# wasm file
+**/*.wasm
+
 # macOS
 .DS_Store
 

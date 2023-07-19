@@ -1,7 +1,7 @@
 use cosmwasm_std::{StdError, Uint128};
 use cw20::Cw20ExecuteMsg;
 use margined_common::integer::Integer;
-use margined_perp::margined_engine::{PnlCalcOption, Side};
+use margined_perp::margined_engine::{PnlCalcOption, Side, PositionFilter};
 use margined_utils::{
     cw_multi_test::Executor,
     testing::{to_decimals, SimpleScenario},
@@ -200,6 +200,7 @@ fn test_open_position_two_longs() {
     let SimpleScenario {
         mut router,
         alice,
+        bob,
         engine,
         vamm,
         ..
@@ -218,6 +219,20 @@ fn test_open_position_two_longs() {
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
+    
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(33u64),
+            to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
 
     let msg = engine
         .open_position(
@@ -232,13 +247,89 @@ fn test_open_position_two_longs() {
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
-    
-    let positions = engine
-        .get_all_positions(&router.wrap(), alice.to_string(), None, None, None)
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(55u64),
+            to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
+            to_decimals(0u64),
+            vec![],
+        )
         .unwrap();
-    for position in positions {
+    router.execute(bob.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(42u64),
+            to_decimals(7u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(20u64),
+            to_decimals(5u64),
+            Uint128::zero(),
+            Some(Uint128::zero()),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+
+    let buy_positions = engine
+        .get_positions(&router.wrap(), vamm.addr().to_string(), PositionFilter::None, Some(Side::Buy), None, None, None)
+        .unwrap();
+    for position in buy_positions {
+        println!("buy position: {:?}", position);
+    }
+    println!("\n\n\n");
+
+    let sell_positions = engine
+        .get_positions(&router.wrap(), vamm.addr().to_string(), PositionFilter::None, Some(Side::Sell), None, None, None)
+        .unwrap();
+    for position in sell_positions {
+        println!("sell position: {:?}", position);
+    }
+    println!("\n\n\n");
+
+    let alice_positions = engine
+        .get_positions(&router.wrap(), vamm.addr().to_string(), PositionFilter::Trader(alice.to_string()), None, None, None, None)
+        .unwrap();
+    for position in alice_positions {
+        println!("alice's position: {:?}", position);
+    }
+    println!("\n\n\n");
+
+    let bob_positions = engine
+        .get_positions(&router.wrap(), vamm.addr().to_string(), PositionFilter::Trader(bob.to_string()), None, None, None, None)
+        .unwrap();
+    for position in bob_positions {
+        println!("bob's position: {:?}", position);
+    }
+    println!("\n\n\n");
+
+    let all_positions = engine
+        .get_positions(&router.wrap(), vamm.addr().to_string(), PositionFilter::None, None, None, None, None)
+        .unwrap();
+    for position in all_positions {
         println!("position: {:?}", position);
     }
+    println!("\n\n\n");
+
     // expect to be 120
     let margin_1 = engine
         .get_balance_with_funding_payment(&router.wrap(), 1)
@@ -246,7 +337,7 @@ fn test_open_position_two_longs() {
     let margin_2 = engine
         .get_balance_with_funding_payment(&router.wrap(), 2)
         .unwrap();
-    assert_eq!(margin_1 + margin_2, to_decimals(120));
+    assert_eq!(margin_1 + margin_2, to_decimals(93));
 
     let position_1 = engine
         .position(&router.wrap(), vamm.addr().to_string(), 1)
@@ -254,8 +345,8 @@ fn test_open_position_two_longs() {
     let position_2 = engine
         .position(&router.wrap(), vamm.addr().to_string(), 2)
         .unwrap();
-    assert_eq!(position_1.size + position_2.size, Integer::new_positive(54_545_454_545u128));
-    assert_eq!(position_1.margin + position_2.margin, to_decimals(120));
+    assert_eq!(position_1.size + position_2.size, Integer::new_positive(43_342_776_203u128));
+    assert_eq!(position_1.margin + position_2.margin, to_decimals(93));
 }
 
 #[test]

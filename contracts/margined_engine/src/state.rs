@@ -22,8 +22,9 @@ pub static KEY_VAMM_MAP: &[u8] = b"vamm-map";
 pub static KEY_LAST_POSITION_ID: &[u8] = b"last_position_id";
 
 static PREFIX_POSITION: &[u8] = b"position"; // prefix position
-pub static PREFIX_POSITION_BY_DIRECTION: &[u8] = b"position_by_direction"; // position from the direction
-pub static PREFIX_POSITION_BY_TRADER: &[u8] = b"position_by_trader"; // position from a trader
+pub static PREFIX_POSITION_BY_SIDE: &[u8] = b"position_by_direction";   // position from the direction
+pub static PREFIX_POSITION_BY_PRICE: &[u8] = b"position_by_price";      // position from the price
+pub static PREFIX_POSITION_BY_TRADER: &[u8] = b"position_by_trader";    // position from a trader
 
 pub type Config = ConfigResponse;
 
@@ -75,6 +76,7 @@ pub fn store_position(
     _inserted: bool,
 ) -> StdResult<u64> {
     let position_id_key = &position.position_id.to_be_bytes();
+    let price_key = position.entry_price.to_be_bytes();
     Bucket::multilevel(storage, &[PREFIX_POSITION, key]).save(position_id_key, position)?;
 
     let total_tick_orders = 0;
@@ -87,24 +89,32 @@ pub fn store_position(
             position.trader.as_bytes(),
         ],
     )
-    .save(position_id_key, &position.direction)?;
+    .save(position_id_key, &position.side)?;
 
     Bucket::multilevel(
         storage,
         &[
-            PREFIX_POSITION_BY_DIRECTION,
+            PREFIX_POSITION_BY_SIDE,
             key,
-            &position.direction.as_bytes(),
+            &position.side.as_bytes(),
         ],
     )
-    .save(position_id_key, &position.direction)?;
+    .save(position_id_key, &position.side)?;
+
+    Bucket::multilevel(
+        storage, &[
+            PREFIX_POSITION_BY_PRICE,
+            key,
+            &price_key])
+    .save(position_id_key, &position.side)?;
 
     Ok(total_tick_orders)
 }
 
 pub fn remove_position(storage: &mut dyn Storage, key: &[u8], position: &Position) -> StdResult<u64> {
     let position_id_key = &position.position_id.to_be_bytes();
-
+    let price_key = position.entry_price.to_be_bytes();
+    
     Bucket::<Position>::multilevel(storage, &[PREFIX_POSITION, key]).remove(position_id_key);
 
     // not found means total is 0
@@ -123,12 +133,19 @@ pub fn remove_position(storage: &mut dyn Storage, key: &[u8], position: &Positio
     Bucket::<bool>::multilevel(
         storage,
         &[
-            PREFIX_POSITION_BY_DIRECTION,
+            PREFIX_POSITION_BY_SIDE,
             key,
-            &position.direction.as_bytes(),
+            &position.side.as_bytes(),
         ],
     )
     .remove(position_id_key);
+
+    Bucket::<bool>::multilevel(
+        storage, &[
+            PREFIX_POSITION_BY_PRICE,
+            key,
+            &price_key,])
+        .remove(position_id_key);
 
     // return total orders belong to the tick
     Ok(total_tick_orders)
@@ -146,7 +163,7 @@ pub fn read_positions_with_indexer<T: Serialize + DeserializeOwned>(
     start_after: Option<u64>,
     limit: Option<u32>,
     order_by: Option<OrderBy>,
-) -> StdResult<Vec<Position>> {
+) -> StdResult<Option<Vec<Position>>> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let start_after = start_after.map(|id| id.to_be_bytes().to_vec());
     let (start, end, order_by) = match order_by {

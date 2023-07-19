@@ -4,6 +4,7 @@ use cosmwasm_std::{Addr, SubMsg, Uint128};
 use margined_common::{asset::AssetInfo, integer::Integer};
 
 #[cw_serde]
+#[derive(Copy)]
 pub enum Side {
     Buy,
     Sell,
@@ -23,6 +24,13 @@ pub enum PnlCalcOption {
     SpotPrice,
     Twap,
     Oracle,
+}
+
+#[cw_serde]
+pub enum PositionFilter {
+    Trader(String), // filter by trader
+    Price(Uint128), // filter by price
+    None,           // no filter
 }
 
 #[cw_serde]
@@ -130,6 +138,15 @@ pub enum QueryMsg {
         limit: Option<u32>,
         order_by: Option<i32>,
     },
+    #[returns(Vec<Position>)]
+    Positions {
+        vamm: String,
+        filter: PositionFilter,
+        side: Option<Side>,
+        start_after: Option<u64>,
+        limit: Option<u32>,
+        order_by: Option<i32>, 
+    },
     #[returns(PositionUnrealizedPnlResponse)]
     UnrealizedPnl {
         vamm: String,
@@ -146,6 +163,8 @@ pub enum QueryMsg {
     BalanceWithFundingPayment { position_id: u64},
     #[returns(Position)]
     PositionWithFundingPayment { vamm: String, position_id: u64 },
+    #[returns(LastPositionIdResponse)]
+    LastPositionId {},
 }
 
 #[cw_serde]
@@ -170,6 +189,11 @@ pub struct StateResponse {
 #[cw_serde]
 pub struct PauserResponse {
     pub pauser: Addr,
+}
+
+#[cw_serde]
+pub struct LastPositionIdResponse {
+    pub last_order_id: u64,
 }
 
 #[cw_serde]
