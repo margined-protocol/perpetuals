@@ -362,6 +362,10 @@ pub fn close_position(
         ("action", "close_position"),
         ("vamm", vamm.as_ref()),
         ("trader", trader.as_ref()),
+        ("position_id", &position_id.to_string()),
+        ("position_side",  &format!("{:?}", position.side)),
+        ("margin_amount", &position.margin.to_string()),
+        ("leverage", &position.notional.checked_div(position.margin)?.to_string()),
     ]))
 }
 
