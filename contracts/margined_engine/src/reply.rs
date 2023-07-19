@@ -319,7 +319,7 @@ pub fn close_position_reply(
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "close_position_reply"),
-        ("pnl", &swap.unrealized_pnl.to_string()),
+        ("pnl", &margin_delta.to_string()),
         ("spread_fee", &fees_amount[0].to_string()),
         ("toll_fee", &fees_amount[1].to_string()),
         ("funding_payment", &funding_payment.to_string()),
