@@ -365,6 +365,7 @@ pub fn close_position(
         ("position_id", &position_id.to_string()),
         ("position_side",  &format!("{:?}", position.side)),
         ("margin_amount", &position.margin.to_string()),
+        ("entry_price", &position.entry_price.to_string()),
         ("leverage", &position.notional.checked_div(position.margin)?.to_string()),
     ]))
 }
