@@ -253,7 +253,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
             INCREASE_POSITION_REPLY_ID => {
                 let (input, output, position_id) = parse_swap(response)?;
                 let response =
-                    update_position_reply(deps, env, input, output, position_id, INCREASE_POSITION_REPLY_ID)?;
+                    update_position_reply(deps, env, input, output, position_id)?;
                 Ok(response)
             }
             CLOSE_POSITION_REPLY_ID => {

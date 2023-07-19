@@ -2,7 +2,6 @@ use cosmwasm_std::{DepsMut, Env, Response, StdError, StdResult, SubMsg, Uint128}
 use margined_utils::contracts::helpers::VammController;
 
 use crate::{
-    contract::INCREASE_POSITION_REPLY_ID,
     messages::{
         execute_insurance_fund_withdrawal, execute_transfer, execute_transfer_from,
         execute_transfer_to_insurance_fund, transfer_fees, withdraw,
@@ -32,7 +31,6 @@ pub fn update_position_reply(
     input: Uint128,
     output: Uint128,
     position_id: u64,
-    reply_id: u64,
 ) -> StdResult<Response> {
     let mut swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
 
@@ -64,11 +62,7 @@ pub fn update_position_reply(
         &deps.as_ref(),
         &mut state,
         swap.vamm.clone(),
-        if reply_id == INCREASE_POSITION_REPLY_ID {
-            Integer::new_positive(input)
-        } else {
-            Integer::new_negative(input)
-        },
+        Integer::new_positive(input),
         swap.trader.clone(),
     )?;
 
@@ -81,48 +75,18 @@ pub fn update_position_reply(
     let new_notional;
 
     // calculate margin needed given swap
-    match reply_id {
-        INCREASE_POSITION_REPLY_ID => {
-            swap_margin = swap
-                .open_notional
-                .checked_mul(config.decimals)?
-                .checked_div(swap.leverage)?;
+    swap_margin = swap
+        .open_notional
+        .checked_mul(config.decimals)?
+        .checked_div(swap.leverage)?;
 
-            swap.margin_to_vault = swap
-                .margin_to_vault
-                .checked_add(Integer::new_positive(swap_margin))?;
+    swap.margin_to_vault = swap
+        .margin_to_vault
+        .checked_add(Integer::new_positive(swap_margin))?;
 
-            margin_delta = Integer::new_positive(swap_margin);
-            new_direction = side_to_direction(&swap.side);
-            new_notional = position.notional.checked_add(swap.open_notional)?;
-        }
-        // DECREASE_POSITION_REPLY
-        _ => {
-            swap_margin = Uint128::zero();
-
-            // realized_pnl = unrealized_pnl * close_ratio
-            let realized_pnl = if !position.size.is_zero() {
-                swap.unrealized_pnl.checked_mul(signed_output.abs())? / position.size.abs()
-            } else {
-                Integer::zero()
-            };
-
-            let unrealized_pnl_after = swap.unrealized_pnl - realized_pnl;
-
-            let remaining_notional = if position.size > Integer::zero() {
-                Integer::new_positive(swap.position_notional)
-                    - Integer::new_positive(swap.open_notional)
-                    - unrealized_pnl_after
-            } else {
-                unrealized_pnl_after + Integer::new_positive(swap.position_notional)
-                    - Integer::new_positive(swap.open_notional)
-            };
-
-            margin_delta = realized_pnl;
-            new_direction = position.direction.clone();
-            new_notional = remaining_notional.value;
-        }
-    }
+    margin_delta = Integer::new_positive(swap_margin);
+    new_direction = side_to_direction(&swap.side);
+    new_notional = position.notional.checked_add(swap.open_notional)?;
 
     // calculate the remaining margin
     let RemainMarginResponse {
