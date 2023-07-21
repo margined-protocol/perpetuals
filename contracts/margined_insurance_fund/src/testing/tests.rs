@@ -421,7 +421,7 @@ fn test_vamm_shutdown_from_insurance() {
 
     // shutdown all vamms
     let msg = insurance_fund.shutdown_vamms().unwrap();
-    router.execute(insurance_fund.addr(), msg).unwrap();
+    router.execute(owner.clone(), msg).unwrap();
 
     // query all vamms' status
     let res = insurance_fund
@@ -700,7 +700,7 @@ fn test_not_owner() {
     //instantiate contract here
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
-        engine: ENGINE.to_string(),
+        engine: "orai1xwx3xs6gx9gkgf4rj7wu2elqa92cjqhutlnqx68eppgs09qm8c2qs72jh5".to_string(),
     };
     let info = mock_info("owner", &[]);
 
