@@ -252,7 +252,6 @@ fn test_increase_when_traders_open_positions_in_diff_directions() {
     assert_eq!(open_interest_notional, to_decimals(600u64));
 }
 
-// TODO: @lehieuhust restest for open_interest_notional
 #[test]
 fn test_increase_when_traders_open_larger_positions_in_reverse_directions() {
     let SimpleScenario {
@@ -653,7 +652,6 @@ fn test_stop_trading_if_over_open_interest_notional_cap() {
     );
 }
 
-// TODO: @lehieuhust restest for open_interest_notional
 #[test]
 fn test_wont_stop_trading_if_reducing_position_even_if_over_open_interest_notional_cap() {
     let SimpleScenario {

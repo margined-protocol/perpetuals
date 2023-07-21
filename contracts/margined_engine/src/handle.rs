@@ -366,7 +366,7 @@ pub fn close_position(
         ("position_side",  &format!("{:?}", position.side)),
         ("margin_amount", &position.margin.to_string()),
         ("entry_price", &position.entry_price.to_string()),
-        ("leverage", &position.notional.checked_div(position.margin)?.to_string()),
+        ("leverage", &position.notional.checked_mul(config.decimals)?.checked_div(position.margin)?.to_string()),
     ]))
 }
 
@@ -556,7 +556,7 @@ pub fn deposit_margin(
         return Err(StdError::generic_err("Unauthorized"));
     }
 
-    position.margin = position.margin.checked_add(amount)?; // TODO: @lehieuhust check if leverage is less than 1
+    position.margin = position.margin.checked_add(amount)?;
 
     store_position(deps.storage, &position_key, &position, false)?;
 
