@@ -104,7 +104,7 @@ fn test_trigger_tp_sl() {
             Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
-            Uint128::from(27_000_000_000u128),
+            Uint128::from(20_000_000_000u128),
             Some(Uint128::from(14_000_000_000u128)),
             to_decimals(0u64),
             vec![],
@@ -116,7 +116,7 @@ fn test_trigger_tp_sl() {
     let position = engine
         .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.take_profit, to_decimals(27));
+    assert_eq!(position.take_profit, to_decimals(20));
     assert_eq!(position.stop_loss, Some(to_decimals(14)));
     
     let price = vamm.spot_price(&router.wrap()).unwrap();
@@ -129,7 +129,7 @@ fn test_trigger_tp_sl() {
             Side::Sell,
             to_decimals(6u64),
             to_decimals(8u64),
-            Uint128::from(6_000_000_000u128),
+            Uint128::from(20_000_000_000u128),
             Some(Uint128::from(28_000_000_000u128)),
             to_decimals(0u64),
             vec![],
@@ -160,7 +160,7 @@ fn test_trigger_tp_sl() {
             Side::Sell,
             to_decimals(21u64),
             to_decimals(10u64),
-            Uint128::from(18_000_000_000u128),
+            Uint128::from(6_000_000_000u128),
             Some(Uint128::from(24_000_000_000u128)),
             to_decimals(0u64),
             vec![],

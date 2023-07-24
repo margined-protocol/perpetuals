@@ -396,7 +396,7 @@ impl SimpleScenario {
                     eligible_collateral: usdc.0.to_string(),
                     initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
-                    tp_sl_spread: Uint128::from(50_000u128), // 0.05
+                    tp_sl_spread: Uint128::from(50_000_000u128), // 0.05
                     liquidation_fee: Uint128::from(50_000_000u128),      // 0.05
                 },
                 &[],
