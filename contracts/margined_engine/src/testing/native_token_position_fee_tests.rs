@@ -1,7 +1,6 @@
 use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Side};
-use margined_utils::testing::to_decimals;
 use margined_utils::tools::fund_calculator::calculate_funds_needed;
 
 use margined_utils::{cw_multi_test::Executor, testing::NativeTokenScenario};
@@ -60,7 +59,7 @@ fn test_force_error_open_position_no_token_sent() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(37_500_000u64),
             vec![],
@@ -101,7 +100,7 @@ fn test_ten_percent_fee_open_long_position() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(37_500_000u64),
             calculate_funds_needed(
@@ -165,7 +164,7 @@ fn test_force_error_insufficient_token_long_position() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(37_500_000u64),
             vec![Coin::new(66_000_000u128, "orai")],
@@ -205,8 +204,8 @@ fn test_ten_percent_fee_open_short_position() {
             Side::Sell,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(2_000_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::from(150_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -271,8 +270,8 @@ fn test_force_error_insufficient_token_short_position() {
             Side::Sell,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(2_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::from(150_000_000u64),
             vec![Coin::new(100_000_000u128, "orai")],
         )
@@ -311,7 +310,7 @@ fn test_ten_percent_fee_long_position_price_remains_long_again() {
             Side::Buy,
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
+            Uint128::from(15_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
@@ -336,7 +335,7 @@ fn test_ten_percent_fee_long_position_price_remains_long_again() {
             Side::Buy,
             Uint128::from(175_000_000u64),
             Uint128::from(2_000_000u64),
-            to_decimals(10),
+            Uint128::from(23_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(17_500_000u64),
             calculate_funds_needed(
@@ -407,7 +406,7 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
             Side::Buy,
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
+            Uint128::from(22_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
@@ -432,7 +431,7 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
             Side::Buy,
             Uint128::from(35_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
+            Uint128::from(21_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(17_500_000u64),
             calculate_funds_needed(
@@ -464,7 +463,7 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
             Side::Buy,
             Uint128::from(200_000_000u64),
             Uint128::from(2_000_000u64),
-            to_decimals(10),
+            Uint128::from(35_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(12_500_000u64),
             calculate_funds_needed(
@@ -535,7 +534,7 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
             Side::Buy,
             Uint128::from(125_000_000u64),
             Uint128::from(2_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
@@ -559,8 +558,8 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
             Side::Sell,
             Uint128::from(125_000_000u64),
             Uint128::from(2_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(8_000_000u64),
+            Some(Uint128::from(15_000_000u64)),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -594,7 +593,7 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
             Side::Buy,
             Uint128::from(50_000_000u64),
             Uint128::from(5_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
@@ -654,8 +653,8 @@ fn test_ten_percent_fee_short_position_price_remains_short_again() {
             Side::Sell,
             Uint128::from(100_000_000u64),
             Uint128::from(2_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(2_000_000u64),
+            Some(Uint128::from(18_000_000u64)),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -678,8 +677,8 @@ fn test_ten_percent_fee_short_position_price_remains_short_again() {
             Side::Sell,
             Uint128::from(50_000_000u64),
             Uint128::from(8_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(2_000_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::from(125_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -748,8 +747,8 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
             Side::Sell,
             Uint128::from(100_000_000u64),
             Uint128::from(2_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(2_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -772,8 +771,8 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
             Side::Sell,
             Uint128::from(150_000_000u64),
             Uint128::from(2_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(1_000_000u64),
+            Some(Uint128::from(8_000_000u64)),
             Uint128::from(75_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -807,8 +806,8 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
             Side::Sell,
             Uint128::from(100_000_000u64),
             Uint128::from(3_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(800_000u64),
+            Some(Uint128::from(6_000_000u64)),
             Uint128::from(300_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -868,8 +867,8 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
             Side::Sell,
             Uint128::from(200_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(2_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -892,7 +891,7 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
             Side::Buy,
             Uint128::from(200_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
@@ -927,8 +926,8 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
             Side::Sell,
             Uint128::from(50_000_000u64),
             Uint128::from(4_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(2_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -985,7 +984,7 @@ fn test_ten_percent_fee_long_position_price_remains_reduce_position() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(37_500_000u64),
             calculate_funds_needed(
@@ -1005,8 +1004,8 @@ fn test_ten_percent_fee_long_position_price_remains_reduce_position() {
             Side::Sell,
             Uint128::from(350_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(9_000_000u64),
+            Some(Uint128::from(21_000_000u64)),
             Uint128::from(17_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -1064,7 +1063,7 @@ fn test_ten_percent_fee_reduce_long_position_zero_fee() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(37_500_000u64),
             calculate_funds_needed(
@@ -1084,8 +1083,8 @@ fn test_ten_percent_fee_reduce_long_position_zero_fee() {
             Side::Sell,
             Uint128::from(350_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(10_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(17_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -1143,8 +1142,8 @@ fn test_ten_percent_fee_short_position_price_remains_reduce_position() {
             Side::Sell,
             Uint128::from(6_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(7_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(15_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -1163,7 +1162,7 @@ fn test_ten_percent_fee_short_position_price_remains_reduce_position() {
             Side::Buy,
             Uint128::from(40_000_000u64),
             Uint128::from(5_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(12_500_000u64),
             calculate_funds_needed(
@@ -1224,7 +1223,7 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(37_500_000u64),
             calculate_funds_needed(
@@ -1247,7 +1246,7 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
             Side::Buy,
             Uint128::from(400_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
+            Uint128::from(35_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(12_500_000u64),
             calculate_funds_needed(
@@ -1280,8 +1279,8 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
             Side::Sell,
             Uint128::from(400_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(10_000_000u64),
+            Some(Uint128::from(32_000_000u64)),
             Uint128::from(12_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -1344,7 +1343,7 @@ fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
             Side::Buy,
             Uint128::from(500_000_000u64),
             Uint128::from(2_000_000u64),
-            to_decimals(10),
+            Uint128::from(23_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(50_000_000u64),
             calculate_funds_needed(
@@ -1364,8 +1363,8 @@ fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
             Side::Sell,
             Uint128::from(400_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(7_000_000u64),
+            Some(Uint128::from(34_000_000u64)),
             Uint128::from(12_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -1394,8 +1393,8 @@ fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
             Side::Sell,
             Uint128::from(350_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(10_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(17_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -1454,8 +1453,8 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
             Side::Sell,
             Uint128::from(100_000_000u64),
             Uint128::from(2_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(7_000_000u64),
+            Some(Uint128::from(14_000_000u64)),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -1474,7 +1473,7 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
             Side::Buy,
             Uint128::from(50_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(7_350_000u64),
             calculate_funds_needed(
@@ -1504,7 +1503,7 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
             Side::Buy,
             Uint128::from(150_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(17_640_000u64),
             calculate_funds_needed(
@@ -1565,8 +1564,8 @@ fn test_ten_percent_fee_reduce_short_position_price_down_short_again() {
             Side::Sell,
             Uint128::from(250_000_000u64),
             Uint128::from(2_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(3_000_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::from(100_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -1588,8 +1587,8 @@ fn test_ten_percent_fee_reduce_short_position_price_down_short_again() {
             Side::Sell,
             Uint128::from(100_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(1_000_000u64),
+            Some(Uint128::from(5_000_000u64)),
             Uint128::from(50_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -1621,7 +1620,7 @@ fn test_ten_percent_fee_reduce_short_position_price_down_short_again() {
             Side::Buy,
             Uint128::from(100_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(50_000_000u64),
             calculate_funds_needed(
@@ -1683,7 +1682,7 @@ fn test_ten_percent_fee_open_long_price_remains_close_manually() {
             Side::Buy,
             Uint128::from(50_000_000u64),
             Uint128::from(5_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
@@ -1705,8 +1704,8 @@ fn test_ten_percent_fee_open_long_price_remains_close_manually() {
             Side::Sell,
             Uint128::from(250_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(10_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -1750,8 +1749,8 @@ fn test_ten_percent_fee_open_short_price_remains_close_manually() {
             Side::Sell,
             Uint128::from(100_000_000u64),
             Uint128::from(2_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -1772,7 +1771,7 @@ fn test_ten_percent_fee_open_short_price_remains_close_manually() {
             Side::Buy,
             Uint128::from(200_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
@@ -1826,7 +1825,7 @@ fn test_ten_percent_fee_open_long_price_up_close_manually() {
             Side::Buy,
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
+            Uint128::from(30_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
@@ -1848,7 +1847,7 @@ fn test_ten_percent_fee_open_long_price_up_close_manually() {
             Side::Buy,
             Uint128::from(35_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
+            Uint128::from(30_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(17_500_000u64),
             calculate_funds_needed(
@@ -1878,8 +1877,8 @@ fn test_ten_percent_fee_open_long_price_up_close_manually() {
             Side::Sell,
             pnl.position_notional,
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(15_000_000u64),
+            Some(Uint128::from(25_000_000u64)),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -1924,7 +1923,7 @@ fn test_ten_percent_fee_open_long_price_down_close_manually() {
             Side::Buy,
             Uint128::from(500_000_000u64),
             Uint128::from(2_000_000u64),
-            to_decimals(10),
+            Uint128::from(23_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(50_000_000u64),
             calculate_funds_needed(
@@ -1946,8 +1945,8 @@ fn test_ten_percent_fee_open_long_price_down_close_manually() {
             Side::Sell,
             Uint128::from(400_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(16_000_000u64),
+            Some(Uint128::from(34_000_000u64)),
             Uint128::from(12_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -1976,8 +1975,8 @@ fn test_ten_percent_fee_open_long_price_down_close_manually() {
             Side::Sell,
             pnl.position_notional,
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(4_000_000u64),
+            Some(Uint128::from(16_000_000u64)),
             Uint128::from(50_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -2031,8 +2030,8 @@ fn test_ten_percent_fee_open_short_price_up_close_manually() {
             Side::Sell,
             Uint128::from(200_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(7_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -2053,7 +2052,7 @@ fn test_ten_percent_fee_open_short_price_up_close_manually() {
             Side::Buy,
             Uint128::from(50_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(7_350_000u64),
             calculate_funds_needed(
@@ -2083,7 +2082,7 @@ fn test_ten_percent_fee_open_short_price_up_close_manually() {
             Side::Buy,
             pnl.position_notional,
             Uint128::from(1_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
@@ -2137,8 +2136,8 @@ fn test_ten_percent_fee_open_short_price_down_close_manually() {
             Side::Sell,
             Uint128::from(250_000_000u64),
             Uint128::from(2_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(3_000_000u64),
+            Some(Uint128::from(11_000_000u64)),
             Uint128::from(100_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -2159,8 +2158,8 @@ fn test_ten_percent_fee_open_short_price_down_close_manually() {
             Side::Sell,
             Uint128::from(100_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(1_000_000u64),
+            Some(Uint128::from(5_000_000u64)),
             Uint128::from(50_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -2189,7 +2188,7 @@ fn test_ten_percent_fee_open_short_price_down_close_manually() {
             Side::Buy,
             pnl.position_notional,
             Uint128::from(1_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(100_000_000u64),
             calculate_funds_needed(
@@ -2233,7 +2232,7 @@ fn test_ten_percent_fee_open_long_price_remains_close_opening_larger_short() {
             Side::Buy,
             Uint128::from(125_000_000u64),
             Uint128::from(2_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
@@ -2255,8 +2254,8 @@ fn test_ten_percent_fee_open_long_price_remains_close_opening_larger_short() {
             Side::Sell,
             Uint128::from(45_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(8_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(45_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -2310,8 +2309,8 @@ fn test_ten_percent_fee_open_short_price_remains_close_opening_larger_long() {
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -2332,7 +2331,7 @@ fn test_ten_percent_fee_open_short_price_remains_close_opening_larger_long() {
             Side::Buy,
             Uint128::from(90_000_000u64),
             Uint128::from(5_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(45_000_000u64),
             calculate_funds_needed(
@@ -2400,7 +2399,7 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
             Side::Buy,
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
@@ -2422,7 +2421,7 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
             Side::Buy,
             Uint128::from(35_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
+            Uint128::from(25_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(17_500_000u64),
             calculate_funds_needed(
@@ -2452,8 +2451,8 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
             Side::Sell,
             Uint128::from(100_000_000u64),
             Uint128::from(8_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(62_510_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -2526,7 +2525,7 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
             Side::Buy,
             Uint128::from(125_000_000u64),
             Uint128::from(2_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
@@ -2548,8 +2547,8 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
             Side::Sell,
             Uint128::from(125_000_000u64),
             Uint128::from(2_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -2578,8 +2577,8 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
             Side::Sell,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(1_000_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::from(1_450_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -2645,8 +2644,8 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
             Side::Sell,
             Uint128::from(200_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -2665,7 +2664,7 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
             Side::Buy,
             Uint128::from(50_000_000u64),
             Uint128::from(4_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(7_349_000u64),
             calculate_funds_needed(
@@ -2695,7 +2694,7 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(37_490_000u64),
             calculate_funds_needed(
@@ -2755,8 +2754,8 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
             Side::Sell,
             Uint128::from(500_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(4_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(100_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -2777,8 +2776,8 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
             Side::Sell,
             Uint128::from(100_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(1_000_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::from(50_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
@@ -2807,7 +2806,7 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::from(149_990_000u64),
             calculate_funds_needed(
@@ -2865,7 +2864,7 @@ fn test_ten_percent_fee_open_long_price_down_liquidation() {
             Side::Buy,
             Uint128::from(5_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::zero(),
             calculate_funds_needed(
@@ -2885,8 +2884,8 @@ fn test_ten_percent_fee_open_long_price_down_liquidation() {
             Side::Sell,
             Uint128::from(50_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(5_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::zero(),
             calculate_funds_needed(
                 &router.wrap(),
@@ -2922,8 +2921,8 @@ fn test_ten_percent_fee_open_long_price_down_liquidation() {
             Side::Sell,
             Uint128::from(60_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(900_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::zero(),
             calculate_funds_needed(
                 &router.wrap(),
@@ -2980,7 +2979,7 @@ fn test_ten_percent_fee_open_long_price_down_liquidation_with_positive_margin() 
             Side::Buy,
             Uint128::from(10_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
+            Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
             Uint128::zero(),
             calculate_funds_needed(
@@ -3000,8 +2999,8 @@ fn test_ten_percent_fee_open_long_price_down_liquidation_with_positive_margin() 
             Side::Sell,
             Uint128::from(10_000_000u64),
             Uint128::from(5_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(10_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::zero(),
             calculate_funds_needed(
                 &router.wrap(),
@@ -3037,8 +3036,8 @@ fn test_ten_percent_fee_open_long_price_down_liquidation_with_positive_margin() 
             Side::Sell,
             Uint128::from(1_000_000u64),
             Uint128::from(20_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(15_000_000u64)),
             Uint128::zero(),
             calculate_funds_needed(
                 &router.wrap(),

@@ -78,8 +78,8 @@ fn test_partially_liquidate_long_position() {
             Side::Sell,
             Uint128::from(45_180_723u128),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(18_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(45_180_723u128, "orai")],
         )
@@ -164,8 +164,8 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
             Side::Buy,
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(13_000_000u64),
+            Some(Uint128::from(9_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(25_000_000u128, "orai")],
         )
@@ -185,8 +185,8 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
             Side::Sell,
             Uint128::from(45_180_723u128),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(18_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(45_180_723u128, "orai")],
         )
@@ -276,8 +276,8 @@ fn test_partially_liquidate_short_position() {
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(7_000_000u64),
+            Some(Uint128::from(18_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -297,8 +297,8 @@ fn test_partially_liquidate_short_position() {
             Side::Buy,
             Uint128::from(19_672_131u128),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(10_000_000u64),
+            Some(Uint128::from(6_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(19_672_131u128, "orai")],
         )
@@ -383,8 +383,8 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(7_000_000u64),
+            Some(Uint128::from(18_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -404,8 +404,8 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
             Side::Buy,
             Uint128::from(19_672_131u128),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(10_000_000u64),
+            Some(Uint128::from(5_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(19_672_131u128, "orai")],
         )
@@ -495,8 +495,8 @@ fn test_long_position_complete_liquidation() {
             Side::Buy,
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(14_000_000u64),
+            Some(Uint128::from(5_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(25_000_000u128, "orai")],
         )
@@ -516,8 +516,8 @@ fn test_long_position_complete_liquidation() {
             Side::Sell,
             Uint128::from(73_529_411u128),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(18_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(73_529_411u128, "orai")],
         )
@@ -602,8 +602,8 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
             Side::Buy,
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(14_000_000u64),
+            Some(Uint128::from(5_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(25_000_000u128, "orai")],
         )
@@ -623,8 +623,8 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
             Side::Sell,
             Uint128::from(73_529_411u128),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(18_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(73_529_411u128, "orai")],
         )
@@ -710,8 +710,8 @@ fn test_short_position_complete_liquidation() {
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(10_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(18_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -731,8 +731,8 @@ fn test_short_position_complete_liquidation() {
             Side::Buy,
             Uint128::from(40_336_134u128),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(14_000_000u64),
+            Some(Uint128::from(5_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(40_336_134u128, "orai")],
         )
@@ -816,8 +816,8 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             Side::Buy,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(14_000_000u64),
+            Some(Uint128::from(9_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -837,8 +837,8 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             Side::Buy,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(16_000_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -858,8 +858,8 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(18_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -1111,6 +1111,8 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
         Side::Buy,
         Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(16_000_000u64),
+        Some(Uint128::from(8_000_000u64)),
         1u64,
     );
 
@@ -1122,6 +1124,8 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
         Side::Buy,
         Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(14_000_000u64),
+        Some(Uint128::from(10_000_000u64)),
         1u64,
     );
 
@@ -1131,6 +1135,8 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
         Side::Sell,
         Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(11_000_000u64),
+        Some(Uint128::from(20_000_000u64)),
         1u64,
     );
 
@@ -1219,6 +1225,8 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         Side::Buy,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(15_000_000u64),
+        Some(Uint128::from(8_000_000u64)),
         5u64,
     );
 
@@ -1229,6 +1237,8 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         Side::Buy,
         Uint128::from(2_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(19_000_000u64),
+        Some(Uint128::from(11_000_000u64)),
         5u64,
     );
 
@@ -1239,6 +1249,8 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         Side::Buy,
         Uint128::from(2_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(23_000_000u64),
+        Some(Uint128::from(13_000_000u64)),
         5u64,
     );
 
@@ -1249,6 +1261,8 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         Side::Sell,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(10_000_000u64),
+        Some(Uint128::from(15_000_000u64)),
         5u64,
     );
 
@@ -1434,6 +1448,8 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         Side::Buy,
         Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(16_000_000u64),
+        Some(Uint128::from(8_000_000u64)),
         1u64,
     );
 
@@ -1444,6 +1460,8 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         Side::Buy,
         Uint128::from(10_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(14_000_000u64),
+        Some(Uint128::from(11_000_000u64)),
         1u64,
     );
 
@@ -1454,6 +1472,8 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         Side::Buy,
         Uint128::from(10_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(17_000_000u64),
+        Some(Uint128::from(13_000_000u64)),
         1u64,
     );
 
@@ -1465,6 +1485,8 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         Side::Buy,
         Uint128::from(2_000_000u128), // 0.4
         Uint128::from(5_000_000u64),
+        Uint128::from(20_000_000u64),
+        Some(Uint128::from(13_000_000u64)),
         1u64,
     );
 
@@ -1474,6 +1496,8 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         Side::Sell,
         Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(13_000_000u64),
+        Some(Uint128::from(20_000_000u64)),
         1u64,
     );
 
@@ -1589,6 +1613,8 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         Side::Buy,
         Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(16_000_000u64),
+        Some(Uint128::from(8_000_000u64)),
         1u64,
     );
 
@@ -1599,6 +1625,8 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         Side::Buy,
         Uint128::from(10_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(13_000_000u64),
+        Some(Uint128::from(11_000_000u64)),
         1u64,
     );
 
@@ -1609,6 +1637,8 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         Side::Buy,
         Uint128::from(10_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(14_000_000u64),
+        Some(Uint128::from(12_000_000u64)),
         1u64,
     );
 
@@ -1620,6 +1650,8 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         Side::Buy,
         Uint128::from(10_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(18_000_000u64),
+        Some(Uint128::from(13_000_000u64)),
         1u64,
     );
 
@@ -1629,6 +1661,8 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         Side::Sell,
         Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(8_000_000u64),
+        Some(Uint128::from(20_000_000u64)),
         1u64,
     );
 
@@ -1730,6 +1764,8 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
         Side::Buy,
         Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(16_000_000u64),
+        Some(Uint128::from(8_000_000u64)),
         1u64,
     );
 
@@ -1741,6 +1777,8 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
         Side::Buy,
         Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(15_000_000u64),
+        Some(Uint128::from(11_000_000u64)),
         1u64,
     );
 
@@ -1750,6 +1788,8 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
         Side::Sell,
         Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(10_000_000u64),
+        Some(Uint128::from(15_000_000u64)),
         1u64,
     );
 
@@ -1831,6 +1871,8 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
         Side::Buy,
         Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(16_000_000u64),
+        Some(Uint128::from(8_000_000u64)),
         1u64,
     );
 
@@ -1842,6 +1884,8 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
         Side::Buy,
         Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(15_000_000u64),
+        Some(Uint128::from(11_000_000u64)),
         1u64,
     );
 
@@ -1851,6 +1895,8 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
         Side::Sell,
         Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(10_000_000u64),
+        Some(Uint128::from(15_000_000u64)),
         1u64,
     );
 
@@ -1867,8 +1913,8 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
             Side::Sell,
             Uint128::from(44_000_000u64),
             Uint128::from(1_000_000u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            Uint128::from(9_000_000u64),
+            Some(Uint128::from(13_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(25_000_000u128, "orai")],
         )
@@ -1972,6 +2018,8 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         Side::Buy,
         Uint128::from(10_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(14_000_000u64),
+        Some(Uint128::from(8_000_000u64)),
         2u64,
     );
 
@@ -1982,6 +2030,8 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         Side::Buy,
         Uint128::from(5_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(15_000_000u64),
+        Some(Uint128::from(11_000_000u64)),
         2u64,
     );
 
@@ -1993,6 +2043,8 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         Side::Buy,
         Uint128::from(5_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(17_000_000u64),
+        Some(Uint128::from(13_000_000u64)),
         2u64,
     );
 
@@ -2002,6 +2054,8 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         Side::Sell,
         Uint128::from(10_000_000u64),
         Uint128::from(5_000_000u64),
+        Uint128::from(10_000_000u64),
+        Some(Uint128::from(15_000_000u64)),
         2u64,
     );
 

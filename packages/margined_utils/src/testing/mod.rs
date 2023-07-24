@@ -111,6 +111,7 @@ impl NativeTokenScenario {
                     eligible_collateral: NATIVE_DENOM.to_string(),
                     initial_margin_ratio: Uint128::from(50_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
+                    tp_sl_spread: Uint128::from(50_000u128), // 0.05
                     liquidation_fee: Uint128::from(50_000u128),      // 0.05
                 },
                 &[],
@@ -153,6 +154,7 @@ impl NativeTokenScenario {
                     initial_margin_ratio: None,
                     maintenance_margin_ratio: None,
                     partial_liquidation_ratio: None,
+                    tp_sl_spread: None,
                     liquidation_fee: None,
                 },
                 &[],
@@ -261,6 +263,8 @@ impl NativeTokenScenario {
         side: Side,
         quote_asset_amount: Uint128,
         leverage: Uint128,
+        take_profit: Uint128,
+        stop_loss: Option<Uint128>,
         count: u64,
     ) {
         let funds = calculate_funds_needed(
@@ -277,8 +281,8 @@ impl NativeTokenScenario {
                     side.clone(),
                     quote_asset_amount,
                     leverage,
-                    to_decimals(10),
-                    Some(Uint128::zero()),
+                    take_profit,
+                    stop_loss,
                     Uint128::zero(),
                     funds.clone(),
                 )
@@ -392,6 +396,7 @@ impl SimpleScenario {
                     eligible_collateral: usdc.0.to_string(),
                     initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
+                    tp_sl_spread: Uint128::from(50_000u128), // 0.05
                     liquidation_fee: Uint128::from(50_000_000u128),      // 0.05
                 },
                 &[],
@@ -427,6 +432,7 @@ impl SimpleScenario {
                     initial_margin_ratio: None,
                     maintenance_margin_ratio: None,
                     partial_liquidation_ratio: None,
+                    tp_sl_spread: None,
                     liquidation_fee: None,
                 },
                 &[],
@@ -589,6 +595,8 @@ impl SimpleScenario {
         side: Side,
         quote_asset_amount: Uint128,
         leverage: Uint128,
+        take_profit: Uint128,
+        stop_loss: Option<Uint128>,
         count: u64,
     ) {
         for _ in 0..count {
@@ -599,8 +607,8 @@ impl SimpleScenario {
                     side.clone(),
                     quote_asset_amount,
                     leverage,
-                    to_decimals(10),
-                    Some(Uint128::zero()),
+                    take_profit,
+                    stop_loss,
                     Uint128::zero(),
                     vec![],
                 )
@@ -772,6 +780,7 @@ impl ShutdownScenario {
                     eligible_collateral: NATIVE_DENOM.to_string(),
                     initial_margin_ratio: Uint128::from(50_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
+                    tp_sl_spread: Uint128::from(50_000u128),        // 0.05
                     liquidation_fee: Uint128::from(50_000u128),      // 0.05
                 },
                 &[],

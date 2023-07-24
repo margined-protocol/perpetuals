@@ -44,6 +44,7 @@ pub fn update_config(
     initial_margin_ratio: Option<Uint128>,
     maintenance_margin_ratio: Option<Uint128>,
     partial_liquidation_ratio: Option<Uint128>,
+    tp_sl_spread: Option<Uint128>,
     liquidation_fee: Option<Uint128>,
 ) -> StdResult<Response> {
     let mut config = read_config(deps.storage)?;
@@ -88,6 +89,12 @@ pub fn update_config(
         config.partial_liquidation_ratio = partial_liquidation_ratio;
     }
 
+    // update take_profit and stop_loss spread ratio
+    if let Some(tp_sl_spread) = tp_sl_spread {
+        validate_ratio(tp_sl_spread, config.decimals)?;
+        config.tp_sl_spread = tp_sl_spread;
+    }
+
     // update liquidation fee
     if let Some(liquidation_fee) = liquidation_fee {
         validate_ratio(liquidation_fee, config.decimals)?;
@@ -130,6 +137,36 @@ pub fn open_position(
 
     if leverage < config.decimals {
         return Err(StdError::generic_err("Leverage must be greater than 1"));
+    }
+
+    let entry_price = get_input_price(
+        &deps.querier,
+        &vamm,
+        side_to_direction(&side),
+        margin_amount.checked_mul(leverage)?.checked_div(config.decimals)?
+    )?;
+
+    match side {
+        Side::Buy => {
+            if take_profit <= entry_price {
+                return Err(StdError::generic_err("TP price is too low"));
+            }
+            if let Some(stop_loss) = stop_loss {
+                if stop_loss > entry_price {
+                    return Err(StdError::generic_err("SL price is too high"));
+                }
+            }
+        },
+        Side::Sell => {
+            if take_profit >= entry_price {
+                return Err(StdError::generic_err("TP price is too high"));
+            }
+            if let Some(stop_loss) = stop_loss {
+                if stop_loss < entry_price {
+                    return Err(StdError::generic_err("SL price is too low"));
+                }
+            }
+        },
     }
 
     // calculate the margin ratio of new position wrt to leverage
@@ -235,21 +272,37 @@ pub fn update_tp_sl(
         return Err(StdError::generic_err("Both take profit and stop loss are not set"));
     }
 
-    match take_profit {
-        Some(tp) => {
-            require_non_zero_input(tp)?;
-            position.take_profit = tp;
-        }
-        None => {},
+    match position.side {
+        Side::Buy => {
+            if let Some(take_profit) = take_profit {
+                if take_profit <= position.entry_price {
+                    return Err(StdError::generic_err("TP price is too low"));
+                }
+                position.take_profit = take_profit;
+            }
+            
+            if let Some(sl) = stop_loss {
+                if sl > position.entry_price {
+                    return Err(StdError::generic_err("SL price is too high"));
+                }
+                position.stop_loss = stop_loss;
+            }
+        },
+        Side::Sell => {
+            if let Some(take_profit) = take_profit {
+                if take_profit >= position.entry_price {
+                    return Err(StdError::generic_err("TP price is too high"));
+                }
+            }
+            if let Some(sl) = stop_loss {
+                if sl < position.entry_price {
+                    return Err(StdError::generic_err("SL price is too low"));
+                }
+                position.stop_loss = stop_loss;
+            }
+        },
     }
 
-    match stop_loss {
-        Some(_) => {
-            position.stop_loss = stop_loss;
-        }
-        None => {},
-    }
-    
     store_position(deps.storage, &position_key, &position, false)?;
     
     Ok(Response::new().add_attributes(vec![
@@ -394,41 +447,38 @@ pub fn trigger_tp_sl(
 
     let spot_price = get_spot_price(&deps.querier, &vamm)?;
     let stop_loss = position.stop_loss.unwrap_or_default();
+    let tp_spread = position.take_profit.checked_mul(config.tp_sl_spread)?.checked_div(config.decimals)?;
+    let sl_spread = stop_loss.checked_mul(config.tp_sl_spread)?.checked_div(config.decimals)?;
+
     let mut msgs: Vec<SubMsg> = vec![];
     let mut attribute_msgs: Vec<Attribute> = vec![];
 
     // if spot_price is ~ take_profit or stop_loss, close position
     if position.side == Side::Buy {
-        if spot_price <= position.take_profit && 
-            position.take_profit.checked_mul(5u128.into())?.checked_div(1000u128.into())? 
-            >= position.take_profit.checked_sub(spot_price)? ||
-            spot_price > position.take_profit {
+        if  spot_price > position.take_profit || 
+            position.take_profit.abs_diff(spot_price) <= tp_spread {
             msgs.push(internal_close_position(deps, &position, quote_asset_limit, CLOSE_POSITION_REPLY_ID)?);
             attribute_msgs.push(
                 Attribute { key: "action".to_string(), value: "TRIGGER_TAKE_PROFIT".to_string() },
             );
         } else if stop_loss > Uint128::zero() && 
-            spot_price >= stop_loss && spot_price.checked_sub(stop_loss)? 
-            <= stop_loss.checked_mul(5u128.into())?.checked_div(1000u128.into())? ||
-            spot_price < position.take_profit {
+            stop_loss > spot_price ||
+            spot_price.abs_diff(stop_loss) <= sl_spread {
             msgs.push(internal_close_position(deps, &position, quote_asset_limit, CLOSE_POSITION_REPLY_ID)?);
             attribute_msgs.push(
                 Attribute { key: "action".to_string(), value: "TRIGGER_STOP_LOSS".to_string() }
             );
         };
     } else if position.side == Side::Sell {
-        if spot_price >= position.take_profit && 
-            position.take_profit.checked_mul(5u128.into())?.checked_div(1000u128.into())? 
-            >= spot_price.checked_sub(position.take_profit)? ||
-            spot_price < position.take_profit {
+        if  position.take_profit > spot_price ||
+            spot_price.abs_diff(position.take_profit) <= tp_spread {
             msgs.push(internal_close_position(deps, &position, quote_asset_limit, CLOSE_POSITION_REPLY_ID)?);
             attribute_msgs.push(
                 Attribute { key: "action".to_string(), value: "TRIGGER_TAKE_PROFIT".to_string() }
             );
         } else if stop_loss > Uint128::zero() && 
-            spot_price <= stop_loss && stop_loss.checked_sub(spot_price)? 
-            <= stop_loss.checked_mul(5u128.into())?.checked_div(1000u128.into())? ||
-            spot_price > position.take_profit {
+            spot_price > stop_loss ||
+            stop_loss.abs_diff(spot_price) <= sl_spread {
             msgs.push(internal_close_position(deps, &position, quote_asset_limit, CLOSE_POSITION_REPLY_ID)?);
             attribute_msgs.push(
                 Attribute { key: "action".to_string(), value: "TRIGGER_STOP_LOSS".to_string() }
@@ -834,4 +884,13 @@ fn get_spot_price(
     vamm: &Addr,
 ) -> StdResult<Uint128> {
     querier.query_wasm_smart(vamm, &QueryMsg::SpotPrice {})
+}
+
+fn get_input_price(
+    querier: &QuerierWrapper,
+    vamm: &Addr,
+    direction: Direction,
+    amount: Uint128,
+) -> StdResult<Uint128> {
+    querier.query_wasm_smart(vamm, &QueryMsg::InputPrice { direction, amount })
 }

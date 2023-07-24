@@ -48,8 +48,8 @@ fn test_change_tp_sl() {
             Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            to_decimals(18),
+            Some(to_decimals(9)),
             to_decimals(0u64),
             vec![],
         )
@@ -60,15 +60,15 @@ fn test_change_tp_sl() {
     let position = engine
         .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.take_profit, to_decimals(10));
-    assert_eq!(position.stop_loss, Some(to_decimals(0)));
+    assert_eq!(position.take_profit, to_decimals(18));
+    assert_eq!(position.stop_loss, Some(to_decimals(9)));
 
     let msg = engine
         .update_tp_sl(
             vamm.addr().to_string(),
             1,
-            Some(to_decimals(2)),
-            Some(to_decimals(1)),
+            Some(to_decimals(26)),
+            Some(to_decimals(14)),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
@@ -77,8 +77,8 @@ fn test_change_tp_sl() {
     let position = engine
         .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.take_profit, to_decimals(2));
-    assert_eq!(position.stop_loss, Some(to_decimals(1)));
+    assert_eq!(position.take_profit, to_decimals(26));
+    assert_eq!(position.stop_loss, Some(to_decimals(14)));
 
     let msg = engine
         .close_position(vamm.addr().to_string(), 1, to_decimals(0)).unwrap();
@@ -95,7 +95,9 @@ fn test_trigger_tp_sl() {
         vamm,
         ..
     } = new_simple_scenario();
-
+    let price = vamm.spot_price(&router.wrap()).unwrap();
+    println!("[LOG] [0] spot price: {:?}", price);
+    
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
@@ -103,7 +105,7 @@ fn test_trigger_tp_sl() {
             to_decimals(60u64),
             to_decimals(10u64),
             Uint128::from(27_000_000_000u128),
-            Some(Uint128::from(24_000_000_000u128)),
+            Some(Uint128::from(14_000_000_000u128)),
             to_decimals(0u64),
             vec![],
         )
@@ -115,7 +117,7 @@ fn test_trigger_tp_sl() {
         .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(position.take_profit, to_decimals(27));
-    assert_eq!(position.stop_loss, Some(to_decimals(24)));
+    assert_eq!(position.stop_loss, Some(to_decimals(14)));
     
     let price = vamm.spot_price(&router.wrap()).unwrap();
     println!("[LOG] [1] spot price: {:?}", price);
@@ -128,7 +130,7 @@ fn test_trigger_tp_sl() {
             to_decimals(6u64),
             to_decimals(8u64),
             Uint128::from(6_000_000_000u128),
-            Some(Uint128::from(10_000_000_000u128)),
+            Some(Uint128::from(28_000_000_000u128)),
             to_decimals(0u64),
             vec![],
         )
@@ -147,7 +149,7 @@ fn test_trigger_tp_sl() {
         )
         .unwrap();
     let ret = router.execute(alice.clone(), msg).unwrap();
-    println!("[LOG] trigger event: {:?}", ret);
+    println!("[LOG] trigger stop loss event: {:?}", ret);
     
     let price = vamm.spot_price(&router.wrap()).unwrap();
     println!("[LOG] [3] spot price: {:?}", price);
@@ -158,7 +160,7 @@ fn test_trigger_tp_sl() {
             Side::Sell,
             to_decimals(21u64),
             to_decimals(10u64),
-            Uint128::from(27_000_000_000u128),
+            Uint128::from(18_000_000_000u128),
             Some(Uint128::from(24_000_000_000u128)),
             to_decimals(0u64),
             vec![],
@@ -177,6 +179,6 @@ fn test_trigger_tp_sl() {
             to_decimals(0u64),
         )
         .unwrap();
-    router.execute(alice.clone(), msg).unwrap();
-
+    let ret = router.execute(alice.clone(), msg).unwrap();
+    println!("[LOG] trigger take profit event: {:?}", ret);
 }

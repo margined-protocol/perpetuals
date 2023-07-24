@@ -84,6 +84,7 @@ pub fn instantiate(
     validate_ratio(msg.initial_margin_ratio, decimals)?;
     validate_ratio(msg.maintenance_margin_ratio, decimals)?;
     validate_ratio(msg.liquidation_fee, decimals)?;
+    validate_ratio(msg.tp_sl_spread, decimals)?;
 
     // validate that the maintenance margin is not greater than the initial
     validate_margin_ratios(msg.initial_margin_ratio, msg.maintenance_margin_ratio)?;
@@ -98,6 +99,7 @@ pub fn instantiate(
         initial_margin_ratio: msg.initial_margin_ratio,
         maintenance_margin_ratio: msg.maintenance_margin_ratio,
         partial_liquidation_ratio: Uint128::zero(), // set as zero by default
+        tp_sl_spread: msg.tp_sl_spread,
         liquidation_fee: msg.liquidation_fee,
     };
 
@@ -131,6 +133,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             initial_margin_ratio,
             maintenance_margin_ratio,
             partial_liquidation_ratio,
+            tp_sl_spread,
             liquidation_fee,
         } => update_config(
             deps,
@@ -141,6 +144,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             initial_margin_ratio,
             maintenance_margin_ratio,
             partial_liquidation_ratio,
+            tp_sl_spread,
             liquidation_fee,
         ),
         ExecuteMsg::UpdatePauser { pauser } => update_pauser(deps, info, pauser),

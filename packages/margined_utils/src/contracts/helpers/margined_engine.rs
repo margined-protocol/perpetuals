@@ -30,6 +30,7 @@ impl EngineController {
         initial_margin_ratio: Option<Uint128>,
         maintenance_margin_ratio: Option<Uint128>,
         partial_liquidation_ratio: Option<Uint128>,
+        tp_sl_spread: Option<Uint128>,
         liquidation_fee: Option<Uint128>,
     ) -> StdResult<CosmosMsg> {
         wasm_execute(
@@ -41,6 +42,7 @@ impl EngineController {
                 initial_margin_ratio,
                 maintenance_margin_ratio,
                 partial_liquidation_ratio,
+                tp_sl_spread,
                 liquidation_fee,
             },
             vec![],
@@ -57,6 +59,7 @@ impl EngineController {
                 initial_margin_ratio: Some(initial_margin_ratio),
                 maintenance_margin_ratio: None,
                 partial_liquidation_ratio: None,
+                tp_sl_spread: None,
                 liquidation_fee: None,
             },
             vec![],
@@ -76,6 +79,7 @@ impl EngineController {
                 initial_margin_ratio: None,
                 maintenance_margin_ratio: Some(maintenance_margin_ratio),
                 partial_liquidation_ratio: None,
+                tp_sl_spread: None,
                 liquidation_fee: None,
             },
             vec![],
@@ -92,6 +96,7 @@ impl EngineController {
                 initial_margin_ratio: Some(margin_ratio),
                 maintenance_margin_ratio: Some(margin_ratio),
                 partial_liquidation_ratio: None,
+                tp_sl_spread: None,
                 liquidation_fee: None,
             },
             vec![],
@@ -109,6 +114,7 @@ impl EngineController {
             initial_margin_ratio: None,
             maintenance_margin_ratio: None,
             partial_liquidation_ratio: Some(partial_liquidation_ratio),
+            tp_sl_spread: None,
             liquidation_fee: None,
         };
         wasm_execute(&self.0, &msg, vec![])
@@ -122,6 +128,7 @@ impl EngineController {
             initial_margin_ratio: None,
             maintenance_margin_ratio: None,
             partial_liquidation_ratio: None,
+            tp_sl_spread: None,
             liquidation_fee: Some(liquidation_fee),
         };
         wasm_execute(&self.0, &msg, vec![])

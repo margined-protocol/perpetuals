@@ -41,6 +41,7 @@ pub struct InstantiateMsg {
     pub eligible_collateral: String,
     pub initial_margin_ratio: Uint128,
     pub maintenance_margin_ratio: Uint128,
+    pub tp_sl_spread: Uint128,
     pub liquidation_fee: Uint128,
 }
 
@@ -53,6 +54,7 @@ pub enum ExecuteMsg {
         initial_margin_ratio: Option<Uint128>,
         maintenance_margin_ratio: Option<Uint128>,
         partial_liquidation_ratio: Option<Uint128>,
+        tp_sl_spread: Option<Uint128>,
         liquidation_fee: Option<Uint128>,
     },
     UpdatePauser {
@@ -177,6 +179,7 @@ pub struct ConfigResponse {
     pub initial_margin_ratio: Uint128,
     pub maintenance_margin_ratio: Uint128,
     pub partial_liquidation_ratio: Uint128,
+    pub tp_sl_spread: Uint128,
     pub liquidation_fee: Uint128,
 }
 

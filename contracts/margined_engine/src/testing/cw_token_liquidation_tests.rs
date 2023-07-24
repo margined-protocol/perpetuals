@@ -112,7 +112,7 @@ fn test_partially_liquidate_long_position() {
             Uint128::from(45_180_722_890u128),
             to_decimals(1u64),
             to_decimals(10),
-            Some(Uint128::zero()),
+            Some(to_decimals(16)),
             to_decimals(0u64),
             vec![],
         )
@@ -248,7 +248,7 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
             Uint128::from(45_180_722_890u128),
             to_decimals(1u64),
             to_decimals(10),
-            Some(Uint128::zero()),
+            Some(to_decimals(16)),
             to_decimals(0u64),
             vec![],
         )
@@ -368,8 +368,8 @@ fn test_partially_liquidate_short_position() {
             Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
-            to_decimals(15),
-            Some(Uint128::zero()),
+            to_decimals(6),
+            Some(to_decimals(16)),
             to_decimals(0u64),
             vec![],
         )
@@ -507,8 +507,8 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
             Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
-            to_decimals(15),
-            Some(Uint128::zero()),
+            to_decimals(5),
+            Some(to_decimals(16)),
             to_decimals(0u64),
             vec![],
         )
@@ -528,7 +528,7 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
             Side::Buy,
             Uint128::from(19_672_131_150u128),
             to_decimals(1u64),
-            to_decimals(10),
+            to_decimals(13),
             Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
@@ -670,7 +670,7 @@ fn test_long_position_complete_liquidation() {
             Uint128::from(73_529_411_760u128),
             to_decimals(1u64),
             to_decimals(10),
-            Some(Uint128::zero()),
+            Some(to_decimals(16)),
             to_decimals(0u64),
             vec![],
         )
@@ -804,7 +804,7 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
             Uint128::from(73_529_411_760u128),
             to_decimals(1u64),
             to_decimals(10),
-            Some(Uint128::zero()),
+            Some(to_decimals(16)),
             to_decimals(0u64),
             vec![],
         )
@@ -919,8 +919,8 @@ fn test_short_position_complete_liquidation() {
             Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
-            to_decimals(15),
-            Some(Uint128::zero()),
+            to_decimals(6),
+            Some(to_decimals(16)),
             to_decimals(0u64),
             vec![],
         )
@@ -940,7 +940,7 @@ fn test_short_position_complete_liquidation() {
             Side::Buy,
             Uint128::from(40_336_134_450u128),
             to_decimals(1u64),
-            to_decimals(10),
+            to_decimals(14),
             Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
@@ -1074,7 +1074,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
-            to_decimals(10),
+            to_decimals(15),
             Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
@@ -1096,7 +1096,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             to_decimals(20u64),
             to_decimals(5u64),
             to_decimals(10),
-            Some(Uint128::zero()),
+            Some(to_decimals(17)),
             to_decimals(0u64),
             vec![],
         )
@@ -1411,6 +1411,8 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
         Side::Buy,
         to_decimals(20u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(Uint128::zero()),
         1u64,
     );
 
@@ -1422,6 +1424,8 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
         Side::Buy,
         to_decimals(20u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(Uint128::zero()),
         1u64,
     );
 
@@ -1431,6 +1435,8 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
         Side::Sell,
         to_decimals(20u64),
         to_decimals(5u64),
+        to_decimals(9u64),
+        Some(to_decimals(20u64)),
         1u64,
     );
 
@@ -1571,6 +1577,8 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         Side::Buy,
         to_decimals(4u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(to_decimals(0u64)),
         5u64,
     );
 
@@ -1581,6 +1589,8 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         Side::Buy,
         to_decimals(2u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(to_decimals(0u64)),
         5u64,
     );
 
@@ -1591,6 +1601,8 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         Side::Buy,
         to_decimals(2u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(to_decimals(0u64)),
         5u64,
     );
 
@@ -1601,6 +1613,8 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         Side::Sell,
         to_decimals(4u64),
         to_decimals(5u64),
+        to_decimals(9u64),
+        Some(to_decimals(17u64)),
         5u64,
     );
 
@@ -1836,6 +1850,8 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         Side::Buy,
         to_decimals(20u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(to_decimals(0u64)),
         1u64,
     );
 
@@ -1846,6 +1862,8 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         Side::Buy,
         to_decimals(10u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(to_decimals(0u64)),
         1u64,
     );
 
@@ -1856,6 +1874,8 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         Side::Buy,
         to_decimals(10u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(to_decimals(0u64)),
         1u64,
     );
 
@@ -1865,8 +1885,10 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
     env.open_small_position(
         env.david.clone(),
         Side::Buy,
-        to_decimals(2u64), // 2
+        to_decimals(2u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(to_decimals(0u64)),
         1u64,
     );
 
@@ -1876,6 +1898,8 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         Side::Sell,
         to_decimals(20u64),
         to_decimals(5u64),
+        to_decimals(8u64),
+        Some(to_decimals(20u64)),
         1u64,
     );
 
@@ -2040,6 +2064,8 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         Side::Buy,
         to_decimals(20u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(to_decimals(0u64)),
         1u64,
     );
 
@@ -2050,6 +2076,8 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         Side::Buy,
         to_decimals(10u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(to_decimals(0u64)),
         1u64,
     );
 
@@ -2060,6 +2088,8 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         Side::Buy,
         to_decimals(10u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(to_decimals(0u64)),
         1u64,
     );
 
@@ -2071,6 +2101,8 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         Side::Buy,
         to_decimals(10u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(to_decimals(0u64)),
         1u64,
     );
 
@@ -2080,6 +2112,8 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         Side::Sell,
         to_decimals(20u64),
         to_decimals(5u64),
+        to_decimals(11u64),
+        Some(to_decimals(20u64)),
         1u64,
     );
 
@@ -2212,6 +2246,8 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
         Side::Buy,
         to_decimals(20u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(to_decimals(0u64)),
         1u64,
     );
 
@@ -2223,6 +2259,8 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
         Side::Buy,
         to_decimals(20u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(to_decimals(0u64)),
         1u64,
     );
 
@@ -2232,6 +2270,8 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
         Side::Sell,
         to_decimals(20u64),
         to_decimals(5u64),
+        to_decimals(7u64),
+        Some(to_decimals(20u64)),
         1u64,
     );
 
@@ -2341,6 +2381,8 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
         Side::Buy,
         to_decimals(20u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(to_decimals(0u64)),
         1u64,
     );
 
@@ -2352,6 +2394,8 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
         Side::Buy,
         to_decimals(20u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(to_decimals(0u64)),
         1u64,
     );
 
@@ -2361,6 +2405,8 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
         Side::Sell,
         to_decimals(50u64),
         to_decimals(5u64),
+        to_decimals(7u64),
+        Some(to_decimals(20u64)),
         1u64,
     );
 
@@ -2377,8 +2423,8 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
             Side::Sell,
             to_decimals(44u64),
             to_decimals(1u64),
-            to_decimals(10),
-            Some(Uint128::zero()),
+            to_decimals(7),
+            Some(to_decimals(11)),
             to_decimals(0u64),
             vec![],
         )
@@ -2530,6 +2576,8 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         Side::Buy,
         to_decimals(10u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(to_decimals(0u64)),
         2u64,
     );
 
@@ -2540,6 +2588,8 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         Side::Buy,
         to_decimals(5u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(to_decimals(0u64)),
         2u64,
     );
 
@@ -2551,6 +2601,8 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         Side::Buy,
         to_decimals(5u64),
         to_decimals(5u64),
+        to_decimals(17u64),
+        Some(to_decimals(0u64)),
         2u64,
     );
 
@@ -2560,6 +2612,8 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         Side::Sell,
         to_decimals(10u64),
         to_decimals(5u64),
+        to_decimals(7u64),
+        Some(to_decimals(20u64)),
         2u64,
     );
 
