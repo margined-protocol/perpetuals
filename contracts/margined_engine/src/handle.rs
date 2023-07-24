@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    Addr, DepsMut, Env, MessageInfo, Response, StdError, StdResult, SubMsg, Uint128, QuerierWrapper,
+    Addr, DepsMut, Env, MessageInfo, Response, StdError, StdResult, SubMsg, Uint128, QuerierWrapper, Attribute,
 };
 use margined_utils::contracts::helpers::VammController;
 
@@ -7,7 +7,7 @@ use crate::{
     contract::{
         CLOSE_POSITION_REPLY_ID, INCREASE_POSITION_REPLY_ID,
         LIQUIDATION_REPLY_ID, PARTIAL_CLOSE_POSITION_REPLY_ID, PARTIAL_LIQUIDATION_REPLY_ID,
-        PAY_FUNDING_REPLY_ID, TAKE_PROFIT_REPLY_ID, STOP_LOSS_REPLY_ID,
+        PAY_FUNDING_REPLY_ID,
     },
     messages::{execute_transfer_from, withdraw},
     query::{query_free_collateral, query_margin_ratio},
@@ -395,6 +395,7 @@ pub fn trigger_tp_sl(
     let spot_price = get_spot_price(&deps.querier, &vamm)?;
     let stop_loss = position.stop_loss.unwrap_or_default();
     let mut msgs: Vec<SubMsg> = vec![];
+    let mut attribute_msgs: Vec<Attribute> = vec![];
 
     // if spot_price is ~ take_profit or stop_loss, close position
     if position.side == Side::Buy {
@@ -402,31 +403,43 @@ pub fn trigger_tp_sl(
             position.take_profit.checked_mul(5u128.into())?.checked_div(1000u128.into())? 
             >= position.take_profit.checked_sub(spot_price)? ||
             spot_price > position.take_profit {
-            msgs.push(internal_close_position(deps, &position, quote_asset_limit, TAKE_PROFIT_REPLY_ID)?);
+            msgs.push(internal_close_position(deps, &position, quote_asset_limit, CLOSE_POSITION_REPLY_ID)?);
+            attribute_msgs.push(
+                Attribute { key: "action".to_string(), value: "TRIGGER_TAKE_PROFIT".to_string() },
+            );
         } else if stop_loss > Uint128::zero() && 
             spot_price >= stop_loss && spot_price.checked_sub(stop_loss)? 
             <= stop_loss.checked_mul(5u128.into())?.checked_div(1000u128.into())? ||
             spot_price < position.take_profit {
-            msgs.push(internal_close_position(deps, &position, quote_asset_limit, STOP_LOSS_REPLY_ID)?);
+            msgs.push(internal_close_position(deps, &position, quote_asset_limit, CLOSE_POSITION_REPLY_ID)?);
+            attribute_msgs.push(
+                Attribute { key: "action".to_string(), value: "TRIGGER_STOP_LOSS".to_string() }
+            );
         };
     } else if position.side == Side::Sell {
         if spot_price >= position.take_profit && 
             position.take_profit.checked_mul(5u128.into())?.checked_div(1000u128.into())? 
             >= spot_price.checked_sub(position.take_profit)? ||
             spot_price < position.take_profit {
-            msgs.push(internal_close_position(deps, &position, quote_asset_limit, TAKE_PROFIT_REPLY_ID)?);
+            msgs.push(internal_close_position(deps, &position, quote_asset_limit, CLOSE_POSITION_REPLY_ID)?);
+            attribute_msgs.push(
+                Attribute { key: "action".to_string(), value: "TRIGGER_TAKE_PROFIT".to_string() }
+            );
         } else if stop_loss > Uint128::zero() && 
             spot_price <= stop_loss && stop_loss.checked_sub(spot_price)? 
             <= stop_loss.checked_mul(5u128.into())?.checked_div(1000u128.into())? ||
             spot_price > position.take_profit {
-            msgs.push(internal_close_position(deps, &position, quote_asset_limit, STOP_LOSS_REPLY_ID)?);
+            msgs.push(internal_close_position(deps, &position, quote_asset_limit, CLOSE_POSITION_REPLY_ID)?);
+            attribute_msgs.push(
+                Attribute { key: "action".to_string(), value: "TRIGGER_STOP_LOSS".to_string() }
+            );
         };
     }
+    attribute_msgs.push(
+        Attribute { key: "vamm".to_string(), value: vamm.to_string() },
+    );
 
-    Ok(Response::new().add_submessages(msgs).add_attributes(vec![
-        ("action", "tp_sl"),
-        ("vamm", vamm.as_ref()),
-    ]))
+    Ok(Response::new().add_submessages(msgs).add_attributes(attribute_msgs))
 }
 
 pub fn liquidate(

@@ -50,8 +50,7 @@ pub const PARTIAL_CLOSE_POSITION_REPLY_ID: u64 = 3;
 pub const LIQUIDATION_REPLY_ID: u64 = 4;
 pub const PARTIAL_LIQUIDATION_REPLY_ID: u64 = 5;
 pub const PAY_FUNDING_REPLY_ID: u64 = 6;
-pub const TAKE_PROFIT_REPLY_ID: u64 = 7;
-pub const STOP_LOSS_REPLY_ID: u64 = 8;
+
 pub const TRANSFER_FAILURE_REPLY_ID: u64 = 9;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -281,16 +280,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
                 let response = pay_funding_reply(deps, env, premium_fraction, sender)?;
                 Ok(response)
             }
-            TAKE_PROFIT_REPLY_ID => {
-                let (input, output, position_id) = parse_swap(response)?;
-                let response = close_position_reply(deps, env, input, output, position_id)?;
-                Ok(response)
-            }
-            STOP_LOSS_REPLY_ID => {
-                let (input, output, position_id) = parse_swap(response)?;
-                let response = close_position_reply(deps, env, input, output, position_id)?;
-                Ok(response)
-            }
             _ => Err(StdError::generic_err(format!(
                 "reply (id {:?}) invalid",
                 msg.id
@@ -323,14 +312,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
             ))),
             PAY_FUNDING_REPLY_ID => Err(StdError::generic_err(format!(
                 "funding payment failure - reply (id {:?})",
-                msg.id
-            ))),
-            TAKE_PROFIT_REPLY_ID => Err(StdError::generic_err(format!(
-                "take profit failure - reply (id {:?})",
-                msg.id
-            ))),
-            STOP_LOSS_REPLY_ID => Err(StdError::generic_err(format!(
-                "stop loss failure - reply (id {:?})",
                 msg.id
             ))),
             _ => Err(StdError::generic_err(format!(

@@ -146,7 +146,8 @@ fn test_trigger_tp_sl() {
             to_decimals(0u64),
         )
         .unwrap();
-    router.execute(alice.clone(), msg).unwrap();
+    let ret = router.execute(alice.clone(), msg).unwrap();
+    println!("[LOG] trigger event: {:?}", ret);
     
     let price = vamm.spot_price(&router.wrap()).unwrap();
     println!("[LOG] [3] spot price: {:?}", price);
