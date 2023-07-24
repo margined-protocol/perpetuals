@@ -13,7 +13,7 @@ use crate::{
     query::query_twap_price,
     state::{read_config, read_state, store_config, store_state, Config},
     utils::{
-        add_reserve_snapshot, check_is_over_block_fluctuation_limit, modulo, require_margin_engine,
+        add_reserve_snapshot, check_is_over_block_fluctuation_limit, require_margin_engine,
         require_open, TwapCalcOption,
     },
 };
@@ -347,17 +347,15 @@ pub fn get_input_price_with_reserves(
         Direction::RemoveFromAmm => quote_asset_reserve.checked_sub(quote_asset_amount)?,
     };
 
-    let base_asset_after = invariant_k
-        .checked_mul(config.decimals)?
-        .checked_div(quote_asset_after)?;
+    let invariant_k_decimals = invariant_k.checked_mul(config.decimals)?;
 
-    let mut base_asset_bought = if base_asset_after > base_asset_reserve {
-        base_asset_after - base_asset_reserve
-    } else {
-        base_asset_reserve - base_asset_after
-    };
+    let base_asset_after = invariant_k_decimals.checked_div(quote_asset_after)?;
 
-    let remainder = modulo(invariant_k, quote_asset_after, config.decimals)?;
+    let mut base_asset_bought = base_asset_after.abs_diff(base_asset_reserve);
+
+    // follows the design of the perpetual protocol decimals
+    // https://github.com/perpetual-protocol/perpetual-protocol/blob/release/v2.1.x/src/utils/Decimal.sol
+    let remainder = invariant_k_decimals.checked_rem(quote_asset_after)?;
     if remainder != Uint128::zero() {
         if *direction == Direction::AddToAmm {
             base_asset_bought = base_asset_bought.checked_sub(1u128.into())?;
@@ -390,17 +388,14 @@ pub fn get_output_price_with_reserves(
         Direction::RemoveFromAmm => base_asset_reserve.checked_sub(base_asset_amount)?,
     };
 
-    let quote_asset_after = invariant_k
-        .checked_mul(config.decimals)?
-        .checked_div(base_asset_after)?;
+    let invariant_k_decimals = invariant_k.checked_mul(config.decimals)?;
 
-    let mut quote_asset_sold = if quote_asset_after > quote_asset_reserve {
-        quote_asset_after - quote_asset_reserve
-    } else {
-        quote_asset_reserve - quote_asset_after
-    };
+    let quote_asset_after = invariant_k_decimals.checked_div(base_asset_after)?;
 
-    let remainder = modulo(invariant_k, base_asset_after, config.decimals)?;
+    let mut quote_asset_sold = quote_asset_after.abs_diff(quote_asset_reserve);
+    // follows the design of the perpetual protocol decimals
+    // https://github.com/perpetual-protocol/perpetual-protocol/blob/release/v2.1.x/src/utils/Decimal.sol
+    let remainder = invariant_k_decimals.checked_rem(base_asset_after)?;
     if remainder != Uint128::zero() {
         if *direction == Direction::AddToAmm {
             quote_asset_sold = quote_asset_sold.checked_sub(1u128.into())?;
