@@ -62,7 +62,7 @@ pub fn remove_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<
     Ok(Response::default())
 }
 
-pub fn shutdown_all_vamm(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<Response> {
+pub fn shutdown_all_vamm(deps: DepsMut, _env: Env, info: MessageInfo) -> StdResult<Response> {
     // check permission
     if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
         return Err(StdError::generic_err("unauthorized"));

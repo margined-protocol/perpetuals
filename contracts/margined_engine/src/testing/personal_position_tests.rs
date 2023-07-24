@@ -45,7 +45,7 @@ fn test_return_zero_margin_when_alices_position_is_underwater() {
             Side::Sell,
             to_decimals(60u64),
             to_decimals(10u64),
-            Uint128::zero(),
+            to_decimals(10),
             Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],

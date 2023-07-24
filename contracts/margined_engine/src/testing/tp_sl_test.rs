@@ -48,7 +48,7 @@ fn test_change_tp_sl() {
             Side::Buy,
             to_decimals(60u64),
             to_decimals(10u64),
-            Uint128::zero(),
+            to_decimals(10),
             Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
@@ -60,7 +60,7 @@ fn test_change_tp_sl() {
     let position = engine
         .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.take_profit, to_decimals(0));
+    assert_eq!(position.take_profit, to_decimals(10));
     assert_eq!(position.stop_loss, Some(to_decimals(0)));
 
     let msg = engine
