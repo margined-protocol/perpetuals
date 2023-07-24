@@ -126,6 +126,7 @@ pub fn open_position(
     require_not_restriction_mode(deps.storage, &vamm, env.block.height)?;
     require_non_zero_input(margin_amount)?;
     require_non_zero_input(leverage)?;
+    require_non_zero_input(take_profit)?;
 
     if leverage < config.decimals {
         return Err(StdError::generic_err("Leverage must be greater than 1"));
@@ -236,6 +237,7 @@ pub fn update_tp_sl(
 
     match take_profit {
         Some(tp) => {
+            require_non_zero_input(tp)?;
             position.take_profit = tp;
         }
         None => {},
