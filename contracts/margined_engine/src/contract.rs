@@ -10,6 +10,9 @@ use margined_common::validate::{
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 use crate::error::ContractError;
+use crate::handle::{update_tp_sl, trigger_tp_sl};
+use crate::query::{query_last_position_id, query_positions};
+use crate::state::init_last_position_id;
 use crate::{
     handle::{
         close_position, deposit_margin, liquidate, open_position, pay_funding, update_config,
@@ -23,7 +26,7 @@ use crate::{
     },
     reply::{
         close_position_reply, liquidate_reply, partial_close_position_reply,
-        partial_liquidation_reply, pay_funding_reply, reverse_position_reply,
+        partial_liquidation_reply, pay_funding_reply,
         update_position_reply,
     },
     state::{store_config, store_state, Config, State},
@@ -42,13 +45,11 @@ pub const PAUSER: Admin = Admin::new("pauser");
 pub const WHITELIST: Hooks = Hooks::new("whitelist");
 
 pub const INCREASE_POSITION_REPLY_ID: u64 = 1;
-pub const DECREASE_POSITION_REPLY_ID: u64 = 2;
-pub const REVERSE_POSITION_REPLY_ID: u64 = 3;
-pub const CLOSE_POSITION_REPLY_ID: u64 = 4;
-pub const PARTIAL_CLOSE_POSITION_REPLY_ID: u64 = 5;
-pub const LIQUIDATION_REPLY_ID: u64 = 6;
-pub const PARTIAL_LIQUIDATION_REPLY_ID: u64 = 7;
-pub const PAY_FUNDING_REPLY_ID: u64 = 8;
+pub const CLOSE_POSITION_REPLY_ID: u64 = 2;
+pub const PARTIAL_CLOSE_POSITION_REPLY_ID: u64 = 3;
+pub const LIQUIDATION_REPLY_ID: u64 = 4;
+pub const PARTIAL_LIQUIDATION_REPLY_ID: u64 = 5;
+pub const PAY_FUNDING_REPLY_ID: u64 = 6;
 
 pub const TRANSFER_FAILURE_REPLY_ID: u64 = 9;
 
@@ -83,6 +84,7 @@ pub fn instantiate(
     validate_ratio(msg.initial_margin_ratio, decimals)?;
     validate_ratio(msg.maintenance_margin_ratio, decimals)?;
     validate_ratio(msg.liquidation_fee, decimals)?;
+    validate_ratio(msg.tp_sl_spread, decimals)?;
 
     // validate that the maintenance margin is not greater than the initial
     validate_margin_ratios(msg.initial_margin_ratio, msg.maintenance_margin_ratio)?;
@@ -97,8 +99,12 @@ pub fn instantiate(
         initial_margin_ratio: msg.initial_margin_ratio,
         maintenance_margin_ratio: msg.maintenance_margin_ratio,
         partial_liquidation_ratio: Uint128::zero(), // set as zero by default
+        tp_sl_spread: msg.tp_sl_spread,
         liquidation_fee: msg.liquidation_fee,
     };
+
+    // Initialize last position id
+    init_last_position_id(deps.storage)?;
 
     store_config(deps.storage, &config)?;
 
@@ -127,6 +133,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             initial_margin_ratio,
             maintenance_margin_ratio,
             partial_liquidation_ratio,
+            tp_sl_spread,
             liquidation_fee,
         } => update_config(
             deps,
@@ -137,6 +144,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             initial_margin_ratio,
             maintenance_margin_ratio,
             partial_liquidation_ratio,
+            tp_sl_spread,
             liquidation_fee,
         ),
         ExecuteMsg::UpdatePauser { pauser } => update_pauser(deps, info, pauser),
@@ -147,6 +155,8 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             side,
             margin_amount,
             leverage,
+            take_profit,
+            stop_loss,
             base_asset_limit,
         } => open_position(
             deps,
@@ -156,22 +166,43 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             side,
             margin_amount,
             leverage,
+            take_profit,
+            stop_loss,
             base_asset_limit,
         ),
+        ExecuteMsg::UpdateTpSl {
+            vamm,
+            position_id,
+            take_profit,
+            stop_loss
+        } => update_tp_sl(deps, env, info, vamm, position_id, take_profit, stop_loss),
         ExecuteMsg::ClosePosition {
             vamm,
+            position_id,
             quote_asset_limit,
-        } => close_position(deps, env, info, vamm, quote_asset_limit),
+        } => close_position(deps, env, info, vamm, position_id, quote_asset_limit),
         ExecuteMsg::Liquidate {
             vamm,
             trader,
+            position_id,
             quote_asset_limit,
-        } => liquidate(deps, env, info, vamm, trader, quote_asset_limit),
+        } => liquidate(deps, env, info, vamm, position_id, trader, quote_asset_limit),
+        ExecuteMsg::TriggerTpSl {
+            vamm,
+            position_id,
+            quote_asset_limit
+        } => trigger_tp_sl(deps, env, info, vamm, position_id, quote_asset_limit),
         ExecuteMsg::PayFunding { vamm } => pay_funding(deps, env, info, vamm),
-        ExecuteMsg::DepositMargin { vamm, amount } => deposit_margin(deps, env, info, vamm, amount),
-        ExecuteMsg::WithdrawMargin { vamm, amount } => {
-            withdraw_margin(deps, env, info, vamm, amount)
-        }
+        ExecuteMsg::DepositMargin {
+            vamm,
+            position_id,
+            amount
+        } => deposit_margin(deps, env, info, vamm, position_id, amount),
+        ExecuteMsg::WithdrawMargin {
+            vamm,
+            position_id,
+            amount
+        } => withdraw_margin(deps, env, info, vamm, position_id, amount),
         ExecuteMsg::SetPause { pause } => set_pause(deps, env, info, pause),
     }
 }
@@ -184,33 +215,47 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetPauser {} => to_binary(&query_pauser(deps)?),
         QueryMsg::IsWhitelisted { address } => to_binary(&WHITELIST.query_hook(deps, address)?),
         QueryMsg::GetWhitelist {} => to_binary(&WHITELIST.query_hooks(deps)?),
-        QueryMsg::AllPositions { trader } => to_binary(&query_all_positions(deps, trader)?),
-        QueryMsg::Position { vamm, trader } => to_binary(&query_position(deps, vamm, trader)?),
-        QueryMsg::MarginRatio { vamm, trader } => {
-            to_binary(&query_margin_ratio(deps, vamm, trader)?)
+        QueryMsg::AllPositions {
+            trader,
+            start_after,
+            limit,
+            order_by,
+        } => to_binary(&query_all_positions(deps, trader, start_after, limit, order_by)?),
+        QueryMsg::Positions {
+            vamm,
+            filter,
+            side,
+            start_after,
+            limit,
+            order_by,
+        } => to_binary(&query_positions(deps, vamm, side, filter, start_after, limit, order_by)?),
+        QueryMsg::Position { vamm, position_id } => to_binary(&query_position(deps, vamm, position_id)?),
+        QueryMsg::MarginRatio { vamm, position_id } => {
+            to_binary(&query_margin_ratio(deps, vamm, position_id)?)
         }
         QueryMsg::CumulativePremiumFraction { vamm } => {
             to_binary(&query_cumulative_premium_fraction(deps, vamm)?)
         }
         QueryMsg::UnrealizedPnl {
             vamm,
-            trader,
+            position_id,
             calc_option,
         } => to_binary(&query_position_notional_unrealized_pnl(
             deps,
             vamm,
-            trader,
+            position_id,
             calc_option,
         )?),
-        QueryMsg::FreeCollateral { vamm, trader } => {
-            to_binary(&query_free_collateral(deps, vamm, trader)?)
+        QueryMsg::FreeCollateral { vamm, position_id } => {
+            to_binary(&query_free_collateral(deps, vamm, position_id)?)
         }
-        QueryMsg::BalanceWithFundingPayment { trader } => {
-            to_binary(&query_trader_balance_with_funding_payment(deps, trader)?)
+        QueryMsg::BalanceWithFundingPayment { position_id} => {
+            to_binary(&query_trader_balance_with_funding_payment(deps, position_id)?)
         }
-        QueryMsg::PositionWithFundingPayment { vamm, trader } => to_binary(
-            &query_trader_position_with_funding_payment(deps, vamm, trader)?,
+        QueryMsg::PositionWithFundingPayment { vamm, position_id } => to_binary(
+            &query_trader_position_with_funding_payment(deps, vamm, position_id)?,
         ),
+        QueryMsg::LastPositionId {} => to_binary(&query_last_position_id(deps)?),
     }
 }
 
@@ -219,40 +264,29 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
     match &msg.result {
         SubMsgResult::Ok(response) => match msg.id {
             INCREASE_POSITION_REPLY_ID => {
-                let (input, output) = parse_swap(response)?;
+                let (input, output, position_id) = parse_swap(response)?;
                 let response =
-                    update_position_reply(deps, env, input, output, INCREASE_POSITION_REPLY_ID)?;
-                Ok(response)
-            }
-            DECREASE_POSITION_REPLY_ID => {
-                let (input, output) = parse_swap(response)?;
-                let response =
-                    update_position_reply(deps, env, input, output, DECREASE_POSITION_REPLY_ID)?;
-                Ok(response)
-            }
-            REVERSE_POSITION_REPLY_ID => {
-                let (input, output) = parse_swap(response)?;
-                let response = reverse_position_reply(deps, env, input, output)?;
+                    update_position_reply(deps, env, input, output, position_id)?;
                 Ok(response)
             }
             CLOSE_POSITION_REPLY_ID => {
-                let (input, output) = parse_swap(response)?;
-                let response = close_position_reply(deps, env, input, output)?;
+                let (input, output, position_id) = parse_swap(response)?;
+                let response = close_position_reply(deps, env, input, output, position_id)?;
                 Ok(response)
             }
             PARTIAL_CLOSE_POSITION_REPLY_ID => {
-                let (input, output) = parse_swap(response)?;
-                let response = partial_close_position_reply(deps, env, input, output)?;
+                let (input, output, position_id) = parse_swap(response)?;
+                let response = partial_close_position_reply(deps, env, input, output, position_id)?;
                 Ok(response)
             }
             LIQUIDATION_REPLY_ID => {
-                let (input, output) = parse_swap(response)?;
-                let response = liquidate_reply(deps, env, input, output)?;
+                let (input, output, position_id) = parse_swap(response)?;
+                let response = liquidate_reply(deps, env, input, output, position_id)?;
                 Ok(response)
             }
             PARTIAL_LIQUIDATION_REPLY_ID => {
-                let (input, output) = parse_swap(response)?;
-                let response = partial_liquidation_reply(deps, env, input, output)?;
+                let (input, output, position_id) = parse_swap(response)?;
+                let response = partial_liquidation_reply(deps, env, input, output, position_id)?;
                 Ok(response)
             }
             PAY_FUNDING_REPLY_ID => {
@@ -272,14 +306,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
             ))),
             INCREASE_POSITION_REPLY_ID => Err(StdError::generic_err(format!(
                 "increase position failure - reply (id {:?})",
-                msg.id
-            ))),
-            DECREASE_POSITION_REPLY_ID => Err(StdError::generic_err(format!(
-                "decrease position failure - reply (id {:?})",
-                msg.id
-            ))),
-            REVERSE_POSITION_REPLY_ID => Err(StdError::generic_err(format!(
-                "reverse position failure - reply (id {:?})",
                 msg.id
             ))),
             CLOSE_POSITION_REPLY_ID => Err(StdError::generic_err(format!(

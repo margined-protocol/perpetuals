@@ -26,6 +26,8 @@ fn test_paused_by_admin() {
             Side::Buy,
             to_decimals(1u64),
             to_decimals(1u64),
+            to_decimals(11),
+            Some(to_decimals(8)),
             to_decimals(0u64),
             vec![],
         )
@@ -37,7 +39,7 @@ fn test_paused_by_admin() {
     );
 
     let msg = engine
-        .deposit_margin(vamm.addr().to_string(), to_decimals(1u64), vec![])
+        .deposit_margin(vamm.addr().to_string(), 1, to_decimals(1u64), vec![])
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
@@ -46,7 +48,7 @@ fn test_paused_by_admin() {
     );
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), to_decimals(1u64))
+        .withdraw_margin(vamm.addr().to_string(), 1, to_decimals(1u64))
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
@@ -55,12 +57,12 @@ fn test_paused_by_admin() {
     );
 
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         err.source().unwrap().to_string(),
-        "Generic error: Margin engine is paused".to_string()
+        "margined_perp::margined_engine::Position not found".to_string()
     );
 }
 
@@ -104,6 +106,8 @@ fn test_pause_then_unpause_by_admin() {
             Side::Buy,
             to_decimals(1u64),
             to_decimals(1u64),
+            to_decimals(11),
+            Some(to_decimals(8)),
             to_decimals(0u64),
             vec![],
         )
@@ -111,17 +115,17 @@ fn test_pause_then_unpause_by_admin() {
     router.execute(alice.clone(), msg).unwrap();
 
     let msg = engine
-        .deposit_margin(vamm.addr().to_string(), to_decimals(1u64), vec![])
+        .deposit_margin(vamm.addr().to_string(), 1, to_decimals(1u64), vec![])
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), to_decimals(1u64))
+        .withdraw_margin(vamm.addr().to_string(), 1, to_decimals(1u64))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 }

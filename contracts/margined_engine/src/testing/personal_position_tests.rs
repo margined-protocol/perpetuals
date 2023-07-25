@@ -45,6 +45,8 @@ fn test_return_zero_margin_when_alices_position_is_underwater() {
             Side::Sell,
             to_decimals(60u64),
             to_decimals(10u64),
+            to_decimals(3),
+            Some(to_decimals(12)),
             to_decimals(0u64),
             vec![],
         )
@@ -84,7 +86,7 @@ fn test_return_zero_margin_when_alices_position_is_underwater() {
         .get_position_with_funding_payment(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1u64
         )
         .unwrap();
     assert_eq!(alice_position.margin, to_decimals(0u64),);

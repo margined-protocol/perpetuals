@@ -54,11 +54,10 @@ pub fn execute_transfer_to_insurance_fund(
         .eligible_collateral
         .query_balance(&deps.querier, env.contract.address)?;
 
-    let amount_to_send = if token_balance < amount {
-        token_balance
-    } else {
-        amount
-    };
+    let amount_to_send = Uint128::min(
+        token_balance,
+        amount,
+    );
 
     match config.insurance_fund {
         Some(insurance_fund) => execute_transfer(deps.storage, &insurance_fund, amount_to_send),

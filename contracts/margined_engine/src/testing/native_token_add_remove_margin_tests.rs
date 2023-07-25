@@ -4,7 +4,7 @@ use margined_common::{
     integer::Integer,
 };
 use margined_perp::margined_engine::Side;
-use margined_utils::{cw_multi_test::Executor, testing::NativeTokenScenario};
+use margined_utils::{cw_multi_test::Executor, testing::{NativeTokenScenario, to_decimals}};
 
 use crate::testing::new_native_token_scenario;
 
@@ -26,6 +26,8 @@ fn test_add_margin() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
+            to_decimals(10),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(60_000_000u128, "orai")],
         )
@@ -42,6 +44,7 @@ fn test_add_margin() {
     let msg = engine
         .deposit_margin(
             vamm.addr().to_string(),
+            1,
             Uint128::from(80_000_000u64),
             vec![Coin::new(80_000_000u128, "orai")],
         )
@@ -59,13 +62,13 @@ fn test_add_margin() {
         .get_position_with_funding_payment(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
         )
         .unwrap();
     assert_eq!(alice_position.margin, Uint128::from(140_000_000u64));
     assert_eq!(
         engine
-            .get_balance_with_funding_payment(&router.wrap(), alice.to_string())
+            .get_balance_with_funding_payment(&router.wrap(), 1)
             .unwrap(),
         Uint128::from(140_000_000u64),
     );
@@ -99,6 +102,7 @@ fn test_force_error_add_incorrect_margin() {
     let msg = engine
         .deposit_margin(
             vamm.addr().to_string(),
+            1,
             Uint128::from(85_000_000u64),
             vec![Coin::new(85_000_000u128, "ucosmos")],
         )
@@ -125,6 +129,7 @@ fn test_add_margin_no_open_position() {
     let msg = engine
         .deposit_margin(
             vamm.addr().to_string(),
+            1,
             Uint128::from(80_000_000u64),
             vec![Coin::new(80_000_000u128, "orai")],
         )
@@ -133,7 +138,7 @@ fn test_add_margin_no_open_position() {
 
     assert_eq!(
         err.source().unwrap().to_string(),
-        "Generic error: No position found"
+        "margined_perp::margined_engine::Position not found"
     );
 }
 
@@ -153,6 +158,8 @@ fn test_remove_margin() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(60_000_000u128, "orai")],
         )
@@ -167,7 +174,7 @@ fn test_remove_margin() {
     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(20_000_000u64))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(20_000_000u64))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
@@ -182,13 +189,13 @@ fn test_remove_margin() {
         .get_position_with_funding_payment(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1
         )
         .unwrap();
     assert_eq!(alice_position.margin, Uint128::from(40_000_000u64));
     assert_eq!(
         engine
-            .get_balance_with_funding_payment(&router.wrap(), alice.to_string())
+            .get_balance_with_funding_payment(&router.wrap(), 1)
             .unwrap(),
         Uint128::from(40_000_000u64),
     );
@@ -212,6 +219,8 @@ fn test_remove_margin_after_paying_funding() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(0_000_000u64),
             vec![Coin::new(60_000_000u128, "orai")],
         )
@@ -244,7 +253,7 @@ fn test_remove_margin_after_paying_funding() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(20_000_000u64))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(20_000_000u64))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
@@ -259,13 +268,13 @@ fn test_remove_margin_after_paying_funding() {
         .get_position_with_funding_payment(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1
         )
         .unwrap();
     assert_eq!(alice_position.margin, Uint128::from(36_250_000u128),);
     assert_eq!(
         engine
-            .get_balance_with_funding_payment(&router.wrap(), alice.to_string())
+            .get_balance_with_funding_payment(&router.wrap(), 1)
             .unwrap(),
         Uint128::from(36_250_000u128),
     );
@@ -287,6 +296,8 @@ fn test_remove_margin_insufficient_margin() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(0_000_000u64),
             vec![Coin::new(60_000_000u128, "orai")],
         )
@@ -301,7 +312,7 @@ fn test_remove_margin_insufficient_margin() {
     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(61_000_000u64))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(61_000_000u64))
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
@@ -326,6 +337,8 @@ fn test_remove_margin_incorrect_ratio_four_percent() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(0_000_000u64),
             vec![Coin::new(60_000_000u128, "orai")],
         )
@@ -340,7 +353,7 @@ fn test_remove_margin_incorrect_ratio_four_percent() {
     assert_eq!(engine_balance, Uint128::from(60_000_000u64));
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(36_000_000u64))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(36_000_000u64))
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
@@ -367,6 +380,8 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price(
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(0_000_000u64),
             vec![Coin::new(60_000_000u128, "orai")],
         )
@@ -380,6 +395,8 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price(
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(27_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(0_000_000u64),
             vec![Coin::new(60_000_000u128, "orai")],
         )
@@ -388,7 +405,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price(
     // reserve 1600 : 62.5, price = 25.6
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(45_010_000u128))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(45_010_000u128))
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
@@ -397,12 +414,12 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_spot_price(
     );
 
     let free_collateral = engine
-        .get_free_collateral(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .get_free_collateral(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(free_collateral, Integer::new_positive(45_000_000u128));
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(45_000_000u128))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(45_000_000u128))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 }
@@ -425,6 +442,8 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() 
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(0u64),
             vec![Coin::new(60_000_000u128, "orai")],
         )
@@ -438,6 +457,8 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() 
             Side::Sell,
             Uint128::from(10_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(14_000_000u64),
+            Some(Uint128::from(17_000_000u64)),
             Uint128::from(0u64),
             vec![Coin::new(10_000_000u128, "orai")],
         )
@@ -446,7 +467,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() 
     // reserve 1250 : 80 price = 15.625
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(24_900_000u128))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(24_900_000u128))
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
@@ -455,15 +476,16 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_spot_price() 
     );
 
     let free_collateral = engine
-        .get_free_collateral(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .get_free_collateral(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(free_collateral, Integer::new_positive(24_850_742u128));
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(24_850_742u128))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(24_850_742u128))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 }
+
 #[test]
 fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price() {
     let NativeTokenScenario {
@@ -482,6 +504,8 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(7_000_000u64),
+            Some(Uint128::from(11_000_000u64)),
             Uint128::from(0u64),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -495,6 +519,8 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(4_000_000u64),
+            Some(Uint128::from(9_000_000u64)),
             Uint128::from(0u64),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -510,7 +536,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price
     // min(20, 20 + 21.96) - 78.04 * 0.05 = 16.098
     // can not remove margin > 16.098
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(16_500_000u128))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(16_500_000u128))
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
@@ -519,12 +545,12 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_spot_price
     );
 
     let free_collateral = engine
-        .get_free_collateral(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .get_free_collateral(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(free_collateral, Integer::new_positive(16_097_561u128));
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(16_097_561u128))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(16_097_561u128))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 }
@@ -547,6 +573,8 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_spot_price()
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(7_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::from(0u64),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -559,6 +587,8 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_spot_price()
             Side::Buy,
             Uint128::from(10_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(13_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(0u64),
             vec![Coin::new(10_000_000u128, "orai")],
         )
@@ -567,7 +597,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_spot_price()
     // reserve 800 : 125, price = 6.4
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(2_500_000u128))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(2_500_000u128))
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
@@ -576,12 +606,12 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_spot_price()
     );
 
     let free_collateral = engine
-        .get_free_collateral(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .get_free_collateral(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(free_collateral, Integer::new_positive(2_282_600u128));
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(2_282_600u128))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(2_282_600u128))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 }
@@ -604,6 +634,8 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_twap_price(
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(0u64),
             vec![Coin::new(60_000_000u128, "orai")],
         )
@@ -622,6 +654,8 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_twap_price(
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(27_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(0u64),
             vec![Coin::new(60_000_000u128, "orai")],
         )
@@ -635,7 +669,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_twap_price(
     });
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(45_010_000u128))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(45_010_000u128))
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
@@ -644,12 +678,12 @@ fn test_remove_margin_unrealized_pnl_long_position_with_profit_using_twap_price(
     );
 
     let free_collateral = engine
-        .get_free_collateral(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .get_free_collateral(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(free_collateral, Integer::new_positive(45_000_000u128));
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(45_000_000u128))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(45_000_000u128))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 }
@@ -672,6 +706,8 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() 
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(0u64),
             vec![Coin::new(60_000_000u128, "orai")],
         )
@@ -690,6 +726,8 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() 
             Side::Sell,
             Uint128::from(10_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(14_000_000u64),
+            Some(Uint128::from(17_000_000u64)),
             Uint128::from(0u64),
             vec![Coin::new(10_000_000u128, "orai")],
         )
@@ -703,7 +741,7 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() 
     });
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(34_930_000u128))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(34_930_000u128))
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
@@ -712,15 +750,16 @@ fn test_remove_margin_unrealized_pnl_long_position_with_loss_using_twap_price() 
     );
 
     let free_collateral = engine
-        .get_free_collateral(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .get_free_collateral(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(free_collateral, Integer::new_positive(34_925_370u128));
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(34_925_370u128))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(34_925_370u128))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 }
+
 #[test]
 fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price() {
     let NativeTokenScenario {
@@ -739,6 +778,8 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(7_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::from(0u64),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -757,6 +798,8 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(6_500_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::from(0u64),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -777,7 +820,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price
     // min(20, 20 + 21.96) - 78.04 * 0.05 = 16.098
     // can not remove margin > 16.098
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(15_600_000u128))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(15_600_000u128))
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
@@ -786,12 +829,12 @@ fn test_remove_margin_unrealized_pnl_short_position_with_profit_using_twap_price
     );
 
     let free_collateral = engine
-        .get_free_collateral(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .get_free_collateral(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(free_collateral, Integer::new_positive(15_548_781u128));
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(15_500_000u128))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(15_500_000u128))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 }
@@ -814,6 +857,8 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_twap_price()
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(7_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::from(0u64),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -831,6 +876,8 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_twap_price()
             Side::Buy,
             Uint128::from(10_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(10_000_000u64),
+            Some(Uint128::from(7_000_000u64)),
             Uint128::from(0u64),
             vec![Coin::new(10_000_000u128, "orai")],
         )
@@ -851,7 +898,7 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_twap_price()
     // min(20, 20 + (-6.05)) - 106.05 * 0.05 = 8.6475
     // can not remove margin > 8.6475
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(8_700_000u128))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(8_700_000u128))
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
@@ -860,12 +907,12 @@ fn test_remove_margin_unrealized_pnl_short_position_with_loss_using_twap_price()
     );
 
     let free_collateral = engine
-        .get_free_collateral(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .get_free_collateral(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(free_collateral, Integer::new_positive(8_641_296u128));
 
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(8_600_000u128))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(8_600_000u128))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 }

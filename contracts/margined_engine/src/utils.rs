@@ -35,31 +35,6 @@ pub fn keccak_256(input: &[u8]) -> Vec<u8> {
     hasher.finalize().to_vec()
 }
 
-// reads position from storage but also handles the case where there is no
-// previously stored position, i.e. a new position
-pub fn get_position(
-    storage: &dyn Storage,
-    position_key: &[u8],
-    vamm: &Addr,
-    trader: &Addr,
-    side: &Side,
-    block_height: u64,
-) -> StdResult<Position> {
-    // read the position for the trader from vamm
-    let mut position = read_position(storage, &position_key)?;
-
-    // so if the position returned is None then its new
-    if position.vamm.as_str().is_empty() {
-        // update the default position
-        position.vamm = vamm.clone();
-        position.trader = trader.clone();
-        position.direction = side_to_direction(side);
-        position.block_number = block_height;
-    }
-
-    Ok(position)
-}
-
 // Creates an asset from the eligible collateral and msg sent
 pub fn get_asset(info: MessageInfo, eligible_collateral: AssetInfo) -> Asset {
     match &eligible_collateral {
@@ -162,13 +137,13 @@ pub fn check_base_asset_holding_cap(
 pub fn get_margin_ratio_calc_option(
     deps: Deps,
     vamm: String,
-    trader: String,
+    position_id: u64,
     calc_option: PnlCalcOption,
 ) -> StdResult<Integer> {
     let config = read_config(deps.storage)?;
-    let position_key = keccak_256(&[vamm.as_bytes(), trader.as_bytes()].concat());
+    let position_key = keccak_256(&[vamm.as_bytes()].concat());
     // retrieve the latest position
-    let position = read_position(deps.storage, &position_key)?;
+    let position = read_position(deps.storage, &position_key, position_id)?;
 
     if position.size.is_zero() {
         return Ok(Integer::zero());
@@ -255,6 +230,7 @@ pub fn calc_remain_margin_with_funding_payment(
     // calculate the remaining margin
     let mut remaining_margin: Integer =
         margin_delta - funding_payment + Integer::new_positive(position.margin);
+
     let mut bad_debt = Integer::zero();
 
     if remaining_margin.is_negative() {
@@ -285,17 +261,6 @@ pub fn calc_funding_payment(
     } else {
         Integer::ZERO
     }
-}
-
-// this resets the main variables of a position
-pub fn clear_position(env: Env, mut position: Position) -> StdResult<Position> {
-    position.size = Integer::zero();
-    position.margin = Uint128::zero();
-    position.notional = Uint128::zero();
-    position.last_updated_premium_fraction = Integer::zero();
-    position.block_number = env.block.height;
-
-    Ok(position)
 }
 
 pub fn update_pauser(deps: DepsMut, info: MessageInfo, pauser: String) -> StdResult<Response> {
@@ -408,14 +373,12 @@ pub fn require_insufficient_margin(
 
 pub fn require_not_restriction_mode(
     storage: &dyn Storage,
-    position_key: &[u8],
     vamm: &Addr,
     block_height: u64,
 ) -> StdResult<Response> {
     let vamm_map = read_vamm_map(storage, vamm)?;
-    let position = read_position(storage, &position_key)?;
 
-    if vamm_map.last_restriction_block == block_height && position.block_number == block_height {
+    if vamm_map.last_restriction_block == block_height {
         return Err(StdError::generic_err("Only one action allowed"));
     }
 
@@ -440,7 +403,7 @@ pub fn require_non_zero_input(input: Uint128) -> StdResult<Response> {
     Ok(Response::new())
 }
 
-pub fn parse_swap(response: &SubMsgResponse) -> StdResult<(Uint128, Uint128)> {
+pub fn parse_swap(response: &SubMsgResponse) -> StdResult<(Uint128, Uint128, u64)> {
     // Find swap inputs and output events
     let wasm = read_response("wasm", response)?;
     let swap = read_event("type", wasm)?;
@@ -449,19 +412,21 @@ pub fn parse_swap(response: &SubMsgResponse) -> StdResult<(Uint128, Uint128)> {
         "input" => {
             let input_str = read_event("quote_asset_amount", wasm)?;
             let output_str = read_event("base_asset_amount", wasm)?;
-
+            let position_id = read_event("position_id", wasm)?;
             Ok((
                 Uint128::from_str(input_str)?,
                 Uint128::from_str(output_str)?,
+                u64::from_str(position_id).unwrap(),
             ))
         }
         "output" => {
             let input_str = read_event("base_asset_amount", wasm)?;
             let output_str = read_event("quote_asset_amount", wasm)?;
-
+            let position_id = read_event("position_id", wasm)?;
             Ok((
                 Uint128::from_str(input_str)?,
                 Uint128::from_str(output_str)?,
+                u64::from_str(position_id).unwrap(),
             ))
         }
         _ => {
@@ -503,4 +468,20 @@ pub fn position_to_side(size: Integer) -> Side {
     } else {
         Side::Buy
     }
+}
+
+// upper bound key by 1, for Order::Ascending
+pub fn calc_range_start(start_after: Option<Vec<u8>>) -> Option<Vec<u8>> {
+    start_after.map(|mut input| {
+        // zero out all trailing 255, increment first that is not such
+        for i in (0..input.len()).rev() {
+            if input[i] == 255 {
+                input[i] = 0;
+            } else {
+                input[i] += 1;
+                break;
+            }
+        }
+        input
+    })
 }

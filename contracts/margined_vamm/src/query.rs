@@ -174,11 +174,12 @@ pub fn query_calc_fee(deps: Deps, quote_asset_amount: Uint128) -> StdResult<Calc
 
 /// Returns bool to show is spread limit has been exceeded
 pub fn query_is_over_spread_limit(deps: Deps) -> StdResult<bool> {
-    let config = read_config(deps.storage)?;
+    let config: ConfigResponse = read_config(deps.storage)?;
     let pricefeed_controller = PricefeedController(config.pricefeed);
 
     // get price from the oracle
     let oracle_price = pricefeed_controller.get_price(&deps.querier, config.base_asset)?;
+
     if oracle_price.is_zero() {
         return Err(StdError::generic_err("underlying price is 0"));
     }

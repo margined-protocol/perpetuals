@@ -45,6 +45,8 @@ fn test_increase_with_increase_position() {
             Side::Buy,
             to_decimals(600u64),
             to_decimals(1u64),
+            to_decimals(18),
+            Some(to_decimals(9)),
             to_decimals(0u64),
             vec![],
         )
@@ -68,7 +70,7 @@ fn test_reduce_when_position_is_reduced() {
     } = new_simple_scenario();
 
     let msg = vamm
-        .set_open_interest_notional_cap(Uint128::from(600_000_000_000u128))
+        .set_open_interest_notional_cap(Uint128::from(900_000_000_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -79,7 +81,7 @@ fn test_reduce_when_position_is_reduced() {
             usdc.addr().clone(),
             &Cw20ExecuteMsg::DecreaseAllowance {
                 spender: engine.addr().to_string(),
-                amount: to_decimals(1400),
+                amount: to_decimals(1100),
                 expires: None,
             },
             &[],
@@ -92,6 +94,8 @@ fn test_reduce_when_position_is_reduced() {
             Side::Buy,
             to_decimals(600u64),
             to_decimals(1u64),
+            to_decimals(18),
+            Some(to_decimals(9)),
             to_decimals(0u64),
             vec![],
         )
@@ -104,6 +108,8 @@ fn test_reduce_when_position_is_reduced() {
             Side::Sell,
             to_decimals(300u64),
             to_decimals(1u64),
+            to_decimals(10),
+            Some(to_decimals(26)),
             to_decimals(0u64),
             vec![],
         )
@@ -111,7 +117,7 @@ fn test_reduce_when_position_is_reduced() {
     router.execute(alice.clone(), msg).unwrap();
 
     let open_interest_notional = engine.state(&router.wrap()).unwrap().open_interest_notional;
-    assert_eq!(open_interest_notional, to_decimals(300u64));
+    assert_eq!(open_interest_notional, to_decimals(900u64));
 }
 
 #[test]
@@ -151,6 +157,8 @@ fn test_reduce_when_close_position() {
             Side::Buy,
             to_decimals(400u64),
             to_decimals(1u64),
+            to_decimals(18),
+            Some(to_decimals(9)),
             to_decimals(0u64),
             vec![],
         )
@@ -158,7 +166,7 @@ fn test_reduce_when_close_position() {
     router.execute(alice.clone(), msg).unwrap();
 
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
@@ -218,6 +226,8 @@ fn test_increase_when_traders_open_positions_in_diff_directions() {
             Side::Buy,
             to_decimals(300u64),
             to_decimals(1u64),
+            to_decimals(18),
+            Some(to_decimals(9)),
             to_decimals(0u64),
             vec![],
         )
@@ -230,6 +240,8 @@ fn test_increase_when_traders_open_positions_in_diff_directions() {
             Side::Sell,
             to_decimals(300u64),
             to_decimals(1u64),
+            to_decimals(10),
+            Some(to_decimals(26)),
             to_decimals(0u64),
             vec![],
         )
@@ -277,6 +289,8 @@ fn test_increase_when_traders_open_larger_positions_in_reverse_directions() {
             Side::Buy,
             to_decimals(250u64),
             to_decimals(1u64),
+            to_decimals(18),
+            Some(to_decimals(9)),
             to_decimals(0u64),
             vec![],
         )
@@ -287,8 +301,10 @@ fn test_increase_when_traders_open_larger_positions_in_reverse_directions() {
         .open_position(
             vamm.addr().to_string(),
             Side::Sell,
-            to_decimals(450u64),
+            to_decimals(350u64),
             to_decimals(1u64),
+            to_decimals(10),
+            Some(to_decimals(17)),
             to_decimals(0u64),
             vec![],
         )
@@ -297,7 +313,7 @@ fn test_increase_when_traders_open_larger_positions_in_reverse_directions() {
 
     let open_interest_notional = engine.state(&router.wrap()).unwrap().open_interest_notional;
     // this is near zero due to some rounding errors
-    assert_eq!(open_interest_notional, to_decimals(200u64));
+    assert_eq!(open_interest_notional, to_decimals(600u64));
 }
 
 #[test]
@@ -351,6 +367,8 @@ fn test_zero_when_everyone_closes_positions() {
             Side::Buy,
             to_decimals(250u64),
             to_decimals(1u64),
+            to_decimals(18),
+            Some(to_decimals(9)),
             to_decimals(0u64),
             vec![],
         )
@@ -363,6 +381,8 @@ fn test_zero_when_everyone_closes_positions() {
             Side::Sell,
             to_decimals(250u64),
             to_decimals(1u64),
+            to_decimals(12),
+            Some(to_decimals(17)),
             to_decimals(0u64),
             vec![],
         )
@@ -370,12 +390,12 @@ fn test_zero_when_everyone_closes_positions() {
     router.execute(bob.clone(), msg).unwrap();
 
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 2, to_decimals(0u64))
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
@@ -435,6 +455,8 @@ fn test_zero_when_everyone_closes_positions_one_position_is_bankrupt() {
             Side::Sell,
             to_decimals(250u64),
             to_decimals(1u64),
+            to_decimals(6),
+            Some(to_decimals(13)),
             to_decimals(0u64),
             vec![],
         )
@@ -447,6 +469,8 @@ fn test_zero_when_everyone_closes_positions_one_position_is_bankrupt() {
             Side::Buy,
             to_decimals(250u64),
             to_decimals(1u64),
+            to_decimals(15),
+            Some(to_decimals(4)),
             to_decimals(0u64),
             vec![],
         )
@@ -456,6 +480,7 @@ fn test_zero_when_everyone_closes_positions_one_position_is_bankrupt() {
     let msg = engine
         .liquidate(
             vamm.addr().to_string(),
+            1,
             alice.to_string(),
             to_decimals(0u64),
         )
@@ -468,7 +493,7 @@ fn test_zero_when_everyone_closes_positions_one_position_is_bankrupt() {
     });
 
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 2, to_decimals(0u64))
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
@@ -494,6 +519,8 @@ fn test_open_interest_logged_without_cap() {
             Side::Sell,
             to_decimals(250u64),
             to_decimals(1u64),
+            to_decimals(6),
+            Some(to_decimals(13)),
             to_decimals(0u64),
             vec![],
         )
@@ -509,6 +536,8 @@ fn test_open_interest_logged_without_cap() {
             Side::Buy,
             to_decimals(250u64),
             to_decimals(1u64),
+            to_decimals(10),
+            Some(to_decimals(4)),
             to_decimals(0u64),
             vec![],
         )
@@ -521,6 +550,7 @@ fn test_open_interest_logged_without_cap() {
     let msg = engine
         .liquidate(
             vamm.addr().to_string(),
+            1,
             alice.to_string(),
             to_decimals(0u64),
         )
@@ -533,7 +563,7 @@ fn test_open_interest_logged_without_cap() {
     });
 
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 2, to_decimals(0u64))
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
@@ -593,6 +623,8 @@ fn test_stop_trading_if_over_open_interest_notional_cap() {
             Side::Buy,
             to_decimals(600u64),
             to_decimals(1u64),
+            to_decimals(18),
+            Some(to_decimals(8)),
             to_decimals(0u64),
             vec![],
         )
@@ -605,6 +637,8 @@ fn test_stop_trading_if_over_open_interest_notional_cap() {
             Side::Buy,
             to_decimals(1u64),
             to_decimals(1u64),
+            to_decimals(27),
+            Some(to_decimals(25)),
             to_decimals(0u64),
             vec![],
         )
@@ -643,7 +677,7 @@ fn test_wont_stop_trading_if_reducing_position_even_if_over_open_interest_notion
             usdc.addr().clone(),
             &Cw20ExecuteMsg::DecreaseAllowance {
                 spender: engine.addr().to_string(),
-                amount: to_decimals(1400),
+                amount: to_decimals(1100),
                 expires: None,
             },
             &[],
@@ -669,6 +703,8 @@ fn test_wont_stop_trading_if_reducing_position_even_if_over_open_interest_notion
             Side::Buy,
             to_decimals(600u64),
             to_decimals(1u64),
+            to_decimals(18),
+            Some(to_decimals(8)),
             to_decimals(0u64),
             vec![],
         )
@@ -676,7 +712,7 @@ fn test_wont_stop_trading_if_reducing_position_even_if_over_open_interest_notion
     router.execute(alice.clone(), msg).unwrap();
 
     let msg = vamm
-        .set_open_interest_notional_cap(Uint128::from(300_000_000_000u128))
+        .set_open_interest_notional_cap(Uint128::from(900_000_000_000u128))
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
@@ -686,6 +722,8 @@ fn test_wont_stop_trading_if_reducing_position_even_if_over_open_interest_notion
             Side::Sell,
             to_decimals(300u64),
             to_decimals(1u64),
+            to_decimals(13),
+            Some(to_decimals(26)),
             to_decimals(0u64),
             vec![],
         )
@@ -693,5 +731,5 @@ fn test_wont_stop_trading_if_reducing_position_even_if_over_open_interest_notion
     router.execute(alice.clone(), msg).unwrap();
 
     let open_interest_notional = engine.state(&router.wrap()).unwrap().open_interest_notional;
-    assert_eq!(open_interest_notional, to_decimals(300u64));
+    assert_eq!(open_interest_notional, to_decimals(900u64));
 }

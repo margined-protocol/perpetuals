@@ -2,8 +2,6 @@ use cosmwasm_std::{DepsMut, Env, Response, StdError, StdResult, SubMsg, Uint128}
 use margined_utils::contracts::helpers::VammController;
 
 use crate::{
-    contract::INCREASE_POSITION_REPLY_ID,
-    handle::internal_increase_position,
     messages::{
         execute_insurance_fund_withdrawal, execute_transfer, execute_transfer_from,
         execute_transfer_to_insurance_fund, transfer_fees, withdraw,
@@ -12,19 +10,17 @@ use crate::{
     state::{
         append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_sent_funds,
         read_state, read_tmp_liquidator, read_tmp_swap, remove_position, remove_sent_funds,
-        remove_tmp_liquidator, remove_tmp_swap, store_position, store_sent_funds, store_state,
-        store_tmp_swap, State,
+        remove_tmp_liquidator, remove_tmp_swap, store_position, store_state, State, read_position,
     },
     utils::{
-        calc_remain_margin_with_funding_payment, check_base_asset_holding_cap, clear_position,
-        get_position, keccak_256, realize_bad_debt, require_additional_margin, side_to_direction,
+        calc_remain_margin_with_funding_payment, check_base_asset_holding_cap, keccak_256, realize_bad_debt, require_additional_margin, side_to_direction,
         update_open_interest_notional,
     },
 };
 
 use margined_common::{asset::AssetInfo, integer::Integer};
 use margined_perp::{
-    margined_engine::{RemainMarginResponse, Side},
+    margined_engine::{RemainMarginResponse, Side, Position},
     margined_vamm::Direction,
 };
 
@@ -34,20 +30,25 @@ pub fn update_position_reply(
     env: Env,
     input: Uint128,
     output: Uint128,
-    reply_id: u64,
+    position_id: u64,
 ) -> StdResult<Response> {
-    let mut swap = read_tmp_swap(deps.storage)?;
+    let mut swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
 
-    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
-
-    let mut position = get_position(
-        deps.storage,
-        &position_key,
-        &swap.vamm,
-        &swap.trader,
-        &swap.side,
-        env.block.height,
-    )?;
+    let mut position: Position = Position {
+        position_id: swap.position_id,
+        vamm: swap.vamm.clone(),
+        trader: swap.trader.clone(),
+        side: swap.side.clone(),
+        direction: side_to_direction(&swap.side),
+        size: Integer::zero(),
+        margin: Uint128::zero(),
+        notional: Uint128::zero(),
+        entry_price: Uint128::zero(),
+        take_profit: swap.take_profit,
+        stop_loss: swap.stop_loss, 
+        last_updated_premium_fraction: Integer::zero(),
+        block_time: env.block.time.seconds()
+    };
 
     // depending on the direction the output is positive or negative
     let signed_output = match &swap.side {
@@ -61,11 +62,7 @@ pub fn update_position_reply(
         &deps.as_ref(),
         &mut state,
         swap.vamm.clone(),
-        if reply_id == INCREASE_POSITION_REPLY_ID {
-            Integer::new_positive(input)
-        } else {
-            Integer::new_negative(input)
-        },
+        Integer::new_positive(input),
         swap.trader.clone(),
     )?;
 
@@ -78,48 +75,18 @@ pub fn update_position_reply(
     let new_notional;
 
     // calculate margin needed given swap
-    match reply_id {
-        INCREASE_POSITION_REPLY_ID => {
-            swap_margin = swap
-                .open_notional
-                .checked_mul(config.decimals)?
-                .checked_div(swap.leverage)?;
+    swap_margin = swap
+        .open_notional
+        .checked_mul(config.decimals)?
+        .checked_div(swap.leverage)?;
 
-            swap.margin_to_vault = swap
-                .margin_to_vault
-                .checked_add(Integer::new_positive(swap_margin))?;
+    swap.margin_to_vault = swap
+        .margin_to_vault
+        .checked_add(Integer::new_positive(swap_margin))?;
 
-            margin_delta = Integer::new_positive(swap_margin);
-            new_direction = side_to_direction(&swap.side);
-            new_notional = position.notional.checked_add(swap.open_notional)?;
-        }
-        // DECREASE_POSITION_REPLY
-        _ => {
-            swap_margin = Uint128::zero();
-
-            // realized_pnl = unrealized_pnl * close_ratio
-            let realized_pnl = if !position.size.is_zero() {
-                swap.unrealized_pnl.checked_mul(signed_output.abs())? / position.size.abs()
-            } else {
-                Integer::zero()
-            };
-
-            let unrealized_pnl_after = swap.unrealized_pnl - realized_pnl;
-
-            let remaining_notional = if position.size > Integer::zero() {
-                Integer::new_positive(swap.position_notional)
-                    - Integer::new_positive(swap.open_notional)
-                    - unrealized_pnl_after
-            } else {
-                unrealized_pnl_after + Integer::new_positive(swap.position_notional)
-                    - Integer::new_positive(swap.open_notional)
-            };
-
-            margin_delta = realized_pnl;
-            new_direction = position.direction.clone();
-            new_notional = remaining_notional.value;
-        }
-    }
+    margin_delta = Integer::new_positive(swap_margin);
+    new_direction = side_to_direction(&swap.side);
+    new_notional = position.notional.checked_add(swap.open_notional)?;
 
     // calculate the remaining margin
     let RemainMarginResponse {
@@ -135,11 +102,11 @@ pub fn update_position_reply(
     position.size += signed_output;
     position.margin = margin;
     position.last_updated_premium_fraction = latest_premium_fraction;
-    position.block_number = env.block.height;
+    position.entry_price = position.notional.checked_mul(config.decimals)?.checked_div(position.size.value)?;
+    position.block_time =  env.block.time.seconds();
 
-    let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
-
-    store_position(deps.storage, &position_key, &position)?;
+    let position_key = keccak_256(&[position.vamm.as_bytes()].concat());
+    store_position(deps.storage, &position_key, &position, false)?;
 
     // check the new position doesn't exceed any caps
     check_base_asset_holding_cap(
@@ -209,14 +176,14 @@ pub fn update_position_reply(
     let margin_ratio = query_margin_ratio(
         deps.as_ref(),
         position.vamm.to_string(),
-        position.trader.to_string(),
+        position.position_id,
     )?;
 
     require_additional_margin(margin_ratio, config.maintenance_margin_ratio)?;
 
     store_state(deps.storage, &state)?;
 
-    remove_tmp_swap(deps.storage);
+    remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
     remove_sent_funds(deps.storage);
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
@@ -226,140 +193,19 @@ pub fn update_position_reply(
     ]))
 }
 
-// reverse position after successful execution of the swap
-pub fn reverse_position_reply(
-    deps: DepsMut,
-    env: Env,
-    _input: Uint128,
-    output: Uint128,
-) -> StdResult<Response> {
-    let mut swap = read_tmp_swap(deps.storage)?;
-
-    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
-
-    let mut position = get_position(
-        deps.storage,
-        &position_key,
-        &swap.vamm,
-        &swap.trader,
-        &swap.side,
-        env.block.height,
-    )?;
-    let mut state = read_state(deps.storage)?;
-    update_open_interest_notional(
-        &deps.as_ref(),
-        &mut state,
-        swap.vamm.clone(),
-        Integer::new_negative(output),
-        swap.trader.clone(),
-    )?;
-
-    let previous_margin = Integer::new_negative(position.margin);
-
-    // reset the position in order to reverse
-    position = clear_position(env, position)?;
-
-    // now increase the position again if there is additional position
-    let current_open_notional = swap.open_notional;
-    swap.open_notional = if swap.open_notional > output {
-        swap.open_notional.checked_sub(output)?
-    } else {
-        output.checked_sub(swap.open_notional)?
-    };
-
-    // create messages to pay for toll and spread fees
-    let fees = transfer_fees(
-        deps.as_ref(),
-        swap.trader.clone(),
-        swap.vamm.clone(),
-        current_open_notional,
-    )?;
-
-    // add the fee transfer messages
-    let mut msgs: Vec<SubMsg> = fees.messages;
-
-    let mut funds = read_sent_funds(deps.storage)?;
-    // add the total fees (spread + toll) to the required funds counter
-    funds.required = funds
-        .required
-        .checked_add(fees.spread_fee)?
-        .checked_add(fees.toll_fee)?;
-
-    // reduce position if old position is larger
-    if swap.open_notional.checked_div(swap.leverage)? == Uint128::zero() {
-        // latest margin requirements
-        let margin = previous_margin.checked_sub(swap.unrealized_pnl)?;
-
-        // create transfer message
-        msgs.push(execute_transfer(deps.storage, &swap.trader, margin.value)?);
-
-        let config = read_config(deps.storage)?;
-        // check if native tokens are sufficient
-        if let AssetInfo::NativeToken { .. } = config.eligible_collateral {
-            funds.are_sufficient()?;
-        }
-
-        remove_sent_funds(deps.storage);
-        remove_tmp_swap(deps.storage);
-    } else {
-        // determine new position
-        swap.margin_to_vault = previous_margin.checked_sub(swap.unrealized_pnl)?;
-        swap.unrealized_pnl = Integer::zero();
-
-        // set fees_paid flag to true so they aren't paid twice
-        swap.fees_paid = true;
-
-        // update the funds required
-        funds.required = if swap.margin_to_vault.is_positive() {
-            funds.required.checked_add(swap.margin_to_vault.value)?
-        } else if funds.required > swap.margin_to_vault.value {
-            funds.required.checked_sub(swap.margin_to_vault.value)?
-        } else {
-            // add both fees
-            fees.spread_fee.checked_add(fees.toll_fee)?
-        };
-
-        msgs.push(internal_increase_position(
-            swap.vamm.clone(),
-            swap.side.clone(),
-            swap.open_notional,
-            Uint128::zero(),
-        )?);
-
-        store_tmp_swap(deps.storage, &swap)?;
-        store_sent_funds(deps.storage, &funds)?;
-    }
-
-    let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
-    store_position(deps.storage, &position_key, &position)?;
-    store_state(deps.storage, &state)?;
-
-    Ok(Response::new().add_submessages(msgs).add_attributes(vec![
-        ("action", "reverse_position_reply"),
-        ("spread_fee", "increase_position_reply"),
-        ("toll_fee", "increase_position_reply"),
-    ]))
-}
-
 // Closes position after successful execution of the swap
 pub fn close_position_reply(
     deps: DepsMut,
     env: Env,
     _input: Uint128,
     output: Uint128,
+    position_id: u64
 ) -> StdResult<Response> {
-    let swap = read_tmp_swap(deps.storage)?;
+    let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
 
-    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
+    let position_key = keccak_256(&[swap.vamm.as_bytes()].concat());
 
-    let position = get_position(
-        deps.storage,
-        &position_key,
-        &swap.vamm.clone(),
-        &swap.trader,
-        &swap.side,
-        env.block.height,
-    )?;
+    let position = read_position(deps.storage, &position_key, position_id)?;
 
     let margin_delta = match &position.direction {
         Direction::AddToAmm => {
@@ -428,15 +274,16 @@ pub fn close_position_reply(
         swap.trader,
     )?;
 
-    let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
-    remove_position(deps.storage, &position_key);
+    let position_key = keccak_256(&[position.vamm.as_bytes()].concat());
+    remove_position(deps.storage, &position_key, &position).unwrap();
 
     store_state(deps.storage, &state)?;
 
-    remove_tmp_swap(deps.storage);
+    remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "close_position_reply"),
+        ("pnl", &margin_delta.to_string()),
         ("spread_fee", &fees_amount[0].to_string()),
         ("toll_fee", &fees_amount[1].to_string()),
         ("funding_payment", &funding_payment.to_string()),
@@ -450,17 +297,11 @@ pub fn partial_close_position_reply(
     env: Env,
     input: Uint128,
     output: Uint128,
+    position_id: u64
 ) -> StdResult<Response> {
-    let swap = read_tmp_swap(deps.storage)?;
-    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
-    let mut position = get_position(
-        deps.storage,
-        &position_key,
-        &swap.vamm,
-        &swap.trader,
-        &swap.side,
-        env.block.height,
-    )?;
+    let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
+    let position_key = keccak_256(&[swap.vamm.as_bytes()].concat());
+    let mut position = read_position(deps.storage, &position_key, position_id)?;
 
     let mut state: State = read_state(deps.storage)?;
     update_open_interest_notional(
@@ -510,10 +351,10 @@ pub fn partial_close_position_reply(
     position.margin = margin;
     position.notional = remaining_notional.value;
     position.last_updated_premium_fraction = latest_premium_fraction;
-    position.block_number = env.block.height;
+    position.block_time = env.block.time.seconds();
 
-    let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
-    store_position(deps.storage, &position_key, &position)?;
+    let position_key = keccak_256(&[position.vamm.as_bytes()].concat());
+    store_position(deps.storage, &position_key, &position, false)?;
     store_state(deps.storage, &state)?;
 
     // to prevent attacker to leverage the bad debt to withdraw extra token from insurance fund
@@ -522,12 +363,13 @@ pub fn partial_close_position_reply(
     }
 
     // remove the tmp position
-    remove_tmp_swap(deps.storage);
+    remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
 
     Ok(Response::new()
         .add_submessages(fees.messages)
         .add_attributes(vec![
             ("action", "partial_close_position_reply"),
+            ("pnl", &unrealized_pnl_after.to_string()),
             ("spread_fee", &fees.spread_fee.to_string()),
             ("toll_fee", &fees.toll_fee.to_string()),
             ("funding_payment", &funding_payment.to_string()),
@@ -541,19 +383,14 @@ pub fn liquidate_reply(
     env: Env,
     _input: Uint128,
     output: Uint128,
+    position_id: u64
 ) -> StdResult<Response> {
-    let swap = read_tmp_swap(deps.storage)?;
+    let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
+    
     let liquidator = read_tmp_liquidator(deps.storage)?;
 
-    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
-    let position = get_position(
-        deps.storage,
-        &position_key,
-        &swap.vamm,
-        &swap.trader,
-        &swap.side,
-        env.block.height,
-    )?;
+    let position_key = keccak_256(&[swap.vamm.as_bytes()].concat());
+    let position = read_position(deps.storage, &position_key, position_id)?;
 
     // calculate delta from trade and whether it was profitable or a loss
     let margin_delta = match &position.direction {
@@ -620,9 +457,9 @@ pub fn liquidate_reply(
 
     store_state(deps.storage, &state)?;
 
-    let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
-    remove_position(deps.storage, &position_key);
-    remove_tmp_swap(deps.storage);
+    let position_key = keccak_256(&[position.vamm.as_bytes()].concat());
+    remove_position(deps.storage, &position_key, &position).unwrap();
+    remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
     remove_tmp_liquidator(deps.storage);
 
     enter_restriction_mode(deps.storage, swap.vamm, env.block.height)?;
@@ -645,22 +482,13 @@ pub fn partial_liquidation_reply(
     env: Env,
     input: Uint128,
     output: Uint128,
+    position_id: u64
 ) -> StdResult<Response> {
-    let swap = read_tmp_swap(deps.storage)?;
-
+    let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
     let liquidator = read_tmp_liquidator(deps.storage)?;
 
-    let position_key = keccak_256(&[swap.vamm.as_bytes(), swap.trader.as_bytes()].concat());
-
-    let mut position = get_position(
-        deps.storage,
-        &position_key,
-        &swap.vamm,
-        &swap.trader,
-        &swap.side,
-        env.block.height,
-    )?;
-
+    let position_key = keccak_256(&[swap.vamm.as_bytes()].concat());
+    let mut position = read_position(deps.storage, &position_key, position_id)?;
     let config = read_config(deps.storage)?;
 
     // calculate delta from trade and whether it was profitable or a loss
@@ -727,11 +555,11 @@ pub fn partial_liquidation_reply(
             Uint128::zero(),
         )?);
     }
-    let position_key = keccak_256(&[position.vamm.as_bytes(), position.trader.as_bytes()].concat());
-    store_position(deps.storage, &position_key, &position)?;
+    let position_key = keccak_256(&[position.vamm.as_bytes()].concat());
+    store_position(deps.storage, &position_key, &position, false)?;
     store_state(deps.storage, &state)?;
 
-    remove_tmp_swap(deps.storage);
+    remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
     remove_tmp_liquidator(deps.storage);
 
     enter_restriction_mode(deps.storage, swap.vamm, env.block.height)?;

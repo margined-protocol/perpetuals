@@ -1,6 +1,6 @@
 use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Uint128};
 use margined_perp::margined_engine::Side;
-use margined_utils::cw_multi_test::Executor;
+use margined_utils::{cw_multi_test::Executor, testing::to_decimals};
 
 use crate::testing::new_native_token_scenario;
 
@@ -56,6 +56,8 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
             Side::Buy,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            to_decimals(10),
+            Some(Uint128::zero()),
             Uint128::from(9_090_000u128),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -74,6 +76,8 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
             Side::Buy,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(15_000_000u64),
+            Some(Uint128::from(11_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -92,8 +96,10 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(12_000_000u64),
+            Some(Uint128::from(15_000_000u64)),
             Uint128::zero(),
-            vec![],
+            vec![Coin::new(20_000_000u128, "orai")],
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -110,6 +116,8 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(9_000_000u64),
+            Some(Uint128::from(13_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -127,6 +135,7 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            2,
             env.alice.to_string(),
             Uint128::zero(),
         )
@@ -190,6 +199,8 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
             Side::Buy,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(15_000_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::from(9_090_000u128),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -208,7 +219,9 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
             Side::Buy,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
-            Uint128::from(7_570_000u128),
+            Uint128::from(20_000_000u64),
+            Some(Uint128::from(10_000_000u64)),
+            Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
         .unwrap();
@@ -226,8 +239,10 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
-            Uint128::from(7_580_000u128),
-            vec![],
+            Uint128::from(12_000_000u64),
+            Some(Uint128::from(20_000_000u64)),
+            Uint128::zero(),
+            vec![Coin::new(20_000_000u128, "orai")],
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -244,6 +259,8 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(9_000_000u64),
+            Some(Uint128::from(15_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -261,6 +278,7 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            2,
             env.alice.to_string(),
             Uint128::zero(),
         )
@@ -269,7 +287,7 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
 
     let msg = env
         .engine
-        .close_position(env.vamm.addr().to_string(), Uint128::zero())
+        .close_position(env.vamm.addr().to_string(), 4, Uint128::zero())
         .unwrap();
     let err = env.router.execute(env.carol.clone(), msg).unwrap_err();
     assert_eq!(
@@ -329,6 +347,8 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(8_000_000u64),
+            Some(Uint128::from(15_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -347,6 +367,8 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(7_000_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -360,7 +382,7 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
 
     let msg = env
         .engine
-        .close_position(env.vamm.addr().to_string(), Uint128::zero())
+        .close_position(env.vamm.addr().to_string(), 1, Uint128::zero())
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
@@ -376,6 +398,8 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
             Side::Buy,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(12_000_000u64),
+            Some(Uint128::from(7_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -393,6 +417,7 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            2,
             env.alice.to_string(),
             Uint128::zero(),
         )
@@ -401,7 +426,7 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
 
     let msg = env
         .engine
-        .close_position(env.vamm.addr().to_string(), Uint128::zero())
+        .close_position(env.vamm.addr().to_string(), 3, Uint128::zero())
         .unwrap();
     let err = env.router.execute(env.carol.clone(), msg).unwrap_err();
     assert_eq!(
@@ -461,6 +486,8 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
             Side::Buy,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(13_000_000u64),
+            Some(Uint128::from(8_000_000u64)),
             Uint128::from(9_090_000u128),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -479,6 +506,8 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
             Side::Buy,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(15_000_000u64),
+            Some(Uint128::from(11_000_000u64)),
             Uint128::from(7_570_000u128),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -497,8 +526,10 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(8_000_000u64),
+            Some(Uint128::from(20_000_000u64)),
             Uint128::from(7_580_000u128),
-            vec![],
+            vec![Coin::new(20_000_000u128, "orai")],
         )
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
@@ -515,6 +546,8 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
             Side::Buy,
             Uint128::from(10_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(16_000_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::from(0u64),
             vec![Coin::new(10_000_000u128, "orai")],
         )
@@ -532,6 +565,7 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            2,
             env.alice.to_string(),
             Uint128::zero(),
         )
@@ -540,7 +574,7 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
 
     let msg = env
         .engine
-        .close_position(env.vamm.addr().to_string(), Uint128::zero())
+        .close_position(env.vamm.addr().to_string(), 4, Uint128::zero())
         .unwrap();
     let err = env.router.execute(env.carol.clone(), msg).unwrap_err();
     assert_eq!(
@@ -600,6 +634,8 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(8_000_000u64),
+            Some(Uint128::from(15_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -618,6 +654,8 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(7_000_000u64),
+            Some(Uint128::from(9_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -631,7 +669,7 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
 
     let msg = env
         .engine
-        .close_position(env.vamm.addr().to_string(), Uint128::zero())
+        .close_position(env.vamm.addr().to_string(), 1, Uint128::zero())
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
@@ -647,6 +685,8 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
             Side::Sell,
             Uint128::from(10_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(8_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(10_000_000u128, "orai")],
         )
@@ -664,6 +704,7 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            2,
             env.alice.to_string(),
             Uint128::zero(),
         )
@@ -672,7 +713,7 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
 
     let msg = env
         .engine
-        .close_position(env.vamm.addr().to_string(), Uint128::zero())
+        .close_position(env.vamm.addr().to_string(), 3, Uint128::zero())
         .unwrap();
     let err = env.router.execute(env.carol.clone(), msg).unwrap_err();
     assert_eq!(

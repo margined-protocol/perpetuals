@@ -4,9 +4,19 @@ use cosmwasm_std::{Addr, SubMsg, Uint128};
 use margined_common::{asset::AssetInfo, integer::Integer};
 
 #[cw_serde]
+#[derive(Copy)]
 pub enum Side {
     Buy,
     Sell,
+}
+
+impl Side {
+    pub fn as_bytes(&self) -> &[u8] {
+        match self {
+            Side::Buy => &[0u8],
+            Side::Sell => &[1u8],
+        }
+    }
 }
 
 #[cw_serde]
@@ -17,6 +27,13 @@ pub enum PnlCalcOption {
 }
 
 #[cw_serde]
+pub enum PositionFilter {
+    Trader(String), // filter by trader
+    Price(Uint128), // filter by price
+    None,           // no filter
+}
+
+#[cw_serde]
 pub struct InstantiateMsg {
     pub pauser: String,
     pub insurance_fund: Option<String>, // insurance_fund need engine addr, so there is senario when we re-deploy engine
@@ -24,6 +41,7 @@ pub struct InstantiateMsg {
     pub eligible_collateral: String,
     pub initial_margin_ratio: Uint128,
     pub maintenance_margin_ratio: Uint128,
+    pub tp_sl_spread: Uint128,
     pub liquidation_fee: Uint128,
 }
 
@@ -36,6 +54,7 @@ pub enum ExecuteMsg {
         initial_margin_ratio: Option<Uint128>,
         maintenance_margin_ratio: Option<Uint128>,
         partial_liquidation_ratio: Option<Uint128>,
+        tp_sl_spread: Option<Uint128>,
         liquidation_fee: Option<Uint128>,
     },
     UpdatePauser {
@@ -52,14 +71,29 @@ pub enum ExecuteMsg {
         side: Side,
         margin_amount: Uint128,
         leverage: Uint128,
+        take_profit: Uint128,
+        stop_loss: Option<Uint128>,
         base_asset_limit: Uint128,
+    },
+    UpdateTpSl {
+        vamm: String,
+        position_id: u64,
+        take_profit: Option<Uint128>,
+        stop_loss: Option<Uint128>,
     },
     ClosePosition {
         vamm: String,
+        position_id: u64,
+        quote_asset_limit: Uint128,
+    },
+    TriggerTpSl {
+        vamm: String,
+        position_id: u64,
         quote_asset_limit: Uint128,
     },
     Liquidate {
         vamm: String,
+        position_id: u64,
         trader: String,
         quote_asset_limit: Uint128,
     },
@@ -68,10 +102,12 @@ pub enum ExecuteMsg {
     },
     DepositMargin {
         vamm: String,
+        position_id: u64,
         amount: Uint128,
     },
     WithdrawMargin {
         vamm: String,
+        position_id: u64,
         amount: Uint128,
     },
     SetPause {
@@ -96,25 +132,41 @@ pub enum QueryMsg {
     #[returns(cw_controllers::HooksResponse)]
     GetWhitelist {},
     #[returns(Position)]
-    Position { vamm: String, trader: String },
+    Position { vamm: String, position_id: u64 },
     #[returns(Vec<Position>)]
-    AllPositions { trader: String },
+    AllPositions {
+        trader: String,
+        start_after: Option<u64>,
+        limit: Option<u32>,
+        order_by: Option<i32>,
+    },
+    #[returns(Vec<Position>)]
+    Positions {
+        vamm: String,
+        filter: PositionFilter,
+        side: Option<Side>,
+        start_after: Option<u64>,
+        limit: Option<u32>,
+        order_by: Option<i32>, 
+    },
     #[returns(PositionUnrealizedPnlResponse)]
     UnrealizedPnl {
         vamm: String,
-        trader: String,
+        position_id: u64,
         calc_option: PnlCalcOption,
     },
     #[returns(Integer)]
     CumulativePremiumFraction { vamm: String },
     #[returns(Integer)]
-    MarginRatio { vamm: String, trader: String },
+    MarginRatio { vamm: String, position_id: u64 },
     #[returns(Integer)]
-    FreeCollateral { vamm: String, trader: String },
+    FreeCollateral { vamm: String, position_id: u64 },
     #[returns(Uint128)]
-    BalanceWithFundingPayment { trader: String },
+    BalanceWithFundingPayment { position_id: u64},
     #[returns(Position)]
-    PositionWithFundingPayment { vamm: String, trader: String },
+    PositionWithFundingPayment { vamm: String, position_id: u64 },
+    #[returns(LastPositionIdResponse)]
+    LastPositionId {},
 }
 
 #[cw_serde]
@@ -127,6 +179,7 @@ pub struct ConfigResponse {
     pub initial_margin_ratio: Uint128,
     pub maintenance_margin_ratio: Uint128,
     pub partial_liquidation_ratio: Uint128,
+    pub tp_sl_spread: Uint128,
     pub liquidation_fee: Uint128,
 }
 
@@ -142,28 +195,43 @@ pub struct PauserResponse {
 }
 
 #[cw_serde]
+pub struct LastPositionIdResponse {
+    pub last_order_id: u64,
+}
+
+#[cw_serde]
 pub struct Position {
+    pub position_id: u64,
     pub vamm: Addr,
     pub trader: Addr,
+    pub side: Side,
     pub direction: Direction,
     pub size: Integer,
     pub margin: Uint128,
     pub notional: Uint128,
+    pub entry_price: Uint128,
+    pub take_profit: Uint128,
+    pub stop_loss: Option<Uint128>,
     pub last_updated_premium_fraction: Integer,
-    pub block_number: u64,
+    pub block_time: u64,
 }
 
 impl Default for Position {
     fn default() -> Position {
         Position {
+            position_id: 0u64,
             vamm: Addr::unchecked(""),
             trader: Addr::unchecked(""),
+            side: Side::Buy,
             direction: Direction::AddToAmm,
             size: Integer::zero(),
             margin: Uint128::zero(),
             notional: Uint128::zero(),
+            entry_price: Uint128::zero(),
+            take_profit: Uint128::zero(),
+            stop_loss: Some(Uint128::zero()),
             last_updated_premium_fraction: Integer::zero(),
-            block_number: 0u64,
+            block_time: 0u64,
         }
     }
 }

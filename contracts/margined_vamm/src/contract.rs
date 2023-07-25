@@ -148,6 +148,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         ExecuteMsg::UpdateOwner { owner } => update_owner(deps, info, owner),
         ExecuteMsg::SwapInput {
             direction,
+            position_id,
             quote_asset_amount,
             can_go_over_fluctuation,
             base_asset_limit,
@@ -156,12 +157,14 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             env,
             info,
             direction,
+            position_id,
             quote_asset_amount,
             base_asset_limit,
             can_go_over_fluctuation,
         ),
         ExecuteMsg::SwapOutput {
             direction,
+            position_id,
             base_asset_amount,
             quote_asset_limit,
         } => swap_output(
@@ -169,6 +172,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             env,
             info,
             direction,
+            position_id,
             base_asset_amount,
             quote_asset_limit,
         ),

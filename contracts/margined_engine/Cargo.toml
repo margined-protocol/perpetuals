@@ -26,6 +26,7 @@ cw2 = { workspace = true }
 cosmwasm-std = { workspace = true }
 cosmwasm-schema = { workspace = true }
 thiserror = { workspace = true }
+cosmwasm-storage = { workspace = true }
 
 margined_utils = { workspace = true }
 margined_perp = { workspace = true }
@@ -39,3 +40,4 @@ margined_vamm = { workspace = true }
 margined_fee_pool = { workspace = true }
 margined_insurance_fund = { workspace = true }
 mock_pricefeed = { workspace = true }
+serde = { version = "1.0.103", default-features = false, features = ["derive"] }

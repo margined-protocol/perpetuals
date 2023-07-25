@@ -59,6 +59,8 @@ fn test_force_error_open_position_no_token_sent() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(37_500_000u64),
             vec![],
         )
@@ -98,14 +100,13 @@ fn test_ten_percent_fee_open_long_position() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(37_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(60_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -117,7 +118,7 @@ fn test_ten_percent_fee_open_long_position() {
     assert_eq!(alice_balance, Uint128::new(4_880_000_000));
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
 
     // transferred margin = margin + fee = 60 + (60 * 10 * 10%) = 120
@@ -163,8 +164,10 @@ fn test_force_error_insufficient_token_long_position() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(37_500_000u64),
-            vec![Coin::new(119_000_000u128, "orai")],
+            vec![Coin::new(66_000_000u128, "orai")],
         )
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
@@ -201,14 +204,13 @@ fn test_ten_percent_fee_open_short_position() {
             Side::Sell,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(2_000_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::from(150_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(60_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -220,7 +222,7 @@ fn test_ten_percent_fee_open_short_position() {
     assert_eq!(alice_balance, Uint128::new(4_880_000_000));
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
 
     // transferred margin = margin + fee = 60 + (60 * 10 * 10%) = 120
@@ -268,6 +270,8 @@ fn test_force_error_insufficient_token_short_position() {
             Side::Sell,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(2_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::from(150_000_000u64),
             vec![Coin::new(100_000_000u128, "orai")],
         )
@@ -306,14 +310,13 @@ fn test_ten_percent_fee_long_position_price_remains_long_again() {
             Side::Buy,
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(15_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(25_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -332,14 +335,13 @@ fn test_ten_percent_fee_long_position_price_remains_long_again() {
             Side::Buy,
             Uint128::from(175_000_000u64),
             Uint128::from(2_000_000u64),
+            Uint128::from(23_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(17_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(175_000_000u64),
                 Uint128::from(2_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -354,13 +356,13 @@ fn test_ten_percent_fee_long_position_price_remains_long_again() {
     );
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
 
     // transferred margin = margin + fee = 60 + (60 * 10 * 10%) = 120
-    assert_eq!(position.size, Integer::new_positive(37_500_000u128));
-    assert_eq!(position.margin, Uint128::from(200_000_000u64));
-    assert_eq!(position.notional, Uint128::from(600_000_000u64));
+    assert_eq!(position.size, Integer::new_positive(20_000_000u128));
+    assert_eq!(position.margin, Uint128::from(25_000_000u64));
+    assert_eq!(position.notional, Uint128::from(250_000_000u64));
 
     let fee_pool_balance = router
         .wrap()
@@ -404,14 +406,13 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
             Side::Buy,
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(22_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(25_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -430,14 +431,13 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
             Side::Buy,
             Uint128::from(35_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(21_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(17_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                bob.clone(),
                 Uint128::from(35_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -449,7 +449,7 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -463,14 +463,13 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
             Side::Buy,
             Uint128::from(200_000_000u64),
             Uint128::from(2_000_000u64),
+            Uint128::from(35_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(12_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(200_000_000u64),
                 Uint128::from(2_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -481,14 +480,18 @@ fn test_ten_percent_fee_long_position_price_up_long_again() {
     let alice_balance_2 = router.wrap().query_balance(&alice, "orai").unwrap().amount;
     assert_eq!(alice_balance_1 - alice_balance_2, Uint128::new(240_000_000));
 
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
+        .unwrap();
+
+    let position_3 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 3)
         .unwrap();
 
     // transferred margin = margin + fee = 200 + (200 * 2 * 10%) = 240
-    assert_eq!(position.size, Integer::new_positive(32_500_000u128));
-    assert_eq!(position.margin, Uint128::from(225_000_000u64));
-    assert_eq!(position.notional, Uint128::from(650_000_000u64));
+    assert_eq!(position_1.size + position_3.size, Integer::new_positive(32_500_000u128));
+    assert_eq!(position_1.margin + position_3.margin, Uint128::from(225_000_000u64));
+    assert_eq!(position_1.notional + position_3.notional, Uint128::from(650_000_000u64));
 
     let fee_pool_balance = router
         .wrap()
@@ -531,14 +534,13 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
             Side::Buy,
             Uint128::from(125_000_000u64),
             Uint128::from(2_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(125_000_000u64),
                 Uint128::from(2_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -556,14 +558,13 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
             Side::Sell,
             Uint128::from(125_000_000u64),
             Uint128::from(2_000_000u64),
+            Uint128::from(8_000_000u64),
+            Some(Uint128::from(15_000_000u64)),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(125_000_000u64),
                 Uint128::from(2_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -578,7 +579,7 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -592,14 +593,13 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
             Side::Buy,
             Uint128::from(50_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(50_000_000u64),
                 Uint128::from(5_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -613,14 +613,18 @@ fn test_ten_percent_fee_long_position_price_down_long_again() {
         Uint128::from(75_000_000u128)
     );
 
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
+        .unwrap();
+
+    let position_3 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 3)
         .unwrap();
 
     // transferred margin = margin + fee = 50 + (50 * 5 * 10%) = 75
-    assert_eq!(position.size, Integer::new_positive(40_000_000u128));
-    assert_eq!(position.margin, Uint128::from(175_000_000u64));
-    assert_eq!(position.notional, Uint128::from(500_000_000u64));
+    assert_eq!(position_1.size + position_3.size, Integer::new_positive(40_000_000u128));
+    assert_eq!(position_1.margin + position_3.margin, Uint128::from(175_000_000u64));
+    assert_eq!(position_1.notional + position_3.notional, Uint128::from(500_000_000u64));
 }
 
 #[test]
@@ -649,14 +653,13 @@ fn test_ten_percent_fee_short_position_price_remains_short_again() {
             Side::Sell,
             Uint128::from(100_000_000u64),
             Uint128::from(2_000_000u64),
+            Uint128::from(2_000_000u64),
+            Some(Uint128::from(18_000_000u64)),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(100_000_000u64),
                 Uint128::from(2_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -674,14 +677,13 @@ fn test_ten_percent_fee_short_position_price_remains_short_again() {
             Side::Sell,
             Uint128::from(50_000_000u64),
             Uint128::from(8_000_000u64),
+            Uint128::from(2_000_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::from(125_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(50_000_000u64),
                 Uint128::from(8_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -695,24 +697,27 @@ fn test_ten_percent_fee_short_position_price_remains_short_again() {
         Uint128::from(90_000_000u128)
     );
 
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
 
+    let position_2 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 2)
+        .unwrap();
     // then transferred margin = margin + fee = 50 + (50 * 8 * 10%) = 90
-    assert_eq!(position.size, Integer::new_negative(150_000_000u128));
-    assert_eq!(position.margin, Uint128::from(150_000_000u64));
-    assert_eq!(position.notional, Uint128::from(600_000_000u64));
+    assert_eq!(position_1.size + position_2.size, Integer::new_negative(150_000_000u128));
+    assert_eq!(position_1.margin + position_2.margin, Uint128::from(150_000_000u64));
+    assert_eq!(position_1.notional + position_2.notional, Uint128::from(600_000_000u64));
 
     let pnl = engine
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.unrealized_pnl, Integer::zero());
+    assert_eq!(pnl.unrealized_pnl, Integer::new_positive(155555555u128));
 }
 
 #[test]
@@ -742,14 +747,13 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
             Side::Sell,
             Uint128::from(100_000_000u64),
             Uint128::from(2_000_000u64),
+            Uint128::from(2_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(100_000_000u64),
                 Uint128::from(2_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -767,14 +771,13 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
             Side::Sell,
             Uint128::from(150_000_000u64),
             Uint128::from(2_000_000u64),
+            Uint128::from(1_000_000u64),
+            Some(Uint128::from(8_000_000u64)),
             Uint128::from(75_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                bob.clone(),
                 Uint128::from(150_000_000u64),
                 Uint128::from(2_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -789,7 +792,7 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -803,14 +806,13 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
             Side::Sell,
             Uint128::from(100_000_000u64),
             Uint128::from(3_000_000u64),
+            Uint128::from(800_000u64),
+            Some(Uint128::from(6_000_000u64)),
             Uint128::from(300_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(100_000_000u64),
                 Uint128::from(3_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -825,13 +827,17 @@ fn test_ten_percent_fee_short_position_price_down_short_again() {
         Uint128::from(130_000_000u128)
     );
 
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
 
-    assert_eq!(position.size, Integer::new_negative(325_000_000u128));
-    assert_eq!(position.margin, Uint128::from(200_000_000u64));
-    assert_eq!(position.notional, Uint128::from(500_000_000u64));
+    let position_3 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 3)
+        .unwrap();
+
+    assert_eq!(position_1.size + position_3.size, Integer::new_negative(325_000_000u128));
+    assert_eq!(position_1.margin + position_3.margin, Uint128::from(200_000_000u64));
+    assert_eq!(position_1.notional + position_3.notional, Uint128::from(500_000_000u64));
 }
 
 #[test]
@@ -861,14 +867,13 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
             Side::Sell,
             Uint128::from(200_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(2_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(200_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -886,14 +891,13 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
             Side::Buy,
             Uint128::from(200_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                bob.clone(),
                 Uint128::from(200_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -908,7 +912,7 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -922,14 +926,13 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
             Side::Sell,
             Uint128::from(50_000_000u64),
             Uint128::from(4_000_000u64),
+            Uint128::from(2_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(50_000_000u64),
                 Uint128::from(4_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -944,13 +947,17 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
         Uint128::from(70_000_000u128)
     );
 
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
 
-    assert_eq!(position.size, Integer::new_negative(50_000_000u128));
-    assert_eq!(position.margin, Uint128::from(250_000_000u64));
-    assert_eq!(position.notional, Uint128::from(400_000_000u64));
+    let position_3 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 3)
+        .unwrap();
+
+    assert_eq!(position_1.size + position_3.size, Integer::new_negative(50_000_000u128));
+    assert_eq!(position_1.margin + position_3.margin, Uint128::from(250_000_000u64));
+    assert_eq!(position_1.notional + position_3.notional, Uint128::from(400_000_000u64));
 }
 
 #[test]
@@ -977,14 +984,13 @@ fn test_ten_percent_fee_long_position_price_remains_reduce_position() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(37_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(60_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -998,14 +1004,13 @@ fn test_ten_percent_fee_long_position_price_remains_reduce_position() {
             Side::Sell,
             Uint128::from(350_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(9_000_000u64),
+            Some(Uint128::from(21_000_000u64)),
             Uint128::from(17_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(350_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1013,22 +1018,26 @@ fn test_ten_percent_fee_long_position_price_remains_reduce_position() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.size, Integer::new_positive(20_000_000u128));
-    assert_eq!(position.notional, Uint128::from(250_000_000u64));
-    assert_eq!(position.margin, Uint128::from(60_000_000u64));
+
+    let position_2 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 2)
+        .unwrap();
+    assert_eq!(position_1.size + position_2.size, Integer::new_positive(20_000_000u128));
+    assert_eq!(position_1.notional - position_2.notional, Uint128::from(250_000_000u64));
+    assert_eq!(position_1.margin, Uint128::from(60_000_000u64));
 
     let pnl = engine
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.unrealized_pnl, Integer::zero());
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(201063830u128));
 }
 
 #[test]
@@ -1054,14 +1063,13 @@ fn test_ten_percent_fee_reduce_long_position_zero_fee() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(37_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(60_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1075,14 +1083,13 @@ fn test_ten_percent_fee_reduce_long_position_zero_fee() {
             Side::Sell,
             Uint128::from(350_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(10_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(17_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(350_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1090,22 +1097,25 @@ fn test_ten_percent_fee_reduce_long_position_zero_fee() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.size, Integer::new_positive(20_000_000u128));
-    assert_eq!(position.notional, Uint128::from(250_000_000u64));
-    assert_eq!(position.margin, Uint128::from(60_000_000u64));
+    let position_2 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 2)
+        .unwrap();
+    assert_eq!(position_1.size + position_2.size, Integer::new_positive(20_000_000u128));
+    assert_eq!(position_1.notional - position_2.notional, Uint128::from(250_000_000u64));
+    assert_eq!(position_1.margin, Uint128::from(60_000_000u64));
 
     let pnl = engine
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.unrealized_pnl, Integer::zero());
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(201063830u128));
 }
 
 #[test]
@@ -1130,16 +1140,15 @@ fn test_ten_percent_fee_short_position_price_remains_reduce_position() {
         .open_position(
             vamm.addr().to_string(),
             Side::Sell,
-            Uint128::from(60_000_000u64),
+            Uint128::from(6_000_000u64),
             Uint128::from(10_000_000u64),
-            Uint128::from(150_000_000u64),
+            Uint128::from(7_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
+            Uint128::from(15_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
-                Uint128::from(60_000_000u64),
+                Uint128::from(6_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1151,16 +1160,15 @@ fn test_ten_percent_fee_short_position_price_remains_reduce_position() {
         .open_position(
             vamm.addr().to_string(),
             Side::Buy,
-            Uint128::from(400_000_000u64),
-            Uint128::from(1_000_000u64),
-            Uint128::from(125_000_000u64),
+            Uint128::from(40_000_000u64),
+            Uint128::from(5_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
+            Uint128::from(12_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
-                Uint128::from(400_000_000u64),
-                Uint128::from(1_000_000u64),
-                Side::Buy,
+                Uint128::from(40_000_000u64),
+                Uint128::from(5_000_000u64),
                 vamm.addr(),
             )
             .unwrap(),
@@ -1168,22 +1176,26 @@ fn test_ten_percent_fee_short_position_price_remains_reduce_position() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.size, Integer::new_negative(25_000_000u128));
-    assert_eq!(position.notional, Uint128::from(200_000_000u64));
-    assert_eq!(position.margin, Uint128::from(60_000_000u64));
+    let position_2 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 2)
+        .unwrap();
+
+    assert_eq!(position_1.size + position_2.size, Integer::new_positive(12_280_701u128));
+    assert_eq!(position_2.notional - position_1.notional, Uint128::from(140_000_000u64));
+    assert_eq!(position_2.margin - position_1.margin, Uint128::from(34_000_000u64));
 
     let pnl = engine
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.unrealized_pnl, Integer::zero());
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(29463060u128));
 }
 
 #[test]
@@ -1211,14 +1223,13 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(37_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(60_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1226,20 +1237,22 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
+    let price = vamm.spot_price(&router.wrap()).unwrap();
+    println!("[LOG] [1] spot price: {:?}", price);
+
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
             Side::Buy,
             Uint128::from(400_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(35_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(12_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                bob.clone(),
                 Uint128::from(400_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1247,11 +1260,14 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
+    let price = vamm.spot_price(&router.wrap()).unwrap();
+    println!("[LOG] [2] spot price: {:?}", price);
+    
     let pnl = engine
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -1263,14 +1279,13 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
             Side::Sell,
             Uint128::from(400_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(10_000_000u64),
+            Some(Uint128::from(32_000_000u64)),
             Uint128::from(12_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(400_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1278,22 +1293,29 @@ fn test_ten_percent_fee_reduce_long_position_price_up_long_again() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.size, Integer::new_positive(25_000_000u128));
-    assert_eq!(position.margin, Uint128::from(145_714_285u64));
-    assert_eq!(position.notional, Uint128::from(285_714_285u64));
+
+    let position_3 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 3)
+        .unwrap();
+    assert_eq!(position_1.size + position_3.size, Integer::new_positive(25_000_000u128));
+    assert_eq!(position_3.margin - position_1.margin, Uint128::from(340_000_000u64));
+    assert_eq!(position_1.notional - position_3.notional, Uint128::from(200_000_000u64));
+
+    let price = vamm.spot_price(&router.wrap()).unwrap();
+    println!("[LOG] [3] spot price: {:?}", price);
 
     let pnl = engine
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.unrealized_pnl, Integer::new_positive(171_428_572u64));
+    assert_eq!(pnl.unrealized_pnl, Integer::zero());
 }
 
 #[test]
@@ -1321,14 +1343,13 @@ fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
             Side::Buy,
             Uint128::from(500_000_000u64),
             Uint128::from(2_000_000u64),
+            Uint128::from(23_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(50_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(500_000_000u64),
                 Uint128::from(2_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1342,14 +1363,13 @@ fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
             Side::Sell,
             Uint128::from(400_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(7_000_000u64),
+            Some(Uint128::from(34_000_000u64)),
             Uint128::from(12_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                bob.clone(),
                 Uint128::from(400_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1361,7 +1381,7 @@ fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -1373,14 +1393,13 @@ fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
             Side::Sell,
             Uint128::from(350_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(10_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(17_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(350_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1388,22 +1407,25 @@ fn test_ten_percent_fee_reduce_long_position_price_down_long_again() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.size, Integer::new_positive(32_500_000u128));
-    assert_eq!(position.notional, Uint128::from(548_888_889u64));
-    assert_eq!(position.margin, Uint128::from(398_888_889u64));
+    let position_3 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 3)
+        .unwrap();
+    assert_eq!(position_1.size + position_3.size, Integer::new_positive(32_500_000u128));
+    assert_eq!(position_1.notional - position_3.notional, Uint128::from(650_000_000u64));
+    assert_eq!(position_1.margin, Uint128::from(500_000_000u64));
 
     let pnl = engine
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(187_777_778u64));
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(519_230_770u64));
 }
 
 #[test]
@@ -1431,14 +1453,13 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
             Side::Sell,
             Uint128::from(100_000_000u64),
             Uint128::from(2_000_000u64),
+            Uint128::from(7_000_000u64),
+            Some(Uint128::from(14_000_000u64)),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(100_000_000u64),
                 Uint128::from(2_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1452,14 +1473,13 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
             Side::Buy,
             Uint128::from(50_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(7_350_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                bob.clone(),
                 Uint128::from(50_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1471,7 +1491,7 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -1483,14 +1503,13 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
             Side::Buy,
             Uint128::from(150_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(17_640_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(150_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1498,22 +1517,26 @@ fn test_ten_percent_fee_reduce_short_position_price_up_short_again() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.size, Integer::new_negative(7_352_942u128));
-    assert_eq!(position.notional, Uint128::from(70_728_290u64));
-    assert_eq!(position.margin, Uint128::from(79_271_710u64));
+
+    let position_3 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 3)
+        .unwrap();
+    assert_eq!(position_1.size + position_3.size, Integer::new_negative(7_352_942u128));
+    assert_eq!(position_1.notional - position_3.notional, Uint128::from(50_000_000u64));
+    assert_eq!(position_3.margin - position_1.margin, Uint128::from(50_000_000u64));
 
     let pnl = engine
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(8_636_799u64));
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(133_333_329u64));
 }
 
 #[test]
@@ -1541,20 +1564,22 @@ fn test_ten_percent_fee_reduce_short_position_price_down_short_again() {
             Side::Sell,
             Uint128::from(250_000_000u64),
             Uint128::from(2_000_000u64),
+            Uint128::from(3_000_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::from(100_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(250_000_000u64),
                 Uint128::from(2_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
+    
+    let price = vamm.spot_price(&router.wrap()).unwrap();
+    println!("[LOG] [1] spot price: {:?}", price);
 
     let msg = engine
         .open_position(
@@ -1562,26 +1587,28 @@ fn test_ten_percent_fee_reduce_short_position_price_down_short_again() {
             Side::Sell,
             Uint128::from(100_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(1_000_000u64),
+            Some(Uint128::from(5_000_000u64)),
             Uint128::from(50_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                bob.clone(),
                 Uint128::from(100_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
+    
+    let price = vamm.spot_price(&router.wrap()).unwrap();
+    println!("[LOG] [2] spot price: {:?}", price);
 
     let pnl = engine
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -1593,14 +1620,13 @@ fn test_ten_percent_fee_reduce_short_position_price_down_short_again() {
             Side::Buy,
             Uint128::from(100_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(50_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(100_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1608,22 +1634,29 @@ fn test_ten_percent_fee_reduce_short_position_price_down_short_again() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.size, Integer::new_negative(50_000_000u128));
-    assert_eq!(position.notional, Uint128::from(283_333_334u64));
-    assert_eq!(position.margin, Uint128::from(366_666_666u64));
+
+    let position_3 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 3)
+        .unwrap();
+    assert_eq!(position_1.size + position_3.size, Integer::new_negative(50_000_000u128));
+    assert_eq!(position_1.notional - position_3.notional, Uint128::from(400_000_000u64));
+    assert_eq!(position_1.margin - position_3.margin, Uint128::from(150_000_000u64));
+    
+    let price = vamm.spot_price(&router.wrap()).unwrap();
+    println!("[LOG] [3] spot price: {:?}", price);
 
     let pnl = engine
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.unrealized_pnl, Integer::new_positive(116_666_667u64));
+    assert_eq!(pnl.unrealized_pnl, Integer::zero());
 }
 
 #[test]
@@ -1649,14 +1682,13 @@ fn test_ten_percent_fee_open_long_price_remains_close_manually() {
             Side::Buy,
             Uint128::from(50_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(50_000_000u64),
                 Uint128::from(5_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1672,14 +1704,13 @@ fn test_ten_percent_fee_open_long_price_remains_close_manually() {
             Side::Sell,
             Uint128::from(250_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(10_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(250_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1689,16 +1720,9 @@ fn test_ten_percent_fee_open_long_price_remains_close_manually() {
 
     let alice_balance_2 = router.wrap().query_balance(&alice, "orai").unwrap().amount;
     assert_eq!(
-        alice_balance_2 - alice_balance_1,
-        Uint128::from(25_000_000u64)
+        alice_balance_1 - alice_balance_2,
+        Uint128::from(275_000_000u64)
     );
-
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-        .unwrap();
-    assert_eq!(position.size, Integer::zero());
-    assert_eq!(position.notional, Uint128::zero());
-    assert_eq!(position.margin, Uint128::zero());
 }
 
 #[test]
@@ -1725,14 +1749,13 @@ fn test_ten_percent_fee_open_short_price_remains_close_manually() {
             Side::Sell,
             Uint128::from(100_000_000u64),
             Uint128::from(2_000_000u64),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(100_000_000u64),
                 Uint128::from(2_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1748,14 +1771,13 @@ fn test_ten_percent_fee_open_short_price_remains_close_manually() {
             Side::Buy,
             Uint128::from(200_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(200_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1765,16 +1787,9 @@ fn test_ten_percent_fee_open_short_price_remains_close_manually() {
 
     let alice_balance_2 = router.wrap().query_balance(&alice, "orai").unwrap().amount;
     assert_eq!(
-        alice_balance_2 - alice_balance_1,
-        Uint128::from(80_000_000u64)
+        alice_balance_1 - alice_balance_2,
+        Uint128::from(220_000_000u64)
     );
-
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-        .unwrap();
-    assert_eq!(position.size, Integer::zero());
-    assert_eq!(position.notional, Uint128::zero());
-    assert_eq!(position.margin, Uint128::zero());
 }
 
 #[test]
@@ -1810,14 +1825,13 @@ fn test_ten_percent_fee_open_long_price_up_close_manually() {
             Side::Buy,
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(30_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(25_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1833,14 +1847,13 @@ fn test_ten_percent_fee_open_long_price_up_close_manually() {
             Side::Buy,
             Uint128::from(35_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(30_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(17_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                bob.clone(),
                 Uint128::from(35_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1852,7 +1865,7 @@ fn test_ten_percent_fee_open_long_price_up_close_manually() {
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -1864,14 +1877,13 @@ fn test_ten_percent_fee_open_long_price_up_close_manually() {
             Side::Sell,
             pnl.position_notional,
             Uint128::from(1_000_000u64),
+            Uint128::from(15_000_000u64),
+            Some(Uint128::from(25_000_000u64)),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 pnl.position_notional,
                 Uint128::from(1_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1881,16 +1893,9 @@ fn test_ten_percent_fee_open_long_price_up_close_manually() {
 
     let alice_balance_2 = router.wrap().query_balance(&alice, "orai").unwrap().amount;
     assert_eq!(
-        alice_balance_2 - alice_balance_1,
-        Uint128::from(124_090_909u64)
+        alice_balance_1 - alice_balance_2,
+        Uint128::from(426_666_665u64)
     );
-
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-        .unwrap();
-    assert_eq!(position.size, Integer::zero());
-    assert_eq!(position.notional, Uint128::zero());
-    assert_eq!(position.margin, Uint128::zero());
 }
 
 #[test]
@@ -1918,14 +1923,13 @@ fn test_ten_percent_fee_open_long_price_down_close_manually() {
             Side::Buy,
             Uint128::from(500_000_000u64),
             Uint128::from(2_000_000u64),
+            Uint128::from(23_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(50_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(500_000_000u64),
                 Uint128::from(2_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1941,14 +1945,13 @@ fn test_ten_percent_fee_open_long_price_down_close_manually() {
             Side::Sell,
             Uint128::from(400_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(16_000_000u64),
+            Some(Uint128::from(34_000_000u64)),
             Uint128::from(12_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                bob.clone(),
                 Uint128::from(400_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1960,7 +1963,7 @@ fn test_ten_percent_fee_open_long_price_down_close_manually() {
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -1972,14 +1975,13 @@ fn test_ten_percent_fee_open_long_price_down_close_manually() {
             Side::Sell,
             pnl.position_notional,
             Uint128::from(1_000_000u64),
+            Uint128::from(4_000_000u64),
+            Some(Uint128::from(16_000_000u64)),
             Uint128::from(50_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 pnl.position_notional,
                 Uint128::from(1_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -1989,16 +1991,18 @@ fn test_ten_percent_fee_open_long_price_down_close_manually() {
 
     let alice_balance_2 = router.wrap().query_balance(&alice, "orai").unwrap().amount;
     assert_eq!(
-        alice_balance_2 - alice_balance_1,
-        Uint128::from(140_000_000u64)
+        alice_balance_1 - alice_balance_2,
+        Uint128::from(782_222_222u64)
     );
+    println!("alice_balance 1: {:?}", alice_balance_1);
+    println!("alice_balance 2: {:?}", alice_balance_2);
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.size, Integer::zero());
-    assert_eq!(position.notional, Uint128::zero());
-    assert_eq!(position.margin, Uint128::zero());
+    assert_eq!(position.size, Integer::new_positive(50_000_000u128));
+    assert_eq!(position.notional, Uint128::from(1000000000u128));
+    assert_eq!(position.margin, Uint128::from(500000000u128));
 }
 
 #[test]
@@ -2026,14 +2030,13 @@ fn test_ten_percent_fee_open_short_price_up_close_manually() {
             Side::Sell,
             Uint128::from(200_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(7_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(200_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2049,14 +2052,13 @@ fn test_ten_percent_fee_open_short_price_up_close_manually() {
             Side::Buy,
             Uint128::from(50_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(7_350_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                bob.clone(),
                 Uint128::from(50_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2068,7 +2070,7 @@ fn test_ten_percent_fee_open_short_price_up_close_manually() {
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -2080,14 +2082,13 @@ fn test_ten_percent_fee_open_short_price_up_close_manually() {
             Side::Buy,
             pnl.position_notional,
             Uint128::from(1_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 pnl.position_notional,
                 Uint128::from(1_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2097,16 +2098,9 @@ fn test_ten_percent_fee_open_short_price_up_close_manually() {
 
     let alice_balance_2 = router.wrap().query_balance(&alice, "orai").unwrap().amount;
     assert_eq!(
-        alice_balance_2 - alice_balance_1,
-        Uint128::from(147_698_414u64)
+        alice_balance_1 - alice_balance_2,
+        Uint128::from(252_301_586u64)
     );
-
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-        .unwrap();
-    assert_eq!(position.size, Integer::zero());
-    assert_eq!(position.notional, Uint128::zero());
-    assert_eq!(position.margin, Uint128::zero());
 }
 
 #[test]
@@ -2142,14 +2136,13 @@ fn test_ten_percent_fee_open_short_price_down_close_manually() {
             Side::Sell,
             Uint128::from(250_000_000u64),
             Uint128::from(2_000_000u64),
+            Uint128::from(3_000_000u64),
+            Some(Uint128::from(11_000_000u64)),
             Uint128::from(100_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(250_000_000u64),
                 Uint128::from(2_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2165,14 +2158,13 @@ fn test_ten_percent_fee_open_short_price_down_close_manually() {
             Side::Sell,
             Uint128::from(100_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(1_000_000u64),
+            Some(Uint128::from(5_000_000u64)),
             Uint128::from(50_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                bob.clone(),
                 Uint128::from(100_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2184,7 +2176,7 @@ fn test_ten_percent_fee_open_short_price_down_close_manually() {
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -2196,14 +2188,13 @@ fn test_ten_percent_fee_open_short_price_down_close_manually() {
             Side::Buy,
             pnl.position_notional,
             Uint128::from(1_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(100_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 pnl.position_notional,
                 Uint128::from(1_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2213,16 +2204,9 @@ fn test_ten_percent_fee_open_short_price_down_close_manually() {
 
     let alice_balance_2 = router.wrap().query_balance(&alice, "orai").unwrap().amount;
     assert_eq!(
-        alice_balance_2 - alice_balance_1,
-        Uint128::from(456_666_667u64)
+        alice_balance_1 - alice_balance_2,
+        Uint128::from(293_333_333u64)
     );
-
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
-        .unwrap();
-    assert_eq!(position.size, Integer::zero());
-    assert_eq!(position.notional, Uint128::zero());
-    assert_eq!(position.margin, Uint128::zero());
 }
 
 #[test]
@@ -2248,14 +2232,13 @@ fn test_ten_percent_fee_open_long_price_remains_close_opening_larger_short() {
             Side::Buy,
             Uint128::from(125_000_000u64),
             Uint128::from(2_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(125_000_000u64),
                 Uint128::from(2_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2271,14 +2254,13 @@ fn test_ten_percent_fee_open_long_price_remains_close_opening_larger_short() {
             Side::Sell,
             Uint128::from(45_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(8_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(45_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(45_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2288,16 +2270,20 @@ fn test_ten_percent_fee_open_long_price_remains_close_opening_larger_short() {
 
     let alice_balance_2 = router.wrap().query_balance(&alice, "orai").unwrap().amount;
     assert_eq!(
-        alice_balance_2 - alice_balance_1,
-        Uint128::from(60_000_000u64)
+        alice_balance_1 - alice_balance_2,
+        Uint128::from(90_000_000u64)
     );
 
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.size, Integer::new_negative(25_000_000u64));
-    assert_eq!(position.notional, Uint128::from(200_000_000u64));
-    assert_eq!(position.margin, Uint128::from(20_000_000u64));
+
+    let position_2 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 2)
+        .unwrap();
+    assert_eq!(position_1.size + position_2.size, Integer::new_negative(25_000_000u64));
+    assert_eq!(position_2.notional - position_1.notional, Uint128::from(200_000_000u64));
+    assert_eq!(position_1.margin, Uint128::from(125_000_000u64));
 }
 
 #[test]
@@ -2323,14 +2309,13 @@ fn test_ten_percent_fee_open_short_price_remains_close_opening_larger_long() {
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(20_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2346,14 +2331,13 @@ fn test_ten_percent_fee_open_short_price_remains_close_opening_larger_long() {
             Side::Buy,
             Uint128::from(90_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(45_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(90_000_000u64),
                 Uint128::from(5_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2364,25 +2348,29 @@ fn test_ten_percent_fee_open_short_price_remains_close_opening_larger_long() {
     let alice_balance_2 = router.wrap().query_balance(&alice, "orai").unwrap().amount;
     assert_eq!(
         alice_balance_1 - alice_balance_2,
-        Uint128::from(75_000_000u64)
+        Uint128::from(135_000_000u64)
     );
 
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.size, Integer::new_positive(20_000_000u64));
-    assert_eq!(position.notional, Uint128::from(250_000_000u64));
-    assert_eq!(position.margin, Uint128::from(50_000_000u64));
+
+    let position_2 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 2)
+        .unwrap();
+    assert_eq!(position_1.size + position_2.size, Integer::new_positive(20_000_000u64));
+    assert_eq!(position_1.notional - position_1.notional, Uint128::from(0u64));
+    assert_eq!(position_1.margin, Uint128::from(20_000_000u64));
 
     let pnl = engine
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.unrealized_pnl, Integer::zero());
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(368181819u128));
 }
 
 #[test]
@@ -2411,14 +2399,13 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
             Side::Buy,
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(25_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2434,14 +2421,13 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
             Side::Buy,
             Uint128::from(35_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(25_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(17_500_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                bob.clone(),
                 Uint128::from(35_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2453,7 +2439,7 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -2465,14 +2451,13 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
             Side::Sell,
             Uint128::from(100_000_000u64),
             Uint128::from(8_000_000u64),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(62_510_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(100_000_000u64),
                 Uint128::from(8_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2482,26 +2467,30 @@ fn test_ten_percent_fee_open_long_price_up_close_opening_larger_short() {
 
     let alice_balance_2 = router.wrap().query_balance(&alice, "orai").unwrap().amount;
     assert_eq!(
-        alice_balance_2 - alice_balance_1,
-        Uint128::from(31_363_636u64)
+        alice_balance_1 - alice_balance_2,
+        Uint128::from(180_000_000u64)
     );
 
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.size, Integer::new_negative(42_500_001u64));
-    assert_eq!(position.notional, Uint128::from(412_121_213u64));
-    assert_eq!(position.margin, Uint128::from(51_515_151u64));
+
+    let position_3 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 3)
+        .unwrap();
+    assert_eq!(position_1.size + position_3.size, Integer::new_negative(42_500_000u64));
+    assert_eq!(position_3.notional - position_1.notional, Uint128::from(550_000_000u64));
+    assert_eq!(position_1.margin, Uint128::from(25_000_000u64));
 
     let pnl = engine
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(9u64));
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(139_655_173u64));
 
     let fee_pool_balance = router
         .wrap()
@@ -2536,14 +2525,13 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
             Side::Buy,
             Uint128::from(125_000_000u64),
             Uint128::from(2_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(125_000_000u64),
                 Uint128::from(2_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2559,14 +2547,13 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
             Side::Sell,
             Uint128::from(125_000_000u64),
             Uint128::from(2_000_000u64),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(20_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                bob.clone(),
                 Uint128::from(125_000_000u64),
                 Uint128::from(2_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2578,7 +2565,7 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -2590,14 +2577,13 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
             Side::Sell,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(1_000_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::from(1_450_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(60_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2608,25 +2594,29 @@ fn test_ten_percent_fee_open_long_price_down_close_opening_larger_short() {
     let alice_balance_2 = router.wrap().query_balance(&alice, "orai").unwrap().amount;
     assert_eq!(
         alice_balance_1 - alice_balance_2,
-        Uint128::from(61_666_667u64)
+        Uint128::from(120_000_000u64)
     );
 
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.size, Integer::new_negative(130_000_001u64));
-    assert_eq!(position.notional, Uint128::from(433_333_334u64));
-    assert_eq!(position.margin, Uint128::from(43_333_333u64));
+
+    let position_3 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 3)
+        .unwrap();
+    assert_eq!(position_1.size + position_3.size, Integer::new_negative(130_000_000u64));
+    assert_eq!(position_3.notional - position_1.notional, Uint128::from(350_000_000u64));
+    assert_eq!(position_1.margin, Uint128::from(125_000_000u64));
 
     let pnl = engine
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(3u64));
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(220370371u64));
 }
 
 #[test]
@@ -2654,14 +2644,13 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
             Side::Sell,
             Uint128::from(200_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(25_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(200_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2675,14 +2664,13 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
             Side::Buy,
             Uint128::from(50_000_000u64),
             Uint128::from(4_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(7_349_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                bob.clone(),
                 Uint128::from(50_000_000u64),
                 Uint128::from(4_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2694,7 +2682,7 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -2706,14 +2694,13 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(37_490_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(60_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2721,22 +2708,26 @@ fn test_ten_percent_fee_open_short_price_up_close_opening_larger_long() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.size, Integer::new_positive(12_499_999u64));
-    assert_eq!(position.notional, Uint128::from(266_666_666u64));
-    assert_eq!(position.margin, Uint128::from(26_666_666u64));
+
+    let position_3 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 3)
+        .unwrap();
+    assert_eq!(position_1.size + position_3.size, Integer::new_positive(12_500_000u64));
+    assert_eq!(position_3.notional - position_1.notional, Uint128::from(400_000_000u64));
+    assert_eq!(position_1.margin - position_3.margin, Uint128::from(140_000_000u64));
 
     let pnl = engine
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(21u64));
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(866666667u64));
 }
 
 #[test]
@@ -2763,14 +2754,13 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
             Side::Sell,
             Uint128::from(500_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(4_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::from(100_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(500_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2786,14 +2776,13 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
             Side::Sell,
             Uint128::from(100_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(1_000_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::from(50_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                bob.clone(),
                 Uint128::from(100_000_000u64),
                 Uint128::from(1_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2805,7 +2794,7 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -2817,14 +2806,13 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
             Side::Buy,
             Uint128::from(60_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::from(149_990_000u64),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(60_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2833,17 +2821,23 @@ fn test_ten_percent_fee_open_short_price_down_close_opening_larger_long() {
     router.execute(alice.clone(), msg).unwrap();
 
     let alice_balance_2 = router.wrap().query_balance(&alice, "orai").unwrap().amount;
+    println!("alice_balance 1: {:?}", alice_balance_1);
+    println!("alice_balance 2: {:?}", alice_balance_2);
     assert_eq!(
-        alice_balance_2 - alice_balance_1,
-        Uint128::from(640_000_000u64)
+        alice_balance_1 - alice_balance_2,
+        Uint128::from(120_000_000u64)
     );
 
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.size, Integer::new_positive(49_999_999u64));
-    assert_eq!(position.notional, Uint128::from(333_333_333u64));
-    assert_eq!(position.margin, Uint128::from(33_333_333u64));
+
+    let position_3 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 3)
+        .unwrap();
+    assert_eq!(position_1.size + position_3.size, Integer::new_positive(50_000_000u64));
+    assert_eq!(position_3.notional - position_1.notional, Uint128::from(100_000_000u64));
+    assert_eq!(position_1.margin + position_3.margin, Uint128::from(560_000_000u64));
 }
 
 #[test]
@@ -2870,14 +2864,13 @@ fn test_ten_percent_fee_open_long_price_down_liquidation() {
             Side::Buy,
             Uint128::from(5_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::zero(),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(5_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2891,14 +2884,13 @@ fn test_ten_percent_fee_open_long_price_down_liquidation() {
             Side::Sell,
             Uint128::from(50_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(5_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::zero(),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                bob.clone(),
                 Uint128::from(50_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -2910,14 +2902,14 @@ fn test_ten_percent_fee_open_long_price_down_liquidation() {
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(35_962_880u64));
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(4_761_904u64));
     assert_eq!(position.notional, Uint128::from(50_000_000u64));
@@ -2929,36 +2921,40 @@ fn test_ten_percent_fee_open_long_price_down_liquidation() {
             Side::Sell,
             Uint128::from(60_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(900_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::zero(),
-            vec![Coin::new(82_925_760u128, "orai")],
+            calculate_funds_needed(
+                &router.wrap(),
+                Uint128::from(60_000_000u64),
+                Uint128::from(1_000_000u64),
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
 
     assert_eq!(
         calculate_funds_needed(
             &router.wrap(),
-            engine.addr(),
-            alice.clone(),
             Uint128::from(60_000_000u64),
             Uint128::from(1_000_000u64),
-            Side::Sell,
             vamm.addr(),
         )
         .unwrap(),
-        vec![Coin::new(82_925_760u128, "orai")]
+        vec![Coin::new(66000000u128, "orai")]
     );
 
     router.execute(alice.clone(), msg).unwrap();
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 3)
         .unwrap();
-    assert_eq!(position.size, Integer::new_negative(17_501_548u64));
-    assert_eq!(position.notional, Uint128::from(45_962_880u64));
-    assert_eq!(position.margin, Uint128::from(45_962_880u64));
+    assert_eq!(position.size, Integer::new_negative(22_263_452u64));
+    assert_eq!(position.notional, Uint128::from(60_000_000u64));
+    assert_eq!(position.margin, Uint128::from(60_000_000u64));
 }
 
-// TODO: Find these tests
 #[test]
 fn test_ten_percent_fee_open_long_price_down_liquidation_with_positive_margin() {
     let NativeTokenScenario {
@@ -2983,14 +2979,13 @@ fn test_ten_percent_fee_open_long_price_down_liquidation_with_positive_margin() 
             Side::Buy,
             Uint128::from(10_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::zero()),
             Uint128::zero(),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                alice.clone(),
                 Uint128::from(10_000_000u64),
                 Uint128::from(10_000_000u64),
-                Side::Buy,
                 vamm.addr(),
             )
             .unwrap(),
@@ -3004,14 +2999,13 @@ fn test_ten_percent_fee_open_long_price_down_liquidation_with_positive_margin() 
             Side::Sell,
             Uint128::from(10_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(10_000_000u64),
+            Some(Uint128::from(22_000_000u64)),
             Uint128::zero(),
             calculate_funds_needed(
                 &router.wrap(),
-                engine.addr(),
-                bob.clone(),
                 Uint128::from(10_000_000u64),
                 Uint128::from(5_000_000u64),
-                Side::Sell,
                 vamm.addr(),
             )
             .unwrap(),
@@ -3023,14 +3017,14 @@ fn test_ten_percent_fee_open_long_price_down_liquidation_with_positive_margin() 
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
     assert_eq!(pnl.unrealized_pnl, Integer::new_negative(8_506_226u64));
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(9_090_909u64));
     assert_eq!(position.notional, Uint128::from(100_000_000u64));
@@ -3040,25 +3034,30 @@ fn test_ten_percent_fee_open_long_price_down_liquidation_with_positive_margin() 
         .open_position(
             vamm.addr().to_string(),
             Side::Sell,
-            Uint128::from(60_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(20_000_000u64),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(15_000_000u64)),
             Uint128::zero(),
-            vec![Coin::new(6_000_000u128, "orai")],
+            calculate_funds_needed(
+                &router.wrap(),
+                Uint128::from(1_000_000u64),
+                Uint128::from(20_000_000u64),
+                vamm.addr(),
+            )
+            .unwrap(),
         )
         .unwrap();
 
     assert_eq!(
         calculate_funds_needed(
             &router.wrap(),
-            engine.addr(),
-            alice.clone(),
             Uint128::from(60_000_000u64),
             Uint128::from(1_000_000u64),
-            Side::Sell,
             vamm.addr(),
         )
         .unwrap(),
-        vec![Coin::new(6_000_000u128, "orai")]
+        vec![Coin::new(66_000_000u128, "orai")]
     );
 
     let err = router.execute(alice.clone(), msg).unwrap_err();

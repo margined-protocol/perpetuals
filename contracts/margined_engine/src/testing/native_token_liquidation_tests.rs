@@ -1,7 +1,7 @@
 use cosmwasm_std::{BankMsg, Coin, CosmosMsg, StdError, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Side};
-use margined_utils::{cw_multi_test::Executor, testing::NativeTokenScenario};
+use margined_utils::{cw_multi_test::Executor, testing::{NativeTokenScenario, to_decimals}};
 
 use crate::testing::new_native_token_scenario;
 
@@ -57,6 +57,8 @@ fn test_partially_liquidate_long_position() {
             Side::Buy,
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
+            to_decimals(10),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(25_000_000u128, "orai")],
         )
@@ -76,6 +78,8 @@ fn test_partially_liquidate_long_position() {
             Side::Sell,
             Uint128::from(45_180_723u128),
             Uint128::from(1_000_000u64),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(18_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(45_180_723u128, "orai")],
         )
@@ -83,18 +87,18 @@ fn test_partially_liquidate_long_position() {
     router.execute(bob.clone(), msg).unwrap();
 
     let msg = engine
-        .liquidate(vamm.addr().to_string(), alice.to_string(), Uint128::zero())
+        .liquidate(vamm.addr().to_string(), 1, alice.to_string(), Uint128::zero())
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(position.margin, Uint128::from(19_274_982u128));
     assert_eq!(position.size, Integer::new_positive(15_000_000u128));
 
     let margin_ratio = engine
-        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_positive(43_713u128));
 
@@ -160,6 +164,8 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
             Side::Buy,
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(13_000_000u64),
+            Some(Uint128::from(9_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(25_000_000u128, "orai")],
         )
@@ -179,6 +185,8 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
             Side::Sell,
             Uint128::from(45_180_723u128),
             Uint128::from(1_000_000u64),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(18_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(45_180_723u128, "orai")],
         )
@@ -191,6 +199,7 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
     let msg = engine
         .liquidate(
             vamm.addr().to_string(),
+            1,
             alice.to_string(),
             Uint128::from(273_850_000u64),
         )
@@ -198,7 +207,7 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
     let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "partial liquidation failure - reply (id 7)".to_string(),
+            msg: "partial liquidation failure - reply (id 5)".to_string(),
         },
         err.downcast().unwrap()
     );
@@ -207,6 +216,7 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
     let msg = engine
         .liquidate(
             vamm.addr().to_string(),
+            1,
             alice.to_string(),
             Uint128::from(273_800_000u64),
         )
@@ -266,6 +276,8 @@ fn test_partially_liquidate_short_position() {
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(7_000_000u64),
+            Some(Uint128::from(18_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -285,6 +297,8 @@ fn test_partially_liquidate_short_position() {
             Side::Buy,
             Uint128::from(19_672_131u128),
             Uint128::from(1_000_000u64),
+            Uint128::from(10_000_000u64),
+            Some(Uint128::from(6_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(19_672_131u128, "orai")],
         )
@@ -292,18 +306,18 @@ fn test_partially_liquidate_short_position() {
     router.execute(bob.clone(), msg).unwrap();
 
     let msg = engine
-        .liquidate(vamm.addr().to_string(), alice.to_string(), Uint128::zero())
+        .liquidate(vamm.addr().to_string(), 1, alice.to_string(), Uint128::zero())
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(position.margin, Uint128::from(16_079_607u128));
     assert_eq!(position.size, Integer::new_negative(18_750_000u128));
 
     let margin_ratio = engine
-        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_positive(45_736u128));
 
@@ -369,6 +383,8 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(7_000_000u64),
+            Some(Uint128::from(18_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -388,6 +404,8 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
             Side::Buy,
             Uint128::from(19_672_131u128),
             Uint128::from(1_000_000u64),
+            Uint128::from(10_000_000u64),
+            Some(Uint128::from(5_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(19_672_131u128, "orai")],
         )
@@ -400,6 +418,7 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
     let msg = engine
         .liquidate(
             vamm.addr().to_string(),
+            1,
             alice.to_string(),
             Uint128::from(177_000_000u64),
         )
@@ -407,7 +426,7 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
     let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "partial liquidation failure - reply (id 7)".to_string(),
+            msg: "partial liquidation failure - reply (id 5)".to_string(),
         },
         err.downcast().unwrap()
     );
@@ -416,6 +435,7 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
     let msg = engine
         .liquidate(
             vamm.addr().to_string(),
+            1,
             alice.to_string(),
             Uint128::from(177_100_000u64),
         )
@@ -475,6 +495,8 @@ fn test_long_position_complete_liquidation() {
             Side::Buy,
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(14_000_000u64),
+            Some(Uint128::from(5_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(25_000_000u128, "orai")],
         )
@@ -494,6 +516,8 @@ fn test_long_position_complete_liquidation() {
             Side::Sell,
             Uint128::from(73_529_411u128),
             Uint128::from(1_000_000u64),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(18_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(73_529_411u128, "orai")],
         )
@@ -501,16 +525,16 @@ fn test_long_position_complete_liquidation() {
     router.execute(bob.clone(), msg).unwrap();
 
     let msg = engine
-        .liquidate(vamm.addr().to_string(), alice.to_string(), Uint128::zero())
+        .liquidate(vamm.addr().to_string(), 1, alice.to_string(), Uint128::zero())
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 
     let err = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "Querier contract error: Generic error: No position found".to_string()
+            msg: "Querier contract error: margined_perp::margined_engine::Position not found".to_string()
         },
         err
     );
@@ -578,6 +602,8 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
             Side::Buy,
             Uint128::from(25_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(14_000_000u64),
+            Some(Uint128::from(5_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(25_000_000u128, "orai")],
         )
@@ -597,6 +623,8 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
             Side::Sell,
             Uint128::from(73_529_411u128),
             Uint128::from(1_000_000u64),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(18_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(73_529_411u128, "orai")],
         )
@@ -606,6 +634,7 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
     let msg = engine
         .liquidate(
             vamm.addr().to_string(),
+            1,
             alice.to_string(),
             Uint128::from(224_100_000u128),
         )
@@ -613,7 +642,7 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
     let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "liquidation failure - reply (id 6)".to_string(),
+            msg: "liquidation failure - reply (id 4)".to_string(),
         },
         err.downcast().unwrap()
     );
@@ -621,6 +650,7 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
     let msg = engine
         .liquidate(
             vamm.addr().to_string(),
+            1,
             alice.to_string(),
             Uint128::from(224_000_000u64),
         )
@@ -680,6 +710,8 @@ fn test_short_position_complete_liquidation() {
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(10_000_000u64),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(18_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -699,6 +731,8 @@ fn test_short_position_complete_liquidation() {
             Side::Buy,
             Uint128::from(40_336_134u128),
             Uint128::from(1_000_000u64),
+            Uint128::from(14_000_000u64),
+            Some(Uint128::from(5_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(40_336_134u128, "orai")],
         )
@@ -706,16 +740,16 @@ fn test_short_position_complete_liquidation() {
     router.execute(bob.clone(), msg).unwrap();
 
     let msg = engine
-        .liquidate(vamm.addr().to_string(), alice.to_string(), Uint128::zero())
+        .liquidate(vamm.addr().to_string(), 1, alice.to_string(), Uint128::zero())
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 
     let err = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "Querier contract error: Generic error: No position found".to_string()
+            msg: "Querier contract error: margined_perp::margined_engine::Position not found".to_string()
         },
         err
     );
@@ -782,6 +816,8 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             Side::Buy,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(14_000_000u64),
+            Some(Uint128::from(9_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -801,6 +837,8 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             Side::Buy,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(16_000_000u64),
+            Some(Uint128::from(10_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -820,8 +858,10 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
             Side::Sell,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            Uint128::from(6_000_000u64),
+            Some(Uint128::from(18_000_000u64)),
             Uint128::zero(),
-            vec![],
+            vec![Coin::new(20_000_000u128, "orai")],
         )
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
@@ -836,7 +876,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
     // TWAP PnL = (70.42 * 270 + 84.62 * 15 + 99.96 * 600 + 84.62 * 15) / 900 - 100 ~= -9.39
     // Use TWAP price PnL since -9.39 > -15.38
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 2)
         .unwrap();
     assert_eq!(position.notional, Uint128::from(100_000_000u64));
 
@@ -844,7 +884,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            2,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -854,7 +894,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            2,
             PnlCalcOption::Twap,
         )
         .unwrap();
@@ -867,7 +907,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine
-        .liquidate(vamm.addr().to_string(), alice.to_string(), Uint128::zero())
+        .liquidate(vamm.addr().to_string(), 2, alice.to_string(), Uint128::zero())
         .unwrap();
     let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
@@ -928,6 +968,8 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
             Side::Buy,
             Uint128::from(20_000_000u64),
             Uint128::from(5_000_000u64),
+            to_decimals(10),
+            Some(Uint128::zero()),
             Uint128::zero(),
             vec![Coin::new(20_000_000u128, "orai")],
         )
@@ -944,7 +986,7 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
     // TWAP PnL = (83.3333333333 * 885 + 100 * 15) / 900 - 100 = -16.39
     // Use spot price PnL since 0 > -16.39
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(position.notional, Uint128::from(100_000_000u64));
 
@@ -953,7 +995,7 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
@@ -963,7 +1005,7 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::Twap,
         )
         .unwrap();
@@ -976,7 +1018,7 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine
-        .liquidate(vamm.addr().to_string(), alice.to_string(), Uint128::zero())
+        .liquidate(vamm.addr().to_string(), 1, alice.to_string(), Uint128::zero())
         .unwrap();
     let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
@@ -1015,13 +1057,13 @@ fn test_force_error_empty_position() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine
-        .liquidate(vamm.addr().to_string(), alice.to_string(), Uint128::zero())
+        .liquidate(vamm.addr().to_string(), 1, alice.to_string(), Uint128::zero())
         .unwrap();
     let err = router.execute(carol.clone(), msg).unwrap_err();
 
     assert_eq!(
         err.source().unwrap().to_string(),
-        "Generic error: Position is zero"
+        "margined_perp::margined_engine::Position not found"
     );
 }
 
@@ -1067,10 +1109,11 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
     env.open_small_position(
         env.bob.clone(),
         Side::Buy,
-        Uint128::from(4_000_000u64),
+        Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
-        4_000_000u128,
-        5u64,
+        Uint128::from(16_000_000u64),
+        Some(Uint128::from(8_000_000u64)),
+        1u64,
     );
 
     // when alice create a 20 margin * 5x long position when 7.5757575758 quoteAsset = 100
@@ -1079,20 +1122,22 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
     env.open_small_position(
         env.alice.clone(),
         Side::Buy,
-        Uint128::from(4_000_000u64),
+        Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
-        4_000_000u128,
-        5u64,
+        Uint128::from(14_000_000u64),
+        Some(Uint128::from(10_000_000u64)),
+        1u64,
     );
 
     // AMM after: 1100 : 90.9090909091, price: 12.1
     env.open_small_position(
         env.bob.clone(),
         Side::Sell,
-        Uint128::from(4_000_000u64),
+        Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
-        0u128,
-        5u64,
+        Uint128::from(11_000_000u64),
+        Some(Uint128::from(20_000_000u64)),
+        1u64,
     );
 
     let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
@@ -1111,6 +1156,7 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            2,
             env.alice.to_string(),
             Uint128::zero(),
         )
@@ -1118,8 +1164,8 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
     env.router.execute(env.carol.clone(), msg).unwrap();
 
     let state = env.vamm.state(&env.router.wrap()).unwrap();
-    assert_eq!(state.quote_asset_reserve, Uint128::from(1_077_551_039u128));
-    assert_eq!(state.base_asset_reserve, Uint128::from(92_803_036u128));
+    assert_eq!(state.quote_asset_reserve, Uint128::from(1_077_551_026u128));
+    assert_eq!(state.base_asset_reserve, Uint128::from(92_803_031u128));
 }
 
 #[test]
@@ -1179,7 +1225,8 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         Side::Buy,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
-        4_000_000u128,
+        Uint128::from(15_000_000u64),
+        Some(Uint128::from(8_000_000u64)),
         5u64,
     );
 
@@ -1190,7 +1237,8 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         Side::Buy,
         Uint128::from(2_000_000u64),
         Uint128::from(5_000_000u64),
-        2_000_000u128,
+        Uint128::from(19_000_000u64),
+        Some(Uint128::from(11_000_000u64)),
         5u64,
     );
 
@@ -1201,7 +1249,8 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         Side::Buy,
         Uint128::from(2_000_000u64),
         Uint128::from(5_000_000u64),
-        2_000_000u128,
+        Uint128::from(23_000_000u64),
+        Some(Uint128::from(13_000_000u64)),
         5u64,
     );
 
@@ -1212,7 +1261,8 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         Side::Sell,
         Uint128::from(4_000_000u64),
         Uint128::from(5_000_000u64),
-        0u128,
+        Uint128::from(10_000_000u64),
+        Some(Uint128::from(15_000_000u64)),
         5u64,
     );
 
@@ -1229,6 +1279,18 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            11,
+            env.alice.to_string(),
+            Uint128::zero(),
+        )
+        .unwrap();
+    env.router.execute(env.carol.clone(), msg).unwrap();
+    
+    let msg = env
+        .engine
+        .liquidate(
+            env.vamm.addr().to_string(),
+            12,
             env.alice.to_string(),
             Uint128::zero(),
         )
@@ -1239,6 +1301,84 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            13,
+            env.alice.to_string(),
+            Uint128::zero(),
+        )
+        .unwrap();
+    env.router.execute(env.carol.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .liquidate(
+            env.vamm.addr().to_string(),
+            14,
+            env.alice.to_string(),
+            Uint128::zero(),
+        )
+        .unwrap();
+    env.router.execute(env.carol.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .liquidate(
+            env.vamm.addr().to_string(),
+            15,
+            env.alice.to_string(),
+            Uint128::zero(),
+        )
+        .unwrap();
+    env.router.execute(env.carol.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .liquidate(
+            env.vamm.addr().to_string(),
+            6,
+            env.carol.to_string(),
+            Uint128::zero(),
+        )
+        .unwrap();
+    env.router.execute(env.bob.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .liquidate(
+            env.vamm.addr().to_string(),
+            7,
+            env.carol.to_string(),
+            Uint128::zero(),
+        )
+        .unwrap();
+    env.router.execute(env.bob.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .liquidate(
+            env.vamm.addr().to_string(),
+            8,
+            env.carol.to_string(),
+            Uint128::zero(),
+        )
+        .unwrap();
+    env.router.execute(env.bob.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .liquidate(
+            env.vamm.addr().to_string(),
+            9,
+            env.carol.to_string(),
+            Uint128::zero(),
+        )
+        .unwrap();
+    env.router.execute(env.bob.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .liquidate(
+            env.vamm.addr().to_string(),
+            10,
             env.carol.to_string(),
             Uint128::zero(),
         )
@@ -1246,8 +1386,8 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let state = env.vamm.state(&env.router.wrap()).unwrap();
-    assert_eq!(state.quote_asset_reserve, Uint128::from(1_077_551_052u128));
-    assert_eq!(state.base_asset_reserve, Uint128::from(92_803_036u128));
+    assert_eq!(state.quote_asset_reserve, Uint128::from(1_077_551_079u128));
+    assert_eq!(state.base_asset_reserve, Uint128::from(92_803_034u128));
 }
 
 #[test]
@@ -1271,7 +1411,7 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
 
     let msg = env
         .vamm
-        .set_fluctuation_limit_ratio(Uint128::from(60_000u128))
+        .set_fluctuation_limit_ratio(Uint128::from(210_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -1306,10 +1446,11 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
     env.open_small_position(
         env.bob.clone(),
         Side::Buy,
-        Uint128::from(4_000_000u64),
+        Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
-        4_000_000u128,
-        5u64,
+        Uint128::from(16_000_000u64),
+        Some(Uint128::from(8_000_000u64)),
+        1u64,
     );
 
     // when carol create a 10 margin * 5x long position when 7.5757575758 quoteAsset = 100
@@ -1317,10 +1458,11 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
     env.open_small_position(
         env.carol.clone(),
         Side::Buy,
-        Uint128::from(2_000_000u64),
+        Uint128::from(10_000_000u64),
         Uint128::from(5_000_000u64),
-        2_000_000u128,
-        5u64,
+        Uint128::from(14_000_000u64),
+        Some(Uint128::from(11_000_000u64)),
+        1u64,
     );
 
     // when alice create a 10 margin * 5x long position
@@ -1328,10 +1470,11 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
     env.open_small_position(
         env.alice.clone(),
         Side::Buy,
-        Uint128::from(2_000_000u64),
+        Uint128::from(10_000_000u64),
         Uint128::from(5_000_000u64),
-        2_000_000u128,
-        5u64,
+        Uint128::from(17_000_000u64),
+        Some(Uint128::from(13_000_000u64)),
+        1u64,
     );
 
     // when david create a 2 margin * 5x long position
@@ -1340,20 +1483,22 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
     env.open_small_position(
         env.david.clone(),
         Side::Buy,
-        Uint128::from(400_000u128), // 0.4
+        Uint128::from(2_000_000u128), // 0.4
         Uint128::from(5_000_000u64),
-        400_000u128,
-        5u64,
+        Uint128::from(20_000_000u64),
+        Some(Uint128::from(13_000_000u64)),
+        1u64,
     );
 
     // AMM after: 1110 : 90.09009009, price: 12.321
     env.open_small_position(
         env.bob.clone(),
         Side::Sell,
-        Uint128::from(4_000_000u64),
+        Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
-        0u128,
-        5u64,
+        Uint128::from(13_000_000u64),
+        Some(Uint128::from(20_000_000u64)),
+        1u64,
     );
 
     let bob_balance = env
@@ -1362,7 +1507,7 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         .query_balance(&env.bob, "orai")
         .unwrap()
         .amount;
-    assert_eq!(bob_balance, Uint128::from(4_980_000_000u128));
+    assert_eq!(bob_balance, Uint128::from(4_960_000_000u128));
 
     let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
     let msg = env
@@ -1377,6 +1522,7 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            3,
             env.alice.to_string(),
             Uint128::zero(),
         )
@@ -1387,6 +1533,7 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            2,
             env.carol.to_string(),
             Uint128::zero(),
         )
@@ -1397,6 +1544,7 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            4,
             env.david.to_string(),
             Uint128::zero(),
         )
@@ -1404,8 +1552,8 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let state = env.vamm.state(&env.router.wrap()).unwrap();
-    assert_eq!(state.quote_asset_reserve, Uint128::from(1_079_066_101u128));
-    assert_eq!(state.base_asset_reserve, Uint128::from(92_672_742u128));
+    assert_eq!(state.quote_asset_reserve, Uint128::from(1_079_066_040u128));
+    assert_eq!(state.base_asset_reserve, Uint128::from(92_672_736u128));
 }
 
 #[test]
@@ -1429,7 +1577,7 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
 
     let msg = env
         .vamm
-        .set_fluctuation_limit_ratio(Uint128::from(120_000u128))
+        .set_fluctuation_limit_ratio(Uint128::from(210_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -1463,10 +1611,11 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
     env.open_small_position(
         env.bob.clone(),
         Side::Buy,
-        Uint128::from(4_000_000u64),
+        Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
-        4_000_000u128,
-        5u64,
+        Uint128::from(16_000_000u64),
+        Some(Uint128::from(8_000_000u64)),
+        1u64,
     );
 
     // when carol create a 10 margin * 5x long position when 7.5757575758 quoteAsset = 100
@@ -1474,10 +1623,11 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
     env.open_small_position(
         env.carol.clone(),
         Side::Buy,
-        Uint128::from(2_000_000u64),
+        Uint128::from(10_000_000u64),
         Uint128::from(5_000_000u64),
-        2_000_000u128,
-        5u64,
+        Uint128::from(13_000_000u64),
+        Some(Uint128::from(11_000_000u64)),
+        1u64,
     );
 
     // when alice create a 10 margin * 5x long position
@@ -1485,10 +1635,11 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
     env.open_small_position(
         env.alice.clone(),
         Side::Buy,
-        Uint128::from(2_000_000u64),
+        Uint128::from(10_000_000u64),
         Uint128::from(5_000_000u64),
-        2_000_000u128,
-        5u64,
+        Uint128::from(14_000_000u64),
+        Some(Uint128::from(12_000_000u64)),
+        1u64,
     );
 
     // when david create a 10 margin * 5x long position
@@ -1497,20 +1648,22 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
     env.open_small_position(
         env.david.clone(),
         Side::Buy,
-        Uint128::from(2_000_000u64),
+        Uint128::from(10_000_000u64),
         Uint128::from(5_000_000u64),
-        2_000_000u128,
-        5u64,
+        Uint128::from(18_000_000u64),
+        Some(Uint128::from(13_000_000u64)),
+        1u64,
     );
 
     // AMM after: 1150 : 86.9565217391, price: 13.225
     env.open_small_position(
         env.bob.clone(),
         Side::Sell,
-        Uint128::from(4_000_000u64),
+        Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
-        0u128,
-        5u64,
+        Uint128::from(8_000_000u64),
+        Some(Uint128::from(20_000_000u64)),
+        1u64,
     );
 
     let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
@@ -1527,6 +1680,7 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            3,
             env.alice.to_string(),
             Uint128::zero(),
         )
@@ -1537,6 +1691,7 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            2,
             env.carol.to_string(),
             Uint128::zero(),
         )
@@ -1547,6 +1702,7 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            4,
             env.david.to_string(),
             Uint128::zero(),
         )
@@ -1554,8 +1710,8 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let state = env.vamm.state(&env.router.wrap()).unwrap();
-    assert_eq!(state.quote_asset_reserve, Uint128::from(1_084_789_420u128));
-    assert_eq!(state.base_asset_reserve, Uint128::from(92_183_802u128));
+    assert_eq!(state.quote_asset_reserve, Uint128::from(1_084_789_377u128));
+    assert_eq!(state.base_asset_reserve, Uint128::from(92_183_795u128));
 }
 
 #[test]
@@ -1579,7 +1735,7 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
 
     let msg = env
         .vamm
-        .set_fluctuation_limit_ratio(Uint128::from(147_000u128))
+        .set_fluctuation_limit_ratio(Uint128::from(210_000u128))
         .unwrap();
     env.router.execute(env.owner.clone(), msg).unwrap();
 
@@ -1606,10 +1762,11 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
     env.open_small_position(
         env.bob.clone(),
         Side::Buy,
-        Uint128::from(4_000_000u64),
+        Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
-        4_000_000u128,
-        5u64,
+        Uint128::from(16_000_000u64),
+        Some(Uint128::from(8_000_000u64)),
+        1u64,
     );
 
     // when alice create a 20 margin * 5x long position when 7.5757575758 quoteAsset = 100
@@ -1618,20 +1775,22 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
     env.open_small_position(
         env.alice.clone(),
         Side::Buy,
-        Uint128::from(4_000_000u64),
+        Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
-        4_000_000u128,
-        5u64,
+        Uint128::from(15_000_000u64),
+        Some(Uint128::from(11_000_000u64)),
+        1u64,
     );
 
     // AMM after: 1100 : 90.9090909091, price: 12.1
     env.open_small_position(
         env.bob.clone(),
         Side::Sell,
-        Uint128::from(4_000_000u64),
+        Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
-        0u128,
-        5u64,
+        Uint128::from(10_000_000u64),
+        Some(Uint128::from(15_000_000u64)),
+        1u64,
     );
 
     let price = env.vamm.spot_price(&env.router.wrap()).unwrap();
@@ -1650,6 +1809,7 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            2,
             env.alice.to_string(),
             Uint128::zero(),
         )
@@ -1709,10 +1869,11 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
     env.open_small_position(
         env.bob.clone(),
         Side::Buy,
-        Uint128::from(4_000_000u64),
+        Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
-        4_000_000u128,
-        5u64,
+        Uint128::from(16_000_000u64),
+        Some(Uint128::from(8_000_000u64)),
+        1u64,
     );
 
     // when alice create a 20 margin * 5x long position when 7.5757575758 quoteAsset = 100
@@ -1721,20 +1882,22 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
     env.open_small_position(
         env.alice.clone(),
         Side::Buy,
-        Uint128::from(4_000_000u64),
+        Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
-        4_000_000u128,
-        5u64,
+        Uint128::from(15_000_000u64),
+        Some(Uint128::from(11_000_000u64)),
+        1u64,
     );
 
     // AMM after: 1100 : 90.9090909091, price: 12.1
     env.open_small_position(
         env.bob.clone(),
         Side::Sell,
-        Uint128::from(4_000_000u64),
+        Uint128::from(20_000_000u64),
         Uint128::from(5_000_000u64),
-        0u128,
-        5u64,
+        Uint128::from(10_000_000u64),
+        Some(Uint128::from(15_000_000u64)),
+        1u64,
     );
 
     let msg = env
@@ -1750,6 +1913,8 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
             Side::Sell,
             Uint128::from(44_000_000u64),
             Uint128::from(1_000_000u64),
+            Uint128::from(9_000_000u64),
+            Some(Uint128::from(13_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(25_000_000u128, "orai")],
         )
@@ -1757,7 +1922,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
     let err = env.router.execute(env.alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "decrease position failure - reply (id 2)".to_string()
+            msg: "increase position failure - reply (id 1)".to_string()
         },
         err.downcast().unwrap()
     );
@@ -1784,6 +1949,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            2,
             env.alice.to_string(),
             Uint128::zero(),
         )
@@ -1852,7 +2018,8 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         Side::Buy,
         Uint128::from(10_000_000u64),
         Uint128::from(5_000_000u64),
-        10_000_000u128,
+        Uint128::from(14_000_000u64),
+        Some(Uint128::from(8_000_000u64)),
         2u64,
     );
 
@@ -1863,7 +2030,8 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         Side::Buy,
         Uint128::from(5_000_000u64),
         Uint128::from(5_000_000u64),
-        5_000_000u128,
+        Uint128::from(15_000_000u64),
+        Some(Uint128::from(11_000_000u64)),
         2u64,
     );
 
@@ -1875,7 +2043,8 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         Side::Buy,
         Uint128::from(5_000_000u64),
         Uint128::from(5_000_000u64),
-        5_000_000u128,
+        Uint128::from(17_000_000u64),
+        Some(Uint128::from(13_000_000u64)),
         2u64,
     );
 
@@ -1885,7 +2054,8 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         Side::Sell,
         Uint128::from(10_000_000u64),
         Uint128::from(5_000_000u64),
-        0u128,
+        Uint128::from(10_000_000u64),
+        Some(Uint128::from(15_000_000u64)),
         2u64,
     );
 
@@ -1912,6 +2082,7 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            5,
             env.alice.to_string(),
             Uint128::zero(),
         )
@@ -1922,6 +2093,18 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         .engine
         .liquidate(
             env.vamm.addr().to_string(),
+            6,
+            env.alice.to_string(),
+            Uint128::zero(),
+        )
+        .unwrap();
+    env.router.execute(env.bob.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .liquidate(
+            env.vamm.addr().to_string(),
+            3,
             env.carol.to_string(),
             Uint128::zero(),
         )
@@ -1929,7 +2112,7 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
     let err = env.router.execute(env.alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "partial liquidation failure - reply (id 7)".to_string()
+            msg: "partial liquidation failure - reply (id 5)".to_string()
         },
         err.downcast().unwrap()
     );

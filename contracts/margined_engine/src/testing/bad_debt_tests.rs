@@ -43,6 +43,8 @@ fn test_cannot_increase_position_when_bad_debt() {
             Side::Buy,
             to_decimals(10u64),
             to_decimals(8u64),
+            to_decimals(11),
+            Some(Uint128::zero()),
             to_decimals(4u64),
             vec![],
         )
@@ -57,6 +59,8 @@ fn test_cannot_increase_position_when_bad_debt() {
                 Side::Sell,
                 to_decimals(10u64),
                 to_decimals(10u64),
+                to_decimals(1),
+                Some(to_decimals(12)),
                 to_decimals(0u64),
                 vec![],
             )
@@ -75,12 +79,15 @@ fn test_cannot_increase_position_when_bad_debt() {
             vamm.addr().to_string(),
             Side::Buy,
             to_decimals(10u64),
-            to_decimals(10u64),
+            to_decimals(20u64),
+            to_decimals(15),
+            Some(Uint128::zero()),
             to_decimals(0u64),
             vec![],
         )
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
+
     assert_eq!(
         StdError::GenericErr {
             msg: "Position is undercollateralized".to_string()
@@ -90,20 +97,20 @@ fn test_cannot_increase_position_when_bad_debt() {
 
     // pump spot price
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 2, to_decimals(0u64))
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+    let msg = engine
+        .close_position(vamm.addr().to_string(), 3, to_decimals(0u64))
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+    let msg = engine
+        .close_position(vamm.addr().to_string(), 4, to_decimals(0u64))
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
-    // increase position should succeed since the position no longer has bad debt
     let msg = engine
-        .open_position(
-            vamm.addr().to_string(),
-            Side::Buy,
-            to_decimals(10u64),
-            to_decimals(10u64),
-            to_decimals(0u64),
-            vec![],
-        )
+        .deposit_margin(vamm.addr().to_string(), 1, to_decimals(10u64), vec![])
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 }
@@ -142,6 +149,8 @@ fn test_cannot_reduce_position_when_bad_debt() {
             Side::Buy,
             to_decimals(10u64),
             to_decimals(8u64),
+            to_decimals(15),
+            Some(Uint128::zero()),
             to_decimals(4u64),
             vec![],
         )
@@ -154,8 +163,10 @@ fn test_cannot_reduce_position_when_bad_debt() {
             .open_position(
                 vamm.addr().to_string(),
                 Side::Sell,
+                to_decimals(1u64),
                 to_decimals(10u64),
-                to_decimals(10u64),
+                to_decimals(3),
+                Some(to_decimals(15)),
                 to_decimals(0u64),
                 vec![],
             )
@@ -173,8 +184,10 @@ fn test_cannot_reduce_position_when_bad_debt() {
         .open_position(
             vamm.addr().to_string(),
             Side::Sell,
-            to_decimals(1u64),
-            to_decimals(1u64),
+            to_decimals(5u64),
+            to_decimals(20u64),
+            to_decimals(5),
+            Some(to_decimals(15)),
             to_decimals(0u64),
             vec![],
         )
@@ -189,9 +202,9 @@ fn test_cannot_reduce_position_when_bad_debt() {
 
     // pump spot price
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
-    router.execute(bob.clone(), msg).unwrap();
+    router.execute(alice.clone(), msg).unwrap();
 
     // increase position should succeed since the position no longer has bad debt
     let msg = engine
@@ -200,6 +213,8 @@ fn test_cannot_reduce_position_when_bad_debt() {
             Side::Sell,
             to_decimals(1u64),
             to_decimals(1u64),
+            to_decimals(4),
+            Some(to_decimals(15)),
             to_decimals(0u64),
             vec![],
         )
@@ -241,6 +256,8 @@ fn test_cannot_close_position_when_bad_debt() {
             Side::Buy,
             to_decimals(10u64),
             to_decimals(8u64),
+            to_decimals(15),
+            Some(Uint128::zero()),
             to_decimals(4u64),
             vec![],
         )
@@ -248,19 +265,19 @@ fn test_cannot_close_position_when_bad_debt() {
     router.execute(alice.clone(), msg).unwrap();
 
     // bob drop spot price
-    for _ in 0..5 {
-        let msg = engine
-            .open_position(
-                vamm.addr().to_string(),
-                Side::Sell,
-                to_decimals(10u64),
-                to_decimals(10u64),
-                to_decimals(0u64),
-                vec![],
-            )
-            .unwrap();
-        router.execute(bob.clone(), msg).unwrap();
-    }
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Sell,
+            to_decimals(50u64),
+            to_decimals(10u64),
+            to_decimals(5),
+            Some(to_decimals(15)),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
 
     router.update_block(|block| {
         block.time = block.time.plus_seconds(1);
@@ -273,7 +290,7 @@ fn test_cannot_close_position_when_bad_debt() {
     // estimated remaining margin = 10 + (-55.136) = -45.136
     // real bad debt: 46.10795455
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
@@ -285,12 +302,12 @@ fn test_cannot_close_position_when_bad_debt() {
 
     // pump spot price
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 2, to_decimals(0u64))
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(1u64))
+        .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 }
@@ -330,6 +347,8 @@ fn test_cannot_partial_close_position_when_bad_debt() {
             Side::Buy,
             to_decimals(10u64),
             to_decimals(8u64),
+            to_decimals(15),
+            Some(Uint128::zero()),
             to_decimals(4u64),
             vec![],
         )
@@ -344,6 +363,8 @@ fn test_cannot_partial_close_position_when_bad_debt() {
                 Side::Sell,
                 to_decimals(10u64),
                 to_decimals(10u64),
+                to_decimals(3),
+                Some(to_decimals(15)),
                 to_decimals(0u64),
                 vec![],
             )
@@ -372,7 +393,7 @@ fn test_cannot_partial_close_position_when_bad_debt() {
     // estimated remaining margin = 10 + (-13.784) = -3.784
     // real bad debt = 4.027
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
@@ -418,6 +439,8 @@ fn test_can_partial_close_position_as_long_as_no_bad_debt_is_incurred() {
             Side::Buy,
             to_decimals(10u64),
             to_decimals(8u64),
+            to_decimals(15),
+            Some(Uint128::zero()),
             to_decimals(4u64),
             vec![],
         )
@@ -432,6 +455,8 @@ fn test_can_partial_close_position_as_long_as_no_bad_debt_is_incurred() {
                 Side::Sell,
                 to_decimals(10u64),
                 to_decimals(10u64),
+                to_decimals(2),
+                Some(to_decimals(15)),
                 to_decimals(0u64),
                 vec![],
             )
@@ -462,12 +487,12 @@ fn test_can_partial_close_position_as_long_as_no_bad_debt_is_incurred() {
     // estimated remaining margin = 10 + (-5.5136) = 4.4864
     // real bad debt = 0
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(6_666_666_667u128));
 }

@@ -27,6 +27,8 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
             Side::Buy,
             Uint128::from(300_000_000u128),
             Uint128::from(2_000_000u128),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::from(9_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(300_000_000u128, "orai")],
         )
@@ -39,6 +41,8 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
             Side::Sell,
             Uint128::from(1200_000_000u128),
             Uint128::from(1_000_000u128),
+            Uint128::from(4_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(1200_000_000u128, "orai")],
         )
@@ -83,7 +87,7 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
         .get_position_with_funding_payment(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1
         )
         .unwrap();
     assert_eq!(alice_position.size, Integer::new_positive(37_500_000u128));
@@ -92,7 +96,7 @@ fn test_generate_loss_for_amm_when_funding_rate_is_positive_and_amm_is_long() {
     // then bob will get 1% of his position size as fundingPayment
     // {balance: -187.5, margin: 1200} => {balance: -187.5, margin: 1201.875}
     let bob_position = engine
-        .get_position_with_funding_payment(&router.wrap(), vamm.addr().to_string(), bob.to_string())
+        .get_position_with_funding_payment(&router.wrap(), vamm.addr().to_string(), 2)
         .unwrap();
     assert_eq!(bob_position.size, Integer::new_negative(187_500_000u128));
     assert_eq!(bob_position.margin, Uint128::from(1_201_875_000u128));
@@ -134,6 +138,8 @@ fn test_will_keep_generating_same_loss_when_funding_rate_is_positive() {
             Side::Buy,
             Uint128::from(300_000_000u128),
             Uint128::from(2_000_000u128),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::from(9_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(300_000_000u128, "orai")],
         )
@@ -146,6 +152,8 @@ fn test_will_keep_generating_same_loss_when_funding_rate_is_positive() {
             Side::Sell,
             Uint128::from(1200_000_000u128),
             Uint128::from(1_000_000u128),
+            Uint128::from(4_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(1200_000_000u128, "orai")],
         )
@@ -220,6 +228,8 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
             Side::Buy,
             Uint128::from(300_000_000u128),
             Uint128::from(2_000_000u128),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::from(9_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(300_000_000u128, "orai")],
         )
@@ -232,6 +242,8 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
             Side::Sell,
             Uint128::from(1200_000_000u128),
             Uint128::from(1_000_000u128),
+            Uint128::from(4_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(1200_000_000u128, "orai")],
         )
@@ -269,12 +281,12 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
         .get_position_with_funding_payment(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1
         )
         .unwrap();
     assert_eq!(alice_position.margin, Uint128::from(299_625_000u128));
     let alice_balance = engine
-        .get_balance_with_funding_payment(&router.wrap(), alice.to_string())
+        .get_balance_with_funding_payment(&router.wrap(), 1)
         .unwrap();
     assert_eq!(alice_balance, Uint128::from(299_625_000u128));
 
@@ -291,12 +303,12 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
         .get_position_with_funding_payment(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1
         )
         .unwrap();
     assert_eq!(alice_position.margin, Uint128::from(299_250_000u128));
     let alice_balance = engine
-        .get_balance_with_funding_payment(&router.wrap(), alice.to_string())
+        .get_balance_with_funding_payment(&router.wrap(), 1)
         .unwrap();
     assert_eq!(alice_balance, Uint128::from(299_250_000u128));
 
@@ -321,12 +333,12 @@ fn test_funding_rate_is_1_percent_then_negative_1_percent() {
         .get_position_with_funding_payment(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1
         )
         .unwrap();
     assert_eq!(alice_position.margin, Uint128::from(299_625_000u128));
     let alice_balance = engine
-        .get_balance_with_funding_payment(&router.wrap(), alice.to_string())
+        .get_balance_with_funding_payment(&router.wrap(), 1)
         .unwrap();
     assert_eq!(alice_balance, Uint128::from(299_625_000u128));
 }
@@ -350,6 +362,8 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
             Side::Buy,
             Uint128::from(300_000_000u128),
             Uint128::from(2_000_000u128),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::from(9_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(300_000_000u128, "orai")],
         )
@@ -362,6 +376,8 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
             Side::Sell,
             Uint128::from(1200_000_000u128),
             Uint128::from(1_000_000u128),
+            Uint128::from(4_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(1200_000_000u128, "orai")],
         )
@@ -390,7 +406,7 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
         .get_position_with_funding_payment(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1
         )
         .unwrap();
     assert_eq!(alice_position.margin, Uint128::from(1_050_000_000u128));
@@ -399,7 +415,7 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
     // {balance: 37.5, margin: 300} => {balance: 37.5, margin: 1050}
     // then alice can withdraw more than her initial margin while remain the enough margin ratio
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(400_000_000u128))
+        .withdraw_margin(vamm.addr().to_string(), 1, Uint128::from(400_000_000u128))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
@@ -408,12 +424,12 @@ fn test_have_huge_funding_payment_profit_withdraw_excess_margin() {
         .get_position_with_funding_payment(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1
         )
         .unwrap();
     assert_eq!(alice_position.margin, Uint128::from(650_000_000u128));
     let alice_balance = engine
-        .get_balance_with_funding_payment(&router.wrap(), alice.to_string())
+        .get_balance_with_funding_payment(&router.wrap(), 1)
         .unwrap();
     assert_eq!(alice_balance, Uint128::from(650_000_000u128));
 }
@@ -437,6 +453,8 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
             Side::Buy,
             Uint128::from(300_000_000u128),
             Uint128::from(2_000_000u128),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::from(9_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(300_000_000u128, "orai")],
         )
@@ -449,6 +467,8 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
             Side::Sell,
             Uint128::from(1200_000_000u128),
             Uint128::from(1_000_000u128),
+            Uint128::from(4_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(1200_000_000u128, "orai")],
         )
@@ -475,12 +495,12 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
     // then bob will get 2000% of his position size as fundingPayment
     // funding payment: -187.5 x 2000% = -3750, margin is 1200 so bad debt = -3750 + 1200 = 2550
     let bob_position = engine
-        .get_position_with_funding_payment(&router.wrap(), vamm.addr().to_string(), bob.to_string())
+        .get_position_with_funding_payment(&router.wrap(), vamm.addr().to_string(), 2)
         .unwrap();
     assert_eq!(bob_position.margin, Uint128::zero());
 
     let msg = engine
-        .liquidate(vamm.addr().to_string(), bob.to_string(), Uint128::zero())
+        .liquidate(vamm.addr().to_string(), 2, bob.to_string(), Uint128::zero())
         .unwrap();
     let response = router.execute(bob.clone(), msg).unwrap();
     assert_eq!(
@@ -512,6 +532,8 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
             Side::Buy,
             Uint128::from(300_000_000u128),
             Uint128::from(2_000_000u128),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::from(9_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(300_000_000u128, "orai")],
         )
@@ -524,6 +546,8 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
             Side::Sell,
             Uint128::from(1200_000_000u128),
             Uint128::from(1_000_000u128),
+            Uint128::from(4_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(1200_000_000u128, "orai")],
         )
@@ -560,6 +584,7 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
     let msg = engine
         .deposit_margin(
             vamm.addr().to_string(),
+            2,
             Uint128::from(1_000_000u128),
             vec![Coin::new(1_000_000u128, "orai")],
         )
@@ -567,7 +592,7 @@ fn test_have_huge_funding_payment_margin_zero_can_add_margin() {
     router.execute(bob.clone(), msg).unwrap();
 
     let bob_position = engine
-        .get_position_with_funding_payment(&router.wrap(), vamm.addr().to_string(), bob.to_string())
+        .get_position_with_funding_payment(&router.wrap(), vamm.addr().to_string(), 2)
         .unwrap();
     assert_eq!(bob_position.margin, Uint128::zero());
 
@@ -598,6 +623,8 @@ fn test_have_huge_funding_payment_margin_zero_cannot_remove_margin() {
             Side::Buy,
             Uint128::from(300_000_000u128),
             Uint128::from(2_000_000u128),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::from(9_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(300_000_000u128, "orai")],
         )
@@ -610,6 +637,8 @@ fn test_have_huge_funding_payment_margin_zero_cannot_remove_margin() {
             Side::Sell,
             Uint128::from(1200_000_000u128),
             Uint128::from(1_000_000u128),
+            Uint128::from(4_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(1200_000_000u128, "orai")],
         )
@@ -644,7 +673,7 @@ fn test_have_huge_funding_payment_margin_zero_cannot_remove_margin() {
     // funding payment: -187.5 x 2000% = -3750, margin is 1200 so bad debt = -3750 + 1200 = 2550
     // margin can't removed
     let msg = engine
-        .withdraw_margin(vamm.addr().to_string(), Uint128::from(1u64))
+        .withdraw_margin(vamm.addr().to_string(), 2, Uint128::from(1u64))
         .unwrap();
     let err = router.execute(bob.clone(), msg).unwrap_err();
     assert_eq!(
@@ -672,6 +701,8 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
             Side::Buy,
             Uint128::from(300_000_000u128),
             Uint128::from(2_000_000u128),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::from(9_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(300_000_000u128, "orai")],
         )
@@ -684,6 +715,8 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
             Side::Sell,
             Uint128::from(1200_000_000u128),
             Uint128::from(1_000_000u128),
+            Uint128::from(4_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(1200_000_000u128, "orai")],
         )
@@ -721,6 +754,7 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
     let msg = engine
         .deposit_margin(
             vamm.addr().to_string(),
+            2,
             Uint128::from(10_000_000u128),
             vec![Coin::new(10_000_000u128, "orai")],
         )
@@ -729,7 +763,7 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
 
     // badDebt 2550 - 10 margin = 2540
     let msg = engine
-        .liquidate(vamm.addr().to_string(), bob.to_string(), Uint128::zero())
+        .liquidate(vamm.addr().to_string(), 2, bob.to_string(), Uint128::zero())
         .unwrap();
     let response = router.execute(bob.clone(), msg).unwrap();
     assert_eq!(
@@ -762,6 +796,8 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
             Side::Buy,
             Uint128::from(300_000_000u128),
             Uint128::from(2_000_000u128),
+            Uint128::from(18_000_000u64),
+            Some(Uint128::from(9_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(300_000_000u128, "orai")],
         )
@@ -774,6 +810,8 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
             Side::Sell,
             Uint128::from(1200_000_000u128),
             Uint128::from(1_000_000u128),
+            Uint128::from(4_000_000u64),
+            Some(Uint128::from(12_000_000u64)),
             Uint128::zero(),
             vec![Coin::new(1200_000_000u128, "orai")],
         )
@@ -811,7 +849,7 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
         .get_position_with_funding_payment(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1
         )
         .unwrap();
     assert_eq!(alice_position.size, Integer::new_positive(37_500_000u128));
@@ -820,7 +858,7 @@ fn test_will_change_nothing_if_funding_rate_is_zero() {
     // then bob's position won't change
     // {balance: -187.5, margin: 1200}
     let bob_position = engine
-        .get_position_with_funding_payment(&router.wrap(), vamm.addr().to_string(), bob.to_string())
+        .get_position_with_funding_payment(&router.wrap(), vamm.addr().to_string(), 2)
         .unwrap();
     assert_eq!(bob_position.size, Integer::new_negative(187_500_000u128));
     assert_eq!(bob_position.margin, Uint128::from(1_200_000_000u128));

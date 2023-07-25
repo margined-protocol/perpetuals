@@ -20,6 +20,7 @@ fn test_instantiation() {
         eligible_collateral: NATIVE_DENOM.to_string(),
         initial_margin_ratio: Uint128::from(50_000u128), // 0.05
         maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
+        tp_sl_spread: Uint128::from(50_000u128), // 0.05
         liquidation_fee: Uint128::from(100u128),
     };
     let info = mock_info(OWNER, &[]);
@@ -41,6 +42,7 @@ fn test_instantiation() {
             initial_margin_ratio: Uint128::from(50_000u128),
             maintenance_margin_ratio: Uint128::from(50_000u128),
             partial_liquidation_ratio: Uint128::zero(),
+            tp_sl_spread: Uint128::from(50_000u128),
             liquidation_fee: Uint128::from(100u128),
         }
     );
@@ -56,6 +58,7 @@ fn test_update_config() {
         eligible_collateral: NATIVE_DENOM.to_string(),
         initial_margin_ratio: Uint128::from(50_000u128), // 0.05
         maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
+        tp_sl_spread: Uint128::from(50_000u128), // 0.05
         liquidation_fee: Uint128::from(100u128),
     };
     let info = mock_info(OWNER, &[]);
@@ -69,6 +72,7 @@ fn test_update_config() {
         initial_margin_ratio: None,
         maintenance_margin_ratio: None,
         partial_liquidation_ratio: None,
+        tp_sl_spread: None,
         liquidation_fee: None,
     };
 
@@ -90,6 +94,7 @@ fn test_update_config() {
             initial_margin_ratio: Uint128::from(50_000u128),
             maintenance_margin_ratio: Uint128::from(50_000u128),
             partial_liquidation_ratio: Uint128::zero(),
+            tp_sl_spread: Uint128::from(50_000u128),
             liquidation_fee: Uint128::from(100u128),
         }
     );
@@ -102,6 +107,7 @@ fn test_update_config() {
         initial_margin_ratio: None,
         maintenance_margin_ratio: None,
         partial_liquidation_ratio: None,
+        tp_sl_spread: None,
         liquidation_fee: None,
     };
 
@@ -117,6 +123,7 @@ fn test_update_config() {
         initial_margin_ratio: Some(Uint128::MAX),
         maintenance_margin_ratio: None,
         partial_liquidation_ratio: None,
+        tp_sl_spread: None,
         liquidation_fee: None,
     };
 
@@ -135,6 +142,7 @@ fn test_update_pauser() {
         eligible_collateral: NATIVE_DENOM.to_string(),
         initial_margin_ratio: Uint128::from(50_000u128), // 0.05
         maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
+        tp_sl_spread: Uint128::from(50_000u128), // 0.05
         liquidation_fee: Uint128::from(100u128),
     };
     let info = mock_info(OWNER, &[]);

@@ -161,6 +161,7 @@ fn test_set_open_cant_do_anything_when_its_beginning() {
         quote_asset_amount: to_decimals(600),
         base_asset_limit: Uint128::zero(),
         can_go_over_fluctuation: false,
+        position_id: 0u64
     };
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
@@ -173,6 +174,7 @@ fn test_set_open_cant_do_anything_when_its_beginning() {
         direction: Direction::AddToAmm,
         base_asset_amount: to_decimals(600),
         quote_asset_limit: Uint128::zero(),
+        position_id: 0u64
     };
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
@@ -224,6 +226,7 @@ fn test_set_open_cant_do_anything_when_closed() {
         quote_asset_amount: to_decimals(600),
         base_asset_limit: Uint128::zero(),
         can_go_over_fluctuation: false,
+        position_id: 0u64
     };
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
@@ -236,6 +239,7 @@ fn test_set_open_cant_do_anything_when_closed() {
         direction: Direction::AddToAmm,
         base_asset_amount: to_decimals(600),
         quote_asset_limit: Uint128::zero(),
+        position_id: 0u64
     };
     let info = mock_info("addr0000", &[]);
     let result = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();

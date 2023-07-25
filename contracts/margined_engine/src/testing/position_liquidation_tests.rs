@@ -62,6 +62,8 @@ fn test_liquidation_fee_100_percent() {
             Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
+            to_decimals(13),
+            Some(to_decimals(8)),
             to_decimals(0u64),
             vec![],
         )
@@ -86,6 +88,7 @@ fn test_liquidation_fee_100_percent() {
     let msg = engine
         .liquidate(
             vamm.addr().to_string(),
+            1,
             alice.to_string(),
             to_decimals(0u64),
         )
@@ -167,6 +170,8 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
             Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
+            to_decimals(6),
+            Some(to_decimals(12)),
             to_decimals(0u64),
             vec![],
         )
@@ -179,6 +184,8 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
             Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
+            to_decimals(3),
+            Some(to_decimals(8)),
             to_decimals(0u64),
             vec![],
         )
@@ -188,7 +195,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     // alice close position, pnl = 200 -105.88 ~= 94.12
     // receive pnl + margin = 114.12
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
@@ -203,7 +210,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     // bob loss all his margin (20) and there's 74.12 badDebt
     // which is already prepaid by insurance fund when alice close the position
     let margin_ratio = engine
-        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), bob.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), 2)
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_negative(252_000_000u128));
 
@@ -213,7 +220,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     // which is already prepaid by insurance fund when alice close the position before
     // clearing house doesn't need to ask insurance fund for covering the bad debt
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 2, to_decimals(0u64))
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
@@ -268,6 +275,8 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
             Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
+            to_decimals(6),
+            Some(to_decimals(12)),
             to_decimals(0u64),
             vec![],
         )
@@ -280,6 +289,8 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
             Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
+            to_decimals(3),
+            Some(to_decimals(8)),
             to_decimals(0u64),
             vec![],
         )
@@ -289,7 +300,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
     // alice close position, pnl = 200 -105.88 ~= 94.12
     // receive pnl + margin = 114.12
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
@@ -301,7 +312,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
     // bob loss all his margin (20) and there's 74.12 badDebt
     // which is already prepaid by insurance fund when alice close the position
     let margin_ratio = engine
-        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), bob.to_string())
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), 2)
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_negative(252_000_000u128));
 
@@ -311,7 +322,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
     // which is already prepaid by insurance fund when alice close the position before
     // clearing house doesn't need to ask insurance fund for covering the bad debt
     let msg = engine
-        .liquidate(vamm.addr().to_string(), bob.to_string(), to_decimals(0u64))
+        .liquidate(vamm.addr().to_string(), 2, bob.to_string(), to_decimals(0u64))
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 
@@ -370,6 +381,8 @@ fn test_alice_has_enough_margin_cant_get_liquidated() {
             Side::Buy,
             to_decimals(300u64),
             to_decimals(2u64),
+            to_decimals(18),
+            Some(to_decimals(9)),
             to_decimals(0u64),
             vec![],
         )
@@ -382,6 +395,8 @@ fn test_alice_has_enough_margin_cant_get_liquidated() {
             Side::Sell,
             to_decimals(500u64),
             to_decimals(1u64),
+            to_decimals(16),
+            Some(to_decimals(27)),
             to_decimals(0u64),
             vec![],
         )
@@ -396,6 +411,7 @@ fn test_alice_has_enough_margin_cant_get_liquidated() {
     let msg = engine
         .liquidate(
             vamm.addr().to_string(),
+            1,
             alice.to_string(),
             to_decimals(0u64),
         )
@@ -454,6 +470,8 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
             Side::Buy,
             to_decimals(150u64),
             to_decimals(4u64),
+            to_decimals(18),
+            Some(to_decimals(9)),
             to_decimals(0u64),
             vec![],
         )
@@ -466,6 +484,8 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
             Side::Sell,
             to_decimals(500u64),
             to_decimals(1u64),
+            to_decimals(8),
+            Some(to_decimals(26)),
             to_decimals(0u64),
             vec![],
         )
@@ -476,6 +496,7 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
     let msg = engine
         .liquidate(
             vamm.addr().to_string(),
+            1,
             alice.to_string(),
             to_decimals(0u64),
         )
@@ -538,6 +559,8 @@ fn test_alice_long_position_underwater_oracle_price_activated_doesnt_get_liquida
             Side::Buy,
             to_decimals(150u64),
             to_decimals(4u64),
+            to_decimals(18),
+            Some(to_decimals(9)),
             to_decimals(0u64),
             vec![],
         )
@@ -558,6 +581,8 @@ fn test_alice_long_position_underwater_oracle_price_activated_doesnt_get_liquida
             Side::Sell,
             to_decimals(500u64),
             to_decimals(1u64),
+            to_decimals(13),
+            Some(to_decimals(26)),
             to_decimals(0u64),
             vec![],
         )
@@ -574,6 +599,7 @@ fn test_alice_long_position_underwater_oracle_price_activated_doesnt_get_liquida
     let msg = engine
         .liquidate(
             vamm.addr().to_string(),
+            1,
             alice.to_string(),
             to_decimals(0u64),
         )
@@ -632,6 +658,8 @@ fn test_alice_short_position_underwater_oracle_price_activated_doesnt_get_liquid
             Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
+            to_decimals(6),
+            Some(to_decimals(13)),
             to_decimals(0u64),
             vec![],
         )
@@ -652,6 +680,8 @@ fn test_alice_short_position_underwater_oracle_price_activated_doesnt_get_liquid
             Side::Sell,
             to_decimals(10u64),
             to_decimals(10u64),
+            to_decimals(3),
+            Some(to_decimals(7)),
             to_decimals(0u64),
             vec![],
         )
@@ -671,6 +701,7 @@ fn test_alice_short_position_underwater_oracle_price_activated_doesnt_get_liquid
     let msg = engine
         .liquidate(
             vamm.addr().to_string(),
+            1,
             alice.to_string(),
             to_decimals(0u64),
         )
@@ -700,6 +731,8 @@ fn test_can_open_same_side_position_even_thought_long_is_underwater_as_long_over
             Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
+            to_decimals(13),
+            Some(to_decimals(9)),
             to_decimals(0u64),
             vec![],
         )
@@ -712,6 +745,8 @@ fn test_can_open_same_side_position_even_thought_long_is_underwater_as_long_over
             Side::Sell,
             to_decimals(250u64),
             to_decimals(1u64),
+            to_decimals(9),
+            Some(to_decimals(17)),
             to_decimals(0u64),
             vec![],
         )
@@ -730,6 +765,8 @@ fn test_can_open_same_side_position_even_thought_long_is_underwater_as_long_over
             Side::Buy,
             to_decimals(100u64),
             to_decimals(1u64),
+            to_decimals(13),
+            Some(to_decimals(9)),
             to_decimals(0u64),
             vec![],
         )
@@ -737,23 +774,42 @@ fn test_can_open_same_side_position_even_thought_long_is_underwater_as_long_over
     router.execute(alice.clone(), msg).unwrap();
 
     // AMM after 1100 : 90.90909
-    // positionNotional = 166.67 + 100 = 266.67
-    // position size = 20 + 9.09 = 29.09
-    // margin = 25 + 100
-    let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+    // positionNotional = 166.67 = 266.67
+    // position size = 20
+    // margin = 25
+    let position_1 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.margin, to_decimals(125u64));
-    assert_eq!(position.size, Integer::from(29_090_909_090u128));
-    let pnl = engine
+    assert_eq!(position_1.margin, to_decimals(25u64));
+    assert_eq!(position_1.size, Integer::from(20_000_000_000u128));
+    assert_eq!(position_1.notional, Uint128::from(250_000_000_000u128));
+
+    let position_3 = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 3)
+        .unwrap();
+    assert_eq!(position_3.margin, to_decimals(100u64));
+    assert_eq!(position_3.size, Integer::from(9_090_909_090u128));
+    assert_eq!(position_3.notional, Uint128::from(100_000_000_000u128));
+
+    let pnl_1 = engine
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            1,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.position_notional, Uint128::from(266_666_666_658u128));
+    assert_eq!(pnl_1.position_notional, Uint128::from(198_360_655_736u128));
+
+    let pnl_3 = engine
+        .get_unrealized_pnl(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            3,
+            PnlCalcOption::SpotPrice,
+        )
+        .unwrap();
+    assert_eq!(pnl_3.position_notional, Uint128::from(99_999_999_990u128));
 }
 
 #[test]
@@ -774,13 +830,15 @@ fn test_can_open_same_side_position_even_thought_short_is_underwater_as_long_ove
             Side::Buy,
             to_decimals(88u64),
             Uint128::from(2_841_000_000u64),
+            to_decimals(13),
+            Some(to_decimals(9)),
             to_decimals(0u64),
             vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(position.margin, to_decimals(88u64));
 
@@ -790,6 +848,8 @@ fn test_can_open_same_side_position_even_thought_short_is_underwater_as_long_ove
             Side::Sell,
             to_decimals(250u64),
             to_decimals(1u64),
+            to_decimals(9),
+            Some(to_decimals(18)),
             to_decimals(0u64),
             vec![],
         )
@@ -808,6 +868,8 @@ fn test_can_open_same_side_position_even_thought_short_is_underwater_as_long_ove
             Side::Sell,
             to_decimals(150u64),
             to_decimals(1u64),
+            to_decimals(8),
+            Some(to_decimals(11)),
             to_decimals(0u64),
             vec![],
         )
@@ -820,19 +882,19 @@ fn test_can_open_same_side_position_even_thought_short_is_underwater_as_long_ove
     // realizedPnl = -83.33 * (20 - 2.35) / 20 = -73.538725
     // margin = 88 -73.538725 ~= 14.4
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 3)
         .unwrap();
-    assert_eq!(position.size, Integer::from(2_353_760_434u128));
-    assert_eq!(position.margin, Uint128::from(14_471_986_128u128));
+    assert_eq!(position.size, Integer::new_negative(17_646_751_562u128));
+    assert_eq!(position.margin, Uint128::from(150_000_000_000u128));
     let pnl = engine
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
-            alice.to_string(),
+            3,
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.position_notional, Uint128::from(16_672_666_672u128));
+    assert_eq!(pnl.position_notional, Uint128::from(150_000_000_006u128));
 }
 
 #[test]
@@ -852,6 +914,8 @@ fn test_cannot_open_position_even_thought_long_is_underwater_if_still_under_afte
             Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
+            to_decimals(13),
+            Some(to_decimals(9)),
             to_decimals(0u64),
             vec![],
         )
@@ -864,6 +928,8 @@ fn test_cannot_open_position_even_thought_long_is_underwater_if_still_under_afte
             Side::Sell,
             to_decimals(250u64),
             to_decimals(1u64),
+            to_decimals(10),
+            Some(to_decimals(17)),
             to_decimals(0u64),
             vec![],
         )
@@ -875,7 +941,9 @@ fn test_cannot_open_position_even_thought_long_is_underwater_if_still_under_afte
             vamm.addr().to_string(),
             Side::Buy,
             to_decimals(1u64),
-            to_decimals(1u64),
+            to_decimals(21u64),
+            to_decimals(13),
+            Some(to_decimals(9)),
             to_decimals(0u64),
             vec![],
         )
@@ -891,7 +959,9 @@ fn test_cannot_open_position_even_thought_long_is_underwater_if_still_under_afte
             vamm.addr().to_string(),
             Side::Sell,
             to_decimals(1u64),
-            to_decimals(1u64),
+            to_decimals(21u64),
+            to_decimals(9),
+            Some(to_decimals(13)),
             to_decimals(0u64),
             vec![],
         )
@@ -920,6 +990,8 @@ fn test_cannot_open_position_even_thought_short_is_underwater_if_still_under_aft
             Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
+            to_decimals(6),
+            Some(to_decimals(13)),
             to_decimals(0u64),
             vec![],
         )
@@ -932,6 +1004,8 @@ fn test_cannot_open_position_even_thought_short_is_underwater_if_still_under_aft
             Side::Buy,
             to_decimals(250u64),
             to_decimals(1u64),
+            to_decimals(9),
+            Some(to_decimals(5)),
             to_decimals(0u64),
             vec![],
         )
@@ -943,7 +1017,9 @@ fn test_cannot_open_position_even_thought_short_is_underwater_if_still_under_aft
             vamm.addr().to_string(),
             Side::Sell,
             to_decimals(1u64),
-            to_decimals(1u64),
+            to_decimals(21u64),
+            to_decimals(9),
+            Some(to_decimals(13)),
             to_decimals(0u64),
             vec![],
         )
@@ -984,6 +1060,8 @@ fn test_close_partial_position_long_position_when_closing_whole_position_is_over
             Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
+            to_decimals(14),
+            Some(to_decimals(9)),
             to_decimals(0u64),
             vec![],
         )
@@ -1008,12 +1086,12 @@ fn test_close_partial_position_long_position_when_closing_whole_position_is_over
     // position notional is 73.53
     // amm reserves after 1176.47 : 85
     let msg = engine
-        .close_position(vamm.addr().to_string(), Uint128::zero())
+        .close_position(vamm.addr().to_string(), 1, Uint128::zero())
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(position.size, Integer::new_positive(15_000_000_000u128));
     assert_eq!(position.margin, Uint128::from(25_000_000_000u128));
@@ -1052,6 +1130,8 @@ fn test_close_partial_position_short_position_when_closing_whole_position_is_ove
             Side::Sell,
             to_decimals(20u64),
             to_decimals(10u64),
+            to_decimals(6),
+            Some(to_decimals(13)),
             to_decimals(0u64),
             vec![],
         )
@@ -1076,12 +1156,12 @@ fn test_close_partial_position_short_position_when_closing_whole_position_is_ove
     // position notional is 42.11
     // amm reserves after 842.11 : 118.75
     let msg = engine
-        .close_position(vamm.addr().to_string(), Uint128::zero())
+        .close_position(vamm.addr().to_string(), 1, Uint128::zero())
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let position = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(position.size, Integer::new_negative(18_750_000_000u128));
     assert_eq!(position.margin, Uint128::from(20_000_000_000u128));
@@ -1118,6 +1198,8 @@ fn test_close_whole_partial_position_when_partial_liquidation_ratio_is_one() {
             Side::Buy,
             to_decimals(25u64),
             to_decimals(10u64),
+            to_decimals(13),
+            Some(to_decimals(9)),
             to_decimals(0u64),
             vec![],
         )
@@ -1137,16 +1219,16 @@ fn test_close_whole_partial_position_when_partial_liquidation_ratio_is_one() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine
-        .close_position(vamm.addr().to_string(), Uint128::zero())
+        .close_position(vamm.addr().to_string(), 1, Uint128::zero())
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
     let err = engine
-        .position(&router.wrap(), vamm.addr().to_string(), alice.to_string())
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "Querier contract error: Generic error: No position found".to_string()
+            msg: "Querier contract error: margined_perp::margined_engine::Position not found".to_string()
         },
         err
     );

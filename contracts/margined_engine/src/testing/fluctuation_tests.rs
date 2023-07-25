@@ -47,6 +47,8 @@ fn test_force_error_open_position_exceeds_fluctuation_limit() {
             Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
+            to_decimals(15),
+            Some(to_decimals(8)),
             to_decimals(0u64),
             vec![],
         )
@@ -94,6 +96,8 @@ fn test_force_error_reduce_position_exceeds_fluctuation_limit() {
             Side::Buy,
             to_decimals(250u64),
             to_decimals(1u64),
+            to_decimals(15),
+            Some(to_decimals(8)),
             to_decimals(0u64),
             vec![],
         )
@@ -113,6 +117,8 @@ fn test_force_error_reduce_position_exceeds_fluctuation_limit() {
             Side::Sell,
             to_decimals(50u64),
             to_decimals(1u64),
+            to_decimals(8),
+            Some(to_decimals(30)),
             to_decimals(0u64),
             vec![],
         )
@@ -120,7 +126,7 @@ fn test_force_error_reduce_position_exceeds_fluctuation_limit() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "decrease position failure - reply (id 2)".to_string(),
+            msg: "increase position failure - reply (id 1)".to_string(),
         },
         err.downcast().unwrap()
     );
@@ -178,6 +184,8 @@ fn test_close_position_limit_force_error_exceeding_fluctuation_limit_twice_in_sa
             Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
+            to_decimals(15),
+            Some(to_decimals(8)),
             to_decimals(0u64),
             vec![],
         )
@@ -197,6 +205,8 @@ fn test_close_position_limit_force_error_exceeding_fluctuation_limit_twice_in_sa
             Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
+            to_decimals(20),
+            Some(to_decimals(8)),
             to_decimals(0u64),
             vec![],
         )
@@ -215,7 +225,7 @@ fn test_close_position_limit_force_error_exceeding_fluctuation_limit_twice_in_sa
     // after alice closes her position partially, price: 13.767109
     // price fluctuation: (14.4000000058 - 13.767109) / 14.4000000058 = 0.0524
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 2, to_decimals(0u64))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
@@ -225,12 +235,12 @@ fn test_close_position_limit_force_error_exceeding_fluctuation_limit_twice_in_sa
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     let err = router.execute(bob.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "close position failure - reply (id 4)".to_string(),
+            msg: "close position failure - reply (id 2)".to_string(),
         },
         err.downcast().unwrap()
     );
@@ -287,6 +297,8 @@ fn test_close_position_slippage_limit_originally_long() {
             Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
+            to_decimals(15),
+            Some(to_decimals(8)),
             to_decimals(0u64),
             vec![],
         )
@@ -306,6 +318,8 @@ fn test_close_position_slippage_limit_originally_long() {
             Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
+            to_decimals(20),
+            Some(to_decimals(8)),
             to_decimals(0u64),
             vec![],
         )
@@ -320,7 +334,7 @@ fn test_close_position_slippage_limit_originally_long() {
     // when bob close his position
     // AMM after: 1081.96721 : 92.4242424
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(118u64))
+        .close_position(vamm.addr().to_string(), 1, to_decimals(118u64))
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
@@ -383,6 +397,8 @@ fn test_close_position_slippage_limit_originally_short() {
             Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
+            to_decimals(7),
+            Some(to_decimals(15)),
             Uint128::from(11_111_111_112u128),
             vec![],
         )
@@ -402,6 +418,8 @@ fn test_close_position_slippage_limit_originally_short() {
             Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
+            to_decimals(5),
+            Some(to_decimals(9)),
             Uint128::from(13_890_000_000u128),
             vec![],
         )
@@ -416,7 +434,7 @@ fn test_close_position_slippage_limit_originally_short() {
     // when bob close his position
     // AMM after: 878.0487804877 : 113.8888888889
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(79u64))
+        .close_position(vamm.addr().to_string(), 1, to_decimals(79u64))
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
@@ -477,6 +495,8 @@ fn test_force_error_close_position_slippage_limit_originally_long() {
             Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
+            to_decimals(15),
+            Some(to_decimals(9)),
             to_decimals(9u64),
             vec![],
         )
@@ -494,6 +514,8 @@ fn test_force_error_close_position_slippage_limit_originally_long() {
             Side::Buy,
             to_decimals(20u64),
             to_decimals(5u64),
+            to_decimals(18),
+            Some(to_decimals(11)),
             Uint128::from(7_500_000_000u128),
             vec![],
         )
@@ -506,12 +528,12 @@ fn test_force_error_close_position_slippage_limit_originally_long() {
     });
 
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(119u64))
+        .close_position(vamm.addr().to_string(), 1, to_decimals(119u64))
         .unwrap();
     let err = router.execute(bob.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "close position failure - reply (id 4)".to_string(),
+            msg: "close position failure - reply (id 2)".to_string(),
         },
         err.downcast().unwrap()
     );
@@ -566,6 +588,8 @@ fn test_force_error_close_position_slippage_limit_originally_short() {
             Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
+            to_decimals(7),
+            Some(to_decimals(15)),
             Uint128::from(11_111_111_112u128),
             vec![],
         )
@@ -583,6 +607,8 @@ fn test_force_error_close_position_slippage_limit_originally_short() {
             Side::Sell,
             to_decimals(20u64),
             to_decimals(5u64),
+            to_decimals(5),
+            Some(to_decimals(9)),
             Uint128::from(13_890_000_000u128),
             vec![],
         )
@@ -595,12 +621,12 @@ fn test_force_error_close_position_slippage_limit_originally_short() {
     });
 
     let msg = engine
-        .close_position(vamm.addr().to_string(), to_decimals(78u64))
+        .close_position(vamm.addr().to_string(), 1, to_decimals(78u64))
         .unwrap();
     let err = router.execute(bob.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "close position failure - reply (id 4)".to_string(),
+            msg: "close position failure - reply (id 2)".to_string(),
         },
         err.downcast().unwrap()
     );
