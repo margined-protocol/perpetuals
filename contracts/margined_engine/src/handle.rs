@@ -461,8 +461,8 @@ pub fn trigger_tp_sl(
             attribute_msgs.push(
                 Attribute { key: "action".to_string(), value: "TRIGGER_TAKE_PROFIT".to_string() },
             );
-        } else if stop_loss > Uint128::zero() && 
-            stop_loss > spot_price ||
+        } else if stop_loss > spot_price ||
+            stop_loss > Uint128::zero() && 
             spot_price.abs_diff(stop_loss) <= sl_spread {
             msgs.push(internal_close_position(deps, &position, quote_asset_limit, CLOSE_POSITION_REPLY_ID)?);
             attribute_msgs.push(
