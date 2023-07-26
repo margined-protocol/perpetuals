@@ -246,6 +246,7 @@ pub fn read_sent_funds(storage: &dyn Storage) -> StdResult<SentFunds> {
 pub struct TmpSwapInfo {
     pub position_id: u64,
     pub vamm: Addr,
+    pub pair: String,
     pub trader: Addr,
     pub side: Side,                 // buy or sell
     pub margin_amount: Uint128,     // amount of quote asset being supplied

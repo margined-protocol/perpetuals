@@ -29,9 +29,9 @@ use margined_common::{
     messages::wasm_execute,
     validate::{validate_margin_ratios, validate_ratio},
 };
-use margined_perp::margined_engine::{
+use margined_perp::{margined_engine::{
     PnlCalcOption, Position, PositionUnrealizedPnlResponse, Side,
-};
+}, margined_vamm::ConfigResponse};
 use margined_perp::margined_vamm::{Direction, ExecuteMsg, QueryMsg};
 
 #[allow(clippy::too_many_arguments)]
@@ -139,6 +139,8 @@ pub fn open_position(
         return Err(StdError::generic_err("Leverage must be greater than 1"));
     }
 
+    let vamm_config = get_vamm_config(&deps.querier, &vamm)?;
+
     let entry_price = get_input_price(
         &deps.querier,
         &vamm,
@@ -182,6 +184,7 @@ pub fn open_position(
         position_id,
         vamm: vamm.clone(),
         trader: trader.clone(),
+        pair: format!("{}/{}", vamm_config.base_asset, vamm_config.quote_asset),
         side: side.clone(),
         direction: side_to_direction(&side),
         size: Integer::zero(),
@@ -211,6 +214,7 @@ pub fn open_position(
         &TmpSwapInfo {
             position_id,
             vamm: vamm.clone(),
+            pair: format!("{}/{}", vamm_config.base_asset, vamm_config.quote_asset),
             trader: trader.clone(),
             side: side.clone(),
             margin_amount,
@@ -238,6 +242,7 @@ pub fn open_position(
         ("position_id", &position_id.to_string()),
         ("position_side",  &format!("{:?}", side)),
         ("vamm", vamm.as_ref()),
+        ("pair", &position.pair),
         ("trader", trader.as_ref()),
         ("margin_amount", &margin_amount.to_string()),
         ("leverage", &leverage.to_string()),
@@ -308,6 +313,8 @@ pub fn update_tp_sl(
     Ok(Response::new().add_attributes(vec![
         ("action", "update_tp_sl"),
         ("vamm", vamm.as_ref()),
+        ("pair", &position.pair),
+        ("trader", trader.as_ref()),
         ("position_id", &position_id.to_string()),
     ]))
 }
@@ -385,6 +392,7 @@ pub fn close_position(
             &TmpSwapInfo {
                 position_id,
                 vamm: position.vamm.clone(),
+                pair: position.pair.clone(),
                 trader: position.trader.clone(),
                 side: side.clone(),
                 margin_amount: position.size.value,
@@ -395,7 +403,7 @@ pub fn close_position(
                 margin_to_vault: Integer::zero(),
                 fees_paid: false,
                 take_profit: position.take_profit,
-                stop_loss: position.stop_loss
+                stop_loss: position.stop_loss,
             }
         )?;
 
@@ -416,6 +424,7 @@ pub fn close_position(
     Ok(Response::new().add_submessage(msg).add_attributes(vec![
         ("action", "close_position"),
         ("vamm", vamm.as_ref()),
+        ("pair", &position.pair),
         ("trader", trader.as_ref()),
         ("position_id", &position_id.to_string()),
         ("position_side",  &format!("{:?}", position.side)),
@@ -488,6 +497,15 @@ pub fn trigger_tp_sl(
     attribute_msgs.push(
         Attribute { key: "vamm".to_string(), value: vamm.to_string() },
     );
+    attribute_msgs.push(
+        Attribute { key: "pair".to_string(), value: position.pair },
+    );
+    attribute_msgs.push(
+        Attribute { key: "position_id".to_string(), value: position.position_id.to_string() },
+    );
+    attribute_msgs.push(
+        Attribute { key: "trader".to_string(), value: position.trader.to_string() },
+    );
 
     Ok(Response::new().add_submessages(msgs).add_attributes(attribute_msgs))
 }
@@ -549,6 +567,8 @@ pub fn liquidate(
     Ok(Response::new().add_submessage(msg).add_attributes(vec![
         ("action", "liquidate"),
         ("vamm", vamm.as_ref()),
+        ("pair", &position.pair),
+        ("position_id", &position_id.to_string()),
         ("trader", trader.as_ref()),
     ]))
 }
@@ -731,6 +751,7 @@ pub fn internal_close_position(
         &TmpSwapInfo {
             position_id: position.position_id,
             vamm: position.vamm.clone(),
+            pair: position.pair.clone(),
             trader: position.trader.clone(),
             side: side.clone(),
             margin_amount: position.size.value,
@@ -795,6 +816,7 @@ fn partial_liquidation(
         &TmpSwapInfo {
             position_id: position.position_id,
             vamm: position.vamm.clone(),
+            pair: position.pair.clone(),
             trader: position.trader.clone(),
             side,
             margin_amount: partial_position_size,
@@ -893,4 +915,11 @@ fn get_input_price(
     amount: Uint128,
 ) -> StdResult<Uint128> {
     querier.query_wasm_smart(vamm, &QueryMsg::InputPrice { direction, amount })
+}
+
+fn get_vamm_config(
+    querier: &QuerierWrapper,
+    vamm: &Addr,
+) -> StdResult<ConfigResponse> {
+    querier.query_wasm_smart(vamm, &QueryMsg::Config { })
 }

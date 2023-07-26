@@ -38,6 +38,7 @@ pub fn update_position_reply(
         position_id: swap.position_id,
         vamm: swap.vamm.clone(),
         trader: swap.trader.clone(),
+        pair: swap.pair,
         side: swap.side.clone(),
         direction: side_to_direction(&swap.side),
         size: Integer::zero(),

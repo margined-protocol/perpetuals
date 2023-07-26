@@ -203,6 +203,7 @@ pub struct LastPositionIdResponse {
 pub struct Position {
     pub position_id: u64,
     pub vamm: Addr,
+    pub pair: String,
     pub trader: Addr,
     pub side: Side,
     pub direction: Direction,
@@ -222,6 +223,7 @@ impl Default for Position {
             position_id: 0u64,
             vamm: Addr::unchecked(""),
             trader: Addr::unchecked(""),
+            pair: "".to_string(),
             side: Side::Buy,
             direction: Direction::AddToAmm,
             size: Integer::zero(),
