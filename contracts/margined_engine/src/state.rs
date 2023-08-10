@@ -120,7 +120,7 @@ pub fn remove_position(storage: &mut dyn Storage, key: &[u8], position: &Positio
     // not found means total is 0
     let total_tick_orders  = 0;
 
-    Bucket::<bool>::multilevel(
+    Bucket::<Side>::multilevel(
         storage,
         &[
             PREFIX_POSITION_BY_TRADER,
@@ -130,7 +130,7 @@ pub fn remove_position(storage: &mut dyn Storage, key: &[u8], position: &Positio
     )
     .remove(position_id_key);
 
-    Bucket::<bool>::multilevel(
+    Bucket::<Side>::multilevel(
         storage,
         &[
             PREFIX_POSITION_BY_SIDE,
@@ -140,7 +140,7 @@ pub fn remove_position(storage: &mut dyn Storage, key: &[u8], position: &Positio
     )
     .remove(position_id_key);
 
-    Bucket::<bool>::multilevel(
+    Bucket::<Side>::multilevel(
         storage, &[
             PREFIX_POSITION_BY_PRICE,
             key,
