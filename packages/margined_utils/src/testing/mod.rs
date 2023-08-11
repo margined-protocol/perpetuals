@@ -1,10 +1,14 @@
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use crate::contracts::helpers::{
     margined_engine::EngineController, margined_fee_pool::FeePoolController,
     margined_insurance_fund::InsuranceFundController, margined_pricefeed::PricefeedController,
     margined_vamm::VammController,
 };
 use crate::tools::fund_calculator::calculate_funds_needed;
-use cosmwasm_std::{Addr, BankMsg, Coin, CosmosMsg, Empty, Response, Uint128};
+use cosmwasm_std::{
+    Addr, BankMsg, BlockInfo, Coin, CosmosMsg, Empty, Response, Timestamp, Uint128,
+};
 use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg, MinterResponse};
 use margined_common::asset::NATIVE_DENOM;
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, Side};
@@ -24,6 +28,21 @@ pub type ContractCode = Box<dyn Contract<Empty>>;
 pub struct ContractInfo {
     pub addr: Addr,
     pub id: u64,
+}
+
+fn new_app() -> App {
+    let mut app = AppBuilder::new().build(|_router, _, _storage| {});
+    app.set_block(BlockInfo {
+        height: 1,
+        time: Timestamp::from_seconds(
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs(),
+        ),
+        chain_id: "Oraichain".to_string(),
+    });
+    app
 }
 
 pub struct NativeTokenScenario {
@@ -111,7 +130,7 @@ impl NativeTokenScenario {
                     eligible_collateral: NATIVE_DENOM.to_string(),
                     initial_margin_ratio: Uint128::from(50_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
-                    tp_sl_spread: Uint128::from(50_000u128), // 0.05
+                    tp_sl_spread: Uint128::from(50_000u128),         // 0.05
                     liquidation_fee: Uint128::from(50_000u128),      // 0.05
                 },
                 &[],
@@ -271,8 +290,9 @@ impl NativeTokenScenario {
             &self.router.wrap(),
             quote_asset_amount,
             leverage,
-            self.vamm.addr()
-        ).unwrap();
+            self.vamm.addr(),
+        )
+        .unwrap();
         for _ in 0..count {
             let msg = self
                 .engine
@@ -321,7 +341,7 @@ impl SimpleScenario {
         insurance_fund_code: ContractCode,
         pricefeed_code: ContractCode,
     ) -> Self {
-        let mut router = AppBuilder::new().build(|_router, _, _storage| {});
+        let mut router = new_app();
 
         let owner = Addr::unchecked("owner");
         let alice = Addr::unchecked("alice");
@@ -396,7 +416,7 @@ impl SimpleScenario {
                     eligible_collateral: usdc.0.to_string(),
                     initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
-                    tp_sl_spread: Uint128::from(50_000_000u128), // 0.05
+                    tp_sl_spread: Uint128::from(50_000_000u128),         // 0.05
                     liquidation_fee: Uint128::from(50_000_000u128),      // 0.05
                 },
                 &[],
@@ -640,7 +660,7 @@ impl VammScenario {
         vamm_code: ContractCode,
         pricefeed_code: ContractCode,
     ) -> Self {
-        let mut router = AppBuilder::new().build(|_router, _, _storage| {});
+        let mut router = new_app();
 
         let owner = Addr::unchecked("owner");
         let alice = Addr::unchecked("alice");
@@ -759,7 +779,7 @@ impl ShutdownScenario {
 
         pricefeed_code: ContractCode,
     ) -> Self {
-        let mut router = AppBuilder::new().build(|_router, _, _storage| {});
+        let mut router = new_app();
 
         let owner = Addr::unchecked("owner");
 
@@ -780,7 +800,7 @@ impl ShutdownScenario {
                     eligible_collateral: NATIVE_DENOM.to_string(),
                     initial_margin_ratio: Uint128::from(50_000u128), // 0.05
                     maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
-                    tp_sl_spread: Uint128::from(50_000u128),        // 0.05
+                    tp_sl_spread: Uint128::from(50_000u128),         // 0.05
                     liquidation_fee: Uint128::from(50_000u128),      // 0.05
                 },
                 &[],

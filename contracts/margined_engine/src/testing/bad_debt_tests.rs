@@ -1,7 +1,8 @@
+use cosmwasm_schema::schemars::_serde_json::to_string_pretty;
 use cosmwasm_std::{StdError, Uint128};
 use cw20::Cw20ExecuteMsg;
 use margined_common::integer::Integer;
-use margined_perp::margined_engine::Side;
+use margined_perp::margined_engine::{PositionFilter, Side};
 use margined_utils::{
     cw_multi_test::Executor,
     testing::{to_decimals, SimpleScenario},
@@ -93,6 +94,24 @@ fn test_cannot_increase_position_when_bad_debt() {
             msg: "Position is undercollateralized".to_string()
         },
         err.downcast().unwrap()
+    );
+
+    println!(
+        "{}",
+        to_string_pretty(
+            &engine
+                .get_positions(
+                    &router.wrap(),
+                    vamm.addr().to_string(),
+                    PositionFilter::None,
+                    None,
+                    None,
+                    None,
+                    None,
+                )
+                .unwrap()
+        )
+        .unwrap(),
     );
 
     // pump spot price
