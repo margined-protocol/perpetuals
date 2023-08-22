@@ -149,6 +149,20 @@ pub enum QueryMsg {
         limit: Option<u32>,
         order_by: Option<i32>, 
     },
+    #[returns(TickResponse)]
+    Tick {
+        vamm: String,
+        side: Side,
+        entry_price: Uint128,
+    },
+    #[returns(TicksResponse)]
+    Ticks {
+        vamm: String,
+        side: Side,
+        start_after: Option<Uint128>,
+        limit: Option<u32>,
+        order_by: Option<i32>,
+    },
     #[returns(PositionUnrealizedPnlResponse)]
     UnrealizedPnl {
         vamm: String,

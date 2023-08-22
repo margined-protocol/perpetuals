@@ -12,6 +12,7 @@ use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, MigrateMsg, Que
 use crate::error::ContractError;
 use crate::handle::{update_tp_sl, trigger_tp_sl};
 use crate::query::{query_last_position_id, query_positions};
+use crate::tick::{query_tick, query_ticks};
 use crate::state::init_last_position_id;
 use crate::{
     handle::{
@@ -230,6 +231,18 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             order_by,
         } => to_binary(&query_positions(deps, vamm, side, filter, start_after, limit, order_by)?),
         QueryMsg::Position { vamm, position_id } => to_binary(&query_position(deps, vamm, position_id)?),
+        QueryMsg::Ticks {
+            vamm,
+            side,
+            start_after,
+            limit,
+            order_by,
+        } => to_binary(&query_ticks(deps, vamm, side, start_after, limit, order_by)?),
+        QueryMsg::Tick {
+            vamm,
+            side,
+            entry_price,
+        } => to_binary(&query_tick(deps, vamm, side, entry_price)?),
         QueryMsg::MarginRatio { vamm, position_id } => {
             to_binary(&query_margin_ratio(deps, vamm, position_id)?)
         }
