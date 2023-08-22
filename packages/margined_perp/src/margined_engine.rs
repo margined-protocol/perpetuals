@@ -200,6 +200,17 @@ pub struct LastPositionIdResponse {
 }
 
 #[cw_serde]
+pub struct TickResponse {
+    pub entry_price: Uint128,
+    pub total_positions: u64,
+}
+
+#[cw_serde]
+pub struct TicksResponse {
+    pub ticks: Vec<TickResponse>,
+}
+
+#[cw_serde]
 pub struct Position {
     pub position_id: u64,
     pub vamm: Addr,

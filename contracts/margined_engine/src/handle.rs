@@ -262,8 +262,8 @@ pub fn update_tp_sl(
     let trader = info.sender;
 
     // read the position for the trader from vamm
-    let position_key = keccak_256(&[vamm.as_bytes()].concat());
-    let mut position = read_position(deps.storage, &position_key, position_id)?;
+    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let mut position = read_position(deps.storage, &vamm_key, position_id)?;
 
     let state = read_state(deps.storage)?;
     require_not_paused(state.pause)?;
@@ -308,7 +308,7 @@ pub fn update_tp_sl(
         },
     }
 
-    store_position(deps.storage, &position_key, &position, false)?;
+    store_position(deps.storage, &vamm_key, &position, false)?;
     
     Ok(Response::new().add_attributes(vec![
         ("action", "update_tp_sl"),
@@ -332,8 +332,8 @@ pub fn close_position(
     let trader = info.sender;
 
     // read the position for the trader from vamm
-    let position_key = keccak_256(&[vamm.as_bytes()].concat());
-    let position = read_position(deps.storage, &position_key, position_id)?;
+    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let position = read_position(deps.storage, &vamm_key, position_id)?;
 
     let state = read_state(deps.storage)?;
 
@@ -448,8 +448,8 @@ pub fn trigger_tp_sl(
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
 
     // read the position for the trader from vamm
-    let position_key = keccak_256(&[vamm.as_bytes()].concat());
-    let position = read_position(deps.storage, &position_key, position_id)?;
+    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let position = read_position(deps.storage, &vamm_key, position_id)?;
 
     // check the position isn't zero
     require_position_not_zero(position.size.value)?;
@@ -549,8 +549,8 @@ pub fn liquidate(
     require_insufficient_margin(margin_ratio, config.maintenance_margin_ratio)?;
 
     // read the position for the trader from vamm
-    let position_key = keccak_256(&[vamm.as_bytes()].concat());
-    let position = read_position(deps.storage, &position_key, position_id)?;
+    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let position = read_position(deps.storage, &vamm_key, position_id)?;
 
     // check the position isn't zero
     require_position_not_zero(position.size.value)?;
@@ -633,9 +633,9 @@ pub fn deposit_margin(
             response = response.add_submessage(msg);
         }
     };
-    let position_key = keccak_256(&[vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
     // read the position for the trader from vamm
-    let mut position = read_position(deps.storage, &position_key, position_id)?;
+    let mut position = read_position(deps.storage, &vamm_key, position_id)?;
 
     if position.trader != trader {
         return Err(StdError::generic_err("Unauthorized"));
@@ -643,7 +643,7 @@ pub fn deposit_margin(
 
     position.margin = position.margin.checked_add(amount)?;
 
-    store_position(deps.storage, &position_key, &position, false)?;
+    store_position(deps.storage, &vamm_key, &position, false)?;
 
     Ok(response.add_attributes([
         ("action", "deposit_margin"),
@@ -672,8 +672,8 @@ pub fn withdraw_margin(
     require_non_zero_input(amount)?;
 
     // read the position for the trader from vamm
-    let position_key = keccak_256(&[vamm.as_bytes()].concat());
-    let mut position = read_position(deps.storage, &position_key, position_id)?;
+    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let mut position = read_position(deps.storage, &vamm_key, position_id)?;
 
     if position.trader != trader {
         return Err(StdError::generic_err("Unauthorized"));
@@ -710,7 +710,7 @@ pub fn withdraw_margin(
         Uint128::zero(),
     )?;
 
-    store_position(deps.storage, &position_key, &position, false)?;
+    store_position(deps.storage, &vamm_key, &position, false)?;
     store_state(deps.storage, &state)?;
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
@@ -783,8 +783,8 @@ fn partial_liquidation(
     position_id: u64,
     quote_asset_limit: Uint128,
 ) -> StdResult<SubMsg> {
-    let position_key = keccak_256(&[vamm.as_bytes()].concat());
-    let position = read_position(deps.storage, &position_key, position_id)?;
+    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let position = read_position(deps.storage, &vamm_key, position_id)?;
     let config = read_config(deps.storage)?;
     let partial_position_size = position
         .size

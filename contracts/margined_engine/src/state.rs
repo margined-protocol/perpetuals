@@ -25,6 +25,7 @@ static PREFIX_POSITION: &[u8] = b"position"; // prefix position
 pub static PREFIX_POSITION_BY_SIDE: &[u8] = b"position_by_direction";   // position from the direction
 pub static PREFIX_POSITION_BY_PRICE: &[u8] = b"position_by_price";      // position from the price
 pub static PREFIX_POSITION_BY_TRADER: &[u8] = b"position_by_trader";    // position from a trader
+pub static PREFIX_TICK: &[u8] = b"tick"; // this is tick with value is the total positions
 
 pub type Config = ConfigResponse;
 
@@ -73,13 +74,24 @@ pub fn store_position(
     storage: &mut dyn Storage,
     key: &[u8],
     position: &Position,
-    _inserted: bool,
+    inserted: bool,
 ) -> StdResult<u64> {
     let position_id_key = &position.position_id.to_be_bytes();
     let price_key = position.entry_price.to_be_bytes();
     Bucket::multilevel(storage, &[PREFIX_POSITION, key]).save(position_id_key, position)?;
 
-    let total_tick_orders = 0;
+    let tick_namespaces = &[PREFIX_TICK, key, position.side.as_bytes()];
+    // first time then total is 0
+    let mut total_tick_orders = ReadonlyBucket::<u64>::multilevel(storage, tick_namespaces)
+        .load(&price_key)
+        .unwrap_or_default();
+
+    if inserted {
+        total_tick_orders += 1;
+    }
+
+    // save total orders for a tick
+    Bucket::multilevel(storage, tick_namespaces).save(&price_key, &total_tick_orders)?;
 
     Bucket::multilevel(
         storage,
@@ -118,7 +130,23 @@ pub fn remove_position(storage: &mut dyn Storage, key: &[u8], position: &Positio
     Bucket::<Position>::multilevel(storage, &[PREFIX_POSITION, key]).remove(position_id_key);
 
     // not found means total is 0
-    let total_tick_orders  = 0;
+    let tick_namespaces = &[PREFIX_TICK, key, position.side.as_bytes()];
+    let mut total_tick_orders = ReadonlyBucket::<u64>::multilevel(storage, tick_namespaces)
+        .load(&price_key)
+        .unwrap_or_default();
+
+    // substract one order, if total is 0 mean not existed
+    if total_tick_orders > 0 {
+        total_tick_orders -= 1;
+        if total_tick_orders > 0 {
+            // save total orders for a tick
+            Bucket::multilevel(storage, tick_namespaces)
+                .save(&price_key, &total_tick_orders)
+                .unwrap();
+        } else {
+            Bucket::<u64>::multilevel(storage, tick_namespaces).remove(&price_key);
+        }
+    }
 
     Bucket::<Side>::multilevel(
         storage,

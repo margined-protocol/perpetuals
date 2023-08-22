@@ -141,9 +141,9 @@ pub fn get_margin_ratio_calc_option(
     calc_option: PnlCalcOption,
 ) -> StdResult<Integer> {
     let config = read_config(deps.storage)?;
-    let position_key = keccak_256(&[vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
     // retrieve the latest position
-    let position = read_position(deps.storage, &position_key, position_id)?;
+    let position = read_position(deps.storage, &vamm_key, position_id)?;
 
     if position.size.is_zero() {
         return Ok(Integer::zero());

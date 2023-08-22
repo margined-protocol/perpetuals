@@ -106,8 +106,8 @@ pub fn update_position_reply(
     position.entry_price = position.notional.checked_mul(config.decimals)?.checked_div(position.size.value)?;
     position.block_time =  env.block.time.seconds();
 
-    let position_key = keccak_256(&[position.vamm.as_bytes()].concat());
-    store_position(deps.storage, &position_key, &position, false)?;
+    let vamm_key = keccak_256(&[position.vamm.as_bytes()].concat());
+    store_position(deps.storage, &vamm_key, &position, false)?;
 
     // check the new position doesn't exceed any caps
     check_base_asset_holding_cap(
@@ -204,9 +204,9 @@ pub fn close_position_reply(
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
 
-    let position_key = keccak_256(&[swap.vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
 
-    let position = read_position(deps.storage, &position_key, position_id)?;
+    let position = read_position(deps.storage, &vamm_key, position_id)?;
 
     let margin_delta = match &position.direction {
         Direction::AddToAmm => {
@@ -275,8 +275,8 @@ pub fn close_position_reply(
         swap.trader,
     )?;
 
-    let position_key = keccak_256(&[position.vamm.as_bytes()].concat());
-    remove_position(deps.storage, &position_key, &position).unwrap();
+    let vamm_key = keccak_256(&[position.vamm.as_bytes()].concat());
+    remove_position(deps.storage, &vamm_key, &position).unwrap();
 
     store_state(deps.storage, &state)?;
 
@@ -301,8 +301,8 @@ pub fn partial_close_position_reply(
     position_id: u64
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
-    let position_key = keccak_256(&[swap.vamm.as_bytes()].concat());
-    let mut position = read_position(deps.storage, &position_key, position_id)?;
+    let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
+    let mut position = read_position(deps.storage, &vamm_key, position_id)?;
 
     let mut state: State = read_state(deps.storage)?;
     update_open_interest_notional(
@@ -354,8 +354,8 @@ pub fn partial_close_position_reply(
     position.last_updated_premium_fraction = latest_premium_fraction;
     position.block_time = env.block.time.seconds();
 
-    let position_key = keccak_256(&[position.vamm.as_bytes()].concat());
-    store_position(deps.storage, &position_key, &position, false)?;
+    let vamm_key = keccak_256(&[position.vamm.as_bytes()].concat());
+    store_position(deps.storage, &vamm_key, &position, false)?;
     store_state(deps.storage, &state)?;
 
     // to prevent attacker to leverage the bad debt to withdraw extra token from insurance fund
@@ -390,8 +390,8 @@ pub fn liquidate_reply(
     
     let liquidator = read_tmp_liquidator(deps.storage)?;
 
-    let position_key = keccak_256(&[swap.vamm.as_bytes()].concat());
-    let position = read_position(deps.storage, &position_key, position_id)?;
+    let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
+    let position = read_position(deps.storage, &vamm_key, position_id)?;
 
     // calculate delta from trade and whether it was profitable or a loss
     let margin_delta = match &position.direction {
@@ -458,8 +458,8 @@ pub fn liquidate_reply(
 
     store_state(deps.storage, &state)?;
 
-    let position_key = keccak_256(&[position.vamm.as_bytes()].concat());
-    remove_position(deps.storage, &position_key, &position).unwrap();
+    let vamm_key = keccak_256(&[position.vamm.as_bytes()].concat());
+    remove_position(deps.storage, &vamm_key, &position).unwrap();
     remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
     remove_tmp_liquidator(deps.storage);
 
@@ -488,8 +488,8 @@ pub fn partial_liquidation_reply(
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
     let liquidator = read_tmp_liquidator(deps.storage)?;
 
-    let position_key = keccak_256(&[swap.vamm.as_bytes()].concat());
-    let mut position = read_position(deps.storage, &position_key, position_id)?;
+    let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
+    let mut position = read_position(deps.storage, &vamm_key, position_id)?;
     let config = read_config(deps.storage)?;
 
     // calculate delta from trade and whether it was profitable or a loss
@@ -556,8 +556,8 @@ pub fn partial_liquidation_reply(
             Uint128::zero(),
         )?);
     }
-    let position_key = keccak_256(&[position.vamm.as_bytes()].concat());
-    store_position(deps.storage, &position_key, &position, false)?;
+    let vamm_key = keccak_256(&[position.vamm.as_bytes()].concat());
+    store_position(deps.storage, &vamm_key, &position, false)?;
     store_state(deps.storage, &state)?;
 
     remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
