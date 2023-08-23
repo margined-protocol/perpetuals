@@ -1,7 +1,7 @@
-use cosmwasm_std::{StdError, Uint128, Addr};
+use cosmwasm_std::{StdError, Uint128};
 use cw20::Cw20ExecuteMsg;
 use margined_common::integer::Integer;
-use margined_perp::{margined_engine::{PnlCalcOption, Side, PositionFilter, TicksResponse, TickResponse, Position, Direction}, margined_pricefeed::Direction};
+use margined_perp::margined_engine::{PnlCalcOption, Side, PositionFilter, TicksResponse, TickResponse};
 use margined_utils::{
     cw_multi_test::Executor,
     testing::{to_decimals, SimpleScenario},
