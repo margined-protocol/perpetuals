@@ -1,7 +1,7 @@
-use cosmwasm_std::{StdError, Uint128};
+use cosmwasm_std::{StdError, Uint128, Addr};
 use cw20::Cw20ExecuteMsg;
 use margined_common::integer::Integer;
-use margined_perp::margined_engine::{PnlCalcOption, Side, PositionFilter};
+use margined_perp::{margined_engine::{PnlCalcOption, Side, PositionFilter, TicksResponse, TickResponse, Position, Direction}, margined_pricefeed::Direction};
 use margined_utils::{
     cw_multi_test::Executor,
     testing::{to_decimals, SimpleScenario},
@@ -293,6 +293,7 @@ fn test_open_position_two_longs() {
     let buy_positions = engine
         .get_positions(&router.wrap(), vamm.addr().to_string(), PositionFilter::None, Some(Side::Buy), None, None, None)
         .unwrap();
+    println!("buy position: {:?}", buy_positions);
     for position in buy_positions {
         println!("buy position: {:?}", position);
     }
@@ -327,6 +328,69 @@ fn test_open_position_two_longs() {
         .unwrap();
     for position in all_positions {
         println!("position: {:?}", position);
+    }
+    println!("\n\n\n");
+
+    let buy_ticks = engine
+        .get_ticks(&router.wrap(), vamm.addr().to_string(), Side::Buy, None, None, Some(2))
+        .unwrap();
+    assert_eq!(
+        buy_ticks, 
+        TicksResponse {
+            ticks: [
+                TickResponse{
+                    entry_price: Uint128::from(41742249999u128),
+                    total_positions: 1
+                },
+                TickResponse{
+                    entry_price: Uint128::from(28240000004u128),
+                    total_positions: 1
+                },
+                TickResponse{
+                    entry_price: Uint128::from(16000000000u128),
+                    total_positions: 1
+                }
+            ].to_vec()
+        }
+    );
+    for tick in buy_ticks.ticks {
+        println!("tick: {:?}", tick);
+        let tick_position = engine
+            .get_positions(&router.wrap(), vamm.addr().to_string(), PositionFilter::Price(tick.entry_price), None, None, None, None)
+            .unwrap();
+        println!("tick_position: {:?}", tick_position);
+    }
+    println!("\n\n\n");
+
+    let sell_ticks = engine
+        .get_ticks(&router.wrap(), vamm.addr().to_string(), Side::Sell, None, None, Some(1))
+        .unwrap();
+
+    assert_eq!(
+        sell_ticks, 
+        TicksResponse {
+            ticks: [
+                TickResponse{
+                    entry_price: Uint128::from(30460159998u128),
+                    total_positions: 1
+                },
+                TickResponse{
+                    entry_price: Uint128::from(37536399995u128),
+                    total_positions: 1
+                },
+                TickResponse{
+                    entry_price: Uint128::from(49428499999u128),
+                    total_positions: 1
+                }
+            ].to_vec()
+        }
+    );
+    for tick in sell_ticks.ticks {
+        println!("tick: {:?}", tick);
+        let tick_position = engine
+            .get_positions(&router.wrap(), vamm.addr().to_string(), PositionFilter::Price(tick.entry_price), None, None, None, None)
+            .unwrap();
+        println!("tick_position: {:?}", tick_position);
     }
     println!("\n\n\n");
 

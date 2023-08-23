@@ -2,7 +2,7 @@ use cosmwasm_schema::cw_serde;
 use cw_controllers::HooksResponse;
 use margined_perp::margined_engine::{
     ConfigResponse, ExecuteMsg, PnlCalcOption, Position, PositionUnrealizedPnlResponse, QueryMsg,
-    Side, StateResponse, PositionFilter,
+    Side, StateResponse, PositionFilter, TicksResponse, TickResponse,
 };
 
 use cosmwasm_std::{Addr, Coin, CosmosMsg, QuerierWrapper, StdResult, Uint128};
@@ -303,6 +303,44 @@ impl EngineController {
         let msg = QueryMsg::Positions {
             vamm,
             filter,
+            side,
+            start_after,
+            limit,
+            order_by
+        };
+
+        querier.query_wasm_smart(&self.0, &msg)
+    }
+
+    /// get price tick from vamm
+    pub fn get_tick(
+        &self,
+        querier: &QuerierWrapper,
+        vamm: String,
+        side: Side,
+        entry_price: Uint128,
+    ) -> StdResult<TickResponse> {
+        let msg = QueryMsg::Tick {
+            vamm,
+            side,
+            entry_price
+        };
+
+        querier.query_wasm_smart(&self.0, &msg)
+    }
+
+    /// get price ticks from vamm
+    pub fn get_ticks(
+        &self,
+        querier: &QuerierWrapper,
+        vamm: String,
+        side: Side,
+        start_after: Option<Uint128>,
+        limit: Option<u32>,
+        order_by: Option<i32>
+    ) -> StdResult<TicksResponse> {
+        let msg = QueryMsg::Ticks {
+            vamm,
             side,
             start_after,
             limit,

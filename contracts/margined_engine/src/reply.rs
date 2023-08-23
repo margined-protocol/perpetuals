@@ -107,7 +107,7 @@ pub fn update_position_reply(
     position.block_time =  env.block.time.seconds();
 
     let vamm_key = keccak_256(&[position.vamm.as_bytes()].concat());
-    store_position(deps.storage, &vamm_key, &position, false)?;
+    store_position(deps.storage, &vamm_key, &position, true)?;
 
     // check the new position doesn't exceed any caps
     check_base_asset_holding_cap(
