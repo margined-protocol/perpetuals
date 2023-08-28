@@ -481,7 +481,6 @@ fn test_zero_when_everyone_closes_positions_one_position_is_bankrupt() {
         .liquidate(
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -551,7 +550,6 @@ fn test_open_interest_logged_without_cap() {
         .liquidate(
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();

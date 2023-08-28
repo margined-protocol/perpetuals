@@ -516,12 +516,10 @@ pub fn liquidate(
     info: MessageInfo,
     vamm: String,
     position_id: u64,
-    trader: String,
     quote_asset_limit: Uint128,
 ) -> StdResult<Response> {
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
-    let trader = deps.api.addr_validate(&trader)?;
 
     // store the liquidator
     store_tmp_liquidator(deps.storage, &info.sender)?;
@@ -569,7 +567,7 @@ pub fn liquidate(
         ("vamm", vamm.as_ref()),
         ("pair", &position.pair),
         ("position_id", &position_id.to_string()),
-        ("trader", trader.as_ref()),
+        ("trader", &position.trader.as_ref()),
     ]))
 }
 

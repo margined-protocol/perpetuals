@@ -89,7 +89,6 @@ fn test_liquidation_fee_100_percent() {
         .liquidate(
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -322,7 +321,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_l
     // which is already prepaid by insurance fund when alice close the position before
     // clearing house doesn't need to ask insurance fund for covering the bad debt
     let msg = engine
-        .liquidate(vamm.addr().to_string(), 2, bob.to_string(), to_decimals(0u64))
+        .liquidate(vamm.addr().to_string(), 2, to_decimals(0u64))
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 
@@ -412,7 +411,6 @@ fn test_alice_has_enough_margin_cant_get_liquidated() {
         .liquidate(
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -497,7 +495,6 @@ fn test_alice_gets_liquidated_insufficient_margin_for_liquidation_fee() {
         .liquidate(
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -600,7 +597,6 @@ fn test_alice_long_position_underwater_oracle_price_activated_doesnt_get_liquida
         .liquidate(
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -702,7 +698,6 @@ fn test_alice_short_position_underwater_oracle_price_activated_doesnt_get_liquid
         .liquidate(
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();

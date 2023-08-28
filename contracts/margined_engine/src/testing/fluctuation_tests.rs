@@ -56,7 +56,7 @@ fn test_force_error_open_position_exceeds_fluctuation_limit() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "increase position failure - reply (id 1)".to_string(),
+            msg: "price is over fluctuation limit".to_string(),
         },
         err.downcast().unwrap()
     );
@@ -126,7 +126,7 @@ fn test_force_error_reduce_position_exceeds_fluctuation_limit() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "increase position failure - reply (id 1)".to_string(),
+            msg: "price is over fluctuation limit".to_string(),
         },
         err.downcast().unwrap()
     );

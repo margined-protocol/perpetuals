@@ -123,7 +123,6 @@ fn test_partially_liquidate_long_position() {
         .liquidate(
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -262,7 +261,6 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
         .liquidate(
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             Uint128::from(273_850_000_000u64),
         )
         .unwrap();
@@ -280,7 +278,6 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
         .liquidate(
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             Uint128::from(273_800_000_000u64),
         )
         .unwrap();
@@ -401,7 +398,6 @@ fn test_partially_liquidate_short_position() {
         .liquidate(
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -543,7 +539,6 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
         .liquidate(
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             Uint128::from(177_000_000_000u64),
         )
         .unwrap();
@@ -560,7 +555,6 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
         .liquidate(
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             Uint128::from(177_100_000_000u64),
         )
         .unwrap();
@@ -678,7 +672,7 @@ fn test_long_position_complete_liquidation() {
     router.execute(bob.clone(), msg).unwrap();
 
     let msg = engine
-        .liquidate(vamm.addr().to_string(), 1, alice.to_string(), Uint128::zero())
+        .liquidate(vamm.addr().to_string(), 1, Uint128::zero())
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 
@@ -815,7 +809,6 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
         .liquidate(
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             Uint128::from(224_100_000_000u128),
         )
         .unwrap();
@@ -831,7 +824,6 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
         .liquidate(
             vamm.addr().to_string(),
             1,
-            alice.to_string(),
             to_decimals(224u64),
         )
         .unwrap();
@@ -949,7 +941,7 @@ fn test_short_position_complete_liquidation() {
     router.execute(bob.clone(), msg).unwrap();
 
     let msg = engine
-        .liquidate(vamm.addr().to_string(), 1, alice.to_string(), Uint128::zero())
+        .liquidate(vamm.addr().to_string(), 1, Uint128::zero())
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 
@@ -1147,7 +1139,7 @@ fn test_force_error_position_not_liquidation_twap_over_maintenance_margin() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine
-        .liquidate(vamm.addr().to_string(), 2, alice.to_string(), Uint128::zero())
+        .liquidate(vamm.addr().to_string(), 2, Uint128::zero())
         .unwrap();
     let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
@@ -1291,7 +1283,7 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine
-        .liquidate(vamm.addr().to_string(), 1, alice.to_string(), Uint128::zero())
+        .liquidate(vamm.addr().to_string(), 1, Uint128::zero())
         .unwrap();
     let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
@@ -1306,7 +1298,6 @@ fn test_force_error_position_not_liquidation_spot_over_maintenance_margin() {
 fn test_force_error_empty_position() {
     let SimpleScenario {
         mut router,
-        alice,
         carol,
         owner,
         engine,
@@ -1330,7 +1321,7 @@ fn test_force_error_empty_position() {
     router.execute(owner.clone(), msg).unwrap();
 
     let msg = engine
-        .liquidate(vamm.addr().to_string(), 1, alice.to_string(), Uint128::zero())
+        .liquidate(vamm.addr().to_string(), 1, Uint128::zero())
         .unwrap();
     let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
@@ -1457,7 +1448,6 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
         .liquidate(
             env.vamm.addr().to_string(),
             2,
-            env.alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -1632,7 +1622,6 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         .liquidate(
             env.vamm.addr().to_string(),
             11,
-            env.alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -1643,7 +1632,6 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         .liquidate(
             env.vamm.addr().to_string(),
             12,
-            env.alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -1654,7 +1642,6 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         .liquidate(
             env.vamm.addr().to_string(),
             13,
-            env.alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -1665,7 +1652,6 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         .liquidate(
             env.vamm.addr().to_string(),
             14,
-            env.alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -1676,7 +1662,6 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         .liquidate(
             env.vamm.addr().to_string(),
             15,
-            env.alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -1687,7 +1672,6 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         .liquidate(
             env.vamm.addr().to_string(),
             6,
-            env.carol.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -1698,7 +1682,6 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         .liquidate(
             env.vamm.addr().to_string(),
             7,
-            env.carol.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -1709,7 +1692,6 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         .liquidate(
             env.vamm.addr().to_string(),
             8,
-            env.carol.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -1720,7 +1702,6 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         .liquidate(
             env.vamm.addr().to_string(),
             9,
-            env.carol.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -1731,7 +1712,6 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
         .liquidate(
             env.vamm.addr().to_string(),
             10,
-            env.carol.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -1923,7 +1903,6 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         .liquidate(
             env.vamm.addr().to_string(),
             3,
-            env.alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -1934,7 +1913,6 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         .liquidate(
             env.vamm.addr().to_string(),
             2,
-            env.carol.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -1945,7 +1923,6 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
         .liquidate(
             env.vamm.addr().to_string(),
             4,
-            env.david.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -2132,7 +2109,6 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         .liquidate(
             env.vamm.addr().to_string(),
             3,
-            env.alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -2143,7 +2119,6 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         .liquidate(
             env.vamm.addr().to_string(),
             2,
-            env.carol.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -2154,7 +2129,6 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
         .liquidate(
             env.vamm.addr().to_string(),
             4,
-            env.david.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -2292,7 +2266,6 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
         .liquidate(
             env.vamm.addr().to_string(),
             2,
-            env.alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -2432,7 +2405,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
     let err = env.router.execute(env.alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "increase position failure - reply (id 1)".to_string()
+            msg: "price is over fluctuation limit".to_string()
         },
         err.downcast().unwrap()
     );
@@ -2460,7 +2433,6 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
         .liquidate(
             env.vamm.addr().to_string(),
             1,
-            env.alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -2641,7 +2613,6 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         .liquidate(
             env.vamm.addr().to_string(),
             5,
-            env.alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -2652,7 +2623,6 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         .liquidate(
             env.vamm.addr().to_string(),
             6,
-            env.alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -2663,7 +2633,6 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
         .liquidate(
             env.vamm.addr().to_string(),
             4,
-            env.carol.to_string(),
             to_decimals(0u64),
         )
         .unwrap();

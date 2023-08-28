@@ -1320,7 +1320,7 @@ fn test_error_open_position_insufficient_balance() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "transfer failure - reply (id 9)".to_string()
+            msg: "insufficient funds".to_string()
         },
         err.downcast().unwrap()
     );

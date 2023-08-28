@@ -94,7 +94,6 @@ pub enum ExecuteMsg {
     Liquidate {
         vamm: String,
         position_id: u64,
-        trader: String,
         quote_asset_limit: Uint128,
     },
     PayFunding {

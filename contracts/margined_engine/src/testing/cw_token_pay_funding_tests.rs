@@ -638,7 +638,7 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
     assert_eq!(bob_position.margin, to_decimals(0u64));
 
     let msg = engine
-        .liquidate(vamm.addr().to_string(), 2, bob.to_string(), to_decimals(0u64))
+        .liquidate(vamm.addr().to_string(), 2, to_decimals(0u64))
         .unwrap();
 
     let response = router.execute(bob.clone(), msg).unwrap();
@@ -879,7 +879,7 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
 
     // badDebt 2550 - 10 margin = 2540
     let msg = engine
-        .liquidate(vamm.addr().to_string(), 2, bob.to_string(), Uint128::zero())
+        .liquidate(vamm.addr().to_string(), 2, Uint128::zero())
         .unwrap();
     let response = router.execute(bob.clone(), msg).unwrap();
     assert_eq!(

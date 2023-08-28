@@ -184,10 +184,9 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         } => close_position(deps, env, info, vamm, position_id, quote_asset_limit),
         ExecuteMsg::Liquidate {
             vamm,
-            trader,
             position_id,
             quote_asset_limit,
-        } => liquidate(deps, env, info, vamm, position_id, trader, quote_asset_limit),
+        } => liquidate(deps, env, info, vamm, position_id, quote_asset_limit),
         ExecuteMsg::TriggerTpSl {
             vamm,
             position_id,
@@ -314,12 +313,10 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
         },
         SubMsgResult::Err(e) => match msg.id {
             TRANSFER_FAILURE_REPLY_ID => Err(StdError::generic_err(format!(
-                "transfer failure - reply (id {:?})",
-                msg.id
+                "insufficient funds",
             ))),
             INCREASE_POSITION_REPLY_ID => Err(StdError::generic_err(format!(
-                "increase position failure - reply (id {:?})",
-                msg.id
+                "price is over fluctuation limit",
             ))),
             CLOSE_POSITION_REPLY_ID => Err(StdError::generic_err(format!(
                 "close position failure - reply (id {:?})",

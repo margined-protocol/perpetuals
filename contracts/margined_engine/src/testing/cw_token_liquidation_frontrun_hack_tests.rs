@@ -187,7 +187,6 @@ fn test_liquidator_can_open_position_and_liquidate_in_next_block() {
         .liquidate(
             env.vamm.addr().to_string(),
             2,
-            env.alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -378,7 +377,6 @@ fn test_can_open_position_short_and_liquidate_but_cannot_do_anything_more_in_sam
         .liquidate(
             env.vamm.addr().to_string(),
             2,
-            env.alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -565,7 +563,6 @@ fn test_can_open_position_long_and_liquidate_but_cannot_do_anything_more_in_same
         .liquidate(
             env.vamm.addr().to_string(),
             2,
-            env.alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -761,7 +758,6 @@ fn test_can_open_position_and_liquidate_but_cannot_do_anything_more_in_same_bloc
         .liquidate(
             env.vamm.addr().to_string(),
             2,
-            env.alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();
@@ -948,7 +944,6 @@ fn test_can_open_position_same_side_and_liquidate_but_cannot_do_anything_more_in
         .liquidate(
             env.vamm.addr().to_string(),
             2,
-            env.alice.to_string(),
             to_decimals(0u64),
         )
         .unwrap();

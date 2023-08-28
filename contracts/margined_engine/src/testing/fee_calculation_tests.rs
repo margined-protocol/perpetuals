@@ -551,7 +551,7 @@ fn test_close_under_collateral_position_total_fee_ten_percent() {
     router.execute(bob.clone(), msg).unwrap();
 
     let msg = engine
-        .liquidate(vamm.addr().to_string(), 1, alice.to_string(), Uint128::zero())
+        .liquidate(vamm.addr().to_string(), 1, Uint128::zero())
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
@@ -611,7 +611,7 @@ fn test_force_error_insufficient_balance_open_position_total_fee_ten_percent() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "transfer failure - reply (id 9)".to_string(),
+            msg: "insufficient funds".to_string(),
         },
         err.downcast().unwrap()
     );
