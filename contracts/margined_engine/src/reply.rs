@@ -276,7 +276,7 @@ pub fn close_position_reply(
     )?;
 
     let vamm_key = keccak_256(&[position.vamm.as_bytes()].concat());
-    remove_position(deps.storage, &vamm_key, &position).unwrap();
+    let total_position = remove_position(deps.storage, &vamm_key, &position).unwrap();
 
     store_state(deps.storage, &state)?;
 
@@ -284,6 +284,7 @@ pub fn close_position_reply(
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "close_position_reply"),
+        ("total_position", &total_position.to_string()),
         ("pnl", &margin_delta.to_string()),
         ("spread_fee", &fees_amount[0].to_string()),
         ("toll_fee", &fees_amount[1].to_string()),
@@ -459,7 +460,8 @@ pub fn liquidate_reply(
     store_state(deps.storage, &state)?;
 
     let vamm_key = keccak_256(&[position.vamm.as_bytes()].concat());
-    remove_position(deps.storage, &vamm_key, &position).unwrap();
+    let total_position = remove_position(deps.storage, &vamm_key, &position).unwrap();
+
     remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
     remove_tmp_liquidator(deps.storage);
 
@@ -467,6 +469,7 @@ pub fn liquidate_reply(
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "liquidation_reply"),
+        ("total_position", &total_position.to_string()),
         ("liquidation_fee", &liquidation_fee.to_string()),
         ("pnl", &margin_delta.to_string()),
         (
