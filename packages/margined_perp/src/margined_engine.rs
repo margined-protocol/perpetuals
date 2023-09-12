@@ -173,6 +173,12 @@ pub enum QueryMsg {
     #[returns(Integer)]
     MarginRatio { vamm: String, position_id: u64 },
     #[returns(Integer)]
+    MarginRatioByCalcOption {
+        vamm: String,
+        position_id: u64,
+        calc_option: PnlCalcOption,
+    },
+    #[returns(Integer)]
     FreeCollateral { vamm: String, position_id: u64 },
     #[returns(Uint128)]
     BalanceWithFundingPayment { position_id: u64},

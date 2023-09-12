@@ -14,6 +14,7 @@ use crate::handle::{update_tp_sl, trigger_tp_sl};
 use crate::query::{query_last_position_id, query_positions};
 use crate::tick::{query_tick, query_ticks};
 use crate::state::init_last_position_id;
+use crate::utils::get_margin_ratio_calc_option;
 use crate::{
     handle::{
         close_position, deposit_margin, liquidate, open_position, pay_funding, update_config,
@@ -244,6 +245,13 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => to_binary(&query_tick(deps, vamm, side, entry_price)?),
         QueryMsg::MarginRatio { vamm, position_id } => {
             to_binary(&query_margin_ratio(deps, vamm, position_id)?)
+        }
+        QueryMsg::MarginRatioByCalcOption {
+            vamm,
+            position_id,
+            calc_option
+        } => {
+            to_binary(&get_margin_ratio_calc_option(deps, vamm, position_id, calc_option)?)
         }
         QueryMsg::CumulativePremiumFraction { vamm } => {
             to_binary(&query_cumulative_premium_fraction(deps, vamm)?)
