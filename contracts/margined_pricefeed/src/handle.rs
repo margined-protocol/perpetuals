@@ -55,5 +55,5 @@ pub fn append_multiple_price(
         store_price_data(deps.storage, key.clone(), prices[index], timestamps[index])?;
     }
 
-    Ok(Response::default())
+    Ok(Response::default().add_attribute("action", "append_multiple_price"))
 }

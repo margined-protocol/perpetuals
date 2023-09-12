@@ -27,7 +27,7 @@ pub fn add_token(deps: DepsMut, info: MessageInfo, token: String) -> StdResult<R
     // add the token
     save_token(deps.storage, valid_token)?;
 
-    Ok(Response::default())
+    Ok(Response::default().add_attribute("action", "add_token"))
 }
 
 pub fn remove_token(deps: DepsMut, info: MessageInfo, token: String) -> StdResult<Response> {
@@ -42,7 +42,7 @@ pub fn remove_token(deps: DepsMut, info: MessageInfo, token: String) -> StdResul
     // remove token here
     remove_token_from_list(deps.storage, valid_token)?;
 
-    Ok(Response::default())
+    Ok(Response::default().add_attribute("action", "remove_token"))
 }
 
 pub fn send_token(
@@ -85,5 +85,5 @@ pub fn send_token(
         valid_recipient.to_string(),
         amount,
         None,
-    )?))
+    )?).add_attribute("action", "send_token"))
 }

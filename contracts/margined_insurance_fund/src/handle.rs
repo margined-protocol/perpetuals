@@ -44,7 +44,7 @@ pub fn add_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Res
     // add the amm
     save_vamm(deps.storage, vamm_valid)?;
 
-    Ok(Response::default())
+    Ok(Response::default().add_attribute("action", "add_vamm"))
 }
 
 pub fn remove_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<Response> {
@@ -59,7 +59,7 @@ pub fn remove_vamm(deps: DepsMut, info: MessageInfo, vamm: String) -> StdResult<
     // remove vamm here
     remove_amm(deps.storage, vamm_valid)?;
 
-    Ok(Response::default())
+    Ok(Response::default().add_attribute("action", "remove_amm"))
 }
 
 pub fn shutdown_all_vamm(deps: DepsMut, _env: Env, info: MessageInfo) -> StdResult<Response> {
@@ -78,7 +78,7 @@ pub fn shutdown_all_vamm(deps: DepsMut, _env: Env, info: MessageInfo) -> StdResu
         msgs.push(msg);
     }
 
-    Ok(Response::default().add_messages(msgs))
+    Ok(Response::default().add_messages(msgs).add_attribute("action", "shutdown_all_vamm"))
 }
 
 pub fn withdraw(
