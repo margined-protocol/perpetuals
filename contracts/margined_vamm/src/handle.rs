@@ -163,7 +163,8 @@ pub fn swap_input(
                 return Err(StdError::generic_err(
                     "Less than minimum base asset amount limit",
                 ));
-            } else if direction == Direction::RemoveFromAmm && base_asset_amount > base_asset_limit {
+            } else if direction == Direction::RemoveFromAmm && base_asset_amount > base_asset_limit
+            {
                 return Err(StdError::generic_err(
                     "Greater than maximum base asset amount limit",
                 ));
@@ -378,7 +379,6 @@ pub fn get_output_price_with_reserves(
     quote_asset_reserve: Uint128,
     base_asset_reserve: Uint128,
 ) -> StdResult<Uint128> {
-
     if base_asset_amount == Uint128::zero() {
         return Ok(Uint128::zero());
     }

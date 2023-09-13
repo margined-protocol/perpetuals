@@ -1,8 +1,10 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Order as OrderBy, from_slice, to_vec, Addr, StdError, StdResult, Storage, Uint128};
+use cosmwasm_schema::serde::{de::DeserializeOwned, Serialize};
+use cosmwasm_std::{
+    from_slice, to_vec, Addr, Order as OrderBy, StdError, StdResult, Storage, Uint128,
+};
 use cosmwasm_storage::{singleton, singleton_read, Bucket, ReadonlyBucket};
 use std::cmp::Ordering;
-use cosmwasm_schema::serde::{de::DeserializeOwned, Serialize};
 
 use margined_common::{asset::Asset, integer::Integer};
 use margined_perp::margined_engine::{ConfigResponse, Position, Side};
@@ -22,9 +24,9 @@ pub static KEY_VAMM_MAP: &[u8] = b"vamm-map";
 pub static KEY_LAST_POSITION_ID: &[u8] = b"last_position_id";
 
 static PREFIX_POSITION: &[u8] = b"position"; // prefix position
-pub static PREFIX_POSITION_BY_SIDE: &[u8] = b"position_by_direction";   // position from the direction
-pub static PREFIX_POSITION_BY_PRICE: &[u8] = b"position_by_price";      // position from the price
-pub static PREFIX_POSITION_BY_TRADER: &[u8] = b"position_by_trader";    // position from a trader
+pub static PREFIX_POSITION_BY_SIDE: &[u8] = b"position_by_direction"; // position from the direction
+pub static PREFIX_POSITION_BY_PRICE: &[u8] = b"position_by_price"; // position from the price
+pub static PREFIX_POSITION_BY_TRADER: &[u8] = b"position_by_trader"; // position from a trader
 pub static PREFIX_TICK: &[u8] = b"tick"; // this is tick with value is the total positions
 
 pub type Config = ConfigResponse;
@@ -123,10 +125,14 @@ pub fn store_position(
     Ok(total_tick_orders)
 }
 
-pub fn remove_position(storage: &mut dyn Storage, key: &[u8], position: &Position) -> StdResult<u64> {
+pub fn remove_position(
+    storage: &mut dyn Storage,
+    key: &[u8],
+    position: &Position,
+) -> StdResult<u64> {
     let position_id_key = &position.position_id.to_be_bytes();
     let price_key = position.entry_price.to_be_bytes();
-    
+
     Bucket::<Position>::multilevel(storage, &[PREFIX_POSITION, key]).remove(position_id_key);
 
     // not found means total is 0
@@ -285,7 +291,7 @@ pub struct TmpSwapInfo {
     pub margin_to_vault: Integer,   // margin to be sent to vault
     pub fees_paid: bool,            // true if fees have been paid, used in case of reversing position
     pub take_profit: Uint128,       // take profit price of position
-    pub stop_loss: Option<Uint128>,       // stop loss price of position
+    pub stop_loss: Option<Uint128>, // stop loss price of position
 }
 
 pub fn store_tmp_swap(storage: &mut dyn Storage, swap: &TmpSwapInfo) -> StdResult<()> {

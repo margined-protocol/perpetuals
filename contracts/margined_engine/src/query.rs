@@ -1,14 +1,18 @@
-use cosmwasm_std::{Deps, StdError, StdResult, Uint128, Order as OrderBy};
+use cosmwasm_std::{Deps, Order as OrderBy, StdError, StdResult, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
-    ConfigResponse, PauserResponse, PnlCalcOption, Position, PositionUnrealizedPnlResponse,
-    StateResponse, LastPositionIdResponse, Side, PositionFilter,
+    ConfigResponse, LastPositionIdResponse, PauserResponse, PnlCalcOption, Position,
+    PositionFilter, PositionUnrealizedPnlResponse, Side, StateResponse,
 };
 use margined_utils::contracts::helpers::InsuranceFundController;
 
 use crate::{
     contract::PAUSER,
-    state::{read_config, read_position, read_state, read_vamm_map, read_positions, read_last_position_id, read_positions_with_indexer, PREFIX_POSITION_BY_TRADER, PREFIX_POSITION_BY_SIDE, PREFIX_POSITION_BY_PRICE},
+    state::{
+        read_config, read_last_position_id, read_position, read_positions,
+        read_positions_with_indexer, read_state, read_vamm_map, PREFIX_POSITION_BY_PRICE,
+        PREFIX_POSITION_BY_SIDE, PREFIX_POSITION_BY_TRADER,
+    },
     utils::{
         calc_funding_payment, calc_remain_margin_with_funding_payment,
         get_position_notional_unrealized_pnl, keccak_256,
@@ -54,7 +58,7 @@ pub fn query_all_positions(
     trader: String,
     start_after: Option<u64>,
     limit: Option<u32>,
-    order_by: Option<i32>
+    order_by: Option<i32>,
 ) -> StdResult<Vec<Position>> {
     let config = read_config(deps.storage)?;
     let order_by = order_by.map_or(None, |val| OrderBy::try_from(val).ok());
@@ -72,7 +76,8 @@ pub fn query_all_positions(
 
     for vamm in vamms.iter() {
         let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
-        let positions = read_positions(deps.storage, &vamm_key, start_after, limit, order_by).unwrap();
+        let positions =
+            read_positions(deps.storage, &vamm_key, start_after, limit, order_by).unwrap();
 
         for position in positions {
             // a default is returned if no position found with no trader set
@@ -93,42 +98,31 @@ pub fn query_positions(
     filter: PositionFilter,
     start_after: Option<u64>,
     limit: Option<u32>,
-    order_by: Option<i32>
+    order_by: Option<i32>,
 ) -> StdResult<Vec<Position>> {
     let order_by = order_by.map_or(None, |val| OrderBy::try_from(val).ok());
     let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
 
-    let (direction_filter, direction_key): (Box<dyn Fn(&Side) -> bool>, Vec<u8>) =
-        match side {
-            // copy value to closure
-            Some(d) => (Box::new(move |x| d.eq(x)), d.as_bytes().to_vec()),
-            None => (Box::new(|_| true), Side::Buy.as_bytes().to_vec()),
-        };
-    
+    let (direction_filter, direction_key): (Box<dyn Fn(&Side) -> bool>, Vec<u8>) = match side {
+        // copy value to closure
+        Some(d) => (Box::new(move |x| d.eq(x)), d.as_bytes().to_vec()),
+        None => (Box::new(|_| true), Side::Buy.as_bytes().to_vec()),
+    };
+
     let positions: Option<Vec<Position>> = match filter {
-        PositionFilter::Trader(trader_addr) => {
-            read_positions_with_indexer::<Side>(
-                deps.storage,
-                &[
-                    PREFIX_POSITION_BY_TRADER,
-                    &vamm_key,
-                    trader_addr.as_bytes(),
-                ],
-                direction_filter,
-                start_after,
-                limit,
-                order_by,
-            )?
-        }
+        PositionFilter::Trader(trader_addr) => read_positions_with_indexer::<Side>(
+            deps.storage,
+            &[PREFIX_POSITION_BY_TRADER, &vamm_key, trader_addr.as_bytes()],
+            direction_filter,
+            start_after,
+            limit,
+            order_by,
+        )?,
         PositionFilter::Price(price) => {
             let price_key = price.to_be_bytes();
             read_positions_with_indexer::<Side>(
                 deps.storage,
-                &[
-                    PREFIX_POSITION_BY_PRICE,
-                    &vamm_key,
-                    &price_key
-                ],
+                &[PREFIX_POSITION_BY_PRICE, &vamm_key, &price_key],
                 direction_filter,
                 start_after,
                 limit,
@@ -138,17 +132,19 @@ pub fn query_positions(
         PositionFilter::None => match side {
             Some(_) => read_positions_with_indexer::<Side>(
                 deps.storage,
-                &[
-                    PREFIX_POSITION_BY_SIDE,
-                    &vamm_key,
-                    &direction_key
-                ],
+                &[PREFIX_POSITION_BY_SIDE, &vamm_key, &direction_key],
                 direction_filter,
                 start_after,
                 limit,
                 order_by,
             )?,
-            None => Some(read_positions(deps.storage, &vamm_key, start_after, limit, order_by)?),
+            None => Some(read_positions(
+                deps.storage,
+                &vamm_key,
+                start_after,
+                limit,
+                order_by,
+            )?),
         },
     };
 
@@ -185,7 +181,10 @@ pub fn query_cumulative_premium_fraction(deps: Deps, vamm: String) -> StdResult<
 }
 
 /// Queries traders balance across all vamms with funding payment
-pub fn query_trader_balance_with_funding_payment(deps: Deps, position_id: u64) -> StdResult<Uint128> {
+pub fn query_trader_balance_with_funding_payment(
+    deps: Deps,
+    position_id: u64,
+) -> StdResult<Uint128> {
     let config = read_config(deps.storage)?;
 
     let mut margin = Uint128::zero();
@@ -348,7 +347,9 @@ pub fn query_free_collateral(deps: Deps, vamm: String, position_id: u64) -> StdR
 
 pub fn query_last_position_id(deps: Deps) -> StdResult<LastPositionIdResponse> {
     let last_position_id = read_last_position_id(deps.storage)?;
-    let resp = LastPositionIdResponse { last_order_id: last_position_id };
+    let resp = LastPositionIdResponse {
+        last_position_id,
+    };
 
     Ok(resp)
 }

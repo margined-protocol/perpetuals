@@ -1,8 +1,8 @@
 use cosmwasm_schema::cw_serde;
 use cw_controllers::HooksResponse;
 use margined_perp::margined_engine::{
-    ConfigResponse, ExecuteMsg, PnlCalcOption, Position, PositionUnrealizedPnlResponse, QueryMsg,
-    Side, StateResponse, PositionFilter, TicksResponse, TickResponse,
+    ConfigResponse, ExecuteMsg, PnlCalcOption, Position, PositionFilter,
+    PositionUnrealizedPnlResponse, QueryMsg, Side, StateResponse, TickResponse, TicksResponse,
 };
 
 use cosmwasm_std::{Addr, Coin, CosmosMsg, QuerierWrapper, StdResult, Uint128};
@@ -162,7 +162,12 @@ impl EngineController {
         wasm_execute(&self.0, &msg, funds)
     }
 
-    pub fn close_position(&self, vamm: String, position_id: u64, quote_asset_limit: Uint128) -> StdResult<CosmosMsg> {
+    pub fn close_position(
+        &self,
+        vamm: String,
+        position_id: u64,
+        quote_asset_limit: Uint128,
+    ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::ClosePosition {
             vamm,
             position_id,
@@ -197,7 +202,11 @@ impl EngineController {
         amount: Uint128,
         funds: Vec<Coin>,
     ) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::DepositMargin { vamm, position_id, amount };
+        let msg = ExecuteMsg::DepositMargin {
+            vamm,
+            position_id,
+            amount,
+        };
         wasm_execute(&self.0, &msg, funds)
     }
 
@@ -205,9 +214,13 @@ impl EngineController {
         &self,
         vamm: String,
         position_id: u64,
-        amount: Uint128
+        amount: Uint128,
     ) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::WithdrawMargin { vamm, position_id, amount };
+        let msg = ExecuteMsg::WithdrawMargin {
+            vamm,
+            position_id,
+            amount,
+        };
         wasm_execute(&self.0, &msg, vec![])
     }
 
@@ -216,9 +229,14 @@ impl EngineController {
         vamm: String,
         position_id: u64,
         take_profit: Option<Uint128>,
-        stop_loss: Option<Uint128>
+        stop_loss: Option<Uint128>,
     ) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::UpdateTpSl { vamm, position_id, take_profit, stop_loss };
+        let msg = ExecuteMsg::UpdateTpSl {
+            vamm,
+            position_id,
+            take_profit,
+            stop_loss,
+        };
         wasm_execute(&self.0, &msg, vec![])
     }
 
@@ -228,7 +246,11 @@ impl EngineController {
         position_id: u64,
         quote_asset_limit: Uint128,
     ) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::TriggerTpSl { vamm, position_id, quote_asset_limit };
+        let msg = ExecuteMsg::TriggerTpSl {
+            vamm,
+            position_id,
+            quote_asset_limit,
+        };
         wasm_execute(&self.0, &msg, vec![])
     }
 
@@ -261,7 +283,7 @@ impl EngineController {
         &self,
         querier: &QuerierWrapper,
         vamm: String,
-        position_id: u64
+        position_id: u64,
     ) -> StdResult<Position> {
         let msg = QueryMsg::Position { vamm, position_id };
 
@@ -275,7 +297,7 @@ impl EngineController {
         trader: String,
         start_after: Option<u64>,
         limit: Option<u32>,
-        order_by: Option<i32>
+        order_by: Option<i32>,
     ) -> StdResult<Vec<Position>> {
         let msg = QueryMsg::AllPositions {
             trader,
@@ -292,11 +314,11 @@ impl EngineController {
         &self,
         querier: &QuerierWrapper,
         vamm: String,
-        filter: PositionFilter, 
+        filter: PositionFilter,
         side: Option<Side>,
         start_after: Option<u64>,
         limit: Option<u32>,
-        order_by: Option<i32>
+        order_by: Option<i32>,
     ) -> StdResult<Vec<Position>> {
         let msg = QueryMsg::Positions {
             vamm,
@@ -304,7 +326,7 @@ impl EngineController {
             side,
             start_after,
             limit,
-            order_by
+            order_by,
         };
 
         querier.query_wasm_smart(&self.0, &msg)
@@ -321,7 +343,7 @@ impl EngineController {
         let msg = QueryMsg::Tick {
             vamm,
             side,
-            entry_price
+            entry_price,
         };
 
         querier.query_wasm_smart(&self.0, &msg)
@@ -335,14 +357,14 @@ impl EngineController {
         side: Side,
         start_after: Option<Uint128>,
         limit: Option<u32>,
-        order_by: Option<i32>
+        order_by: Option<i32>,
     ) -> StdResult<TicksResponse> {
         let msg = QueryMsg::Ticks {
             vamm,
             side,
             start_after,
             limit,
-            order_by
+            order_by,
         };
 
         querier.query_wasm_smart(&self.0, &msg)
@@ -409,7 +431,7 @@ impl EngineController {
     pub fn get_balance_with_funding_payment(
         &self,
         querier: &QuerierWrapper,
-        position_id: u64
+        position_id: u64,
     ) -> StdResult<Uint128> {
         let msg = QueryMsg::BalanceWithFundingPayment { position_id };
 

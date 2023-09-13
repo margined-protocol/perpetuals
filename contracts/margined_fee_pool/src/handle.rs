@@ -81,9 +81,8 @@ pub fn send_token(
     if balance < amount {
         return Err(StdError::generic_err("Insufficient funds"));
     }
-    Ok(Response::default().add_message(valid_token.into_msg(
-        valid_recipient.to_string(),
-        amount,
-        None,
-    )?).add_attribute("action", "send_token"))
+    Ok(Response::default()
+        .add_message(valid_token.into_msg(valid_recipient.to_string(), amount, None)?)
+        .add_attribute("action", "send_token")
+    )
 }

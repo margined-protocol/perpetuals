@@ -10,10 +10,10 @@ use margined_common::validate::{
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 use crate::error::ContractError;
-use crate::handle::{update_tp_sl, trigger_tp_sl};
+use crate::handle::{trigger_tp_sl, update_tp_sl};
 use crate::query::{query_last_position_id, query_positions};
-use crate::tick::{query_tick, query_ticks};
 use crate::state::init_last_position_id;
+use crate::tick::{query_tick, query_ticks};
 use crate::utils::get_margin_ratio_calc_option;
 use crate::{
     handle::{
@@ -28,8 +28,7 @@ use crate::{
     },
     reply::{
         close_position_reply, liquidate_reply, partial_close_position_reply,
-        partial_liquidation_reply, pay_funding_reply,
-        update_position_reply,
+        partial_liquidation_reply, pay_funding_reply, update_position_reply,
     },
     state::{store_config, store_state, Config, State},
     utils::{
@@ -176,7 +175,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             vamm,
             position_id,
             take_profit,
-            stop_loss
+            stop_loss,
         } => update_tp_sl(deps, env, info, vamm, position_id, take_profit, stop_loss),
         ExecuteMsg::ClosePosition {
             vamm,
@@ -191,18 +190,18 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         ExecuteMsg::TriggerTpSl {
             vamm,
             position_id,
-            quote_asset_limit
+            quote_asset_limit,
         } => trigger_tp_sl(deps, env, info, vamm, position_id, quote_asset_limit),
         ExecuteMsg::PayFunding { vamm } => pay_funding(deps, env, info, vamm),
         ExecuteMsg::DepositMargin {
             vamm,
             position_id,
-            amount
+            amount,
         } => deposit_margin(deps, env, info, vamm, position_id, amount),
         ExecuteMsg::WithdrawMargin {
             vamm,
             position_id,
-            amount
+            amount,
         } => withdraw_margin(deps, env, info, vamm, position_id, amount),
         ExecuteMsg::SetPause { pause } => set_pause(deps, env, info, pause),
     }
@@ -221,7 +220,13 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_after,
             limit,
             order_by,
-        } => to_binary(&query_all_positions(deps, trader, start_after, limit, order_by)?),
+        } => to_binary(&query_all_positions(
+            deps,
+            trader,
+            start_after,
+            limit,
+            order_by,
+        )?),
         QueryMsg::Positions {
             vamm,
             filter,
@@ -229,15 +234,32 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_after,
             limit,
             order_by,
-        } => to_binary(&query_positions(deps, vamm, side, filter, start_after, limit, order_by)?),
-        QueryMsg::Position { vamm, position_id } => to_binary(&query_position(deps, vamm, position_id)?),
+        } => to_binary(&query_positions(
+            deps,
+            vamm,
+            side,
+            filter,
+            start_after,
+            limit,
+            order_by,
+        )?),
+        QueryMsg::Position { vamm, position_id } => {
+            to_binary(&query_position(deps, vamm, position_id)?)
+        }
         QueryMsg::Ticks {
             vamm,
             side,
             start_after,
             limit,
             order_by,
-        } => to_binary(&query_ticks(deps, vamm, side, start_after, limit, order_by)?),
+        } => to_binary(&query_ticks(
+            deps,
+            vamm,
+            side,
+            start_after,
+            limit,
+            order_by,
+        )?),
         QueryMsg::Tick {
             vamm,
             side,
@@ -249,10 +271,13 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::MarginRatioByCalcOption {
             vamm,
             position_id,
-            calc_option
-        } => {
-            to_binary(&get_margin_ratio_calc_option(deps, vamm, position_id, calc_option)?)
-        }
+            calc_option,
+        } => to_binary(&get_margin_ratio_calc_option(
+            deps,
+            vamm,
+            position_id,
+            calc_option,
+        )?),
         QueryMsg::CumulativePremiumFraction { vamm } => {
             to_binary(&query_cumulative_premium_fraction(deps, vamm)?)
         }
@@ -269,9 +294,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::FreeCollateral { vamm, position_id } => {
             to_binary(&query_free_collateral(deps, vamm, position_id)?)
         }
-        QueryMsg::BalanceWithFundingPayment { position_id} => {
-            to_binary(&query_trader_balance_with_funding_payment(deps, position_id)?)
-        }
+        QueryMsg::BalanceWithFundingPayment { position_id } => to_binary(
+            &query_trader_balance_with_funding_payment(deps, position_id)?,
+        ),
         QueryMsg::PositionWithFundingPayment { vamm, position_id } => to_binary(
             &query_trader_position_with_funding_payment(deps, vamm, position_id)?,
         ),
@@ -285,8 +310,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
         SubMsgResult::Ok(response) => match msg.id {
             INCREASE_POSITION_REPLY_ID => {
                 let (input, output, position_id) = parse_swap(response)?;
-                let response =
-                    update_position_reply(deps, env, input, output, position_id)?;
+                let response = update_position_reply(deps, env, input, output, position_id)?;
                 Ok(response)
             }
             CLOSE_POSITION_REPLY_ID => {

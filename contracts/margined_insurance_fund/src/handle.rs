@@ -78,7 +78,10 @@ pub fn shutdown_all_vamm(deps: DepsMut, _env: Env, info: MessageInfo) -> StdResu
         msgs.push(msg);
     }
 
-    Ok(Response::default().add_messages(msgs).add_attribute("action", "shutdown_all_vamm"))
+    Ok(Response::default()
+        .add_messages(msgs)
+        .add_attribute("action", "shutdown_all_vamm")
+    )
 }
 
 pub fn withdraw(
@@ -102,5 +105,6 @@ pub fn withdraw(
         .add_attributes(vec![
             ("action", "insurance_withdraw"),
             ("amount", &amount.to_string()),
-        ]))
+        ])
+    )
 }

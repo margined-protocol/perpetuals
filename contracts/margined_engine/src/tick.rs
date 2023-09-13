@@ -1,11 +1,12 @@
-use std::convert::{TryFrom, TryInto};
 use cosmwasm_std::{Deps, Order as OrderBy, StdResult, Uint128};
 use cosmwasm_storage::ReadonlyBucket;
-use margined_perp::margined_engine::{
-    TicksResponse, TickResponse, Side,
-};
+use margined_perp::margined_engine::{Side, TickResponse, TicksResponse};
+use std::convert::{TryFrom, TryInto};
 
-use crate::{state::{DEFAULT_LIMIT, MAX_LIMIT, PREFIX_TICK}, utils::{calc_range_start, keccak_256}};
+use crate::{
+    state::{DEFAULT_LIMIT, MAX_LIMIT, PREFIX_TICK},
+    utils::{calc_range_start, keccak_256},
+};
 
 pub fn query_ticks(
     deps: Deps,
@@ -13,7 +14,7 @@ pub fn query_ticks(
     side: Side,
     start_after: Option<Uint128>,
     limit: Option<u32>,
-    order_by: Option<i32>
+    order_by: Option<i32>,
 ) -> StdResult<TicksResponse> {
     let order_by = order_by.map_or(None, |val| OrderBy::try_from(val).ok());
     let vamm_key = keccak_256(&[vamm.as_bytes()].concat());

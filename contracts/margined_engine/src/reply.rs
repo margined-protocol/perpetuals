@@ -7,19 +7,20 @@ use crate::{
         execute_transfer_to_insurance_fund, transfer_fees, withdraw,
     },
     state::{
-        append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_sent_funds,
-        read_state, read_tmp_liquidator, read_tmp_swap, remove_position, remove_sent_funds,
-        remove_tmp_liquidator, remove_tmp_swap, store_position, store_state, State, read_position,
+        append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_position,
+        read_sent_funds, read_state, read_tmp_liquidator, read_tmp_swap, remove_position,
+        remove_sent_funds, remove_tmp_liquidator, remove_tmp_swap, store_position, store_state,
+        State,
     },
     utils::{
-        calc_remain_margin_with_funding_payment, check_base_asset_holding_cap, keccak_256, realize_bad_debt, side_to_direction,
-        update_open_interest_notional,
+        calc_remain_margin_with_funding_payment, check_base_asset_holding_cap, keccak_256,
+        realize_bad_debt, side_to_direction, update_open_interest_notional,
     },
 };
 
 use margined_common::{asset::AssetInfo, integer::Integer};
 use margined_perp::{
-    margined_engine::{RemainMarginResponse, Side, Position},
+    margined_engine::{Position, RemainMarginResponse, Side},
     margined_vamm::Direction,
 };
 
@@ -45,9 +46,9 @@ pub fn update_position_reply(
         notional: Uint128::zero(),
         entry_price: Uint128::zero(),
         take_profit: swap.take_profit,
-        stop_loss: swap.stop_loss, 
+        stop_loss: swap.stop_loss,
         last_updated_premium_fraction: Integer::zero(),
-        block_time: env.block.time.seconds()
+        block_time: env.block.time.seconds(),
     };
 
     // depending on the direction the output is positive or negative
@@ -102,8 +103,11 @@ pub fn update_position_reply(
     position.size += signed_output;
     position.margin = margin;
     position.last_updated_premium_fraction = latest_premium_fraction;
-    position.entry_price = position.notional.checked_mul(config.decimals)?.checked_div(position.size.value)?;
-    position.block_time =  env.block.time.seconds();
+    position.entry_price = position
+        .notional
+        .checked_mul(config.decimals)?
+        .checked_div(position.size.value)?;
+    position.block_time = env.block.time.seconds();
 
     let vamm_key = keccak_256(&[position.vamm.as_bytes()].concat());
     store_position(deps.storage, &vamm_key, &position, true)?;
@@ -191,12 +195,10 @@ pub fn close_position_reply(
     env: Env,
     _input: Uint128,
     output: Uint128,
-    position_id: u64
+    position_id: u64,
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
-
     let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
-
     let position = read_position(deps.storage, &vamm_key, position_id)?;
 
     let margin_delta = match &position.direction {
@@ -266,11 +268,9 @@ pub fn close_position_reply(
         swap.trader,
     )?;
 
-    let vamm_key = keccak_256(&[position.vamm.as_bytes()].concat());
     let total_position = remove_position(deps.storage, &vamm_key, &position).unwrap();
 
     store_state(deps.storage, &state)?;
-
     remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
@@ -290,7 +290,7 @@ pub fn partial_close_position_reply(
     env: Env,
     input: Uint128,
     output: Uint128,
-    position_id: u64
+    position_id: u64,
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
     let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
@@ -376,10 +376,10 @@ pub fn liquidate_reply(
     env: Env,
     _input: Uint128,
     output: Uint128,
-    position_id: u64
+    position_id: u64,
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
-    
+
     let liquidator = read_tmp_liquidator(deps.storage)?;
 
     let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
@@ -477,7 +477,7 @@ pub fn partial_liquidation_reply(
     env: Env,
     input: Uint128,
     output: Uint128,
-    position_id: u64
+    position_id: u64,
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
     let liquidator = read_tmp_liquidator(deps.storage)?;

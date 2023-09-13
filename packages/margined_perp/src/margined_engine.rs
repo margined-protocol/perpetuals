@@ -146,7 +146,7 @@ pub enum QueryMsg {
         side: Option<Side>,
         start_after: Option<u64>,
         limit: Option<u32>,
-        order_by: Option<i32>, 
+        order_by: Option<i32>,
     },
     #[returns(TickResponse)]
     Tick {
@@ -181,7 +181,7 @@ pub enum QueryMsg {
     #[returns(Integer)]
     FreeCollateral { vamm: String, position_id: u64 },
     #[returns(Uint128)]
-    BalanceWithFundingPayment { position_id: u64},
+    BalanceWithFundingPayment { position_id: u64 },
     #[returns(Position)]
     PositionWithFundingPayment { vamm: String, position_id: u64 },
     #[returns(LastPositionIdResponse)]
@@ -215,7 +215,7 @@ pub struct PauserResponse {
 
 #[cw_serde]
 pub struct LastPositionIdResponse {
-    pub last_order_id: u64,
+    pub last_position_id: u64,
 }
 
 #[cw_serde]
