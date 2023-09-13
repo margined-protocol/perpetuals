@@ -3035,7 +3035,7 @@ fn test_ten_percent_fee_open_long_price_down_liquidation_with_positive_margin() 
             vamm.addr().to_string(),
             Side::Sell,
             Uint128::from(1_000_000u64),
-            Uint128::from(20_000_000u64),
+            Uint128::from(20_000_001u64),
             Uint128::from(6_000_000u64),
             Some(Uint128::from(15_000_000u64)),
             Uint128::zero(),

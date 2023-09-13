@@ -6,14 +6,13 @@ use crate::{
         execute_insurance_fund_withdrawal, execute_transfer, execute_transfer_from,
         execute_transfer_to_insurance_fund, transfer_fees, withdraw,
     },
-    query::query_margin_ratio,
     state::{
         append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_sent_funds,
         read_state, read_tmp_liquidator, read_tmp_swap, remove_position, remove_sent_funds,
         remove_tmp_liquidator, remove_tmp_swap, store_position, store_state, State, read_position,
     },
     utils::{
-        calc_remain_margin_with_funding_payment, check_base_asset_holding_cap, keccak_256, realize_bad_debt, require_additional_margin, side_to_direction,
+        calc_remain_margin_with_funding_payment, check_base_asset_holding_cap, keccak_256, realize_bad_debt, side_to_direction,
         update_open_interest_notional,
     },
 };
@@ -172,15 +171,6 @@ pub fn update_position_reply(
     if let AssetInfo::NativeToken { .. } = config.eligible_collateral {
         funds.are_sufficient()?;
     }
-
-    // check that the maintenance margin is correct
-    let margin_ratio = query_margin_ratio(
-        deps.as_ref(),
-        position.vamm.to_string(),
-        position.position_id,
-    )?;
-
-    require_additional_margin(margin_ratio, config.maintenance_margin_ratio)?;
 
     store_state(deps.storage, &state)?;
 
