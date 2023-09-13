@@ -189,6 +189,7 @@ pub fn update_position_reply(
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "update_position_reply"),
+        ("entry_price", &position.entry_price.to_string()),
         ("spread_fee", &fees_amount[0].to_string()),
         ("toll_fee", &fees_amount[1].to_string()),
     ]))
