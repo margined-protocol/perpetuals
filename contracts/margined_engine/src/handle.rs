@@ -256,6 +256,8 @@ pub fn open_position(
         ("trader", trader.as_ref()),
         ("margin_amount", &margin_amount.to_string()),
         ("leverage", &leverage.to_string()),
+        ("take_profit", &take_profit.to_string()),
+        ("stop_loss", &stop_loss.unwrap().to_string()),
     ]))
 }
 
@@ -498,7 +500,7 @@ pub fn trigger_tp_sl(
             )?);
             attribute_msgs.push(Attribute {
                 key: "action".to_string(),
-                value: "TRIGGER_TAKE_PROFIT".to_string(),
+                value: "trigger_take_profit".to_string(),
             });
         } else if stop_loss > spot_price
             || stop_loss > Uint128::zero() && spot_price.abs_diff(stop_loss) <= sl_spread
@@ -511,7 +513,7 @@ pub fn trigger_tp_sl(
             )?);
             attribute_msgs.push(Attribute {
                 key: "action".to_string(),
-                value: "TRIGGER_STOP_LOSS".to_string(),
+                value: "trigger_stop_loss".to_string(),
             });
         };
     } else if position.side == Side::Sell {
@@ -526,7 +528,7 @@ pub fn trigger_tp_sl(
             )?);
             attribute_msgs.push(Attribute {
                 key: "action".to_string(),
-                value: "TRIGGER_TAKE_PROFIT".to_string(),
+                value: "trigger_take_profit".to_string(),
             });
         } else if stop_loss > Uint128::zero() && spot_price > stop_loss
             || stop_loss.abs_diff(spot_price) <= sl_spread
@@ -539,7 +541,7 @@ pub fn trigger_tp_sl(
             )?);
             attribute_msgs.push(Attribute {
                 key: "action".to_string(),
-                value: "TRIGGER_STOP_LOSS".to_string(),
+                value: "trigger_stop_loss".to_string(),
             });
         };
     }
