@@ -77,10 +77,11 @@ pub fn update_position_reply(
 
     // calculate margin needed given swap
     swap_margin = swap
-        .open_notional
-        .checked_mul(config.decimals)?
-        .checked_div(swap.leverage)?;
+        .open_notional // positive integer
+        .checked_mul(config.decimals)? // decimals alwasy > 0
+        .checked_div(swap.leverage)?; // leverage cannot be 0
 
+    // this value cannot be <= 0 because swap margin is > 0
     swap.margin_to_vault = swap
         .margin_to_vault
         .checked_add(Integer::new_positive(swap_margin))?;
@@ -124,32 +125,19 @@ pub fn update_position_reply(
     let mut funds = read_sent_funds(deps.storage)?;
 
     // create transfer messages depending on PnL
-    #[allow(clippy::comparison_chain)]
-    if swap.margin_to_vault < Integer::zero() {
-        msgs.append(&mut withdraw(
-            deps.as_ref(),
-            env,
-            &mut state,
-            &swap.trader,
-            config.eligible_collateral.clone(),
-            swap.margin_to_vault.value,
-            Uint128::zero(),
-        )?);
-    } else if swap.margin_to_vault > Integer::zero() {
-        match config.eligible_collateral {
-            AssetInfo::NativeToken { .. } => {
-                funds.required = funds.required.checked_add(swap_margin)?;
-            }
-            AssetInfo::Token { .. } => {
-                msgs.push(execute_transfer_from(
-                    deps.storage,
-                    &swap.trader,
-                    &env.contract.address,
-                    swap.margin_to_vault.value,
-                )?);
-            }
+    match config.eligible_collateral {
+        AssetInfo::NativeToken { .. } => {
+            funds.required = funds.required.checked_add(swap_margin)?;
         }
-    };
+        AssetInfo::Token { .. } => {
+            msgs.push(execute_transfer_from(
+                deps.storage,
+                &swap.trader,
+                &env.contract.address,
+                swap.margin_to_vault.value,
+            )?);
+        }
+    }
 
     // create array for fee amounts
     let mut fees_amount: [Uint128; 2] = [Uint128::zero(), Uint128::zero()];
