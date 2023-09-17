@@ -214,11 +214,6 @@ pub fn open_position(
         base_asset_limit,
     )?;
 
-    let PositionUnrealizedPnlResponse {
-        position_notional,
-        unrealized_pnl,
-    } = get_position_notional_unrealized_pnl(deps.as_ref(), &position, PnlCalcOption::SpotPrice)?;
-
     store_tmp_swap(
         deps.storage,
         &TmpSwapInfo {
@@ -230,8 +225,8 @@ pub fn open_position(
             margin_amount,
             leverage,
             open_notional,
-            position_notional,
-            unrealized_pnl,
+            position_notional: Uint128::zero(),
+            unrealized_pnl: Integer::zero(),
             margin_to_vault: Integer::zero(),
             fees_paid: false,
             take_profit,
