@@ -558,6 +558,10 @@ pub fn trigger_tp_sl(
         value: position.position_id.to_string(),
     });
     attribute_msgs.push(Attribute {
+        key: "position_side".to_string(),
+        value: format!("{:?}", position.side),
+    });
+    attribute_msgs.push(Attribute {
         key: "trader".to_string(),
         value: position.trader.to_string(),
     });
@@ -702,6 +706,7 @@ pub fn deposit_margin(
 
     Ok(response.add_attributes([
         ("action", "deposit_margin"),
+        ("position_id", &position_id.to_string()),
         ("trader", trader.as_ref()),
         ("deposit_amount", &amount.to_string()),
     ]))
@@ -769,6 +774,7 @@ pub fn withdraw_margin(
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "withdraw_margin"),
+        ("position_id", &position_id.to_string()),
         ("trader", trader.as_ref()),
         ("withdrawal_amount", &amount.to_string()),
     ]))
