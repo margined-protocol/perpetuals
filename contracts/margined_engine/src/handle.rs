@@ -515,7 +515,9 @@ pub fn trigger_tp_sl(
                 key: "action".to_string(),
                 value: "trigger_stop_loss".to_string(),
             });
-        };
+        } else {
+            return Err(StdError::generic_err("TP/SL price has not been reached"));
+        }
     } else if position.side == Side::Sell {
         if position.take_profit > spot_price
             || spot_price.abs_diff(position.take_profit) <= tp_spread
@@ -543,8 +545,11 @@ pub fn trigger_tp_sl(
                 key: "action".to_string(),
                 value: "trigger_stop_loss".to_string(),
             });
-        };
+        } else {
+            return Err(StdError::generic_err("TP/SL price has not been reached"));
+        }
     }
+
     attribute_msgs.push(Attribute {
         key: "vamm".to_string(),
         value: vamm.to_string(),
