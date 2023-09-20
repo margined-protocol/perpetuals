@@ -510,7 +510,9 @@ pub fn trigger_tp_sl(
                 key: "action".to_string(),
                 value: "trigger_stop_loss".to_string(),
             });
-        };
+        } else {
+            return Err(StdError::generic_err("TP/SL price has not been reached"));
+        }
     } else if position.side == Side::Sell {
         if position.take_profit > spot_price
             || spot_price.abs_diff(position.take_profit) <= tp_spread
@@ -538,8 +540,11 @@ pub fn trigger_tp_sl(
                 key: "action".to_string(),
                 value: "trigger_stop_loss".to_string(),
             });
-        };
+        } else {
+            return Err(StdError::generic_err("TP/SL price has not been reached"));
+        }
     }
+
     attribute_msgs.push(Attribute {
         key: "vamm".to_string(),
         value: vamm.to_string(),
@@ -551,6 +556,10 @@ pub fn trigger_tp_sl(
     attribute_msgs.push(Attribute {
         key: "position_id".to_string(),
         value: position.position_id.to_string(),
+    });
+    attribute_msgs.push(Attribute {
+        key: "position_side".to_string(),
+        value: format!("{:?}", position.side),
     });
     attribute_msgs.push(Attribute {
         key: "trader".to_string(),
@@ -697,6 +706,7 @@ pub fn deposit_margin(
 
     Ok(response.add_attributes([
         ("action", "deposit_margin"),
+        ("position_id", &position_id.to_string()),
         ("trader", trader.as_ref()),
         ("deposit_amount", &amount.to_string()),
     ]))
@@ -764,6 +774,7 @@ pub fn withdraw_margin(
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "withdraw_margin"),
+        ("position_id", &position_id.to_string()),
         ("trader", trader.as_ref()),
         ("withdrawal_amount", &amount.to_string()),
     ]))

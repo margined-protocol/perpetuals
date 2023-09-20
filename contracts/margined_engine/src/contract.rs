@@ -345,10 +345,12 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
         },
         SubMsgResult::Err(e) => match msg.id {
             TRANSFER_FAILURE_REPLY_ID => Err(StdError::generic_err(format!(
-                "insufficient funds",
+                "transfer failure - reply (id {:?})",
+                msg.id
             ))),
             INCREASE_POSITION_REPLY_ID => Err(StdError::generic_err(format!(
-                "price is over fluctuation limit",
+                "open position failure - reply (id {:?})",
+                msg.id
             ))),
             CLOSE_POSITION_REPLY_ID => Err(StdError::generic_err(format!(
                 "close position failure - reply (id {:?})",
