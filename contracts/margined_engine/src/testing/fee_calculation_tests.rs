@@ -1,9 +1,12 @@
 use cosmwasm_std::{StdError, Uint128};
 use cw20::Cw20ExecuteMsg;
 use margined_perp::margined_engine::{PnlCalcOption, Side};
-use margined_utils::{cw_multi_test::Executor, testing::{SimpleScenario, to_decimals}};
+use margined_utils::{
+    cw_multi_test::Executor,
+    testing::{to_decimals, SimpleScenario},
+};
 
-use crate::testing::new_simple_scenario;
+use crate::{contract::TRANSFER_FAILURE_REPLY_ID, testing::new_simple_scenario};
 
 #[test]
 fn test_open_position_total_fee_ten_percent() {
@@ -46,11 +49,7 @@ fn test_open_position_total_fee_ten_percent() {
     router.execute(alice.clone(), msg).unwrap();
 
     let alice_position = engine
-        .get_position_with_funding_payment(
-            &router.wrap(),
-            vamm.addr().to_string(),
-            1
-        )
+        .get_position_with_funding_payment(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(alice_position.margin, Uint128::from(300_000_000_000u64));
 
@@ -611,7 +610,10 @@ fn test_force_error_insufficient_balance_open_position_total_fee_ten_percent() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "insufficient funds".to_string(),
+            msg: format!(
+                "transfer failure - reply (id {})",
+                TRANSFER_FAILURE_REPLY_ID
+            ),
         },
         err.downcast().unwrap()
     );

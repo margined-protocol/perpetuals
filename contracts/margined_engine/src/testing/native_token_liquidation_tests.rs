@@ -1,9 +1,12 @@
 use cosmwasm_std::{BankMsg, Coin, CosmosMsg, StdError, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{PnlCalcOption, Side};
-use margined_utils::{cw_multi_test::Executor, testing::{NativeTokenScenario, to_decimals}};
+use margined_utils::{
+    cw_multi_test::Executor,
+    testing::{to_decimals, NativeTokenScenario},
+};
 
-use crate::testing::new_native_token_scenario;
+use crate::{contract::INCREASE_POSITION_REPLY_ID, testing::new_native_token_scenario};
 
 #[test]
 fn test_partially_liquidate_long_position() {
@@ -197,11 +200,7 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
     // liquidated positionNotional: getOutputPrice(20 (original position) * 0.25) = 68.455
     // if quoteAssetAmountLimit == 273.85 > 68.455 * 4 = 273.82, quote asset gets is less than expected, thus tx reverts
     let msg = engine
-        .liquidate(
-            vamm.addr().to_string(),
-            1,
-            Uint128::from(273_850_000u64),
-        )
+        .liquidate(vamm.addr().to_string(), 1, Uint128::from(273_850_000u64))
         .unwrap();
     let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
@@ -213,11 +212,7 @@ fn test_partially_liquidate_long_position_with_quote_asset_limit() {
 
     // if quoteAssetAmountLimit == 273.8 < 68.455 * 4 = 273.82, quote asset gets is more than expected
     let msg = engine
-        .liquidate(
-            vamm.addr().to_string(),
-            1,
-            Uint128::from(273_800_000u64),
-        )
+        .liquidate(vamm.addr().to_string(), 1, Uint128::from(273_800_000u64))
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 }
@@ -414,11 +409,7 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
     // liquidated positionNotional: getOutputPrice(25 (original position) * 0.25) = 44.258
     // if quoteAssetAmountLimit == 177 > 44.258 * 4 = 177.032, quote asset pays is more than expected, thus tx reverts
     let msg = engine
-        .liquidate(
-            vamm.addr().to_string(),
-            1,
-            Uint128::from(177_000_000u64),
-        )
+        .liquidate(vamm.addr().to_string(), 1, Uint128::from(177_000_000u64))
         .unwrap();
     let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
@@ -430,11 +421,7 @@ fn test_partially_liquidate_short_position_with_quote_asset_limit() {
 
     // if quoteAssetAmountLimit == 177.1 < 44.258 * 4 = 177.032, quote asset pays is less than expected
     let msg = engine
-        .liquidate(
-            vamm.addr().to_string(),
-            1,
-            Uint128::from(177_100_000u64),
-        )
+        .liquidate(vamm.addr().to_string(), 1, Uint128::from(177_100_000u64))
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 }
@@ -530,7 +517,8 @@ fn test_long_position_complete_liquidation() {
         .unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "Querier contract error: margined_perp::margined_engine::Position not found".to_string()
+            msg: "Querier contract error: margined_perp::margined_engine::Position not found"
+                .to_string()
         },
         err
     );
@@ -628,11 +616,7 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
     router.execute(bob.clone(), msg).unwrap();
 
     let msg = engine
-        .liquidate(
-            vamm.addr().to_string(),
-            1,
-            Uint128::from(224_100_000u128),
-        )
+        .liquidate(vamm.addr().to_string(), 1, Uint128::from(224_100_000u128))
         .unwrap();
     let err = router.execute(carol.clone(), msg).unwrap_err();
     assert_eq!(
@@ -643,11 +627,7 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
     );
 
     let msg = engine
-        .liquidate(
-            vamm.addr().to_string(),
-            1,
-            Uint128::from(224_000_000u64),
-        )
+        .liquidate(vamm.addr().to_string(), 1, Uint128::from(224_000_000u64))
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 }
@@ -743,7 +723,8 @@ fn test_short_position_complete_liquidation() {
         .unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "Querier contract error: margined_perp::margined_engine::Position not found".to_string()
+            msg: "Querier contract error: margined_perp::margined_engine::Position not found"
+                .to_string()
         },
         err
     );
@@ -1147,11 +1128,7 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
     // values can be retrieved with amm.quoteAssetReserve() & amm.baseAssetReserve()
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            2,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 2, Uint128::zero())
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
@@ -1269,101 +1246,61 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
     // fluctuation: (12.1 - 11.61116202) / 12.1 = 0.04039983306
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            11,
-            Uint128::zero(),
-        )
-        .unwrap();
-    env.router.execute(env.carol.clone(), msg).unwrap();
-    
-    let msg = env
-        .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            12,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 11, Uint128::zero())
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            13,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 12, Uint128::zero())
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            14,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 13, Uint128::zero())
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            15,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 14, Uint128::zero())
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            6,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 15, Uint128::zero())
+        .unwrap();
+    env.router.execute(env.carol.clone(), msg).unwrap();
+
+    let msg = env
+        .engine
+        .liquidate(env.vamm.addr().to_string(), 6, Uint128::zero())
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            7,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 7, Uint128::zero())
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            8,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 8, Uint128::zero())
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            9,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 9, Uint128::zero())
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            10,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 10, Uint128::zero())
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
@@ -1502,31 +1439,19 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
     // fluctuation: (12.321 - 11.64383498) / 12.321 = 0.05496023212
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            3,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 3, Uint128::zero())
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            2,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 2, Uint128::zero())
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            4,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 4, Uint128::zero())
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
@@ -1657,31 +1582,19 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
     // fluctuation: (13.225 - 11.7676797) / 13.225 = 0.1101943516
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            3,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 3, Uint128::zero())
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            2,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 2, Uint128::zero())
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            4,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 4, Uint128::zero())
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
@@ -1783,11 +1696,7 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
     // values can be retrieved with amm.quoteAssetReserve() & amm.baseAssetReserve()
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            2,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 2, Uint128::zero())
         .unwrap();
     let response = env.router.execute(env.carol.clone(), msg).unwrap();
     assert_eq!(
@@ -1897,7 +1806,10 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
     let err = env.router.execute(env.alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "price is over fluctuation limit".to_string()
+            msg: format!(
+                "open position failure - reply (id {})",
+                INCREASE_POSITION_REPLY_ID
+            )
         },
         err.downcast().unwrap()
     );
@@ -1922,11 +1834,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
     // values can be retrieved with amm.quoteAssetReserve() & amm.baseAssetReserve()
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            2,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 2, Uint128::zero())
         .unwrap();
     let response = env.router.execute(env.carol.clone(), msg).unwrap();
     assert_eq!(
@@ -2054,31 +1962,19 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
     // fluctuation: (11.63 - 11.15) / 11.63 = 0.04127257094
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            5,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 5, Uint128::zero())
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            6,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 6, Uint128::zero())
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            3,
-            Uint128::zero(),
-        )
+        .liquidate(env.vamm.addr().to_string(), 3, Uint128::zero())
         .unwrap();
     let err = env.router.execute(env.alice.clone(), msg).unwrap_err();
     assert_eq!(

@@ -7,7 +7,7 @@ use margined_utils::{
     testing::{to_decimals, SimpleScenario},
 };
 
-use crate::testing::new_simple_scenario;
+use crate::{contract::INCREASE_POSITION_REPLY_ID, testing::new_simple_scenario};
 
 #[test]
 fn test_partially_liquidate_long_position() {
@@ -120,11 +120,7 @@ fn test_partially_liquidate_long_position() {
     router.execute(bob.clone(), msg).unwrap();
 
     let msg = engine
-        .liquidate(
-            vamm.addr().to_string(),
-            1,
-            to_decimals(0u64),
-        )
+        .liquidate(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 
@@ -395,11 +391,7 @@ fn test_partially_liquidate_short_position() {
     router.execute(bob.clone(), msg).unwrap();
 
     let msg = engine
-        .liquidate(
-            vamm.addr().to_string(),
-            1,
-            to_decimals(0u64),
-        )
+        .liquidate(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 
@@ -681,7 +673,8 @@ fn test_long_position_complete_liquidation() {
         .unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "Querier contract error: margined_perp::margined_engine::Position not found".to_string()
+            msg: "Querier contract error: margined_perp::margined_engine::Position not found"
+                .to_string()
         },
         err
     );
@@ -821,11 +814,7 @@ fn test_long_position_complete_liquidation_with_slippage_limit() {
     );
 
     let msg = engine
-        .liquidate(
-            vamm.addr().to_string(),
-            1,
-            to_decimals(224u64),
-        )
+        .liquidate(vamm.addr().to_string(), 1, to_decimals(224u64))
         .unwrap();
     router.execute(carol.clone(), msg).unwrap();
 }
@@ -950,7 +939,8 @@ fn test_short_position_complete_liquidation() {
         .unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "Querier contract error: margined_perp::margined_engine::Position not found".to_string()
+            msg: "Querier contract error: margined_perp::margined_engine::Position not found"
+                .to_string()
         },
         err
     );
@@ -1445,11 +1435,7 @@ fn test_partially_liquidate_one_position_within_fluctuation_limit() {
     // values can be retrieved with amm.quoteAssetReserve() & amm.baseAssetReserve()
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            2,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 2, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
@@ -1619,101 +1605,61 @@ fn test_partially_liquidate_two_positions_within_fluctuation_limit() {
     // fluctuation: (12.1 - 11.61116202) / 12.1 = 0.04039983306
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            11,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 11, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            12,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 12, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            13,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 13, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            14,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 14, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            15,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 15, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.carol.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            6,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 6, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            7,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 7, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            8,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 8, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            9,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 9, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            10,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 10, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
@@ -1900,31 +1846,19 @@ fn test_partially_liquidate_three_positions_within_fluctuation_limit() {
     // fluctuation: (12.321 - 11.64383498) / 12.321 = 0.05496023212
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            3,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 3, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            2,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 2, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            4,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 4, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
@@ -2106,31 +2040,19 @@ fn test_partially_liquidate_two_positions_and_completely_liquidate_one_within_fl
     // fluctuation: (13.225 - 11.7676797) / 13.225 = 0.1101943516
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            3,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 3, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            2,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 2, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            4,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 4, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
@@ -2263,11 +2185,7 @@ fn test_liquidate_one_position_exceeding_fluctuation_limit() {
     // values can be retrieved with amm.quoteAssetReserve() & amm.baseAssetReserve()
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            2,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 2, to_decimals(0u64))
         .unwrap();
     let response = env.router.execute(env.carol.clone(), msg).unwrap();
     assert_eq!(
@@ -2405,7 +2323,10 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
     let err = env.router.execute(env.alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "price is over fluctuation limit".to_string()
+            msg: format!(
+                "open position failure - reply (id {})",
+                INCREASE_POSITION_REPLY_ID
+            )
         },
         err.downcast().unwrap()
     );
@@ -2430,11 +2351,7 @@ fn test_partially_liquidate_one_position_exceeding_fluctuation_limit() {
     // values can be retrieved with amm.quoteAssetReserve() & amm.baseAssetReserve()
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            1,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     let response = env.router.execute(env.carol.clone(), msg).unwrap();
     assert_eq!(
@@ -2610,31 +2527,19 @@ fn test_force_error_partially_liquidate_two_positions_exceeding_fluctuation_limi
     // fluctuation: (11.63 - 11.15) / 11.63 = 0.04127257094
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            5,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 5, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            6,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 6, to_decimals(0u64))
         .unwrap();
     env.router.execute(env.bob.clone(), msg).unwrap();
 
     let msg = env
         .engine
-        .liquidate(
-            env.vamm.addr().to_string(),
-            4,
-            to_decimals(0u64),
-        )
+        .liquidate(env.vamm.addr().to_string(), 4, to_decimals(0u64))
         .unwrap();
     let err = env.router.execute(env.alice.clone(), msg).unwrap_err();
     assert_eq!(

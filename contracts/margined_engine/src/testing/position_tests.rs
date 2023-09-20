@@ -1,13 +1,15 @@
 use cosmwasm_std::{StdError, Uint128};
 use cw20::Cw20ExecuteMsg;
 use margined_common::integer::Integer;
-use margined_perp::margined_engine::{PnlCalcOption, Side, PositionFilter, TicksResponse, TickResponse};
+use margined_perp::margined_engine::{
+    PnlCalcOption, PositionFilter, Side, TickResponse, TicksResponse,
+};
 use margined_utils::{
     cw_multi_test::Executor,
     testing::{to_decimals, SimpleScenario},
 };
 
-use crate::testing::new_simple_scenario;
+use crate::{contract::TRANSFER_FAILURE_REPLY_ID, testing::new_simple_scenario};
 
 #[test]
 fn test_initialization() {
@@ -219,7 +221,7 @@ fn test_open_position_two_longs() {
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
-    
+
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
@@ -291,7 +293,15 @@ fn test_open_position_two_longs() {
     router.execute(alice.clone(), msg).unwrap();
 
     let buy_positions = engine
-        .get_positions(&router.wrap(), vamm.addr().to_string(), PositionFilter::None, Some(Side::Buy), None, None, None)
+        .get_positions(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            PositionFilter::None,
+            Some(Side::Buy),
+            None,
+            None,
+            None,
+        )
         .unwrap();
     println!("buy position: {:?}", buy_positions);
     for position in buy_positions {
@@ -300,7 +310,15 @@ fn test_open_position_two_longs() {
     println!("\n\n\n");
 
     let sell_positions = engine
-        .get_positions(&router.wrap(), vamm.addr().to_string(), PositionFilter::None, Some(Side::Sell), None, None, None)
+        .get_positions(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            PositionFilter::None,
+            Some(Side::Sell),
+            None,
+            None,
+            None,
+        )
         .unwrap();
     for position in sell_positions {
         println!("sell position: {:?}", position);
@@ -308,7 +326,15 @@ fn test_open_position_two_longs() {
     println!("\n\n\n");
 
     let alice_positions = engine
-        .get_positions(&router.wrap(), vamm.addr().to_string(), PositionFilter::Trader(alice.to_string()), None, None, None, None)
+        .get_positions(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            PositionFilter::Trader(alice.to_string()),
+            None,
+            None,
+            None,
+            None,
+        )
         .unwrap();
     for position in alice_positions {
         println!("alice's position: {:?}", position);
@@ -316,7 +342,15 @@ fn test_open_position_two_longs() {
     println!("\n\n\n");
 
     let bob_positions = engine
-        .get_positions(&router.wrap(), vamm.addr().to_string(), PositionFilter::Trader(bob.to_string()), None, None, None, None)
+        .get_positions(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            PositionFilter::Trader(bob.to_string()),
+            None,
+            None,
+            None,
+            None,
+        )
         .unwrap();
     for position in bob_positions {
         println!("bob's position: {:?}", position);
@@ -324,7 +358,15 @@ fn test_open_position_two_longs() {
     println!("\n\n\n");
 
     let all_positions = engine
-        .get_positions(&router.wrap(), vamm.addr().to_string(), PositionFilter::None, None, None, None, None)
+        .get_positions(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            PositionFilter::None,
+            None,
+            None,
+            None,
+            None,
+        )
         .unwrap();
     for position in all_positions {
         println!("position: {:?}", position);
@@ -332,63 +374,95 @@ fn test_open_position_two_longs() {
     println!("\n\n\n");
 
     let buy_ticks = engine
-        .get_ticks(&router.wrap(), vamm.addr().to_string(), Side::Buy, None, None, Some(2))
+        .get_ticks(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            Side::Buy,
+            None,
+            None,
+            Some(2),
+        )
         .unwrap();
     assert_eq!(
-        buy_ticks, 
+        buy_ticks,
         TicksResponse {
             ticks: [
-                TickResponse{
+                TickResponse {
                     entry_price: Uint128::from(41742249999u128),
                     total_positions: 1
                 },
-                TickResponse{
+                TickResponse {
                     entry_price: Uint128::from(28240000004u128),
                     total_positions: 1
                 },
-                TickResponse{
+                TickResponse {
                     entry_price: Uint128::from(16000000000u128),
                     total_positions: 1
                 }
-            ].to_vec()
+            ]
+            .to_vec()
         }
     );
     for tick in buy_ticks.ticks {
         println!("tick: {:?}", tick);
         let tick_position = engine
-            .get_positions(&router.wrap(), vamm.addr().to_string(), PositionFilter::Price(tick.entry_price), None, None, None, None)
+            .get_positions(
+                &router.wrap(),
+                vamm.addr().to_string(),
+                PositionFilter::Price(tick.entry_price),
+                None,
+                None,
+                None,
+                None,
+            )
             .unwrap();
         println!("tick_position: {:?}", tick_position);
     }
     println!("\n\n\n");
 
     let sell_ticks = engine
-        .get_ticks(&router.wrap(), vamm.addr().to_string(), Side::Sell, None, None, Some(1))
+        .get_ticks(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            Side::Sell,
+            None,
+            None,
+            Some(1),
+        )
         .unwrap();
 
     assert_eq!(
-        sell_ticks, 
+        sell_ticks,
         TicksResponse {
             ticks: [
-                TickResponse{
+                TickResponse {
                     entry_price: Uint128::from(30460159998u128),
                     total_positions: 1
                 },
-                TickResponse{
+                TickResponse {
                     entry_price: Uint128::from(37536399995u128),
                     total_positions: 1
                 },
-                TickResponse{
+                TickResponse {
                     entry_price: Uint128::from(49428499999u128),
                     total_positions: 1
                 }
-            ].to_vec()
+            ]
+            .to_vec()
         }
     );
     for tick in sell_ticks.ticks {
         println!("tick: {:?}", tick);
         let tick_position = engine
-            .get_positions(&router.wrap(), vamm.addr().to_string(), PositionFilter::Price(tick.entry_price), None, None, None, None)
+            .get_positions(
+                &router.wrap(),
+                vamm.addr().to_string(),
+                PositionFilter::Price(tick.entry_price),
+                None,
+                None,
+                None,
+                None,
+            )
             .unwrap();
         println!("tick_position: {:?}", tick_position);
     }
@@ -409,7 +483,10 @@ fn test_open_position_two_longs() {
     let position_2 = engine
         .position(&router.wrap(), vamm.addr().to_string(), 2)
         .unwrap();
-    assert_eq!(position_1.size + position_2.size, Integer::new_positive(43_342_776_203u128));
+    assert_eq!(
+        position_1.size + position_2.size,
+        Integer::new_positive(43_342_776_203u128)
+    );
     assert_eq!(position_1.margin + position_2.margin, to_decimals(93));
 }
 
@@ -467,7 +544,10 @@ fn test_open_position_two_shorts() {
     let position_2 = engine
         .position(&router.wrap(), vamm.addr().to_string(), 2)
         .unwrap();
-    assert_eq!(position_1.size + position_2.size, Integer::new_negative(66_666_666_667u128));
+    assert_eq!(
+        position_1.size + position_2.size,
+        Integer::new_negative(66_666_666_667u128)
+    );
     assert_eq!(position_1.margin + position_2.margin, to_decimals(80));
 }
 
@@ -729,7 +809,7 @@ fn test_open_position_long_short_long() {
         .unwrap();
     assert_eq!(position_1.size, Integer::new_positive(to_decimals(20u64)));
     assert_eq!(position_1.margin, Uint128::new(25_000_000_000));
-    
+
     // position 2
     let position_2 = engine
         .position(&router.wrap(), vamm.addr().to_string(), 2)
@@ -756,7 +836,7 @@ fn test_open_position_long_short_long() {
         .position(&router.wrap(), vamm.addr().to_string(), 3)
         .unwrap();
     assert_eq!(position_3.size, Integer::new_positive(to_decimals(25u64)));
-    assert_eq!(position_3.margin, Uint128::new(20_000_000_000)); 
+    assert_eq!(position_3.margin, Uint128::new(20_000_000_000));
 }
 
 #[test]
@@ -797,7 +877,7 @@ fn test_pnl_zero_no_others_trading() {
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
-    let pnl_1= engine
+    let pnl_1 = engine
         .get_unrealized_pnl(
             &router.wrap(),
             vamm.addr().to_string(),
@@ -814,7 +894,10 @@ fn test_pnl_zero_no_others_trading() {
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl_1.unrealized_pnl, Integer::new_positive(321428571428u128));
+    assert_eq!(
+        pnl_1.unrealized_pnl,
+        Integer::new_positive(321428571428u128)
+    );
     assert_eq!(pnl_2.unrealized_pnl, Integer::zero());
 }
 
@@ -878,7 +961,8 @@ fn test_close_safe_position() {
         .unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "Querier contract error: margined_perp::margined_engine::Position not found".to_string()
+            msg: "Querier contract error: margined_perp::margined_engine::Position not found"
+                .to_string()
         },
         err
     );
@@ -949,7 +1033,8 @@ fn test_close_position_over_maintenance_margin_ratio() {
         .unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "Querier contract error: margined_perp::margined_engine::Position not found".to_string()
+            msg: "Querier contract error: margined_perp::margined_engine::Position not found"
+                .to_string()
         },
         err
     );
@@ -1320,7 +1405,10 @@ fn test_error_open_position_insufficient_balance() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "insufficient funds".to_string()
+            msg: format!(
+                "transfer failure - reply (id {})",
+                TRANSFER_FAILURE_REPLY_ID
+            )
         },
         err.downcast().unwrap()
     );
@@ -1467,7 +1555,7 @@ fn test_alice_take_profit_from_bob_unrealized_undercollateralized_position_bob_c
     assert_eq!(margin_ratio, Integer::new_negative(252_000_000u128));
 
     let msg = engine
-        .close_position(vamm.addr().to_string(),  2, to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 2, to_decimals(0u64))
         .unwrap();
     router.execute(bob.clone(), msg).unwrap();
 
@@ -1511,7 +1599,7 @@ fn test_query_no_user_positions() {
 
     // alice closes her position
     let msg = engine
-        .close_position(vamm.addr().to_string(),  1, to_decimals(0u64))
+        .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
 
@@ -1521,7 +1609,8 @@ fn test_query_no_user_positions() {
         .unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "Querier contract error: margined_perp::margined_engine::Position not found".to_string()
+            msg: "Querier contract error: margined_perp::margined_engine::Position not found"
+                .to_string()
         },
         err
     );

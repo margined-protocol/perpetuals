@@ -6,7 +6,7 @@ use margined_utils::{
     testing::{to_decimals, SimpleScenario},
 };
 
-use crate::testing::new_simple_scenario;
+use crate::{contract::INCREASE_POSITION_REPLY_ID, testing::new_simple_scenario};
 
 #[test]
 fn test_force_error_open_position_exceeds_fluctuation_limit() {
@@ -56,7 +56,10 @@ fn test_force_error_open_position_exceeds_fluctuation_limit() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "price is over fluctuation limit".to_string(),
+            msg: format!(
+                "open position failure - reply (id {})",
+                INCREASE_POSITION_REPLY_ID
+            )
         },
         err.downcast().unwrap()
     );
@@ -126,7 +129,10 @@ fn test_force_error_reduce_position_exceeds_fluctuation_limit() {
     let err = router.execute(alice.clone(), msg).unwrap_err();
     assert_eq!(
         StdError::GenericErr {
-            msg: "price is over fluctuation limit".to_string(),
+            msg: format!(
+                "open position failure - reply (id {})",
+                INCREASE_POSITION_REPLY_ID
+            )
         },
         err.downcast().unwrap()
     );
