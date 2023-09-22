@@ -243,6 +243,8 @@ pub struct Position {
     pub entry_price: Uint128,
     pub take_profit: Uint128,
     pub stop_loss: Option<Uint128>,
+    pub spread_fee: Uint128,
+    pub toll_fee: Uint128,
     pub last_updated_premium_fraction: Integer,
     pub block_time: u64,
 }
@@ -263,6 +265,8 @@ impl Default for Position {
             take_profit: Uint128::zero(),
             stop_loss: Some(Uint128::zero()),
             last_updated_premium_fraction: Integer::zero(),
+            spread_fee: Uint128::zero(),
+            toll_fee: Uint128::zero(),
             block_time: 0u64,
         }
     }

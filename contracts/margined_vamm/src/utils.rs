@@ -31,6 +31,7 @@ pub struct TwapPriceCalcParams {
 
 pub fn require_margin_engine(sender: Addr, margin_engine: Addr) -> StdResult<()> {
     // check that sender is the margin engine
+    println!("require_margin_engine - margin_engine: {:?}", margin_engine);
     if sender != margin_engine {
         return Err(StdError::generic_err("sender not margin engine"));
     }

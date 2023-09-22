@@ -292,6 +292,8 @@ pub struct TmpSwapInfo {
     pub fees_paid: bool,            // true if fees have been paid, used in case of reversing position
     pub take_profit: Uint128,       // take profit price of position
     pub stop_loss: Option<Uint128>, // stop loss price of position
+    pub spread_fee: Uint128,        // spread fee
+    pub toll_fee: Uint128,          // toll fee
 }
 
 pub fn store_tmp_swap(storage: &mut dyn Storage, swap: &TmpSwapInfo) -> StdResult<()> {

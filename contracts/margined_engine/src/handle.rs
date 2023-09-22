@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    Addr, Attribute, DepsMut, Env, MessageInfo, QuerierWrapper, Response, StdError, StdResult,
+    Addr, Attribute, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
     SubMsg, Uint128,
 };
 use margined_utils::contracts::helpers::VammController;
@@ -30,11 +30,8 @@ use margined_common::{
     messages::wasm_execute,
     validate::{validate_margin_ratios, validate_ratio},
 };
-use margined_perp::margined_vamm::{Direction, ExecuteMsg, QueryMsg};
-use margined_perp::{
-    margined_engine::{PnlCalcOption, Position, PositionUnrealizedPnlResponse, Side},
-    margined_vamm::ConfigResponse,
-};
+use margined_perp::margined_vamm::{Direction, ExecuteMsg, CalcFeeResponse};
+use margined_perp::margined_engine::{PnlCalcOption, Position, PositionUnrealizedPnlResponse, Side};
 
 #[allow(clippy::too_many_arguments)]
 pub fn update_config(
@@ -126,26 +123,27 @@ pub fn open_position(
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = info.sender.clone();
 
-    let state = read_state(deps.storage)?;
-    require_not_paused(state.pause)?;
     let config = read_config(deps.storage)?;
+    let state = read_state(deps.storage)?;
+
+    require_not_paused(state.pause)?;
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
-    let position_id = increase_last_position_id(deps.storage)?;
 
     require_not_restriction_mode(deps.storage, &vamm, env.block.height)?;
     require_non_zero_input(margin_amount)?;
     require_non_zero_input(leverage)?;
     require_non_zero_input(take_profit)?;
 
+    let position_id = increase_last_position_id(deps.storage)?;
+    let vamm_controller = VammController(vamm.clone());
+
     if leverage < config.decimals {
         return Err(StdError::generic_err("Leverage must be greater than 1"));
     }
 
-    let vamm_config = get_vamm_config(&deps.querier, &vamm)?;
-
-    let entry_price = get_input_price(
+    let vamm_config = vamm_controller.config(&deps.querier).unwrap();
+    let entry_price = vamm_controller.input_price(
         &deps.querier,
-        &vamm,
         side_to_direction(&side),
         margin_amount
             .checked_mul(leverage)?
@@ -198,13 +196,34 @@ pub fn open_position(
         take_profit: Uint128::zero(),
         stop_loss: Some(Uint128::zero()),
         last_updated_premium_fraction: Integer::zero(),
+        spread_fee: Uint128::zero(),
+        toll_fee: Uint128::zero(),
         block_time: 0u64,
     };
 
     // calculate the position notional
-    let open_notional = margin_amount
+    let mut open_notional = margin_amount
         .checked_mul(leverage)?
         .checked_div(config.decimals)?;
+    println!("open position - old open_notional: {:?}", open_notional);
+
+    let CalcFeeResponse {
+        spread_fee,
+        toll_fee,
+    } = vamm_controller.calc_fee(&deps.querier, open_notional)?;
+    println!("open position - spread_fee: {:?}", spread_fee);
+    println!("open position - toll_fee: {:?}", toll_fee);
+
+    let new_margin_amount = margin_amount
+        .checked_sub(spread_fee)?
+        .checked_sub(toll_fee)?;
+    println!("open position - new_margin_amount: {:?}", new_margin_amount);
+
+    // calculate the new position notional
+    open_notional = new_margin_amount
+        .checked_mul(leverage)?
+        .checked_div(config.decimals)?;
+    println!("open position - new open_notional: {:?}", open_notional);
 
     let msg = internal_increase_position(
         vamm.clone(),
@@ -222,13 +241,15 @@ pub fn open_position(
             pair: format!("{}/{}", vamm_config.base_asset, vamm_config.quote_asset),
             trader: trader.clone(),
             side: side.clone(),
-            margin_amount,
+            margin_amount: new_margin_amount,
             leverage,
             open_notional,
             position_notional: Uint128::zero(),
             unrealized_pnl: Integer::zero(),
             margin_to_vault: Integer::zero(),
             fees_paid: false,
+            spread_fee,
+            toll_fee,
             take_profit,
             stop_loss,
         },
@@ -411,6 +432,8 @@ pub fn close_position(
                 unrealized_pnl,
                 margin_to_vault: Integer::zero(),
                 fees_paid: false,
+                spread_fee: position.spread_fee,
+                toll_fee: position.toll_fee,
                 take_profit: position.take_profit,
                 stop_loss: position.stop_loss,
             },
@@ -465,11 +488,12 @@ pub fn trigger_tp_sl(
     // read the position for the trader from vamm
     let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
     let position = read_position(deps.storage, &vamm_key, position_id)?;
+    let vamm_controller = VammController(vamm.clone());
 
     // check the position isn't zero
     require_position_not_zero(position.size.value)?;
 
-    let spot_price = get_spot_price(&deps.querier, &vamm)?;
+    let spot_price = vamm_controller.spot_price(&deps.querier)?;
     let stop_loss = position.stop_loss.unwrap_or_default();
     let tp_spread = position
         .take_profit
@@ -758,6 +782,7 @@ pub fn withdraw_margin(
         return Err(StdError::generic_err("Insufficient collateral"));
     }
 
+    let fees = position.spread_fee.checked_add(position.toll_fee)?;
     // withdraw margin
     let msgs = withdraw(
         deps.as_ref(),
@@ -766,6 +791,7 @@ pub fn withdraw_margin(
         &trader,
         config.eligible_collateral,
         amount,
+        fees,
         Uint128::zero(),
     )?;
 
@@ -823,6 +849,8 @@ pub fn internal_close_position(
             fees_paid: false,
             take_profit: position.take_profit,
             stop_loss: position.stop_loss,
+            spread_fee: position.spread_fee,
+            toll_fee: position.toll_fee,
         },
     )?;
 
@@ -888,6 +916,8 @@ fn partial_liquidation(
             fees_paid: false,
             take_profit: position.take_profit,
             stop_loss: position.stop_loss,
+            spread_fee: position.spread_fee,
+            toll_fee: position.toll_fee,
         },
     )?;
 
@@ -959,21 +989,4 @@ fn swap_output(
     )?;
 
     Ok(SubMsg::reply_always(msg, id))
-}
-
-fn get_spot_price(querier: &QuerierWrapper, vamm: &Addr) -> StdResult<Uint128> {
-    querier.query_wasm_smart(vamm, &QueryMsg::SpotPrice {})
-}
-
-fn get_input_price(
-    querier: &QuerierWrapper,
-    vamm: &Addr,
-    direction: Direction,
-    amount: Uint128,
-) -> StdResult<Uint128> {
-    querier.query_wasm_smart(vamm, &QueryMsg::InputPrice { direction, amount })
-}
-
-fn get_vamm_config(querier: &QuerierWrapper, vamm: &Addr) -> StdResult<ConfigResponse> {
-    querier.query_wasm_smart(vamm, &QueryMsg::Config {})
 }

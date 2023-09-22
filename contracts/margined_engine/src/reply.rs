@@ -25,7 +25,7 @@ use margined_perp::{
 };
 
 // Updates position after successful execution of the swap
-pub fn update_position_reply(
+pub fn open_position_reply(
     deps: DepsMut,
     env: Env,
     input: Uint128,
@@ -48,8 +48,16 @@ pub fn update_position_reply(
         take_profit: swap.take_profit,
         stop_loss: swap.stop_loss,
         last_updated_premium_fraction: Integer::zero(),
+        spread_fee: swap.spread_fee,
+        toll_fee: swap.toll_fee,
         block_time: env.block.time.seconds(),
     };
+    println!("open_position_reply - direction: {:?}", position.direction);
+    println!(
+        "open_position_reply - spread_fee: {:?}",
+        position.spread_fee
+    );
+    println!("open_position_reply - toll_fee: {:?}", position.toll_fee);
 
     // depending on the direction the output is positive or negative
     let signed_output = match &swap.side {
@@ -58,6 +66,7 @@ pub fn update_position_reply(
     };
 
     let mut state = read_state(deps.storage)?;
+    let config = read_config(deps.storage)?;
 
     update_open_interest_notional(
         &deps.as_ref(),
@@ -66,8 +75,6 @@ pub fn update_position_reply(
         Integer::new_positive(input),
         swap.trader.clone(),
     )?;
-
-    let config = read_config(deps.storage)?;
 
     // define variables that differ across increase and decrease scenario
     let swap_margin;
@@ -80,6 +87,11 @@ pub fn update_position_reply(
         .open_notional
         .checked_mul(config.decimals)?
         .checked_div(swap.leverage)?;
+    println!(
+        "open_position_reply - swap.open_notional: {:?}",
+        swap.open_notional
+    );
+    println!("open_position_reply - swap_margin: {:?}", swap_margin);
 
     swap.margin_to_vault = swap
         .margin_to_vault
@@ -111,6 +123,7 @@ pub fn update_position_reply(
 
     let vamm_key = keccak_256(&[position.vamm.as_bytes()].concat());
     store_position(deps.storage, &vamm_key, &position, true)?;
+    println!("open_position_reply - position: {:?}", position);
 
     // check the new position doesn't exceed any caps
     check_base_asset_holding_cap(
@@ -122,9 +135,25 @@ pub fn update_position_reply(
 
     let mut msgs: Vec<SubMsg> = vec![];
     let mut funds = read_sent_funds(deps.storage)?;
+    let fees = position.spread_fee.checked_add(position.toll_fee)?;
+    println!("open_position_reply - funds: {:?}", funds);
 
     // create transfer messages depending on PnL
-    if swap.margin_to_vault > Integer::zero() {
+    #[allow(clippy::comparison_chain)]
+    if swap.margin_to_vault < Integer::zero() {
+        println!("open_position_reply - CASE 1");
+        msgs.append(&mut withdraw(
+            deps.as_ref(),
+            env,
+            &mut state,
+            &swap.trader,
+            config.eligible_collateral.clone(),
+            swap.margin_to_vault.value,
+            fees,
+            Uint128::zero(),
+        )?);
+    } else if swap.margin_to_vault > Integer::zero() {
+        println!("open_position_reply - CASE 2");
         match config.eligible_collateral {
             AssetInfo::NativeToken { .. } => {
                 funds.required = funds.required.checked_add(swap_margin)?;
@@ -140,24 +169,24 @@ pub fn update_position_reply(
         }
     };
 
-    // create array for fee amounts
-    let mut fees_amount: [Uint128; 2] = [Uint128::zero(), Uint128::zero()];
-
     // create messages to pay for toll and spread fees, check flag is true if this follows a reverse
     if !swap.fees_paid {
-        let mut fees = transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional)?;
-
+        let mut fees_messages = transfer_fees(
+            deps.as_ref(),
+            swap.trader,
+            swap.spread_fee,
+            swap.toll_fee,
+            true,
+        )?;
+        println!("open_position_reply - fees_messages: {:?}", fees_messages);
         // add the fee transfer messages
-        msgs.append(&mut fees.messages);
+        msgs.append(&mut fees_messages);
 
         // add the total fees to the required funds counter
         funds.required = funds
             .required
-            .checked_add(fees.spread_fee)?
-            .checked_add(fees.toll_fee)?;
-
-        fees_amount[0] = fees.spread_fee;
-        fees_amount[1] = fees.toll_fee;
+            .checked_add(swap.spread_fee)?
+            .checked_add(swap.toll_fee)?;
     };
 
     // check if native tokens are sufficient
@@ -173,11 +202,10 @@ pub fn update_position_reply(
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "update_position_reply"),
         ("entry_price", &position.entry_price.to_string()),
-        ("spread_fee", &fees_amount[0].to_string()),
-        ("toll_fee", &fees_amount[1].to_string()),
+        ("spread_fee", &position.spread_fee.to_string()),
+        ("toll_fee", &position.toll_fee.to_string()),
     ]))
 }
-
 // Closes position after successful execution of the swap
 pub fn close_position_reply(
     deps: DepsMut,
@@ -189,7 +217,7 @@ pub fn close_position_reply(
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
     let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
     let position = read_position(deps.storage, &vamm_key, position_id)?;
-
+    println!("close_position_reply - position: {:?}", position);
     let margin_delta = match &position.direction {
         Direction::AddToAmm => {
             Integer::new_positive(output) - Integer::new_positive(swap.open_notional)
@@ -205,10 +233,46 @@ pub fn close_position_reply(
         bad_debt,
         latest_premium_fraction: _,
     } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), margin_delta)?;
-
-    let withdraw_amount = Integer::new_positive(margin).checked_add(swap.unrealized_pnl)?;
-
+    println!(
+        "close_position_reply - swap.unrealized_pnl: {:?}",
+        swap.unrealized_pnl
+    );
+    println!("close_position_reply - margin: {:?}", margin);
     let mut msgs: Vec<SubMsg> = vec![];
+    let mut withdraw_amount = Integer::new_positive(margin).checked_add(swap.unrealized_pnl)?;
+    let mut spread_fee = Uint128::zero();
+    let mut toll_fee = Uint128::zero();
+    println!(
+        "close_position_reply - old withdraw_amount: {:?}",
+        withdraw_amount
+    );
+    if withdraw_amount.value > position.spread_fee.checked_add(position.toll_fee)? {
+        spread_fee = position.spread_fee;
+        toll_fee = position.toll_fee;
+        println!("close_position_reply - spread_fee: {:?}", spread_fee);
+        println!("close_position_reply - toll_fee: {:?}", toll_fee);
+        withdraw_amount.value = withdraw_amount
+            .value
+            .checked_sub(position.spread_fee.checked_add(position.toll_fee)?)?;
+
+        println!(
+            "close_position_reply - new withdraw_amount: {:?}",
+            withdraw_amount
+        );
+    } else {
+        if !position
+            .spread_fee
+            .checked_add(position.toll_fee)?
+            .is_zero()
+        {
+            spread_fee = withdraw_amount
+                .value
+                .checked_mul(position.spread_fee)?
+                .checked_div(position.spread_fee.checked_add(position.toll_fee)?)?;
+            toll_fee = withdraw_amount.value.checked_sub(spread_fee)?;
+            withdraw_amount.value = Uint128::zero();
+        }
+    }
 
     // to prevent attacker to leverage the bad debt to withdraw extra token from insurance fund
     if !bad_debt.is_zero() {
@@ -225,25 +289,26 @@ pub fn close_position_reply(
             &swap.trader,
             config.eligible_collateral,
             withdraw_amount.value,
+            spread_fee.checked_add(toll_fee)?,
             Uint128::zero(),
         )?);
     }
 
-    // create array for fee amounts
-    let mut fees_amount: [Uint128; 2] = [Uint128::zero(), Uint128::zero()];
-
-    if !position.notional.is_zero() {
-        let mut fees = transfer_fees(
+    if !spread_fee.is_zero() && !toll_fee.is_zero() {
+        println!(
+            "close_position_reply - transfer spread_fee: {:?}",
+            spread_fee
+        );
+        println!("close_position_reply - transfer toll_fee: {:?}", toll_fee);
+        let mut fees_messages = transfer_fees(
             deps.as_ref(),
             swap.trader.clone(),
-            swap.vamm.clone(),
-            position.notional,
+            spread_fee,
+            toll_fee,
+            false,
         )?;
-
-        fees_amount[0] = fees.spread_fee;
-        fees_amount[1] = fees.toll_fee;
-
-        msgs.append(&mut fees.messages);
+        println!("close_position_reply - fees_messages: {:?}", fees_messages);
+        msgs.append(&mut fees_messages);
     }
 
     let value =
@@ -266,8 +331,8 @@ pub fn close_position_reply(
         ("action", "close_position_reply"),
         ("total_position", &total_position.to_string()),
         ("pnl", &margin_delta.to_string()),
-        ("spread_fee", &fees_amount[0].to_string()),
-        ("toll_fee", &fees_amount[1].to_string()),
+        ("spread_fee", &position.spread_fee.to_string()),
+        ("toll_fee", &position.toll_fee.to_string()),
         ("funding_payment", &funding_payment.to_string()),
         ("bad_debt", &bad_debt.to_string()),
     ]))
@@ -326,7 +391,13 @@ pub fn partial_close_position_reply(
     };
 
     // calculate the fees
-    let fees = transfer_fees(deps.as_ref(), swap.trader, swap.vamm, swap.open_notional)?;
+    let fees_messages = transfer_fees(
+        deps.as_ref(),
+        swap.trader,
+        swap.spread_fee,
+        swap.toll_fee,
+        false,
+    )?;
 
     // set the new position
     position.size += signed_output;
@@ -348,12 +419,12 @@ pub fn partial_close_position_reply(
     remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
 
     Ok(Response::new()
-        .add_submessages(fees.messages)
+        .add_submessages(fees_messages)
         .add_attributes(vec![
             ("action", "partial_close_position_reply"),
             ("pnl", &unrealized_pnl_after.to_string()),
-            ("spread_fee", &fees.spread_fee.to_string()),
-            ("toll_fee", &fees.toll_fee.to_string()),
+            ("spread_fee", &swap.spread_fee.to_string()),
+            ("toll_fee", &swap.toll_fee.to_string()),
             ("funding_payment", &funding_payment.to_string()),
             ("bad_debt", &bad_debt.to_string()),
         ]))
@@ -434,6 +505,7 @@ pub fn liquidate_reply(
         &liquidator,
         config.eligible_collateral,
         liquidation_fee,
+        Uint128::zero(),
         pre_paid_shortfall,
     )?);
 
@@ -536,6 +608,7 @@ pub fn partial_liquidation_reply(
             &liquidator,
             config.eligible_collateral,
             liquidation_fee,
+            Uint128::zero(),
             Uint128::zero(),
         )?);
     }
