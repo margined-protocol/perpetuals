@@ -545,30 +545,16 @@ pub fn trigger_tp_sl(
         }
     }
 
-    attribute_msgs.push(Attribute {
-        key: "vamm".to_string(),
-        value: vamm.to_string(),
-    });
-    attribute_msgs.push(Attribute {
-        key: "pair".to_string(),
-        value: position.pair,
-    });
-    attribute_msgs.push(Attribute {
-        key: "position_id".to_string(),
-        value: position.position_id.to_string(),
-    });
-    attribute_msgs.push(Attribute {
-        key: "position_side".to_string(),
-        value: format!("{:?}", position.side),
-    });
-    attribute_msgs.push(Attribute {
-        key: "trader".to_string(),
-        value: position.trader.to_string(),
-    });
-
     Ok(Response::new()
         .add_submessages(msgs)
-        .add_attributes(attribute_msgs))
+        .add_attributes(attribute_msgs)
+        .add_attributes(vec![
+            ("vamm", &vamm.into_string()),
+            ("pair", &position.pair),
+            ("position_id", &position.position_id.to_string()),
+            ("position_side", &format!("{:?}", position.side)),
+            ("trader", &position.trader.into_string()),
+        ]))
 }
 
 pub fn liquidate(

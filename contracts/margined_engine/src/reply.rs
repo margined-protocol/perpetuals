@@ -175,6 +175,7 @@ pub fn update_position_reply(
         ("entry_price", &position.entry_price.to_string()),
         ("spread_fee", &fees_amount[0].to_string()),
         ("toll_fee", &fees_amount[1].to_string()),
+        ("margin_to_vault", &swap.margin_to_vault.value.to_string()),
     ]))
 }
 
@@ -270,6 +271,7 @@ pub fn close_position_reply(
         ("toll_fee", &fees_amount[1].to_string()),
         ("funding_payment", &funding_payment.to_string()),
         ("bad_debt", &bad_debt.to_string()),
+        ("withdraw_amount", &withdraw_amount.value.to_string()),
     ]))
 }
 
