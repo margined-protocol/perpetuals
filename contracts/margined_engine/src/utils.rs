@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    Addr, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, SubMsg,
-    SubMsgResponse, Uint128,
+    Addr, Attribute, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage,
+    SubMsg, SubMsgResponse, Uint128,
 };
 use margined_utils::contracts::helpers::{InsuranceFundController, VammController};
 use sha3::{Digest, Sha3_256};
@@ -13,7 +13,7 @@ use margined_common::{
     messages::{read_event, read_response},
 };
 use margined_perp::margined_engine::{
-    PnlCalcOption, Position, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
+    PnlCalcOption, Position, PositionUnrealizedPnlResponse, RemainMarginResponse, Side, ConfigResponse,
 };
 use margined_perp::margined_vamm::Direction;
 
@@ -484,4 +484,65 @@ pub fn calc_range_start(start_after: Option<Vec<u8>>) -> Option<Vec<u8>> {
         }
         input
     })
+}
+
+pub fn check_tp_sl_price(
+    config: ConfigResponse,
+    position: &Position,
+    spot_price: Uint128,
+    attribute_msgs: &mut Vec<Attribute>,
+) -> StdResult<bool> {
+    let mut tp_sl_trigger: bool = false;
+    let stop_loss = position.stop_loss.unwrap_or_default();
+    let tp_spread = position
+        .take_profit
+        .checked_mul(config.tp_sl_spread)?
+        .checked_div(config.decimals)?;
+    let sl_spread = stop_loss
+        .checked_mul(config.tp_sl_spread)?
+        .checked_div(config.decimals)?;
+
+    // if spot_price is ~ take_profit or stop_loss, close position
+    if position.side == Side::Buy {
+        if spot_price > position.take_profit
+            || position.take_profit.abs_diff(spot_price) <= tp_spread
+        {   
+            tp_sl_trigger = true;
+            attribute_msgs.push(Attribute {
+                key: "action".to_string(),
+                value: "trigger_take_profit".to_string(),
+            });
+        } else if stop_loss > spot_price
+            || stop_loss > Uint128::zero() && spot_price.abs_diff(stop_loss) <= sl_spread
+        {
+            tp_sl_trigger = true;
+            attribute_msgs.push(Attribute {
+                key: "action".to_string(),
+                value: "trigger_stop_loss".to_string(),
+            });
+        } else {
+            return Err(StdError::generic_err("TP/SL price has not been reached"));
+        }
+    } else if position.side == Side::Sell {
+        if position.take_profit > spot_price
+            || spot_price.abs_diff(position.take_profit) <= tp_spread
+        {
+            tp_sl_trigger = true;
+            attribute_msgs.push(Attribute {
+                key: "action".to_string(),
+                value: "trigger_take_profit".to_string(),
+            });
+        } else if stop_loss > Uint128::zero() && spot_price > stop_loss
+            || stop_loss.abs_diff(spot_price) <= sl_spread
+        {
+            tp_sl_trigger = true;
+            attribute_msgs.push(Attribute {
+                key: "action".to_string(),
+                value: "trigger_stop_loss".to_string(),
+            });
+        } else {
+            return Err(StdError::generic_err("TP/SL price has not been reached"));
+        }
+    }
+    Ok(tp_sl_trigger)
 }
