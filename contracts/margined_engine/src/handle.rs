@@ -252,7 +252,7 @@ pub fn open_position(
         ("margin_amount", &margin_amount.to_string()),
         ("leverage", &leverage.to_string()),
         ("take_profit", &take_profit.to_string()),
-        ("stop_loss", &format!("{:?}", stop_loss)),
+        ("stop_loss", &stop_loss.unwrap_or_default().to_string()),
     ]))
 }
 
