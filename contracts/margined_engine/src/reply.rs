@@ -189,18 +189,22 @@ pub fn open_position_reply(
             .checked_add(swap.toll_fee)?;
     };
 
+    println!("TEST line 192");
+
     // check if native tokens are sufficient
     if let AssetInfo::NativeToken { .. } = config.eligible_collateral {
         funds.are_sufficient()?;
     }
+    println!("TEST line 198");
 
     store_state(deps.storage, &state)?;
 
     remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
     remove_sent_funds(deps.storage);
-
+    println!("TEST line 204");
+    println!("TEST msg: {:?}", msgs);
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
-        ("action", "update_position_reply"),
+        ("action", "open_position_reply"),
         ("entry_price", &position.entry_price.to_string()),
         ("spread_fee", &position.spread_fee.to_string()),
         ("toll_fee", &position.toll_fee.to_string()),
