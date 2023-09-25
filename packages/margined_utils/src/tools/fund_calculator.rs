@@ -32,7 +32,11 @@ pub fn calculate_funds_needed(
     println!("calculate_funds_needed - fee_amount: {:?}", fee_amount);
     let margin_owed = Integer::new_positive(quote_asset_amount);
     println!("calculate_funds_needed - margin_owed: {:?}", margin_owed);
-
-    Ok(vec![Coin::new(fee_amount.u128(), NATIVE_DENOM)])
+    let funds_owed = if margin_owed.is_positive() {
+        margin_owed.value
+    } else {
+        fee_amount
+    };
+    Ok(vec![Coin::new(funds_owed.u128(), NATIVE_DENOM)])
     
 }

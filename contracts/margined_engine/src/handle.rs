@@ -201,6 +201,7 @@ pub fn open_position(
         block_time: 0u64,
     };
 
+    println!("open position - margin_amount: {:?}", margin_amount);
     // calculate the position notional
     let mut open_notional = margin_amount
         .checked_mul(leverage)?
@@ -218,7 +219,7 @@ pub fn open_position(
         .checked_sub(spread_fee)?
         .checked_sub(toll_fee)?;
     println!("open position - new_margin_amount: {:?}", new_margin_amount);
-
+    require_non_zero_input(new_margin_amount)?;
     // calculate the new position notional
     open_notional = new_margin_amount
         .checked_mul(leverage)?

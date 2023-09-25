@@ -108,7 +108,7 @@ pub fn open_position_reply(
         bad_debt: _,
         latest_premium_fraction,
     } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), margin_delta)?;
-
+    println!("open_position_reply - position.size.value: {:?}", position.size.value);
     // set the new position
     position.direction = new_direction;
     position.notional = new_notional;
@@ -399,6 +399,7 @@ pub fn partial_close_position_reply(
         false,
     )?;
 
+    println!("partial_close_position_replyb - fees_messages: {:?}", fees_messages);
     // set the new position
     position.size += signed_output;
     position.margin = margin;

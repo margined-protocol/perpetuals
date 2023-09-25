@@ -1093,7 +1093,7 @@ fn test_close_partial_position_long_position_when_closing_whole_position_is_over
 
     // 5000 - open pos margin (25) + fee (-73.53 * 0.1%)
     let alice_balance = usdc.balance(&router.wrap(), alice.clone()).unwrap();
-    assert_eq!(alice_balance, Uint128::from(4_974_926_470_589u128));
+    assert_eq!(alice_balance, Uint128::from(4_975_000_000_000u128));
 }
 
 #[test]
@@ -1163,7 +1163,7 @@ fn test_close_partial_position_short_position_when_closing_whole_position_is_ove
 
     // 5000 - open pos margin (25) + fee (-42.11 * 0.1%)
     let alice_balance = usdc.balance(&router.wrap(), alice.clone()).unwrap();
-    assert_eq!(alice_balance, Uint128::from(4_979_957_894_737u128));
+    assert_eq!(alice_balance, Uint128::from(4_980_000_000_000u128));
 }
 
 #[test]

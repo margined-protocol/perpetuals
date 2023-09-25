@@ -694,7 +694,7 @@ fn test_ten_percent_fee_short_position_price_remains_short_again() {
     let alice_balance_2 = router.wrap().query_balance(&alice, "orai").unwrap().amount;
     assert_eq!(
         alice_balance_1 - alice_balance_2,
-        Uint128::from(90_000_000u128)
+        Uint128::from(50_000_000u128)
     );
 
     let position_1 = engine
@@ -705,9 +705,9 @@ fn test_ten_percent_fee_short_position_price_remains_short_again() {
         .position(&router.wrap(), vamm.addr().to_string(), 2)
         .unwrap();
     // then transferred margin = margin + fee = 50 + (50 * 8 * 10%) = 90
-    assert_eq!(position_1.size + position_2.size, Integer::new_negative(150_000_000u128));
-    assert_eq!(position_1.margin + position_2.margin, Uint128::from(150_000_000u64));
-    assert_eq!(position_1.notional + position_2.notional, Uint128::from(600_000_000u64));
+    assert_eq!(position_1.size + position_2.size, Integer::new_negative(31_578_949u128));
+    assert_eq!(position_1.margin + position_2.margin, Uint128::from(90_000_000u64));
+    assert_eq!(position_1.notional + position_2.notional, Uint128::from(240_000_000u64));
 
     let pnl = engine
         .get_unrealized_pnl(
@@ -717,7 +717,7 @@ fn test_ten_percent_fee_short_position_price_remains_short_again() {
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.unrealized_pnl, Integer::new_positive(155555555u128));
+    assert_eq!(pnl.unrealized_pnl, Integer::new_positive(31_358_568u128));
 }
 
 #[test]
@@ -893,7 +893,7 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
             Uint128::from(1_000_000u64),
             Uint128::from(18_000_000u64),
             Some(Uint128::zero()),
-            Uint128::from(25_000_000u64),
+            Uint128::from(15_000_000u64),
             calculate_funds_needed(
                 &router.wrap(),
                 Uint128::from(200_000_000u64),
@@ -916,7 +916,7 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
             PnlCalcOption::SpotPrice,
         )
         .unwrap();
-    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(133_333_334u64));
+    assert_eq!(pnl.unrealized_pnl, Integer::new_negative(101_250_005u64));
 
     // alice opens short position with 50 margin, 4x leverage
     // (1000 - 200) * (100 + baseAssetDelta) = 100k, baseAssetDelta = 25
@@ -944,7 +944,7 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
     let alice_balance_2 = router.wrap().query_balance(&alice, "orai").unwrap().amount;
     assert_eq!(
         alice_balance_1 - alice_balance_2,
-        Uint128::from(70_000_000u128)
+        Uint128::from(50_000_000u128)
     );
 
     let position_1 = engine
@@ -955,9 +955,9 @@ fn test_ten_percent_fee_short_position_price_up_short_again() {
         .position(&router.wrap(), vamm.addr().to_string(), 3)
         .unwrap();
 
-    assert_eq!(position_1.size + position_3.size, Integer::new_negative(50_000_000u128));
-    assert_eq!(position_1.margin + position_3.margin, Uint128::from(250_000_000u64));
-    assert_eq!(position_1.notional + position_3.notional, Uint128::from(400_000_000u64));
+    assert_eq!(position_1.size + position_3.size, Integer::new_negative(35_587_584u128));
+    assert_eq!(position_1.margin + position_3.margin, Uint128::from(210_000_000u64));
+    assert_eq!(position_1.notional + position_3.notional, Uint128::from(300_000_000u64));
 }
 
 #[test]
