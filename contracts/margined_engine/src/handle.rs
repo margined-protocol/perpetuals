@@ -201,30 +201,26 @@ pub fn open_position(
         block_time: 0u64,
     };
 
-    println!("open position - margin_amount: {:?}", margin_amount);
     // calculate the position notional
     let mut open_notional = margin_amount
         .checked_mul(leverage)?
         .checked_div(config.decimals)?;
-    println!("open position - old open_notional: {:?}", open_notional);
 
     let CalcFeeResponse {
         spread_fee,
         toll_fee,
     } = vamm_controller.calc_fee(&deps.querier, open_notional)?;
-    println!("open position - spread_fee: {:?}", spread_fee);
-    println!("open position - toll_fee: {:?}", toll_fee);
 
+    // calculate the new margin
     let new_margin_amount = margin_amount
         .checked_sub(spread_fee)?
         .checked_sub(toll_fee)?;
-    println!("open position - new_margin_amount: {:?}", new_margin_amount);
     require_non_zero_input(new_margin_amount)?;
+
     // calculate the new position notional
     open_notional = new_margin_amount
         .checked_mul(leverage)?
         .checked_div(config.decimals)?;
-    println!("open position - new open_notional: {:?}", open_notional);
 
     let msg = internal_increase_position(
         vamm.clone(),

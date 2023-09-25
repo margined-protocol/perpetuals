@@ -15,7 +15,6 @@ pub fn execute_transfer_from(
     amount: Uint128,
 ) -> StdResult<SubMsg> {
     let config = read_config(storage)?;
-    println!("execute_transfer_from - receiver: {:?}", receiver);
     let msg = config.eligible_collateral.into_msg(
         receiver.to_string(),
         amount,
@@ -121,7 +120,6 @@ pub fn transfer_fees(
         };
         messages.push(msg);
     };
-    println!("transfer_fees - messages: {:?}", messages);
     Ok(messages)
 }
 
@@ -141,17 +139,12 @@ pub fn withdraw(
 
     if token_balance.checked_add(pre_paid_shortfall)? < amount.checked_add(fees)? {
         let shortfall = amount.checked_add(fees)?.checked_sub(token_balance.checked_add(pre_paid_shortfall)?)?;
-        println!("withdraw - shortfall: {:?}", shortfall);
 
         // add any shortfall to bad_debt
         state.prepaid_bad_debt = state.prepaid_bad_debt.checked_add(shortfall)?;
-        println!("withdraw - prepaid_bad_debt: {:?}", state.prepaid_bad_debt);
-
         messages.push(execute_insurance_fund_withdrawal(deps, shortfall)?);
     }
 
     messages.push(execute_transfer(deps.storage, receiver, amount)?);
-    println!("withdraw - messages: {:?}", messages);
-
     Ok(messages)
 }
