@@ -11,7 +11,7 @@ use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, MigrateMsg, Que
 
 use crate::error::ContractError;
 use crate::handle::{trigger_tp_sl, update_tp_sl};
-use crate::query::{query_last_position_id, query_positions};
+use crate::query::{query_last_position_id, query_positions, query_position_is_tpsl};
 use crate::state::init_last_position_id;
 use crate::tick::{query_tick, query_ticks};
 use crate::utils::get_margin_ratio_calc_option;
@@ -299,6 +299,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         ),
         QueryMsg::PositionWithFundingPayment { vamm, position_id } => to_binary(
             &query_trader_position_with_funding_payment(deps, vamm, position_id)?,
+        ),
+        QueryMsg::PositionIsTpSL { vamm, position_id } => to_binary(
+            &query_position_is_tpsl(deps, vamm, position_id)?,
         ),
         QueryMsg::LastPositionId {} => to_binary(&query_last_position_id(deps)?),
     }

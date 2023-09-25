@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    Addr, Attribute, DepsMut, Env, MessageInfo, QuerierWrapper, Response, StdError, StdResult,
+    Addr, DepsMut, Env, MessageInfo, QuerierWrapper, Response, StdError, StdResult,
     SubMsg, Uint128,
 };
 use margined_utils::contracts::helpers::VammController;
@@ -472,17 +472,15 @@ pub fn trigger_tp_sl(
     let spot_price = get_spot_price(&deps.querier, &vamm)?;
 
     let mut msgs: Vec<SubMsg> = vec![];
-    let mut attribute_msgs: Vec<Attribute> = vec![];
 
-    let tp_sl_trigger = check_tp_sl_price(
+    let tp_sl_action = check_tp_sl_price(
         config,
         &position,
         spot_price,
-        &mut attribute_msgs
     )
     .unwrap();
 
-    if tp_sl_trigger {
+    if tp_sl_action != "" {
         msgs.push(internal_close_position(
             deps,
             &position,
@@ -493,7 +491,7 @@ pub fn trigger_tp_sl(
 
     Ok(Response::new()
         .add_submessages(msgs)
-        .add_attributes(attribute_msgs)
+        .add_attribute("action", tp_sl_action)
         .add_attributes(vec![
             ("vamm", &vamm.into_string()),
             ("pair", &position.pair),

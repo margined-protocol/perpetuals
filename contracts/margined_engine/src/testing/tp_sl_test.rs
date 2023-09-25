@@ -108,42 +108,46 @@ fn test_takeprofit() {
         .open_position(
             vamm.addr().to_string(),
             Side::Buy,
-            to_decimals(60u64),
+            to_decimals(6u64),
             to_decimals(10u64),
-            Uint128::from(20_000_000_000u128),
-            Some(Uint128::from(14_000_000_000u128)),
+            Uint128::from(15_000_000_000u128),
+            Some(Uint128::from(10_000_000_000u128)),
             to_decimals(0u64),
             vec![],
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
+    
+    let mut tp_sl_status = engine.get_tp_sl_status(&router.wrap(), vamm.addr().to_string(), 1).unwrap();
+    println!("tp_sl_status: {:?}", tp_sl_status);
+    assert_eq!(tp_sl_status.is_tpsl, false);
 
     let alice_balance_after_open = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
         alice_balance_after_open,
-        Uint128::from(4_940_000_000_000u128)
+        Uint128::from(4_994_000_000_000u128)
     );
 
     // take_profit and stop_loss is not set
     let position = engine
         .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(position.take_profit, to_decimals(20));
-    assert_eq!(position.stop_loss, Some(to_decimals(14)));
+    assert_eq!(position.take_profit, to_decimals(15));
+    assert_eq!(position.stop_loss, Some(to_decimals(10)));
 
     let mut price = vamm.spot_price(&router.wrap()).unwrap();
-    assert_eq!(price, Uint128::from(25_600_000_000u128));
+    assert_eq!(price, Uint128::from(11_235_999_999u128));
     println!("[LOG] [1] spot price: {:?}", price);
 
-    // Price decrease to 24,087
+    // Price increase to 15,875
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
-            Side::Sell,
-            to_decimals(6u64),
-            to_decimals(8u64),
+            Side::Buy,
+            to_decimals(20u64),
+            to_decimals(10u64),
             Uint128::from(20_000_000_000u128),
-            Some(Uint128::from(28_000_000_000u128)),
+            Some(Uint128::from(10_000_000_000u128)),
             to_decimals(0u64),
             vec![],
         )
@@ -151,8 +155,12 @@ fn test_takeprofit() {
     router.execute(bob.clone(), msg).unwrap();
 
     price = vamm.spot_price(&router.wrap()).unwrap();
-    assert_eq!(price, Uint128::from(24_087_039_999u128));
+    assert_eq!(price, Uint128::from(15_875_999_999u128));
     println!("[LOG] [2] spot price: {:?}", price);
+
+    tp_sl_status = engine.get_tp_sl_status(&router.wrap(), vamm.addr().to_string(), 1).unwrap();
+    println!("tp_sl_status: {:?}", tp_sl_status);
+    assert_eq!(tp_sl_status.is_tpsl, true);
 
     // take profit trigger
     let msg = engine
@@ -213,6 +221,10 @@ fn test_stoploss() {
         )
         .unwrap();
     router.execute(alice.clone(), msg).unwrap();
+    
+    let mut tp_sl_status = engine.get_tp_sl_status(&router.wrap(), vamm.addr().to_string(), 1).unwrap();
+    println!("tp_sl_status: {:?}", tp_sl_status);
+    assert_eq!(tp_sl_status.is_tpsl, false);
 
     let alice_balance_after_open = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
@@ -250,7 +262,11 @@ fn test_stoploss() {
     assert_eq!(price, Uint128::from(10_815_999_999u128));
     println!("[LOG] [2] spot price: {:?}", price);
 
-    // take profit trigger
+    tp_sl_status = engine.get_tp_sl_status(&router.wrap(), vamm.addr().to_string(), 1).unwrap();
+    println!("tp_sl_status: {:?}", tp_sl_status);
+    assert_eq!(tp_sl_status.is_tpsl, true);
+
+    // stop loss trigger
     let msg = engine
         .trigger_tp_sl(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
