@@ -184,6 +184,8 @@ pub enum QueryMsg {
     BalanceWithFundingPayment { position_id: u64 },
     #[returns(Position)]
     PositionWithFundingPayment { vamm: String, position_id: u64 },
+    #[returns(PositionTpSlResponse)]
+    PositionIsTpSL { vamm: String, position_id: u64 },
     #[returns(LastPositionIdResponse)]
     LastPositionId {},
 }
@@ -227,6 +229,11 @@ pub struct TickResponse {
 #[cw_serde]
 pub struct TicksResponse {
     pub ticks: Vec<TickResponse>,
+}
+
+#[cw_serde]
+pub struct PositionTpSlResponse {
+    pub is_tpsl: bool,
 }
 
 #[cw_serde]

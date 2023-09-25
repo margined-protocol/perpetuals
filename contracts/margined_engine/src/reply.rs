@@ -298,6 +298,7 @@ pub fn close_position_reply(
         ("toll_fee", &position.toll_fee.to_string()),
         ("funding_payment", &funding_payment.to_string()),
         ("bad_debt", &bad_debt.to_string()),
+        ("withdraw_amount", &withdraw_amount.value.to_string()),
     ]))
 }
 

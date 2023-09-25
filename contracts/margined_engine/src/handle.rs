@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    Addr, Attribute, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
+    Addr, DepsMut, Env, MessageInfo, QuerierWrapper, Response, StdError, StdResult,
     SubMsg, Uint128,
 };
 use margined_utils::contracts::helpers::VammController;
@@ -17,7 +17,7 @@ use crate::{
         SentFunds, TmpSwapInfo,
     },
     utils::{
-        calc_remain_margin_with_funding_payment, direction_to_side, get_asset,
+        calc_remain_margin_with_funding_payment, check_tp_sl_price, direction_to_side, get_asset,
         get_margin_ratio_calc_option, get_position_notional_unrealized_pnl, keccak_256,
         position_to_side, require_additional_margin, require_bad_debt, require_insufficient_margin,
         require_non_zero_input, require_not_paused, require_not_restriction_mode,
@@ -491,105 +491,35 @@ pub fn trigger_tp_sl(
     require_position_not_zero(position.size.value)?;
 
     let spot_price = vamm_controller.spot_price(&deps.querier)?;
-    let stop_loss = position.stop_loss.unwrap_or_default();
-    let tp_spread = position
-        .take_profit
-        .checked_mul(config.tp_sl_spread)?
-        .checked_div(config.decimals)?;
-    let sl_spread = stop_loss
-        .checked_mul(config.tp_sl_spread)?
-        .checked_div(config.decimals)?;
 
     let mut msgs: Vec<SubMsg> = vec![];
-    let mut attribute_msgs: Vec<Attribute> = vec![];
 
-    // if spot_price is ~ take_profit or stop_loss, close position
-    if position.side == Side::Buy {
-        if spot_price > position.take_profit
-            || position.take_profit.abs_diff(spot_price) <= tp_spread
-        {
-            msgs.push(internal_close_position(
-                deps,
-                &position,
-                quote_asset_limit,
-                CLOSE_POSITION_REPLY_ID,
-            )?);
-            attribute_msgs.push(Attribute {
-                key: "action".to_string(),
-                value: "trigger_take_profit".to_string(),
-            });
-        } else if stop_loss > spot_price
-            || stop_loss > Uint128::zero() && spot_price.abs_diff(stop_loss) <= sl_spread
-        {
-            msgs.push(internal_close_position(
-                deps,
-                &position,
-                quote_asset_limit,
-                CLOSE_POSITION_REPLY_ID,
-            )?);
-            attribute_msgs.push(Attribute {
-                key: "action".to_string(),
-                value: "trigger_stop_loss".to_string(),
-            });
-        } else {
-            return Err(StdError::generic_err("TP/SL price has not been reached"));
-        }
-    } else if position.side == Side::Sell {
-        if position.take_profit > spot_price
-            || spot_price.abs_diff(position.take_profit) <= tp_spread
-        {
-            msgs.push(internal_close_position(
-                deps,
-                &position,
-                quote_asset_limit,
-                CLOSE_POSITION_REPLY_ID,
-            )?);
-            attribute_msgs.push(Attribute {
-                key: "action".to_string(),
-                value: "trigger_take_profit".to_string(),
-            });
-        } else if stop_loss > Uint128::zero() && spot_price > stop_loss
-            || stop_loss.abs_diff(spot_price) <= sl_spread
-        {
-            msgs.push(internal_close_position(
-                deps,
-                &position,
-                quote_asset_limit,
-                CLOSE_POSITION_REPLY_ID,
-            )?);
-            attribute_msgs.push(Attribute {
-                key: "action".to_string(),
-                value: "trigger_stop_loss".to_string(),
-            });
-        } else {
-            return Err(StdError::generic_err("TP/SL price has not been reached"));
-        }
+    let tp_sl_action = check_tp_sl_price(
+        config,
+        &position,
+        spot_price,
+    )
+    .unwrap();
+
+    if tp_sl_action != "" {
+        msgs.push(internal_close_position(
+            deps,
+            &position,
+            quote_asset_limit,
+            CLOSE_POSITION_REPLY_ID,
+        )?);
     }
-
-    attribute_msgs.push(Attribute {
-        key: "vamm".to_string(),
-        value: vamm.to_string(),
-    });
-    attribute_msgs.push(Attribute {
-        key: "pair".to_string(),
-        value: position.pair,
-    });
-    attribute_msgs.push(Attribute {
-        key: "position_id".to_string(),
-        value: position.position_id.to_string(),
-    });
-    attribute_msgs.push(Attribute {
-        key: "position_side".to_string(),
-        value: format!("{:?}", position.side),
-    });
-    attribute_msgs.push(Attribute {
-        key: "trader".to_string(),
-        value: position.trader.to_string(),
-    });
 
     Ok(Response::new()
         .add_submessages(msgs)
-        .add_attributes(attribute_msgs))
+        .add_attribute("action", tp_sl_action)
+        .add_attributes(vec![
+            ("vamm", &vamm.into_string()),
+            ("pair", &position.pair),
+            ("position_id", &position.position_id.to_string()),
+            ("position_side", &format!("{:?}", position.side)),
+            ("trader", &position.trader.into_string()),
+        ]))
 }
 
 pub fn liquidate(

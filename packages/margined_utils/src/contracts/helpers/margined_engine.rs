@@ -2,7 +2,7 @@ use cosmwasm_schema::cw_serde;
 use cw_controllers::HooksResponse;
 use margined_perp::margined_engine::{
     ConfigResponse, ExecuteMsg, PnlCalcOption, Position, PositionFilter,
-    PositionUnrealizedPnlResponse, QueryMsg, Side, StateResponse, TickResponse, TicksResponse,
+    PositionUnrealizedPnlResponse, QueryMsg, Side, StateResponse, TickResponse, TicksResponse, PositionTpSlResponse,
 };
 
 use cosmwasm_std::{Addr, Coin, CosmosMsg, QuerierWrapper, StdResult, Uint128};
@@ -457,6 +457,18 @@ impl EngineController {
         vamm: String,
     ) -> StdResult<Integer> {
         let msg = QueryMsg::CumulativePremiumFraction { vamm };
+
+        querier.query_wasm_smart(&self.0, &msg)
+    }
+
+    /// get the latest cumulative premium fraction
+    pub fn get_tp_sl_status(
+        &self,
+        querier: &QuerierWrapper,
+        vamm: String,
+        position_id: u64,
+    ) -> StdResult<PositionTpSlResponse> {
+        let msg = QueryMsg::PositionIsTpSL { vamm, position_id };
 
         querier.query_wasm_smart(&self.0, &msg)
     }

@@ -13,7 +13,8 @@ use margined_common::{
     messages::{read_event, read_response},
 };
 use margined_perp::margined_engine::{
-    PnlCalcOption, Position, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
+    ConfigResponse, PnlCalcOption, Position, PositionUnrealizedPnlResponse, RemainMarginResponse,
+    Side,
 };
 use margined_perp::margined_vamm::Direction;
 
@@ -484,4 +485,45 @@ pub fn calc_range_start(start_after: Option<Vec<u8>>) -> Option<Vec<u8>> {
         }
         input
     })
+}
+
+pub fn check_tp_sl_price(
+    config: ConfigResponse,
+    position: &Position,
+    spot_price: Uint128,
+) -> StdResult<String> {
+    let mut msg: String = String::from("");
+
+    let stop_loss = position.stop_loss.unwrap_or_default();
+    let tp_spread = position
+        .take_profit
+        .checked_mul(config.tp_sl_spread)?
+        .checked_div(config.decimals)?;
+    let sl_spread = stop_loss
+        .checked_mul(config.tp_sl_spread)?
+        .checked_div(config.decimals)?;
+
+    // if spot_price is ~ take_profit or stop_loss, close position
+    if position.side == Side::Buy {
+        if spot_price > position.take_profit
+            || position.take_profit.abs_diff(spot_price) <= tp_spread
+        {
+            msg = String::from("trigger_take_profit");
+        } else if stop_loss > spot_price
+            || stop_loss > Uint128::zero() && spot_price.abs_diff(stop_loss) <= sl_spread
+        {
+            msg = String::from("trigger_stop_loss");
+        }
+    } else if position.side == Side::Sell {
+        if position.take_profit > spot_price
+            || spot_price.abs_diff(position.take_profit) <= tp_spread
+        {
+            msg = String::from("trigger_take_profit");
+        } else if stop_loss > Uint128::zero() && spot_price > stop_loss
+            || stop_loss.abs_diff(spot_price) <= sl_spread
+        {
+            msg = String::from("trigger_stop_loss");
+        }
+    }
+    Ok(msg)
 }

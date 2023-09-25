@@ -2,9 +2,9 @@ use cosmwasm_std::{Deps, Order as OrderBy, StdError, StdResult, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
     ConfigResponse, LastPositionIdResponse, PauserResponse, PnlCalcOption, Position,
-    PositionFilter, PositionUnrealizedPnlResponse, Side, StateResponse,
+    PositionFilter, PositionUnrealizedPnlResponse, Side, StateResponse, PositionTpSlResponse,
 };
-use margined_utils::contracts::helpers::InsuranceFundController;
+use margined_utils::contracts::helpers::{InsuranceFundController, VammController};
 
 use crate::{
     contract::PAUSER,
@@ -15,7 +15,7 @@ use crate::{
     },
     utils::{
         calc_funding_payment, calc_remain_margin_with_funding_payment,
-        get_position_notional_unrealized_pnl, keccak_256,
+        get_position_notional_unrealized_pnl, keccak_256, check_tp_sl_price,
     },
 };
 
@@ -352,4 +352,29 @@ pub fn query_last_position_id(deps: Deps) -> StdResult<LastPositionIdResponse> {
     };
 
     Ok(resp)
+}
+
+pub fn query_position_is_tpsl(
+    deps: Deps,
+    vamm: String,
+    position_id: u64,
+) -> StdResult<PositionTpSlResponse> {
+    let config = read_config(deps.storage)?;
+
+    let vamm = deps.api.addr_validate(&vamm)?;    // read the position for the trader from vamm
+    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let position = read_position(deps.storage, &vamm_key, position_id)?;
+    let vamm_controller = VammController(vamm.clone());
+    let spot_price = vamm_controller.spot_price(&deps.querier).unwrap();
+
+    let tp_sl_action = check_tp_sl_price(
+        config,
+        &position,
+        spot_price
+    )
+    .unwrap();
+
+    Ok(PositionTpSlResponse {
+        is_tpsl: tp_sl_action != ""
+    })
 }
