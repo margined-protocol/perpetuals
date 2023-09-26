@@ -343,6 +343,8 @@ pub fn update_tp_sl(
         ("pair", &position.pair),
         ("trader", trader.as_ref()),
         ("position_id", &position_id.to_string()),
+        ("take_profit", &position.take_profit.to_string()),
+        ("stop_loss", &position.stop_loss.unwrap_or_default().to_string()),
     ]))
 }
 
