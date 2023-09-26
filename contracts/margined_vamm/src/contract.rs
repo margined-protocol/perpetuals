@@ -14,6 +14,7 @@ use margined_utils::contracts::helpers::PricefeedController;
 
 use crate::{
     error::ContractError,
+    handle::change_reserve,
     state::read_config,
     utils::{TwapCalcOption, TwapInputAsset},
 };
@@ -178,6 +179,10 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         ),
         ExecuteMsg::SettleFunding {} => settle_funding(deps, env, info),
         ExecuteMsg::SetOpen { open } => set_open(deps, env, info, open),
+        ExecuteMsg::ChangeReserve {
+            quote_asset_reserve,
+            base_asset_reserve,
+        } => change_reserve(deps, info, quote_asset_reserve, base_asset_reserve),
     }
 }
 

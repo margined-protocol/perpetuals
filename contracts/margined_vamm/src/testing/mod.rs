@@ -8,6 +8,8 @@ mod swap_input_output_tests;
 mod swap_tests;
 mod twap_tests;
 
+mod change_reserve_test;
+
 use margined_utils::{
     create_entry_points_testing,
     testing::{SimpleScenario, VammScenario},
