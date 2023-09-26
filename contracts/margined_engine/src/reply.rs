@@ -126,7 +126,7 @@ pub fn open_position_reply(
     let fees = position.spread_fee.checked_add(position.toll_fee)?;
 
     // create transfer messages depending on PnL
-    if swap.margin_to_vault > Integer::zero() {
+    if swap.margin_to_vault.is_positive() {
         match config.eligible_collateral {
             AssetInfo::NativeToken { .. } => {
                 funds.required = funds.required.checked_add(swap_margin)?;
