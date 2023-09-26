@@ -126,19 +126,7 @@ pub fn open_position_reply(
     let fees = position.spread_fee.checked_add(position.toll_fee)?;
 
     // create transfer messages depending on PnL
-    #[allow(clippy::comparison_chain)]
-    if swap.margin_to_vault < Integer::zero() {
-        msgs.append(&mut withdraw(
-            deps.as_ref(),
-            env,
-            &mut state,
-            &swap.trader,
-            config.eligible_collateral.clone(),
-            swap.margin_to_vault.value,
-            fees,
-            Uint128::zero(),
-        )?);
-    } else if swap.margin_to_vault > Integer::zero() {
+    if swap.margin_to_vault > Integer::zero() {
         match config.eligible_collateral {
             AssetInfo::NativeToken { .. } => {
                 funds.required = funds.required.checked_add(swap_margin)?;

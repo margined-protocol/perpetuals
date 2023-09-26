@@ -35,6 +35,9 @@ pub fn calculate_funds_needed(
     } else {
         fee_amount
     };
-    Ok(vec![Coin::new(funds_owed.u128(), NATIVE_DENOM)])
-    
+    if funds_owed.is_zero() {
+        Ok(vec![])
+    } else {
+        Ok(vec![Coin::new(funds_owed.u128(), NATIVE_DENOM)])
+    }
 }
