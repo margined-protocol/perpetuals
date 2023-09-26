@@ -74,10 +74,10 @@ pub enum ExecuteMsg {
     SetOpen {
         open: bool,
     },
-    ChangeReserve {
-        quote_asset_reserve: Uint128,
-        base_asset_reserve: Uint128,
-    },
+    // ChangeReserve {
+    //     quote_asset_reserve: Uint128,
+    //     base_asset_reserve: Uint128,
+    // },
 }
 
 #[cw_serde]
