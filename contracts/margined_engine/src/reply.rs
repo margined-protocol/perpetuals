@@ -222,6 +222,9 @@ pub fn close_position_reply(
             .checked_add(position.toll_fee)?
             .is_zero()
         {
+            // If withdraw_amount < spread_fee + toll_fee, we need to re-caculate fees
+            // new_spread_fee = withdraw_amount * spread_fee / (spread_fee + toll_fee)
+            // new_toll_fee = withdraw_amount - new_spread_fee
             spread_fee = withdraw_amount
                 .value
                 .checked_mul(position.spread_fee)?
