@@ -129,35 +129,35 @@ pub fn set_open(deps: DepsMut, env: Env, info: MessageInfo, open: bool) -> StdRe
     Ok(Response::new().add_attribute("action", "set_open"))
 }
 
-pub fn change_reserve(
-    deps: DepsMut,
-    info: MessageInfo,
-    quote_asset_reserve: Uint128,
-    base_asset_reserve: Uint128,
-) -> StdResult<Response> {
-    let config = read_config(deps.storage)?;
-    let mut state = read_state(deps.storage)?;
+// pub fn change_reserve(
+//     deps: DepsMut,
+//     info: MessageInfo,
+//     quote_asset_reserve: Uint128,
+//     base_asset_reserve: Uint128,
+// ) -> StdResult<Response> {
+//     let config = read_config(deps.storage)?;
+//     let mut state = read_state(deps.storage)?;
 
-    // check permission and if state matches
-    if !OWNER.is_admin(deps.as_ref(), &info.sender)? && info.sender != config.insurance_fund {
-        return Err(StdError::generic_err("unauthorized"));
-    }
+//     // check permission and if state matches
+//     if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
+//         return Err(StdError::generic_err("unauthorized"));
+//     }
 
-    if quote_asset_reserve.is_zero() || base_asset_reserve.is_zero() {
-        return Err(StdError::generic_err("Input must be non-zero"));
-    }
+//     if quote_asset_reserve.is_zero() || base_asset_reserve.is_zero() {
+//         return Err(StdError::generic_err("Input must be non-zero"));
+//     }
 
-    state.quote_asset_reserve = quote_asset_reserve;
-    state.base_asset_reserve = base_asset_reserve;
+//     state.quote_asset_reserve = quote_asset_reserve;
+//     state.base_asset_reserve = base_asset_reserve;
 
-    store_state(deps.storage, &state)?;
+//     store_state(deps.storage, &state)?;
 
-    Ok(Response::new().add_attributes(vec![
-        ("action", "change_reserve"),
-        ("quote_asset_reserve", &quote_asset_reserve.to_string()),
-        ("base_asset_reserve", &base_asset_reserve.to_string()),
-    ]))
-}
+//     Ok(Response::new().add_attributes(vec![
+//         ("action", "change_reserve"),
+//         ("quote_asset_reserve", &quote_asset_reserve.to_string()),
+//         ("base_asset_reserve", &base_asset_reserve.to_string()),
+//     ]))
+// }
 
 // Function should only be called by the margin engine
 pub fn swap_input(
