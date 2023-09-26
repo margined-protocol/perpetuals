@@ -49,10 +49,7 @@ pub fn execute_transfer_to_insurance_fund(
         .eligible_collateral
         .query_balance(&deps.querier, env.contract.address)?;
 
-    let amount_to_send = Uint128::min(
-        token_balance,
-        amount,
-    );
+    let amount_to_send = Uint128::min(token_balance, amount);
 
     match config.insurance_fund {
         Some(insurance_fund) => execute_transfer(deps.storage, &insurance_fund, amount_to_send),
@@ -86,37 +83,27 @@ pub fn transfer_fees(
     from: Addr,
     spread_fee: Uint128,
     toll_fee: Uint128,
-    open_position: bool
+    open_position: bool,
 ) -> StdResult<Vec<SubMsg>> {
     let mut messages: Vec<SubMsg> = vec![];
 
     let config = read_config(deps.storage)?;
 
-    if Some(config.insurance_fund.clone()).is_none() {
-        return Err(StdError::generic_err("insurance fund is not registered"));
-    }
-
     if !spread_fee.is_zero() {
-        let msg = match open_position {
-            true => {
-                execute_transfer_from(deps.storage, &from, &config.insurance_fund.unwrap(), spread_fee)?
-            }
-            false => {
-                execute_transfer(deps.storage, &config.insurance_fund.unwrap(), spread_fee)?
-            },
-        };
+        if let Some(insurance_fund) = config.insurance_fund {
+            let msg = match open_position {
+                true => execute_transfer_from(deps.storage, &from, &insurance_fund, spread_fee)?,
+                false => execute_transfer(deps.storage, &insurance_fund, spread_fee)?,
+            };
 
-        messages.push(msg);
+            messages.push(msg);
+        }
     };
 
     if !toll_fee.is_zero() {
         let msg = match open_position {
-            true => {
-                execute_transfer_from(deps.storage, &from, &config.fee_pool, toll_fee)?
-            }
-            false => {
-                execute_transfer(deps.storage, &config.fee_pool, toll_fee)?
-            },
+            true => execute_transfer_from(deps.storage, &from, &config.fee_pool, toll_fee)?,
+            false => execute_transfer(deps.storage, &config.fee_pool, toll_fee)?,
         };
         messages.push(msg);
     };
@@ -138,7 +125,9 @@ pub fn withdraw(
     let mut messages: Vec<SubMsg> = vec![];
 
     if token_balance.checked_add(pre_paid_shortfall)? < amount.checked_add(fees)? {
-        let shortfall = amount.checked_add(fees)?.checked_sub(token_balance.checked_add(pre_paid_shortfall)?)?;
+        let shortfall = amount
+            .checked_add(fees)?
+            .checked_sub(token_balance.checked_add(pre_paid_shortfall)?)?;
 
         // add any shortfall to bad_debt
         state.prepaid_bad_debt = state.prepaid_bad_debt.checked_add(shortfall)?;
