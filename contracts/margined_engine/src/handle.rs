@@ -142,36 +142,6 @@ pub fn open_position(
     }
 
     let vamm_config = vamm_controller.config(&deps.querier).unwrap();
-    let entry_price = vamm_controller.input_price(
-        &deps.querier,
-        side_to_direction(&side),
-        margin_amount
-            .checked_mul(leverage)?
-            .checked_div(config.decimals)?,
-    )?;
-
-    match side {
-        Side::Buy => {
-            if take_profit <= entry_price {
-                return Err(StdError::generic_err("TP price is too low"));
-            }
-            if let Some(stop_loss) = stop_loss {
-                if stop_loss > entry_price {
-                    return Err(StdError::generic_err("SL price is too high"));
-                }
-            }
-        }
-        Side::Sell => {
-            if take_profit >= entry_price {
-                return Err(StdError::generic_err("TP price is too high"));
-            }
-            if let Some(stop_loss) = stop_loss {
-                if stop_loss < entry_price {
-                    return Err(StdError::generic_err("SL price is too low"));
-                }
-            }
-        }
-    }
 
     // calculate the margin ratio of new position wrt to leverage
     let margin_ratio = config
@@ -221,6 +191,35 @@ pub fn open_position(
     open_notional = new_margin_amount
         .checked_mul(leverage)?
         .checked_div(config.decimals)?;
+
+    let entry_price = vamm_controller.input_price(
+        &deps.querier,
+        side_to_direction(&side),
+        open_notional,
+    )?;
+
+    match side {
+        Side::Buy => {
+            if take_profit <= entry_price {
+                return Err(StdError::generic_err("TP price is too low"));
+            }
+            if let Some(stop_loss) = stop_loss {
+                if stop_loss > entry_price {
+                    return Err(StdError::generic_err("SL price is too high"));
+                }
+            }
+        }
+        Side::Sell => {
+            if take_profit >= entry_price {
+                return Err(StdError::generic_err("TP price is too high"));
+            }
+            if let Some(stop_loss) = stop_loss {
+                if stop_loss < entry_price {
+                    return Err(StdError::generic_err("SL price is too low"));
+                }
+            }
+        }
+    }
 
     let msg = internal_increase_position(
         vamm.clone(),

@@ -123,7 +123,6 @@ pub fn open_position_reply(
 
     let mut msgs: Vec<SubMsg> = vec![];
     let mut funds = read_sent_funds(deps.storage)?;
-    let fees = position.spread_fee.checked_add(position.toll_fee)?;
 
     // create transfer messages depending on PnL
     if swap.margin_to_vault.is_positive() {
