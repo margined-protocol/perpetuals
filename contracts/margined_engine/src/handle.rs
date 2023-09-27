@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    Addr, DepsMut, Env, MessageInfo, QuerierWrapper, Response, StdError, StdResult,
+    Addr, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
     SubMsg, Uint128,
 };
 use margined_utils::contracts::helpers::VammController;

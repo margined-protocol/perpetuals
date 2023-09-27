@@ -300,7 +300,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::PositionWithFundingPayment { vamm, position_id } => to_binary(
             &query_trader_position_with_funding_payment(deps, vamm, position_id)?,
         ),
-        QueryMsg::PositionIsTpSL { vamm, position_id } => to_binary(
+        QueryMsg::PositionIsTpSl { vamm, position_id } => to_binary(
             &query_position_is_tpsl(deps, vamm, position_id)?,
         ),
         QueryMsg::LastPositionId {} => to_binary(&query_last_position_id(deps)?),

@@ -185,7 +185,7 @@ pub enum QueryMsg {
     #[returns(Position)]
     PositionWithFundingPayment { vamm: String, position_id: u64 },
     #[returns(PositionTpSlResponse)]
-    PositionIsTpSL { vamm: String, position_id: u64 },
+    PositionIsTpSl { vamm: String, position_id: u64 },
     #[returns(LastPositionIdResponse)]
     LastPositionId {},
 }

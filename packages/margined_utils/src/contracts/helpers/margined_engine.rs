@@ -468,7 +468,7 @@ impl EngineController {
         vamm: String,
         position_id: u64,
     ) -> StdResult<PositionTpSlResponse> {
-        let msg = QueryMsg::PositionIsTpSL { vamm, position_id };
+        let msg = QueryMsg::PositionIsTpSl { vamm, position_id };
 
         querier.query_wasm_smart(&self.0, &msg)
     }
