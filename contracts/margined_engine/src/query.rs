@@ -16,7 +16,7 @@ use crate::{
     utils::{
         calc_funding_payment, calc_remain_margin_with_funding_payment,
         get_position_notional_unrealized_pnl, keccak_256, check_tp_sl_price,
-    },
+    }, tick::query_ticks,
 };
 
 /// Queries contract Config
@@ -357,24 +357,57 @@ pub fn query_last_position_id(deps: Deps) -> StdResult<LastPositionIdResponse> {
 pub fn query_position_is_tpsl(
     deps: Deps,
     vamm: String,
-    position_id: u64,
+    side: Side,
+    take_profit: bool,
+    limit: u32,
 ) -> StdResult<PositionTpSlResponse> {
     let config = read_config(deps.storage)?;
-
-    let vamm = deps.api.addr_validate(&vamm)?;    // read the position for the trader from vamm
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
-    let position = read_position(deps.storage, &vamm_key, position_id)?;
-    let vamm_controller = VammController(vamm.clone());
+    let vamm_addr = deps.api.addr_validate(&vamm)?;
+    let vamm_controller = VammController(vamm_addr.clone());
     let spot_price = vamm_controller.spot_price(&deps.querier).unwrap();
 
-    let tp_sl_action = check_tp_sl_price(
-        config,
-        &position,
-        spot_price
+    let order_by = match take_profit {
+        true => {
+            if side == Side::Buy { 2 } else { 1 }
+        }
+        false => {
+            if side == Side::Buy { 1 } else { 2 }
+        }
+    };
+
+    // let mut tp_sl_action: String = String::from("");
+    let mut is_tpsl: bool = false;
+    let ticks = query_ticks(
+        deps.storage,
+        vamm.clone(),
+        side,
+        None,
+        Some(limit),
+        Some(order_by),
     )
     .unwrap();
 
+    for tick in ticks.ticks.iter() {
+        let position_by_price = query_positions(
+            deps.storage,
+            vamm.clone(),
+            Some(side),
+            PositionFilter::Price(tick.entry_price),
+            None,
+            Some(limit),
+            Some(1),
+        )
+        .unwrap();
+
+        for position in position_by_price.iter() {
+            let tp_sl_action = check_tp_sl_price(config.clone(), &position, spot_price).unwrap();
+            if tp_sl_action != "" {
+                is_tpsl = true;
+            }
+        }
+    }
+
     Ok(PositionTpSlResponse {
-        is_tpsl: tp_sl_action != ""
+        is_tpsl
     })
 }

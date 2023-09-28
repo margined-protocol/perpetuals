@@ -33,6 +33,8 @@ pub fn open_position_reply(
     position_id: u64,
 ) -> StdResult<Response> {
     let mut swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
+    let vamm_controller = VammController(swap.vamm.clone());
+    let block_time = env.block.time.seconds();
 
     let mut position: Position = Position {
         position_id: swap.position_id,
@@ -170,6 +172,15 @@ pub fn open_position_reply(
     remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
     remove_sent_funds(deps.storage);
 
+    let spot_price = vamm_controller.spot_price(&deps.querier)?;
+    store_tmp_price(
+        deps.storage,
+        &TmpPriceInfo {
+            block_time,
+            spot_price,
+        }
+    )?;
+
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "open_position_reply"),
         ("entry_price", &position.entry_price.to_string()),
@@ -187,10 +198,12 @@ pub fn close_position_reply(
     position_id: u64,
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
-    let vamm_controller = VammController(swap.vamm.clone());
     let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
     let position = read_position(deps.storage, &vamm_key, position_id)?;
+
+    let vamm_controller = VammController(swap.vamm.clone());
     let block_time = env.block.time.seconds();
+
     let margin_delta = match &position.direction {
         Direction::AddToAmm => {
             Integer::new_positive(output) - Integer::new_positive(swap.open_notional)
@@ -279,6 +292,9 @@ pub fn close_position_reply(
     )?;
 
     let total_position = remove_position(deps.storage, &vamm_key, &position).unwrap();
+    store_state(deps.storage, &state)?;
+    remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
+
     let spot_price = vamm_controller.spot_price(&deps.querier)?;
     store_tmp_price(
         deps.storage,
@@ -287,8 +303,6 @@ pub fn close_position_reply(
             spot_price,
         }
     )?;
-    store_state(deps.storage, &state)?;
-    remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "close_position_reply"),
@@ -310,20 +324,20 @@ pub fn tpsl_position_reply(
     output: Uint128,
     position_id: u64,
 ) -> StdResult<Response> {
-    println!("tpsl_position_reply");
+    // println!("tpsl_position_reply");
     let config = read_config(deps.storage)?;
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
-    let vamm_controller = VammController(swap.vamm.clone());
+    // let vamm_controller = VammController(swap.vamm.clone());
     let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
     let position = read_position(deps.storage, &vamm_key, position_id)?;
 
-    let spot_price = vamm_controller.spot_price(&deps.querier)?;
-    println!("tpsl_position_reply - not confirm spot_price: {:?}", spot_price);
+    // let spot_price = vamm_controller.spot_price(&deps.querier)?;
+    // println!("tpsl_position_reply - not confirm spot_price: {:?}", spot_price);
 
     let tmp_tpsl = read_tmp_price(deps.storage);
     if tmp_tpsl.is_ok() {
         let tmp_spot_price = tmp_tpsl.unwrap().spot_price;
-        println!("tpsl_position_reply - current confirm spot_price: {:?}", tmp_spot_price);
+        // println!("tpsl_position_reply - current confirm spot_price: {:?}", tmp_spot_price);
         let tp_sl_action = check_tp_sl_price(config.clone(), &position, tmp_spot_price).unwrap();
             if tp_sl_action != "" {
                 close_position_reply(deps, env, _input, output, position_id)
@@ -345,6 +359,8 @@ pub fn partial_close_position_reply(
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
     let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
+    let vamm_controller = VammController(swap.vamm.clone());
+    let block_time = env.block.time.seconds();
     let mut position = read_position(deps.storage, &vamm_key, position_id)?;
 
     let mut state: State = read_state(deps.storage)?;
@@ -415,6 +431,15 @@ pub fn partial_close_position_reply(
     // remove the tmp position
     remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
 
+    let spot_price = vamm_controller.spot_price(&deps.querier)?;
+    store_tmp_price(
+        deps.storage,
+        &TmpPriceInfo {
+            block_time,
+            spot_price,
+        }
+    )?;
+
     Ok(Response::new()
         .add_submessages(fees_messages)
         .add_attributes(vec![
@@ -436,11 +461,13 @@ pub fn liquidate_reply(
     position_id: u64,
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
-
     let liquidator = read_tmp_liquidator(deps.storage)?;
 
     let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
     let position = read_position(deps.storage, &vamm_key, position_id)?;
+
+    let vamm_controller = VammController(swap.vamm.clone());
+    let block_time = env.block.time.seconds();
 
     // calculate delta from trade and whether it was profitable or a loss
     let margin_delta = match &position.direction {
@@ -516,6 +543,15 @@ pub fn liquidate_reply(
 
     enter_restriction_mode(deps.storage, swap.vamm, env.block.height)?;
 
+    let spot_price = vamm_controller.spot_price(&deps.querier)?;
+    store_tmp_price(
+        deps.storage,
+        &TmpPriceInfo {
+            block_time,
+            spot_price,
+        }
+    )?;
+
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "liquidation_reply"),
         ("total_position", &total_position.to_string()),
@@ -539,6 +575,9 @@ pub fn partial_liquidation_reply(
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
     let liquidator = read_tmp_liquidator(deps.storage)?;
+
+    let vamm_controller = VammController(swap.vamm.clone());
+    let block_time = env.block.time.seconds();
 
     let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
     let mut position = read_position(deps.storage, &vamm_key, position_id)?;
@@ -617,6 +656,15 @@ pub fn partial_liquidation_reply(
     remove_tmp_liquidator(deps.storage);
 
     enter_restriction_mode(deps.storage, swap.vamm, env.block.height)?;
+
+    let spot_price = vamm_controller.spot_price(&deps.querier)?;
+    store_tmp_price(
+        deps.storage,
+        &TmpPriceInfo {
+            block_time,
+            spot_price,
+        }
+    )?;
 
     Ok(Response::new()
         .add_submessages(messages)

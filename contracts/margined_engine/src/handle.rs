@@ -488,29 +488,19 @@ pub fn trigger_tp_sl(
     take_profit: bool,
     limit: u32,
 ) -> StdResult<Response> {
-    let vamm_addr = deps.api.addr_validate(&vamm.clone())?;
-
     let config = read_config(deps.storage)?;
-    require_vamm(deps.as_ref(), &config.insurance_fund, &vamm_addr)?;
-
+    let vamm_addr = deps.api.addr_validate(&vamm.clone())?;
     let vamm_controller = VammController(vamm_addr.clone());
+    let spot_price = vamm_controller.spot_price(&deps.querier)?;
     let mut msgs: Vec<SubMsg> = vec![];
 
-    // let order_by = if side == Side::Buy { 2 } else { 1 }
+    require_vamm(deps.as_ref(), &config.insurance_fund, &vamm_addr)?;
     let order_by = match take_profit {
         true => {
-            if side == Side::Buy {
-                2
-            } else {
-                1
-            }
+            if side == Side::Buy { 2 } else { 1 }
         }
         false => {
-            if side == Side::Buy {
-                1
-            } else {
-                2
-            }
+            if side == Side::Buy { 1 } else { 2 }
         }
     };
 
@@ -525,7 +515,7 @@ pub fn trigger_tp_sl(
     .unwrap();
 
     for tick in ticks.ticks.iter() {
-        println!("trigger_tp_sl - tick: {:?}", tick);
+        // println!("trigger_tp_sl - tick: {:?}", tick);
         let position_by_price = query_positions(
             deps.storage,
             vamm.clone(),
@@ -538,13 +528,11 @@ pub fn trigger_tp_sl(
         .unwrap();
 
         for position in position_by_price.iter() {
-            println!("trigger_tp_sl - position: {:?}", position);
+            // println!("trigger_tp_sl - position: {:?}", position);
 
             // check the position isn't zero
             require_position_not_zero(position.size.value)?;
-
-            let spot_price = vamm_controller.spot_price(&deps.querier)?;
-            println!("trigger_tp_sl - spot_price 1111111: {:?}", spot_price);
+            // println!("trigger_tp_sl - spot_price 1111111: {:?}", spot_price);
             let tp_sl_action = check_tp_sl_price(config.clone(), &position, spot_price).unwrap();
 
             if tp_sl_action != "" {

@@ -11,7 +11,7 @@ use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, MigrateMsg, Que
 
 use crate::error::ContractError;
 use crate::handle::{trigger_tp_sl, update_tp_sl};
-use crate::query::{query_last_position_id, query_positions, query_position_is_tpsl};
+use crate::query::{query_last_position_id, query_position_is_tpsl, query_positions};
 use crate::reply::tpsl_position_reply;
 use crate::state::init_last_position_id;
 use crate::tick::{query_tick, query_ticks};
@@ -28,8 +28,8 @@ use crate::{
         query_trader_balance_with_funding_payment, query_trader_position_with_funding_payment,
     },
     reply::{
-        close_position_reply, liquidate_reply, partial_close_position_reply,
-        partial_liquidation_reply, pay_funding_reply, open_position_reply,
+        close_position_reply, liquidate_reply, open_position_reply, partial_close_position_reply,
+        partial_liquidation_reply, pay_funding_reply,
     },
     state::{store_config, store_state, Config, State},
     utils::{
@@ -302,9 +302,18 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::PositionWithFundingPayment { vamm, position_id } => to_binary(
             &query_trader_position_with_funding_payment(deps, vamm, position_id)?,
         ),
-        QueryMsg::PositionIsTpSl { vamm, position_id } => to_binary(
-            &query_position_is_tpsl(deps, vamm, position_id)?,
-        ),
+        QueryMsg::PositionIsTpSl {
+            vamm,
+            side,
+            take_profit,
+            limit,
+        } => to_binary(&query_position_is_tpsl(
+            deps,
+            vamm,
+            side,
+            take_profit,
+            limit,
+        )?),
         QueryMsg::LastPositionId {} => to_binary(&query_last_position_id(deps)?),
     }
 }
