@@ -68,6 +68,21 @@ fn test_change_tp_sl() {
         .update_tp_sl(
             vamm.addr().to_string(),
             1,
+            None,
+            None,
+        )
+        .unwrap();
+
+    let err = router.execute(alice.clone(), msg).unwrap_err();
+    assert_eq!(
+        err.source().unwrap().to_string(),
+        "Generic error: Both take profit and stop loss are not set".to_string()
+    );
+
+    let msg = engine
+        .update_tp_sl(
+            vamm.addr().to_string(),
+            1,
             Some(to_decimals(26)),
             Some(to_decimals(14)),
         )
@@ -164,7 +179,7 @@ fn test_takeprofit() {
 
     // take profit trigger
     let msg = engine
-        .trigger_tp_sl(vamm.addr().to_string(), 1, to_decimals(0u64))
+        .trigger_tp_sl(vamm.addr().to_string(), Side::Buy, true, 10)
         .unwrap();
     let ret = router.execute(alice.clone(), msg).unwrap();
 
@@ -268,9 +283,13 @@ fn test_stoploss() {
 
     // stop loss trigger
     let msg = engine
-        .trigger_tp_sl(vamm.addr().to_string(), 1, to_decimals(0u64))
+        .trigger_tp_sl(vamm.addr().to_string(), Side::Buy, false, 10)
         .unwrap();
     let ret = router.execute(alice.clone(), msg).unwrap();
+
+    price = vamm.spot_price(&router.wrap()).unwrap();
+    assert_eq!(price, Uint128::from(8_056_874_407u128));
+    println!("[LOG] [2] spot price: {:?}", price);
 
     alice_balance = usdc.balance(&router.wrap(), alice.clone()).unwrap();
 

@@ -14,7 +14,7 @@ use crate::{
     },
     utils::{
         calc_remain_margin_with_funding_payment, check_base_asset_holding_cap, keccak_256,
-        realize_bad_debt, side_to_direction, update_open_interest_notional,
+        realize_bad_debt, side_to_direction, update_open_interest_notional, check_tp_sl_price,
     },
 };
 
@@ -177,6 +177,7 @@ pub fn open_position_reply(
         ("toll_fee", &position.toll_fee.to_string()),
     ]))
 }
+
 // Closes position after successful execution of the swap
 pub fn close_position_reply(
     deps: DepsMut,
@@ -282,6 +283,137 @@ pub fn close_position_reply(
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "close_position_reply"),
+        ("total_position", &total_position.to_string()),
+        ("pnl", &margin_delta.to_string()),
+        ("spread_fee", &position.spread_fee.to_string()),
+        ("toll_fee", &position.toll_fee.to_string()),
+        ("funding_payment", &funding_payment.to_string()),
+        ("bad_debt", &bad_debt.to_string()),
+        ("withdraw_amount", &withdraw_amount.value.to_string()),
+    ]))
+}
+
+// trigger take profit | stop loss position
+pub fn tpsl_position_reply(
+    deps: DepsMut,
+    env: Env,
+    _input: Uint128,
+    output: Uint128,
+    position_id: u64,
+) -> StdResult<Response> {
+    println!("tpsl_position_reply");
+    let config = read_config(deps.storage)?;
+    let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
+    let vamm_controller = VammController(swap.vamm.clone());
+    let spot_price = vamm_controller.spot_price(&deps.querier)?;
+    println!("tpsl_position_reply - spot_price: {:?}", spot_price);
+    let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
+    let position = read_position(deps.storage, &vamm_key, position_id)?;
+
+    let tp_sl_action = check_tp_sl_price(
+        config.clone(),
+        &position,
+        spot_price
+    ).unwrap();
+    println!("tpsl_position_reply - position: {:?}", position);
+    if tp_sl_action == "" {
+        return Err(StdError::generic_err("Take profit | Stop loss price has not been reached"));
+    }
+
+    let margin_delta = match &position.direction {
+        Direction::AddToAmm => {
+            Integer::new_positive(output) - Integer::new_positive(swap.open_notional)
+        }
+        Direction::RemoveFromAmm => {
+            Integer::new_positive(swap.open_notional) - Integer::new_positive(output)
+        }
+    };
+
+    let RemainMarginResponse {
+        funding_payment,
+        margin,
+        bad_debt,
+        latest_premium_fraction: _,
+    } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), margin_delta)?;
+
+    let mut msgs: Vec<SubMsg> = vec![];
+    let mut withdraw_amount = Integer::new_positive(margin).checked_add(swap.unrealized_pnl)?;
+    let mut spread_fee = Uint128::zero();
+    let mut toll_fee = Uint128::zero();
+
+    if withdraw_amount.value > position.spread_fee.checked_add(position.toll_fee)? {
+        spread_fee = position.spread_fee;
+        toll_fee = position.toll_fee;
+        withdraw_amount.value = withdraw_amount
+            .value
+            .checked_sub(position.spread_fee.checked_add(position.toll_fee)?)?;
+    } else {
+        if !position
+            .spread_fee
+            .checked_add(position.toll_fee)?
+            .is_zero()
+        {
+            // If withdraw_amount < spread_fee + toll_fee, we need to re-caculate fees
+            // new_spread_fee = withdraw_amount * spread_fee / (spread_fee + toll_fee)
+            // new_toll_fee = withdraw_amount - new_spread_fee
+            spread_fee = withdraw_amount
+                .value
+                .checked_mul(position.spread_fee)?
+                .checked_div(position.spread_fee.checked_add(position.toll_fee)?)?;
+            toll_fee = withdraw_amount.value.checked_sub(spread_fee)?;
+            withdraw_amount.value = Uint128::zero();
+        }
+    }
+
+    // to prevent attacker to leverage the bad debt to withdraw extra token from insurance fund
+    if !bad_debt.is_zero() {
+        return Err(StdError::generic_err("Cannot close position - bad debt"));
+    }
+
+    let mut state = read_state(deps.storage)?;
+    if !withdraw_amount.is_zero() {
+        let config = read_config(deps.storage)?;
+        msgs.append(&mut withdraw(
+            deps.as_ref(),
+            env,
+            &mut state,
+            &swap.trader,
+            config.eligible_collateral,
+            withdraw_amount.value,
+            spread_fee.checked_add(toll_fee)?,
+            Uint128::zero(),
+        )?);
+    }
+
+    if !spread_fee.is_zero() && !toll_fee.is_zero() {
+        let mut fees_messages = transfer_fees(
+            deps.as_ref(),
+            swap.trader.clone(),
+            spread_fee,
+            toll_fee,
+            false,
+        )?;
+        msgs.append(&mut fees_messages);
+    }
+
+    let value =
+        margin_delta + Integer::new_positive(bad_debt) + Integer::new_positive(position.notional);
+
+    update_open_interest_notional(
+        &deps.as_ref(),
+        &mut state,
+        swap.vamm,
+        value.invert_sign(),
+        swap.trader,
+    )?;
+
+    let total_position = remove_position(deps.storage, &vamm_key, &position).unwrap();
+
+    store_state(deps.storage, &state)?;
+    remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
+
+    Ok(Response::new().add_submessages(msgs).add_attributes(vec![
+        ("action", "tpsl_position_reply"),
         ("total_position", &total_position.to_string()),
         ("pnl", &margin_delta.to_string()),
         ("spread_fee", &position.spread_fee.to_string()),

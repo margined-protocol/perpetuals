@@ -1,4 +1,4 @@
-use cosmwasm_std::{Deps, Order as OrderBy, StdError, StdResult, Uint128};
+use cosmwasm_std::{Deps, Order as OrderBy, StdError, StdResult, Uint128, Storage};
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
     ConfigResponse, LastPositionIdResponse, PauserResponse, PnlCalcOption, Position,
@@ -92,7 +92,7 @@ pub fn query_all_positions(
 
 /// Queries and returns users positions for registered vamms
 pub fn query_positions(
-    deps: Deps,
+    storage: &dyn Storage,
     vamm: String,
     side: Option<Side>,
     filter: PositionFilter,
@@ -111,7 +111,7 @@ pub fn query_positions(
 
     let positions: Option<Vec<Position>> = match filter {
         PositionFilter::Trader(trader_addr) => read_positions_with_indexer::<Side>(
-            deps.storage,
+            storage,
             &[PREFIX_POSITION_BY_TRADER, &vamm_key, trader_addr.as_bytes()],
             direction_filter,
             start_after,
@@ -121,7 +121,7 @@ pub fn query_positions(
         PositionFilter::Price(price) => {
             let price_key = price.to_be_bytes();
             read_positions_with_indexer::<Side>(
-                deps.storage,
+                storage,
                 &[PREFIX_POSITION_BY_PRICE, &vamm_key, &price_key],
                 direction_filter,
                 start_after,
@@ -131,7 +131,7 @@ pub fn query_positions(
         }
         PositionFilter::None => match side {
             Some(_) => read_positions_with_indexer::<Side>(
-                deps.storage,
+                storage,
                 &[PREFIX_POSITION_BY_SIDE, &vamm_key, &direction_key],
                 direction_filter,
                 start_after,
@@ -139,7 +139,7 @@ pub fn query_positions(
                 order_by,
             )?,
             None => Some(read_positions(
-                deps.storage,
+                storage,
                 &vamm_key,
                 start_after,
                 limit,

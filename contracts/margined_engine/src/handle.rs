@@ -1,6 +1,5 @@
 use cosmwasm_std::{
-    Addr, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
-    SubMsg, Uint128,
+    Addr, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, SubMsg, Uint128,
 };
 use margined_utils::contracts::helpers::VammController;
 
@@ -8,14 +7,16 @@ use crate::{
     contract::{
         CLOSE_POSITION_REPLY_ID, INCREASE_POSITION_REPLY_ID, LIQUIDATION_REPLY_ID,
         PARTIAL_CLOSE_POSITION_REPLY_ID, PARTIAL_LIQUIDATION_REPLY_ID, PAY_FUNDING_REPLY_ID,
+        TPSL_POSITION_REPLY_ID,
     },
     messages::{execute_transfer_from, withdraw},
-    query::{query_free_collateral, query_margin_ratio},
+    query::{query_free_collateral, query_margin_ratio, query_positions},
     state::{
         increase_last_position_id, read_config, read_position, read_state, store_config,
         store_position, store_sent_funds, store_state, store_tmp_liquidator, store_tmp_swap,
         SentFunds, TmpSwapInfo,
     },
+    tick::query_ticks,
     utils::{
         calc_remain_margin_with_funding_payment, check_tp_sl_price, direction_to_side, get_asset,
         get_margin_ratio_calc_option, get_position_notional_unrealized_pnl, keccak_256,
@@ -30,8 +31,10 @@ use margined_common::{
     messages::wasm_execute,
     validate::{validate_margin_ratios, validate_ratio},
 };
-use margined_perp::margined_vamm::{Direction, ExecuteMsg, CalcFeeResponse};
-use margined_perp::margined_engine::{PnlCalcOption, Position, PositionUnrealizedPnlResponse, Side};
+use margined_perp::margined_engine::{
+    PnlCalcOption, Position, PositionFilter, PositionUnrealizedPnlResponse, Side,
+};
+use margined_perp::margined_vamm::{CalcFeeResponse, Direction, ExecuteMsg};
 
 #[allow(clippy::too_many_arguments)]
 pub fn update_config(
@@ -297,7 +300,7 @@ pub fn update_tp_sl(
         return Err(StdError::generic_err("Unauthorized"));
     }
 
-    if Some(take_profit).is_none() && Some(stop_loss).is_none() {
+    if take_profit.is_none() && stop_loss.is_none() {
         return Err(StdError::generic_err(
             "Both take profit and stop loss are not set",
         ));
@@ -343,7 +346,10 @@ pub fn update_tp_sl(
         ("trader", trader.as_ref()),
         ("position_id", &position_id.to_string()),
         ("take_profit", &position.take_profit.to_string()),
-        ("stop_loss", &position.stop_loss.unwrap_or_default().to_string()),
+        (
+            "stop_loss",
+            &position.stop_loss.unwrap_or_default().to_string(),
+        ),
     ]))
 }
 
@@ -447,7 +453,12 @@ pub fn close_position(
             PARTIAL_CLOSE_POSITION_REPLY_ID,
         )?
     } else {
-        internal_close_position(deps, &position, quote_amount_limit, CLOSE_POSITION_REPLY_ID)?
+        internal_close_position(
+            deps.storage,
+            &position,
+            quote_amount_limit,
+            CLOSE_POSITION_REPLY_ID,
+        )?
     };
 
     Ok(Response::new().add_submessage(msg).add_attributes(vec![
@@ -472,54 +483,95 @@ pub fn close_position(
 
 pub fn trigger_tp_sl(
     deps: DepsMut,
-    _env: Env,
-    _info: MessageInfo,
     vamm: String,
-    position_id: u64,
-    quote_asset_limit: Uint128,
+    side: Side,
+    take_profit: bool,
+    limit: u32,
 ) -> StdResult<Response> {
-    let vamm = deps.api.addr_validate(&vamm)?;
+    let vamm_addr = deps.api.addr_validate(&vamm.clone())?;
 
     let config = read_config(deps.storage)?;
-    require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
+    require_vamm(deps.as_ref(), &config.insurance_fund, &vamm_addr)?;
 
-    // read the position for the trader from vamm
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
-    let position = read_position(deps.storage, &vamm_key, position_id)?;
-    let vamm_controller = VammController(vamm.clone());
-
-    // check the position isn't zero
-    require_position_not_zero(position.size.value)?;
-
-    let spot_price = vamm_controller.spot_price(&deps.querier)?;
-
+    let vamm_controller = VammController(vamm_addr.clone());
     let mut msgs: Vec<SubMsg> = vec![];
 
-    let tp_sl_action = check_tp_sl_price(
-        config,
-        &position,
-        spot_price,
+    // let order_by = if side == Side::Buy { 2 } else { 1 }
+    let order_by = match take_profit {
+        true => {
+            if side == Side::Buy {
+                2
+            } else {
+                1
+            }
+        }
+        false => {
+            if side == Side::Buy {
+                1
+            } else {
+                2
+            }
+        }
+    };
+
+    let ticks = query_ticks(
+        deps.storage,
+        vamm.clone(),
+        side,
+        None,
+        Some(limit),
+        Some(order_by),
     )
     .unwrap();
 
-    if tp_sl_action != "" {
-        msgs.push(internal_close_position(
-            deps,
-            &position,
-            quote_asset_limit,
-            CLOSE_POSITION_REPLY_ID,
-        )?);
+    for tick in ticks.ticks.iter() {
+        println!("trigger_tp_sl - tick: {:?}", tick);
+        let position_by_price = query_positions(
+            deps.storage,
+            vamm.clone(),
+            Some(side),
+            PositionFilter::Price(tick.entry_price),
+            None,
+            Some(limit),
+            Some(1),
+        )
+        .unwrap();
+
+        for position in position_by_price.iter() {
+            println!("trigger_tp_sl - position: {:?}", position);
+
+            // check the position isn't zero
+            require_position_not_zero(position.size.value)?;
+
+            let mut spot_price = vamm_controller.spot_price(&deps.querier)?;
+            println!("trigger_tp_sl - spot_price 1111111: {:?}", spot_price);
+            let tp_sl_action = check_tp_sl_price(config.clone(), &position, spot_price).unwrap();
+
+            if tp_sl_action != "" {
+                msgs.push(internal_close_position(
+                    deps.storage,
+                    &position,
+                    Uint128::zero(),
+                    TPSL_POSITION_REPLY_ID,
+                )?);
+            }
+            // spot_price = vamm_controller.spot_price(&deps.querier)?;
+            // println!("trigger_tp_sl - spot_price 2222222: {:?}", spot_price);
+        }
     }
+
+    let action = if take_profit {
+        "trigger_take_profit"
+    } else {
+        "trigger_stop_loss"
+    };
 
     Ok(Response::new()
         .add_submessages(msgs)
-        .add_attribute("action", tp_sl_action)
+        .add_attribute("action", action)
         .add_attributes(vec![
-            ("vamm", &vamm.into_string()),
-            ("pair", &position.pair),
-            ("position_id", &position.position_id.to_string()),
-            ("position_side", &format!("{:?}", position.side)),
-            ("trader", &position.trader.into_string()),
+            ("vamm", &vamm_addr.into_string()),
+            ("side", &format!("{:?}", &side)),
         ]))
 }
 
@@ -572,7 +624,12 @@ pub fn liquidate(
     {
         partial_liquidation(deps, env, vamm.clone(), position_id, quote_asset_limit)?
     } else {
-        internal_close_position(deps, &position, quote_asset_limit, LIQUIDATION_REPLY_ID)?
+        internal_close_position(
+            deps.storage,
+            &position,
+            quote_asset_limit,
+            LIQUIDATION_REPLY_ID,
+        )?
     };
 
     Ok(Response::new().add_submessage(msg).add_attributes(vec![
@@ -754,14 +811,14 @@ pub fn internal_increase_position(
 }
 
 pub fn internal_close_position(
-    deps: DepsMut,
+    storage: &mut dyn Storage,
     position: &Position,
     quote_asset_limit: Uint128,
     id: u64,
 ) -> StdResult<SubMsg> {
     let side = direction_to_side(&position.direction);
     store_tmp_swap(
-        deps.storage,
+        storage,
         &TmpSwapInfo {
             position_id: position.position_id,
             vamm: position.vamm.clone(),

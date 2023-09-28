@@ -1,4 +1,4 @@
-use cosmwasm_std::{Deps, Order as OrderBy, StdResult, Uint128};
+use cosmwasm_std::{Order as OrderBy, StdResult, Uint128, Storage};
 use cosmwasm_storage::ReadonlyBucket;
 use margined_perp::margined_engine::{Side, TickResponse, TicksResponse};
 use std::convert::{TryFrom, TryInto};
@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub fn query_ticks(
-    deps: Deps,
+    storage: &dyn Storage,
     vamm: String,
     side: Side,
     start_after: Option<Uint128>,
@@ -20,7 +20,7 @@ pub fn query_ticks(
     let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
 
     let position_bucket: ReadonlyBucket<u64> =
-        ReadonlyBucket::multilevel(deps.storage, &[PREFIX_TICK, &vamm_key, side.as_bytes()]);
+        ReadonlyBucket::multilevel(storage, &[PREFIX_TICK, &vamm_key, side.as_bytes()]);
 
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let start_after = start_after.map(|id| id.to_be_bytes().to_vec());
@@ -46,7 +46,7 @@ pub fn query_ticks(
 }
 
 pub fn query_tick(
-    deps: Deps,
+    storage: &dyn Storage,
     vamm: String,
     side: Side,
     entry_price: Uint128,
@@ -55,7 +55,7 @@ pub fn query_tick(
     let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
 
     let total_positions =
-        ReadonlyBucket::<u64>::multilevel(deps.storage, &[PREFIX_TICK, &vamm_key, side.as_bytes()])
+        ReadonlyBucket::<u64>::multilevel(storage, &[PREFIX_TICK, &vamm_key, side.as_bytes()])
             .load(&price_key)?;
 
     Ok(TickResponse {

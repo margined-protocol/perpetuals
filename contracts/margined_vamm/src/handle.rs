@@ -287,7 +287,7 @@ pub fn swap_output(
         base_asset_amount,
         true,
     )?;
-
+    println!("trigger_tp_sl - swap_output: {:?}", quote_asset_amount);
     Ok(response.add_attributes(vec![
         ("action", "swap"),
         ("type", "output"),

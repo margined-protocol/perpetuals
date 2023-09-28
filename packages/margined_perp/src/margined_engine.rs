@@ -88,8 +88,9 @@ pub enum ExecuteMsg {
     },
     TriggerTpSl {
         vamm: String,
-        position_id: u64,
-        quote_asset_limit: Uint128,
+        side: Side,
+        take_profit: bool,
+        limit: u32,
     },
     Liquidate {
         vamm: String,
