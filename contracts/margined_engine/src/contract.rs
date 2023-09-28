@@ -28,7 +28,7 @@ use crate::{
     },
     reply::{
         close_position_reply, liquidate_reply, partial_close_position_reply,
-        partial_liquidation_reply, pay_funding_reply, update_position_reply,
+        partial_liquidation_reply, pay_funding_reply, open_position_reply,
     },
     state::{store_config, store_state, Config, State},
     utils::{
@@ -300,7 +300,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::PositionWithFundingPayment { vamm, position_id } => to_binary(
             &query_trader_position_with_funding_payment(deps, vamm, position_id)?,
         ),
-        QueryMsg::PositionIsTpSL { vamm, position_id } => to_binary(
+        QueryMsg::PositionIsTpSl { vamm, position_id } => to_binary(
             &query_position_is_tpsl(deps, vamm, position_id)?,
         ),
         QueryMsg::LastPositionId {} => to_binary(&query_last_position_id(deps)?),
@@ -313,7 +313,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
         SubMsgResult::Ok(response) => match msg.id {
             INCREASE_POSITION_REPLY_ID => {
                 let (input, output, position_id) = parse_swap(response)?;
-                let response = update_position_reply(deps, env, input, output, position_id)?;
+                let response = open_position_reply(deps, env, input, output, position_id)?;
                 Ok(response)
             }
             CLOSE_POSITION_REPLY_ID => {

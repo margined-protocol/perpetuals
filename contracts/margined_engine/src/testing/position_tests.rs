@@ -1169,18 +1169,20 @@ fn test_openclose_position_to_check_fee_is_charged() {
             vec![],
         )
         .unwrap();
-    router.execute(alice.clone(), msg).unwrap();
+    let mut tx = router.execute(alice.clone(), msg).unwrap();
+    println!("test_openclose_position_to_check_fee_is_charged - open tx: {:?}", tx);
 
     let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
-    assert_eq!(engine_balance, to_decimals(60u64));
+    assert_eq!(engine_balance, to_decimals(42u64));
 
     let msg = engine
         .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
-    router.execute(alice.clone(), msg).unwrap();
+    tx = router.execute(alice.clone(), msg).unwrap();
+    println!("test_openclose_position_to_check_fee_is_charged - close tx: {:?}", tx);
 
     let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
-    assert_eq!(engine_balance, to_decimals(0u64));
+    assert_eq!(engine_balance, Uint128::from(11u128));
 
     let insurance_balance = usdc
         .balance(&router.wrap(), insurance_fund.addr().clone())
@@ -1233,7 +1235,12 @@ fn test_openclose_position_to_check_fee_is_charged_toll_ratio_5_percent() {
             vec![],
         )
         .unwrap();
-    router.execute(alice.clone(), msg).unwrap();
+    let mut tx = router.execute(alice.clone(), msg).unwrap();
+    println!("test_openclose_position_to_check_fee_is_charged_toll_ratio_5_percent - open tx: {:?}", tx);
+
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
+    println!("test_openclose_position_to_check_fee_is_charged_toll_ratio_5_percent - engine_balance: {:?}", engine_balance);
+    assert_eq!(engine_balance, to_decimals(42u64));
 
     let fee_pool_balance = usdc
         .balance(&router.wrap(), fee_pool.addr().clone())
@@ -1262,14 +1269,22 @@ fn test_openclose_position_to_check_fee_is_charged_toll_ratio_5_percent() {
         .unwrap();
     assert_eq!(fee_pool_balance, to_decimals(35u64));
 
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
+    println!("test_openclose_position_to_check_fee_is_charged_toll_ratio_5_percent - engine_balance: {:?}", engine_balance);
+    assert_eq!(engine_balance, Uint128::from(59400000000u128));
+
     let msg = engine
         .close_position(vamm.addr().to_string(), 1, to_decimals(0u64))
         .unwrap();
-    router.execute(alice.clone(), msg).unwrap();
+    tx = router.execute(alice.clone(), msg).unwrap();
+    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
+    println!("test_openclose_position_to_check_fee_is_charged_toll_ratio_5_percent - engine_balance: {:?}", engine_balance);
+    assert_eq!(engine_balance, Uint128::from(0u128));
+    println!("test_openclose_position_to_check_fee_is_charged_toll_ratio_5_percent - close tx: {:?}", tx);
     let fee_pool_balance = usdc
         .balance(&router.wrap(), fee_pool.addr().clone())
         .unwrap();
-    assert_eq!(fee_pool_balance, to_decimals(65u64));
+    assert_eq!(fee_pool_balance, to_decimals(41u64));
 }
 
 #[test]

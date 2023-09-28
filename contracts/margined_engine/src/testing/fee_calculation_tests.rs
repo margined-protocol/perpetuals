@@ -42,7 +42,7 @@ fn test_open_position_total_fee_ten_percent() {
             Uint128::from(2_000_000_000u64),
             to_decimals(18),
             Some(Uint128::zero()),
-            Uint128::from(37_500_000_000u64),
+            Uint128::from(17_500_000_000u64),
             vec![],
         )
         .unwrap();
@@ -51,10 +51,10 @@ fn test_open_position_total_fee_ten_percent() {
     let alice_position = engine
         .get_position_with_funding_payment(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
-    assert_eq!(alice_position.margin, Uint128::from(300_000_000_000u64));
+    assert_eq!(alice_position.margin, Uint128::from(240_000_000_000u64));
 
     let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
-    assert_eq!(engine_balance, Uint128::from(300_000_000_000u128));
+    assert_eq!(engine_balance, Uint128::from(240_000_000_000u128));
 
     let fee_pool_balance = usdc
         .balance(&router.wrap(), fee_pool.addr().clone())
@@ -126,11 +126,11 @@ fn test_open_short_position_twice_total_fee_ten_percent() {
     let alice_balance_2 = usdc.balance(&router.wrap(), alice.clone()).unwrap();
     assert_eq!(
         alice_balance_1 - alice_balance_2,
-        Uint128::from(60_000_000_000u64)
+        Uint128::from(50_000_000_000u64)
     );
 
     let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
-    assert_eq!(engine_balance, Uint128::from(100_000_000_000u128));
+    assert_eq!(engine_balance, Uint128::from(80_000_000_000u128));
 
     let fee_pool_balance = usdc
         .balance(&router.wrap(), fee_pool.addr().clone())
@@ -177,7 +177,7 @@ fn test_open_and_close_position_fee_ten_percent() {
             Uint128::from(2_000_000_000u64),
             to_decimals(18),
             Some(Uint128::zero()),
-            Uint128::from(37_500_000_000u64),
+            Uint128::from(17_500_000_000u64),
             vec![],
         )
         .unwrap();
@@ -189,7 +189,7 @@ fn test_open_and_close_position_fee_ten_percent() {
     router.execute(alice.clone(), msg).unwrap();
 
     let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
-    assert_eq!(engine_balance, Uint128::zero());
+    assert_eq!(engine_balance, Uint128::from(7u128));
 
     let fee_pool_balance = usdc
         .balance(&router.wrap(), fee_pool.addr().clone())
@@ -269,12 +269,12 @@ fn test_open_position_close_manually_open_reverse_position_total_fee_ten_percent
     let fee_pool_balance = usdc
         .balance(&router.wrap(), fee_pool.addr().clone())
         .unwrap();
-    assert_eq!(fee_pool_balance, Uint128::from(60_000_000_000u128));
+    assert_eq!(fee_pool_balance, Uint128::from(53_999_999_999u128));
 
     let insurance_balance = usdc
         .balance(&router.wrap(), insurance_fund.addr().clone())
         .unwrap();
-    assert_eq!(insurance_balance, Uint128::from(5060_000_000_000u128));
+    assert_eq!(insurance_balance, Uint128::from(5_053_999_999_999u128));
 }
 
 #[test]
@@ -344,12 +344,12 @@ fn test_open_position_close_manually_open_reverse_position_short_then_long_total
     let fee_pool_balance = usdc
         .balance(&router.wrap(), fee_pool.addr().clone())
         .unwrap();
-    assert_eq!(fee_pool_balance, Uint128::from(60_000_000_000u128));
+    assert_eq!(fee_pool_balance, Uint128::from(54_000_000_000u128));
 
     let insurance_balance = usdc
         .balance(&router.wrap(), insurance_fund.addr().clone())
         .unwrap();
-    assert_eq!(insurance_balance, Uint128::from(5060_000_000_000u128));
+    assert_eq!(insurance_balance, Uint128::from(5054_000_000_000u128));
 }
 
 #[test]
@@ -526,7 +526,7 @@ fn test_close_under_collateral_position_total_fee_ten_percent() {
             vamm.addr().to_string(),
             Side::Buy,
             Uint128::from(20_000_000_000u64),
-            Uint128::from(10_000_000_000u64),
+            Uint128::from(5_000_000_000u64),
             to_decimals(15),
             Some(to_decimals(8)),
             Uint128::zero(),
@@ -539,9 +539,9 @@ fn test_close_under_collateral_position_total_fee_ten_percent() {
         .open_position(
             vamm.addr().to_string(),
             Side::Sell,
-            Uint128::from(10_000_000_000u64),
-            Uint128::from(10_000_000_000u64),
-            to_decimals(9),
+            Uint128::from(40_000_000_000u64),
+            Uint128::from(5_000_000_000u64),
+            to_decimals(3),
             Some(to_decimals(30)),
             Uint128::zero(),
             vec![],
@@ -552,7 +552,8 @@ fn test_close_under_collateral_position_total_fee_ten_percent() {
     let msg = engine
         .liquidate(vamm.addr().to_string(), 1, Uint128::zero())
         .unwrap();
-    router.execute(bob.clone(), msg).unwrap();
+    let tx = router.execute(bob.clone(), msg).unwrap();
+    println!("liquidate tx: {:?}", tx);
 
     let fee_pool_balance = usdc
         .balance(&router.wrap(), fee_pool.addr().clone())
@@ -599,11 +600,11 @@ fn test_force_error_insufficient_balance_open_position_total_fee_ten_percent() {
         .open_position(
             vamm.addr().to_string(),
             Side::Buy,
-            Uint128::from(300_000_000_000u64),
+            Uint128::from(400_000_000_000u64),
             Uint128::from(2_000_000_000u64),
-            to_decimals(18),
+            to_decimals(28),
             Some(to_decimals(8)),
-            Uint128::from(37_500_000_000u64),
+            Uint128::from(17_500_000_000u64),
             vec![],
         )
         .unwrap();

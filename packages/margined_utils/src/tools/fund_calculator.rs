@@ -30,13 +30,11 @@ pub fn calculate_funds_needed(
     // pull the fees for the vamm that the position will be taken on; note that this will be shifted however many digits
     let fee_amount = vamm_controller.calc_fee(querier, new_notional)?.toll_fee;
     let margin_owed = Integer::new_positive(quote_asset_amount);
-
     let funds_owed = if margin_owed.is_positive() {
-        fee_amount + margin_owed.value
+        margin_owed.value
     } else {
         fee_amount
     };
-
     if funds_owed.is_zero() {
         Ok(vec![])
     } else {

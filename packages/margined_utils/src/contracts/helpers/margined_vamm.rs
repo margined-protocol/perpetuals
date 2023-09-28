@@ -189,6 +189,16 @@ impl VammController {
         querier.query_wasm_smart(&self.0, &QueryMsg::State {})
     }
 
+    /// get input price
+    pub fn input_price(
+        &self,
+        querier: &QuerierWrapper,
+        direction: Direction,
+        amount: Uint128,
+    ) -> StdResult<Uint128> {
+        querier.query_wasm_smart(&self.0, &QueryMsg::InputPrice { direction, amount })
+    }
+    
     /// get output price
     pub fn output_price(
         &self,
