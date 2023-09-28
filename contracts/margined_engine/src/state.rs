@@ -20,6 +20,7 @@ pub static KEY_STATE: &[u8] = b"state";
 pub static KEY_SENT_FUNDS: &[u8] = b"sent-funds";
 pub static KEY_TMP_SWAP: &[u8] = b"tmp-swap";
 pub static KEY_TMP_LIQUIDATOR: &[u8] = b"tmp-liquidator";
+pub static KEY_TMP_PRICE: &[u8] = b"tmp-price";
 pub static KEY_VAMM_MAP: &[u8] = b"vamm-map";
 pub static KEY_LAST_POSITION_ID: &[u8] = b"last_position_id";
 
@@ -321,6 +322,27 @@ pub fn read_tmp_liquidator(storage: &dyn Storage) -> StdResult<Addr> {
     match storage.get(KEY_TMP_LIQUIDATOR) {
         Some(data) => from_slice(&data),
         None => Err(StdError::generic_err("Addr not found")),
+    }
+}
+
+#[cw_serde]
+pub struct TmpPriceInfo {    
+    pub block_time: u64,        // block time when close position
+    pub spot_price: Uint128,    // spot price when close position
+}
+
+pub fn store_tmp_price(storage: &mut dyn Storage, tpsl_info: &TmpPriceInfo) -> StdResult<()> {
+    Ok(storage.set(KEY_TMP_PRICE, &to_vec(tpsl_info)?))
+}
+
+// pub fn remove_tmp_price<'a>(storage: &'a mut dyn Storage) {
+//     storage.remove(KEY_TMP_PRICE)
+// }
+
+pub fn read_tmp_price(storage: &dyn Storage) -> StdResult<TmpPriceInfo> {
+    match storage.get(KEY_TMP_PRICE) {
+        Some(data) => from_slice(&data),
+        None => Err(StdError::generic_err("Price info not found")),
     }
 }
 

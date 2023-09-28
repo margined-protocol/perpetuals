@@ -182,6 +182,7 @@ fn test_takeprofit() {
         .trigger_tp_sl(vamm.addr().to_string(), Side::Buy, true, 10)
         .unwrap();
     let ret = router.execute(alice.clone(), msg).unwrap();
+    println!("take profit tx: {:?}", ret);
 
     alice_balance = usdc.balance(&router.wrap(), alice.clone()).unwrap();
 
@@ -286,6 +287,7 @@ fn test_stoploss() {
         .trigger_tp_sl(vamm.addr().to_string(), Side::Buy, false, 10)
         .unwrap();
     let ret = router.execute(alice.clone(), msg).unwrap();
+    println!("stop loss tx: {:?}", ret);
 
     price = vamm.spot_price(&router.wrap()).unwrap();
     assert_eq!(price, Uint128::from(8_056_874_407u128));

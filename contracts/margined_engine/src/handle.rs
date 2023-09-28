@@ -543,7 +543,7 @@ pub fn trigger_tp_sl(
             // check the position isn't zero
             require_position_not_zero(position.size.value)?;
 
-            let mut spot_price = vamm_controller.spot_price(&deps.querier)?;
+            let spot_price = vamm_controller.spot_price(&deps.querier)?;
             println!("trigger_tp_sl - spot_price 1111111: {:?}", spot_price);
             let tp_sl_action = check_tp_sl_price(config.clone(), &position, spot_price).unwrap();
 
@@ -555,8 +555,6 @@ pub fn trigger_tp_sl(
                     TPSL_POSITION_REPLY_ID,
                 )?);
             }
-            // spot_price = vamm_controller.spot_price(&deps.querier)?;
-            // println!("trigger_tp_sl - spot_price 2222222: {:?}", spot_price);
         }
     }
 
