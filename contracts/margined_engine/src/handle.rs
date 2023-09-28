@@ -493,6 +493,7 @@ pub fn trigger_tp_sl(
     let vamm_controller = VammController(vamm_addr.clone());
     let spot_price = vamm_controller.spot_price(&deps.querier)?;
     let mut msgs: Vec<SubMsg> = vec![];
+    let mut tp_sl_flag: bool = false;
 
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm_addr)?;
     let order_by = match take_profit {
@@ -515,7 +516,6 @@ pub fn trigger_tp_sl(
     .unwrap();
 
     for tick in ticks.ticks.iter() {
-        // println!("trigger_tp_sl - tick: {:?}", tick);
         let position_by_price = query_positions(
             deps.storage,
             vamm.clone(),
@@ -528,14 +528,20 @@ pub fn trigger_tp_sl(
         .unwrap();
 
         for position in position_by_price.iter() {
-            // println!("trigger_tp_sl - position: {:?}", position);
-
             // check the position isn't zero
             require_position_not_zero(position.size.value)?;
-            // println!("trigger_tp_sl - spot_price 1111111: {:?}", spot_price);
             let tp_sl_action = check_tp_sl_price(config.clone(), &position, spot_price).unwrap();
-
-            if tp_sl_action != "" {
+            if take_profit {
+                if tp_sl_action == "trigger_take_profit" {
+                    tp_sl_flag = true;
+                }
+            } else {
+                if tp_sl_action == "trigger_stop_loss" {
+                    tp_sl_flag = true;
+                }
+            }
+            if tp_sl_flag {
+                tp_sl_flag = false;
                 msgs.push(internal_close_position(
                     deps.storage,
                     &position,

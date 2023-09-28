@@ -502,9 +502,7 @@ pub fn check_tp_sl_price(
     let sl_spread = stop_loss
         .checked_mul(config.tp_sl_spread)?
         .checked_div(config.decimals)?;
-    // println!("check_tp_sl_price - spot_price: {:?}", spot_price);
-    // println!("check_tp_sl_price - position.take_profit: {:?}", position.take_profit);
-    // println!("check_tp_sl_price - stop_loss: {:?}", stop_loss);
+
     // if spot_price is ~ take_profit or stop_loss, close position
     if position.side == Side::Buy {
         if spot_price > position.take_profit
@@ -527,6 +525,5 @@ pub fn check_tp_sl_price(
             msg = String::from("trigger_stop_loss");
         }
     }
-    // println!("check_tp_sl_price - msg: {:?}", msg);
     Ok(msg)
 }

@@ -375,7 +375,6 @@ pub fn query_position_is_tpsl(
         }
     };
 
-    // let mut tp_sl_action: String = String::from("");
     let mut is_tpsl: bool = false;
     let ticks = query_ticks(
         deps.storage,
@@ -401,8 +400,14 @@ pub fn query_position_is_tpsl(
 
         for position in position_by_price.iter() {
             let tp_sl_action = check_tp_sl_price(config.clone(), &position, spot_price).unwrap();
-            if tp_sl_action != "" {
-                is_tpsl = true;
+            if take_profit {
+                if tp_sl_action == "trigger_take_profit" {
+                    is_tpsl = true;
+                }
+            } else {
+                if tp_sl_action == "trigger_stop_loss" {
+                    is_tpsl = true;
+                }
             }
         }
     }

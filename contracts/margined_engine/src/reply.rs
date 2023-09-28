@@ -18,10 +18,10 @@ use crate::{
     },
 };
 
-use margined_common::{asset::AssetInfo, integer::Integer};
+use margined_common::{asset::AssetInfo, integer::Integer, messages::wasm_execute};
 use margined_perp::{
     margined_engine::{Position, RemainMarginResponse, Side},
-    margined_vamm::Direction,
+    margined_vamm::{Direction, ExecuteMsg}
 };
 
 // Updates position after successful execution of the swap
@@ -324,25 +324,33 @@ pub fn tpsl_position_reply(
     output: Uint128,
     position_id: u64,
 ) -> StdResult<Response> {
-    // println!("tpsl_position_reply");
     let config = read_config(deps.storage)?;
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
-    // let vamm_controller = VammController(swap.vamm.clone());
     let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
     let position = read_position(deps.storage, &vamm_key, position_id)?;
-
-    // let spot_price = vamm_controller.spot_price(&deps.querier)?;
-    // println!("tpsl_position_reply - not confirm spot_price: {:?}", spot_price);
-
     let tmp_tpsl = read_tmp_price(deps.storage);
     if tmp_tpsl.is_ok() {
         let tmp_spot_price = tmp_tpsl.unwrap().spot_price;
-        // println!("tpsl_position_reply - current confirm spot_price: {:?}", tmp_spot_price);
-        let tp_sl_action = check_tp_sl_price(config.clone(), &position, tmp_spot_price).unwrap();
+        let tp_sl_action = check_tp_sl_price(
+            config.clone(),
+            &position,
+            tmp_spot_price
+        ).unwrap();
             if tp_sl_action != "" {
                 close_position_reply(deps, env, _input, output, position_id)
             } else {
-                return Err(StdError::generic_err("Take profit | Stop loss price has not been reached"))
+                let msg = wasm_execute(
+                    swap.vamm,
+                    &ExecuteMsg::SwapInput {
+                        direction: side_to_direction(&position.side),
+                        position_id,
+                        quote_asset_amount: position.notional,
+                        base_asset_limit: Uint128::zero(),
+                        can_go_over_fluctuation: false,
+                    },
+                    vec![],
+                )?;
+                Ok(Response::new().add_message(msg).add_attribute("action", "revert_swap"))
             }
     } else {
         close_position_reply(deps, env, _input, output, position_id)
