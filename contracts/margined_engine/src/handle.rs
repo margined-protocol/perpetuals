@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    Addr, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, SubMsg, Uint128,
+    Addr, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, SubMsg, Uint128, Order,
 };
 use margined_utils::contracts::helpers::VammController;
 
@@ -498,10 +498,10 @@ pub fn trigger_tp_sl(
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm_addr)?;
     let order_by = match take_profit {
         true => {
-            if side == Side::Buy { 2 } else { 1 }
+            if side == Side::Buy { Order::Descending } else { Order::Ascending }
         }
         false => {
-            if side == Side::Buy { 1 } else { 2 }
+            if side == Side::Buy { Order::Ascending } else { Order::Descending }
         }
     };
 
@@ -511,7 +511,7 @@ pub fn trigger_tp_sl(
         side,
         None,
         Some(limit),
-        Some(order_by),
+        Some(order_by.into()),
     )
     .unwrap();
 
@@ -523,7 +523,7 @@ pub fn trigger_tp_sl(
             PositionFilter::Price(tick.entry_price),
             None,
             Some(limit),
-            Some(1),
+            Some(Order::Ascending.into()),
         )
         .unwrap();
 

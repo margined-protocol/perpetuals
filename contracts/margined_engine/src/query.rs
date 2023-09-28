@@ -1,4 +1,4 @@
-use cosmwasm_std::{Deps, Order as OrderBy, StdError, StdResult, Uint128, Storage};
+use cosmwasm_std::{Deps, Order, StdError, StdResult, Uint128, Storage};
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
     ConfigResponse, LastPositionIdResponse, PauserResponse, PnlCalcOption, Position,
@@ -61,7 +61,7 @@ pub fn query_all_positions(
     order_by: Option<i32>,
 ) -> StdResult<Vec<Position>> {
     let config = read_config(deps.storage)?;
-    let order_by = order_by.map_or(None, |val| OrderBy::try_from(val).ok());
+    let order_by = order_by.map_or(None, |val| Order::try_from(val).ok());
     let mut response: Vec<Position> = vec![];
 
     let vamms = match config.insurance_fund {
@@ -100,7 +100,7 @@ pub fn query_positions(
     limit: Option<u32>,
     order_by: Option<i32>,
 ) -> StdResult<Vec<Position>> {
-    let order_by = order_by.map_or(None, |val| OrderBy::try_from(val).ok());
+    let order_by = order_by.map_or(None, |val| Order::try_from(val).ok());
     let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
 
     let (direction_filter, direction_key): (Box<dyn Fn(&Side) -> bool>, Vec<u8>) = match side {
@@ -368,10 +368,10 @@ pub fn query_position_is_tpsl(
 
     let order_by = match take_profit {
         true => {
-            if side == Side::Buy { 2 } else { 1 }
+            if side == Side::Buy { Order::Descending } else { Order::Ascending }
         }
         false => {
-            if side == Side::Buy { 1 } else { 2 }
+            if side == Side::Buy { Order::Ascending } else { Order::Descending }
         }
     };
 
@@ -382,7 +382,7 @@ pub fn query_position_is_tpsl(
         side,
         None,
         Some(limit),
-        Some(order_by),
+        Some(order_by.into()),
     )
     .unwrap();
 
