@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    Addr, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, SubMsg, Uint128, Order,
+    Addr, DepsMut, Env, MessageInfo, Order, Response, StdError, StdResult, Storage, SubMsg, Uint128,
 };
 use margined_utils::contracts::helpers::VammController;
 
@@ -144,7 +144,7 @@ pub fn open_position(
         return Err(StdError::generic_err("Leverage must be greater than 1"));
     }
 
-    let vamm_config = vamm_controller.config(&deps.querier).unwrap();
+    let vamm_config = vamm_controller.config(&deps.querier)?;
 
     // calculate the margin ratio of new position wrt to leverage
     let margin_ratio = config
@@ -195,11 +195,8 @@ pub fn open_position(
         .checked_mul(leverage)?
         .checked_div(config.decimals)?;
 
-    let entry_price = vamm_controller.input_price(
-        &deps.querier,
-        side_to_direction(&side),
-        open_notional,
-    )?;
+    let entry_price =
+        vamm_controller.input_price(&deps.querier, side_to_direction(&side), open_notional)?;
 
     match side {
         Side::Buy => {
@@ -496,13 +493,11 @@ pub fn trigger_tp_sl(
     let mut tp_sl_flag: bool = false;
 
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm_addr)?;
-    let order_by = match take_profit {
-        true => {
-            if side == Side::Buy { Order::Descending } else { Order::Ascending }
-        }
-        false => {
-            if side == Side::Buy { Order::Ascending } else { Order::Descending }
-        }
+
+    let order_by = if take_profit && side == Side::Buy || take_profit && side == Side::Sell {
+        Order::Descending
+    } else {
+        Order::Ascending
     };
 
     let ticks = query_ticks(
@@ -512,8 +507,7 @@ pub fn trigger_tp_sl(
         None,
         Some(limit),
         Some(order_by.into()),
-    )
-    .unwrap();
+    )?;
 
     for tick in ticks.ticks.iter() {
         let position_by_price = query_positions(
@@ -524,13 +518,12 @@ pub fn trigger_tp_sl(
             None,
             Some(limit),
             Some(Order::Ascending.into()),
-        )
-        .unwrap();
+        )?;
 
         for position in position_by_price.iter() {
             // check the position isn't zero
             require_position_not_zero(position.size.value)?;
-            let tp_sl_action = check_tp_sl_price(config.clone(), &position, spot_price).unwrap();
+            let tp_sl_action = check_tp_sl_price(config.clone(), &position, spot_price)?;
             if take_profit {
                 if tp_sl_action == "trigger_take_profit" {
                     tp_sl_flag = true;

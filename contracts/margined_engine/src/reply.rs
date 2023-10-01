@@ -291,7 +291,7 @@ pub fn close_position_reply(
         swap.trader,
     )?;
 
-    let total_position = remove_position(deps.storage, &vamm_key, &position).unwrap();
+    let total_position = remove_position(deps.storage, &vamm_key, &position)?;
     store_state(deps.storage, &state)?;
     remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
 
@@ -330,12 +330,12 @@ pub fn tpsl_position_reply(
     let position = read_position(deps.storage, &vamm_key, position_id)?;
     let tmp_tpsl = read_tmp_price(deps.storage);
     if tmp_tpsl.is_ok() {
-        let tmp_spot_price = tmp_tpsl.unwrap().spot_price;
+        let tmp_spot_price = tmp_tpsl?.spot_price;
         let tp_sl_action = check_tp_sl_price(
             config.clone(),
             &position,
             tmp_spot_price
-        ).unwrap();
+        )?;
             if tp_sl_action != "" {
                 close_position_reply(deps, env, _input, output, position_id)
             } else {
@@ -544,7 +544,7 @@ pub fn liquidate_reply(
     store_state(deps.storage, &state)?;
 
     let vamm_key = keccak_256(&[position.vamm.as_bytes()].concat());
-    let total_position = remove_position(deps.storage, &vamm_key, &position).unwrap();
+    let total_position = remove_position(deps.storage, &vamm_key, &position)?;
 
     remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
     remove_tmp_liquidator(deps.storage);

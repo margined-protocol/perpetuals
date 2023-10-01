@@ -148,8 +148,7 @@ pub fn remove_position(
         if total_tick_orders > 0 {
             // save total orders for a tick
             Bucket::multilevel(storage, tick_namespaces)
-                .save(&price_key, &total_tick_orders)
-                .unwrap();
+                .save(&price_key, &total_tick_orders)?;
         } else {
             Bucket::<u64>::multilevel(storage, tick_namespaces).remove(&price_key);
         }
