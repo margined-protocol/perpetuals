@@ -98,30 +98,18 @@ pub fn store_position(
 
     Bucket::multilevel(
         storage,
-        &[
-            PREFIX_POSITION_BY_TRADER,
-            key,
-            position.trader.as_bytes(),
-        ],
+        &[PREFIX_POSITION_BY_TRADER, key, position.trader.as_bytes()],
     )
     .save(position_id_key, &position.side)?;
 
     Bucket::multilevel(
         storage,
-        &[
-            PREFIX_POSITION_BY_SIDE,
-            key,
-            &position.side.as_bytes(),
-        ],
+        &[PREFIX_POSITION_BY_SIDE, key, &position.side.as_bytes()],
     )
     .save(position_id_key, &position.side)?;
 
-    Bucket::multilevel(
-        storage, &[
-            PREFIX_POSITION_BY_PRICE,
-            key,
-            &price_key])
-    .save(position_id_key, &position.side)?;
+    Bucket::multilevel(storage, &[PREFIX_POSITION_BY_PRICE, key, &price_key])
+        .save(position_id_key, &position.side)?;
 
     Ok(total_tick_orders)
 }
@@ -147,8 +135,7 @@ pub fn remove_position(
         total_tick_orders -= 1;
         if total_tick_orders > 0 {
             // save total orders for a tick
-            Bucket::multilevel(storage, tick_namespaces)
-                .save(&price_key, &total_tick_orders)?;
+            Bucket::multilevel(storage, tick_namespaces).save(&price_key, &total_tick_orders)?;
         } else {
             Bucket::<u64>::multilevel(storage, tick_namespaces).remove(&price_key);
         }
@@ -156,29 +143,17 @@ pub fn remove_position(
 
     Bucket::<Side>::multilevel(
         storage,
-        &[
-            PREFIX_POSITION_BY_TRADER,
-            key,
-            position.trader.as_bytes(),
-        ],
+        &[PREFIX_POSITION_BY_TRADER, key, position.trader.as_bytes()],
     )
     .remove(position_id_key);
 
     Bucket::<Side>::multilevel(
         storage,
-        &[
-            PREFIX_POSITION_BY_SIDE,
-            key,
-            &position.side.as_bytes(),
-        ],
+        &[PREFIX_POSITION_BY_SIDE, key, &position.side.as_bytes()],
     )
     .remove(position_id_key);
 
-    Bucket::<Side>::multilevel(
-        storage, &[
-            PREFIX_POSITION_BY_PRICE,
-            key,
-            &price_key,])
+    Bucket::<Side>::multilevel(storage, &[PREFIX_POSITION_BY_PRICE, key, &price_key])
         .remove(position_id_key);
 
     // return total orders belong to the tick
@@ -289,11 +264,11 @@ pub struct TmpSwapInfo {
     pub position_notional: Uint128, // notional of existing position, inclusing funding
     pub unrealized_pnl: Integer,    // any pnl due
     pub margin_to_vault: Integer,   // margin to be sent to vault
-    pub fees_paid: bool,            // true if fees have been paid, used in case of reversing position
-    pub take_profit: Uint128,       // take profit price of position
+    pub fees_paid: bool, // true if fees have been paid, used in case of reversing position
+    pub take_profit: Uint128, // take profit price of position
     pub stop_loss: Option<Uint128>, // stop loss price of position
-    pub spread_fee: Uint128,        // spread fee
-    pub toll_fee: Uint128,          // toll fee
+    pub spread_fee: Uint128, // spread fee
+    pub toll_fee: Uint128, // toll fee
 }
 
 pub fn store_tmp_swap(storage: &mut dyn Storage, swap: &TmpSwapInfo) -> StdResult<()> {
@@ -325,20 +300,9 @@ pub fn read_tmp_liquidator(storage: &dyn Storage) -> StdResult<Addr> {
 }
 
 #[cw_serde]
-pub struct TmpReserveInfo {    
+pub struct TmpReserveInfo {
     pub quote_asset_reserve: Uint128,
     pub base_asset_reserve: Uint128,
-}
-
-pub fn store_tmp_reserve(storage: &mut dyn Storage, reserve_info: &TmpReserveInfo) -> StdResult<()> {
-    Ok(storage.set(KEY_TMP_RESERVE, &to_vec(reserve_info)?))
-}
-
-pub fn read_tmp_reserve(storage: &dyn Storage) -> StdResult<TmpReserveInfo> {
-    match storage.get(KEY_TMP_RESERVE) {
-        Some(data) => from_slice(&data),
-        None => Err(StdError::generic_err("Reserve info not found")),
-    }
 }
 
 #[cw_serde]

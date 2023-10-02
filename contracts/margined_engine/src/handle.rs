@@ -12,8 +12,8 @@ use crate::{
     query::{query_free_collateral, query_margin_ratio, query_positions},
     state::{
         increase_last_position_id, read_config, read_position, read_state, store_config,
-        store_position, store_sent_funds, store_state, store_tmp_liquidator, store_tmp_reserve,
-        store_tmp_swap, SentFunds, TmpSwapInfo,
+        store_position, store_sent_funds, store_state, store_tmp_liquidator, store_tmp_swap,
+        SentFunds, TmpReserveInfo, TmpSwapInfo,
     },
     tick::query_ticks,
     utils::{
@@ -493,6 +493,15 @@ pub fn trigger_tp_sl(
 
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm_addr)?;
 
+    // query pool reserves of the vamm so that we can simulate it while triggering tp sl.
+    // after simulating, we will know if the position is qualified to close or not
+    let vamm_controller = VammController(vamm_addr.clone());
+    let vamm_state = vamm_controller.state(&deps.querier)?;
+    let mut tmp_reserve: TmpReserveInfo = TmpReserveInfo {
+        quote_asset_reserve: vamm_state.quote_asset_reserve,
+        base_asset_reserve: vamm_state.base_asset_reserve,
+    };
+
     let order_by = if take_profit && side == Side::Buy || take_profit && side == Side::Sell {
         Order::Descending
     } else {
@@ -534,14 +543,12 @@ pub fn trigger_tp_sl(
             }
             if tp_sl_flag {
                 tp_sl_flag = false;
-                let tmp_reserve =
-                    simulate_spot_price(deps.as_ref(), config.decimals, vamm_addr.clone(), &position)?;
+                simulate_spot_price(&mut tmp_reserve, config.decimals, &position)?;
                 spot_price = tmp_reserve
                     .quote_asset_reserve
                     .checked_mul(config.decimals)?
                     .checked_div(tmp_reserve.base_asset_reserve)?;
 
-                store_tmp_reserve(deps.storage, &tmp_reserve)?;
                 msgs.push(internal_close_position(
                     deps.storage,
                     &position,

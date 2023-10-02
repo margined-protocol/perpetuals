@@ -10,7 +10,7 @@ use crate::{
         append_cumulative_premium_fraction, enter_restriction_mode, read_config, read_position,
         read_sent_funds, read_state, read_tmp_liquidator, read_tmp_swap, remove_position,
         remove_sent_funds, remove_tmp_liquidator, remove_tmp_swap, store_position, store_state,
-        State, store_tmp_reserve, TmpReserveInfo,
+        State,
     },
     utils::{
         calc_remain_margin_with_funding_payment, check_base_asset_holding_cap, keccak_256,
@@ -21,7 +21,7 @@ use crate::{
 use margined_common::{asset::AssetInfo, integer::Integer};
 use margined_perp::{
     margined_engine::{Position, RemainMarginResponse, Side},
-    margined_vamm::Direction
+    margined_vamm::Direction,
 };
 
 // Updates position after successful execution of the swap
@@ -33,7 +33,6 @@ pub fn open_position_reply(
     position_id: u64,
 ) -> StdResult<Response> {
     let mut swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
-    let vamm_controller = VammController(swap.vamm.clone());
 
     let mut position: Position = Position {
         position_id: swap.position_id,
@@ -171,15 +170,6 @@ pub fn open_position_reply(
     remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
     remove_sent_funds(deps.storage);
 
-    let vamm_state = vamm_controller.state(&deps.querier)?;
-    store_tmp_reserve(
-        deps.storage,
-        &TmpReserveInfo {
-            quote_asset_reserve: vamm_state.quote_asset_reserve,
-            base_asset_reserve: vamm_state.base_asset_reserve,
-        }
-    )?;
-
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "open_position_reply"),
         ("entry_price", &position.entry_price.to_string()),
@@ -199,7 +189,6 @@ pub fn close_position_reply(
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
     let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
     let position = read_position(deps.storage, &vamm_key, position_id)?;
-    let vamm_controller = VammController(swap.vamm.clone());
 
     let margin_delta = match &position.direction {
         Direction::AddToAmm => {
@@ -292,15 +281,6 @@ pub fn close_position_reply(
     store_state(deps.storage, &state)?;
     remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
 
-    let vamm_state = vamm_controller.state(&deps.querier)?;
-    store_tmp_reserve(
-        deps.storage,
-        &TmpReserveInfo {
-            quote_asset_reserve: vamm_state.quote_asset_reserve,
-            base_asset_reserve: vamm_state.base_asset_reserve,
-        }
-    )?;
-
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "close_position_reply"),
         ("total_position", &total_position.to_string()),
@@ -323,7 +303,6 @@ pub fn partial_close_position_reply(
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
     let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
-    let vamm_controller = VammController(swap.vamm.clone());
     let mut position = read_position(deps.storage, &vamm_key, position_id)?;
 
     let mut state: State = read_state(deps.storage)?;
@@ -394,15 +373,6 @@ pub fn partial_close_position_reply(
     // remove the tmp position
     remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
 
-    let vamm_state = vamm_controller.state(&deps.querier)?;
-    store_tmp_reserve(
-        deps.storage,
-        &TmpReserveInfo {
-            quote_asset_reserve: vamm_state.quote_asset_reserve,
-            base_asset_reserve: vamm_state.base_asset_reserve,
-        }
-    )?;
-
     Ok(Response::new()
         .add_submessages(fees_messages)
         .add_attributes(vec![
@@ -428,8 +398,6 @@ pub fn liquidate_reply(
 
     let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
     let position = read_position(deps.storage, &vamm_key, position_id)?;
-
-    let vamm_controller = VammController(swap.vamm.clone());
 
     // calculate delta from trade and whether it was profitable or a loss
     let margin_delta = match &position.direction {
@@ -505,15 +473,6 @@ pub fn liquidate_reply(
 
     enter_restriction_mode(deps.storage, swap.vamm, env.block.height)?;
 
-    let vamm_state = vamm_controller.state(&deps.querier)?;
-    store_tmp_reserve(
-        deps.storage,
-        &TmpReserveInfo {
-            quote_asset_reserve: vamm_state.quote_asset_reserve,
-            base_asset_reserve: vamm_state.base_asset_reserve,
-        }
-    )?;
-
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "liquidation_reply"),
         ("total_position", &total_position.to_string()),
@@ -537,8 +496,6 @@ pub fn partial_liquidation_reply(
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
     let liquidator = read_tmp_liquidator(deps.storage)?;
-
-    let vamm_controller = VammController(swap.vamm.clone());
 
     let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
     let mut position = read_position(deps.storage, &vamm_key, position_id)?;
@@ -617,15 +574,6 @@ pub fn partial_liquidation_reply(
     remove_tmp_liquidator(deps.storage);
 
     enter_restriction_mode(deps.storage, swap.vamm, env.block.height)?;
-
-    let vamm_state = vamm_controller.state(&deps.querier)?;
-    store_tmp_reserve(
-        deps.storage,
-        &TmpReserveInfo {
-            quote_asset_reserve: vamm_state.quote_asset_reserve,
-            base_asset_reserve: vamm_state.base_asset_reserve,
-        }
-    )?;
 
     Ok(Response::new()
         .add_submessages(messages)

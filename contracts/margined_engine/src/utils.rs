@@ -26,8 +26,7 @@ use crate::{
     messages::execute_insurance_fund_withdrawal,
     query::query_cumulative_premium_fraction,
     state::{
-        read_config, read_position, read_state, read_tmp_reserve, read_vamm_map, store_state,
-        State, TmpReserveInfo,
+        read_config, read_position, read_state, read_vamm_map, store_state, State, TmpReserveInfo,
     },
 };
 
@@ -536,24 +535,16 @@ pub fn check_tp_sl_price(
 
 // simulate the spot price after close the position
 pub fn simulate_spot_price(
-    deps: Deps,
+    tmp_reserve: &mut TmpReserveInfo,
     decimals: Uint128,
-    vamm: Addr,
     position: &Position,
-) -> StdResult<TmpReserveInfo> {
-    let vamm_controller = VammController(vamm.clone());
-    let vamm_state = vamm_controller.state(&deps.querier)?;
+) -> StdResult<()> {
+    // let vamm_controller = VammController(vamm.clone());
+    // let vamm_state = vamm_controller.state(&deps.querier)?;
 
-    let mut tmp_reserve: TmpReserveInfo = TmpReserveInfo {
-        quote_asset_reserve: vamm_state.quote_asset_reserve,
-        base_asset_reserve: vamm_state.base_asset_reserve,
-    };
-
-    let tmp_reserve_info = read_tmp_reserve(deps.storage);
-
-    if tmp_reserve_info.is_ok() {
-        tmp_reserve = tmp_reserve_info?;
-    }
+    // if tmp_reserve_info.is_ok() {
+    //     tmp_reserve = tmp_reserve_info?;
+    // }
 
     let base_asset_amount = position.size.value;
     let quote_asset_amount = get_output_price_with_reserves(
@@ -589,5 +580,5 @@ pub fn simulate_spot_price(
         }
     }
 
-    Ok(tmp_reserve)
+    Ok(())
 }
