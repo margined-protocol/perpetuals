@@ -7,14 +7,13 @@ use crate::{
     contract::{
         CLOSE_POSITION_REPLY_ID, INCREASE_POSITION_REPLY_ID, LIQUIDATION_REPLY_ID,
         PARTIAL_CLOSE_POSITION_REPLY_ID, PARTIAL_LIQUIDATION_REPLY_ID, PAY_FUNDING_REPLY_ID,
-        TPSL_POSITION_REPLY_ID,
     },
     messages::{execute_transfer_from, withdraw},
     query::{query_free_collateral, query_margin_ratio, query_positions},
     state::{
         increase_last_position_id, read_config, read_position, read_state, store_config,
-        store_position, store_sent_funds, store_state, store_tmp_liquidator, store_tmp_swap,
-        SentFunds, TmpSwapInfo,
+        store_position, store_sent_funds, store_state, store_tmp_liquidator, store_tmp_reserve,
+        store_tmp_swap, SentFunds, TmpSwapInfo,
     },
     tick::query_ticks,
     utils::{
@@ -22,7 +21,7 @@ use crate::{
         get_margin_ratio_calc_option, get_position_notional_unrealized_pnl, keccak_256,
         position_to_side, require_additional_margin, require_bad_debt, require_insufficient_margin,
         require_non_zero_input, require_not_paused, require_not_restriction_mode,
-        require_position_not_zero, require_vamm, side_to_direction,
+        require_position_not_zero, require_vamm, side_to_direction, simulate_spot_price,
     },
 };
 use margined_common::{
@@ -488,7 +487,7 @@ pub fn trigger_tp_sl(
     let config = read_config(deps.storage)?;
     let vamm_addr = deps.api.addr_validate(&vamm.clone())?;
     let vamm_controller = VammController(vamm_addr.clone());
-    let spot_price = vamm_controller.spot_price(&deps.querier)?;
+    let mut spot_price = vamm_controller.spot_price(&deps.querier)?;
     let mut msgs: Vec<SubMsg> = vec![];
     let mut tp_sl_flag: bool = false;
 
@@ -535,11 +534,15 @@ pub fn trigger_tp_sl(
             }
             if tp_sl_flag {
                 tp_sl_flag = false;
+                let (simulate_spot_price, tmp_reserve) =
+                    simulate_spot_price(deps.as_ref(), vamm_addr.clone(), &position);
+                spot_price = simulate_spot_price;
+                store_tmp_reserve(deps.storage, &tmp_reserve)?;
                 msgs.push(internal_close_position(
                     deps.storage,
                     &position,
                     Uint128::zero(),
-                    TPSL_POSITION_REPLY_ID,
+                    CLOSE_POSITION_REPLY_ID,
                 )?);
             }
         }

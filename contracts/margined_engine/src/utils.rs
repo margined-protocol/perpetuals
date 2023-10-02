@@ -22,7 +22,7 @@ use crate::{
     contract::{PAUSER, WHITELIST},
     messages::execute_insurance_fund_withdrawal,
     query::query_cumulative_premium_fraction,
-    state::{read_config, read_position, read_state, read_vamm_map, store_state, State},
+    state::{read_config, read_position, read_state, read_vamm_map, store_state, State, read_tmp_reserve, TmpReserveInfo},
 };
 
 pub fn keccak_256(input: &[u8]) -> Vec<u8> {
@@ -526,4 +526,97 @@ pub fn check_tp_sl_price(
         }
     }
     Ok(msg)
+}
+
+// get output quote asset amount with reserves
+pub fn get_output_with_reserves(
+    decimals: Uint128,
+    direction: &Direction,
+    base_asset_amount: Uint128,
+    quote_asset_reserve: Uint128,
+    base_asset_reserve: Uint128,
+) -> StdResult<Uint128> {
+    if base_asset_amount == Uint128::zero() {
+        return Ok(Uint128::zero());
+    }
+
+    let invariant_k = quote_asset_reserve
+        .checked_mul(base_asset_reserve)?
+        .checked_div(decimals)?;
+
+    let base_asset_after = match direction {
+        Direction::AddToAmm => base_asset_reserve.checked_add(base_asset_amount)?,
+        Direction::RemoveFromAmm => base_asset_reserve.checked_sub(base_asset_amount)?,
+    };
+
+    let invariant_k_decimals = invariant_k.checked_mul(decimals)?;
+
+    let quote_asset_after = invariant_k_decimals.checked_div(base_asset_after)?;
+
+    let mut quote_asset_sold = quote_asset_after.abs_diff(quote_asset_reserve);
+
+    // follows the design of the perpetual protocol decimals
+    // https://github.com/perpetual-protocol/perpetual-protocol/blob/release/v2.1.x/src/utils/Decimal.sol
+    let remainder = invariant_k_decimals.checked_rem(base_asset_after)?;
+    if remainder != Uint128::zero() {
+        if *direction == Direction::AddToAmm {
+            quote_asset_sold = quote_asset_sold.checked_sub(1u128.into())?;
+        } else {
+            quote_asset_sold = quote_asset_sold.checked_add(1u128.into())?;
+        }
+    }
+    Ok(quote_asset_sold)
+}
+
+// simulate the spot price after close the position
+pub fn simulate_spot_price(deps: Deps, vamm: Addr, position: &Position) -> (Uint128, TmpReserveInfo) {
+    let config = read_config(deps.storage).unwrap();
+    let vamm_controller = VammController(vamm.clone());
+    let vamm_state = vamm_controller.state(&deps.querier).unwrap();
+
+    let mut tmp_reserve: TmpReserveInfo = TmpReserveInfo {
+        quote_asset_reserve: vamm_state.quote_asset_reserve,
+        base_asset_reserve: vamm_state.base_asset_reserve,
+    };
+
+    let tmp_reserve_info = read_tmp_reserve(deps.storage);
+
+    if tmp_reserve_info.is_ok() {
+        tmp_reserve = tmp_reserve_info.unwrap();
+    }
+
+    let base_asset_amount = position.size.value;
+    let quote_asset_amount = get_output_with_reserves(
+        config.decimals,
+        &position.direction.clone(),
+        base_asset_amount,
+        tmp_reserve.quote_asset_reserve,
+        tmp_reserve.base_asset_reserve,
+    ).unwrap();
+
+    // flip direction when simulate close position
+    let update_direction = match position.direction {
+        Direction::AddToAmm => Direction::RemoveFromAmm,
+        Direction::RemoveFromAmm => Direction::AddToAmm,
+    };
+
+    match update_direction {
+        Direction::AddToAmm => {
+            tmp_reserve.quote_asset_reserve =
+                tmp_reserve.quote_asset_reserve.checked_add(quote_asset_amount).unwrap();
+            tmp_reserve.base_asset_reserve = tmp_reserve.base_asset_reserve.checked_sub(base_asset_amount).unwrap();
+        }
+        Direction::RemoveFromAmm => {
+            tmp_reserve.base_asset_reserve = tmp_reserve.base_asset_reserve.checked_add(base_asset_amount).unwrap();
+            tmp_reserve.quote_asset_reserve =
+                tmp_reserve.quote_asset_reserve.checked_sub(quote_asset_amount).unwrap();
+        }
+    }
+
+    let simulate_spot_price = tmp_reserve
+        .quote_asset_reserve
+        .checked_mul(config.decimals).unwrap()
+        .checked_div(tmp_reserve.base_asset_reserve).unwrap();
+
+    (simulate_spot_price, tmp_reserve)
 }

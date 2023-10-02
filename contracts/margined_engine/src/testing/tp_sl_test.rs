@@ -339,3 +339,181 @@ fn test_stoploss() {
             .unwrap()
     );
 }
+
+#[test]
+fn test_multi_takeprofit_buy_position() {
+    let SimpleScenario {
+        mut router,
+        alice,
+        bob,
+        usdc,
+        engine,
+        vamm,
+        ..
+    } = new_simple_scenario();
+    let price = vamm.spot_price(&router.wrap()).unwrap();
+    println!("[LOG] [0] spot price: {:?}", price);
+
+    let mut alice_balance = usdc.balance(&router.wrap(), alice.clone()).unwrap();
+    assert_eq!(alice_balance, Uint128::from(5_000_000_000_000u128));
+
+    let mut bob_balance = usdc.balance(&router.wrap(), bob.clone()).unwrap();
+    assert_eq!(bob_balance, Uint128::from(5_000_000_000_000u128));
+
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(6u64),
+            to_decimals(10u64),
+            Uint128::from(15_000_000_000u128),
+            Some(Uint128::from(10_000_000_000u128)),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(alice.clone(), msg).unwrap();
+    
+    let mut tp_sl_status = engine.get_tp_sl_status(
+        &router.wrap(),
+        vamm.addr().to_string(),
+        Side::Buy,
+        true, 10
+    ).unwrap();
+
+    println!("tp_sl_status: {:?}", tp_sl_status);
+    assert_eq!(tp_sl_status.is_tpsl, false);
+
+    let alice_balance_after_open = usdc.balance(&router.wrap(), alice.clone()).unwrap();
+    assert_eq!(
+        alice_balance_after_open,
+        Uint128::from(4_994_000_000_000u128)
+    );
+
+    println!("alice balance after: {:?}", alice_balance_after_open);
+
+    // take_profit and stop_loss is not set
+    let position = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
+        .unwrap();
+    assert_eq!(position.take_profit, to_decimals(15));
+    assert_eq!(position.stop_loss, Some(to_decimals(10)));
+
+    let mut price = vamm.spot_price(&router.wrap()).unwrap();
+    assert_eq!(price, Uint128::from(11_235_999_999u128));
+    println!("[LOG] [1] spot price: {:?}", price);
+
+    // Price increase to 15,875
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(20u64),
+            to_decimals(10u64),
+            Uint128::from(20_000_000_000u128),
+            Some(Uint128::from(10_000_000_000u128)),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    price = vamm.spot_price(&router.wrap()).unwrap();
+    assert_eq!(price, Uint128::from(15_875_999_999u128));
+    println!("[LOG] [2] spot price: {:?}", price);
+
+    // Price increase to 15,875
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(1u64),
+            to_decimals(2u64),
+            Uint128::from(15_926_400_000u128),
+            Some(Uint128::from(10_000_000_000u128)),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
+    router.execute(bob.clone(), msg).unwrap();
+
+    price = vamm.spot_price(&router.wrap()).unwrap();
+    assert_eq!(price, Uint128::from(15_926_439_999u128));
+    println!("[LOG] [3] spot price: {:?}", price);
+
+    let bob_balance_after_open = usdc.balance(&router.wrap(), bob.clone()).unwrap();
+    assert_eq!(
+        bob_balance_after_open,
+        Uint128::from(4_979_000_000_000u128)
+    );
+
+    tp_sl_status = engine.get_tp_sl_status(
+        &router.wrap(),
+        vamm.addr().to_string(),
+        Side::Buy,
+        true,
+        10
+    ).unwrap();
+    println!("tp_sl_status: {:?}", tp_sl_status);
+    assert_eq!(tp_sl_status.is_tpsl, true);
+
+    // take profit trigger
+    let msg = engine
+        .trigger_tp_sl(vamm.addr().to_string(), Side::Buy, true, 10)
+        .unwrap();
+    let ret = router.execute(alice.clone(), msg).unwrap();
+    println!("take profit tx: {:?}", ret);
+
+    price = vamm.spot_price(&router.wrap()).unwrap();
+    assert_eq!(price, Uint128::from(13_832_543_768u128));
+    println!("[LOG] [3] spot price: {:?}", price);
+
+    alice_balance = usdc.balance(&router.wrap(), alice.clone()).unwrap();
+    println!("alice balance after: {:?}", alice_balance);
+
+    bob_balance = usdc.balance(&router.wrap(), bob.clone()).unwrap();
+    println!("bob balance after: {:?}", bob_balance);
+
+
+    let err = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 1)
+        .unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "Querier contract error: margined_perp::margined_engine::Position not found"
+                .to_string()
+        },
+        err
+    );
+
+    let err = engine
+        .position(&router.wrap(), vamm.addr().to_string(), 3)
+        .unwrap_err();
+    assert_eq!(
+        StdError::GenericErr {
+            msg: "Querier contract error: margined_perp::margined_engine::Position not found"
+                .to_string()
+        },
+        err
+    );
+
+    assert_eq!(ret.events[1].attributes[1].value, "trigger_take_profit");
+
+    // take profit for position 1 and position 3
+    assert_eq!(ret.events[3].attributes[7].value, "3");
+    assert_eq!(ret.events[9].attributes[7].value, "1");
+
+    assert_eq!(ret.events[5].attributes[8].key, "withdraw_amount");
+    assert_eq!(
+        alice_balance,
+        alice_balance_after_open
+            .checked_add(Uint128::from_str(&ret.events[11].attributes[8].value).unwrap())
+            .unwrap()
+    );
+    assert_eq!(
+        bob_balance,
+        bob_balance_after_open
+            .checked_add(Uint128::from_str(&ret.events[5].attributes[8].value).unwrap())
+            .unwrap()
+    );
+}

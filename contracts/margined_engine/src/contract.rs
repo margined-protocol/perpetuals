@@ -12,7 +12,6 @@ use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, MigrateMsg, Que
 use crate::error::ContractError;
 use crate::handle::{trigger_tp_sl, update_tp_sl};
 use crate::query::{query_last_position_id, query_position_is_tpsl, query_positions};
-use crate::reply::tpsl_position_reply;
 use crate::state::init_last_position_id;
 use crate::tick::{query_tick, query_ticks};
 use crate::utils::get_margin_ratio_calc_option;
@@ -52,7 +51,6 @@ pub const PARTIAL_CLOSE_POSITION_REPLY_ID: u64 = 3;
 pub const LIQUIDATION_REPLY_ID: u64 = 4;
 pub const PARTIAL_LIQUIDATION_REPLY_ID: u64 = 5;
 pub const PAY_FUNDING_REPLY_ID: u64 = 6;
-pub const TPSL_POSITION_REPLY_ID: u64 = 7;
 pub const TRANSFER_FAILURE_REPLY_ID: u64 = 9;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -352,11 +350,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
                 let response = pay_funding_reply(deps, env, premium_fraction, sender)?;
                 Ok(response)
             }
-            TPSL_POSITION_REPLY_ID => {
-                let (input, output, position_id) = parse_swap(response)?;
-                let response = tpsl_position_reply(deps, env, input, output, position_id)?;
-                Ok(response)
-            }
             _ => Err(StdError::generic_err(format!(
                 "reply (id {:?}) invalid",
                 msg.id
@@ -389,10 +382,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
             ))),
             PAY_FUNDING_REPLY_ID => Err(StdError::generic_err(format!(
                 "funding payment failure - reply (id {:?})",
-                msg.id
-            ))),
-            TPSL_POSITION_REPLY_ID => Err(StdError::generic_err(format!(
-                "take profit | stop loss position failure - reply (id {:?})",
                 msg.id
             ))),
             _ => Err(StdError::generic_err(format!(
