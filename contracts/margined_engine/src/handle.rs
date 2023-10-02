@@ -534,9 +534,13 @@ pub fn trigger_tp_sl(
             }
             if tp_sl_flag {
                 tp_sl_flag = false;
-                let (simulate_spot_price, tmp_reserve) =
-                    simulate_spot_price(deps.as_ref(), vamm_addr.clone(), &position);
-                spot_price = simulate_spot_price;
+                let tmp_reserve =
+                    simulate_spot_price(deps.as_ref(), config.decimals, vamm_addr.clone(), &position)?;
+                spot_price = tmp_reserve
+                    .quote_asset_reserve
+                    .checked_mul(config.decimals)?
+                    .checked_div(tmp_reserve.base_asset_reserve)?;
+
                 store_tmp_reserve(deps.storage, &tmp_reserve)?;
                 msgs.push(internal_close_position(
                     deps.storage,

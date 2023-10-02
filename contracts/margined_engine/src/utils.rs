@@ -569,10 +569,14 @@ pub fn get_output_with_reserves(
 }
 
 // simulate the spot price after close the position
-pub fn simulate_spot_price(deps: Deps, vamm: Addr, position: &Position) -> (Uint128, TmpReserveInfo) {
-    let config = read_config(deps.storage).unwrap();
+pub fn simulate_spot_price(
+    deps: Deps,
+    decimals: Uint128,
+    vamm: Addr,
+    position: &Position
+) -> StdResult<TmpReserveInfo> {
     let vamm_controller = VammController(vamm.clone());
-    let vamm_state = vamm_controller.state(&deps.querier).unwrap();
+    let vamm_state = vamm_controller.state(&deps.querier)?;
 
     let mut tmp_reserve: TmpReserveInfo = TmpReserveInfo {
         quote_asset_reserve: vamm_state.quote_asset_reserve,
@@ -582,12 +586,12 @@ pub fn simulate_spot_price(deps: Deps, vamm: Addr, position: &Position) -> (Uint
     let tmp_reserve_info = read_tmp_reserve(deps.storage);
 
     if tmp_reserve_info.is_ok() {
-        tmp_reserve = tmp_reserve_info.unwrap();
+        tmp_reserve = tmp_reserve_info?;
     }
 
     let base_asset_amount = position.size.value;
     let quote_asset_amount = get_output_with_reserves(
-        config.decimals,
+        decimals,
         &position.direction.clone(),
         base_asset_amount,
         tmp_reserve.quote_asset_reserve,
@@ -603,20 +607,16 @@ pub fn simulate_spot_price(deps: Deps, vamm: Addr, position: &Position) -> (Uint
     match update_direction {
         Direction::AddToAmm => {
             tmp_reserve.quote_asset_reserve =
-                tmp_reserve.quote_asset_reserve.checked_add(quote_asset_amount).unwrap();
-            tmp_reserve.base_asset_reserve = tmp_reserve.base_asset_reserve.checked_sub(base_asset_amount).unwrap();
+                tmp_reserve.quote_asset_reserve.checked_add(quote_asset_amount)?;
+            tmp_reserve.base_asset_reserve = tmp_reserve.base_asset_reserve.checked_sub(base_asset_amount)?;
         }
         Direction::RemoveFromAmm => {
-            tmp_reserve.base_asset_reserve = tmp_reserve.base_asset_reserve.checked_add(base_asset_amount).unwrap();
+            tmp_reserve.base_asset_reserve = tmp_reserve.base_asset_reserve.checked_add(base_asset_amount)?;
             tmp_reserve.quote_asset_reserve =
-                tmp_reserve.quote_asset_reserve.checked_sub(quote_asset_amount).unwrap();
+                tmp_reserve.quote_asset_reserve.checked_sub(quote_asset_amount)?;
         }
     }
 
-    let simulate_spot_price = tmp_reserve
-        .quote_asset_reserve
-        .checked_mul(config.decimals).unwrap()
-        .checked_div(tmp_reserve.base_asset_reserve).unwrap();
 
-    (simulate_spot_price, tmp_reserve)
+    Ok(tmp_reserve)
 }
