@@ -2,7 +2,10 @@ use cosmwasm_std::{
     Addr, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, SubMsg,
     SubMsgResponse, Uint128,
 };
-use margined_utils::contracts::helpers::{InsuranceFundController, VammController};
+use margined_utils::{
+    contracts::helpers::{InsuranceFundController, VammController},
+    tools::price_swap::get_output_price_with_reserves,
+};
 use sha3::{Digest, Sha3_256};
 
 use std::str::FromStr;
@@ -22,7 +25,10 @@ use crate::{
     contract::{PAUSER, WHITELIST},
     messages::execute_insurance_fund_withdrawal,
     query::query_cumulative_premium_fraction,
-    state::{read_config, read_position, read_state, read_vamm_map, store_state, State, read_tmp_reserve, TmpReserveInfo},
+    state::{
+        read_config, read_position, read_state, read_tmp_reserve, read_vamm_map, store_state,
+        State, TmpReserveInfo,
+    },
 };
 
 pub fn keccak_256(input: &[u8]) -> Vec<u8> {
@@ -528,52 +534,12 @@ pub fn check_tp_sl_price(
     Ok(msg)
 }
 
-// get output quote asset amount with reserves
-pub fn get_output_with_reserves(
-    decimals: Uint128,
-    direction: &Direction,
-    base_asset_amount: Uint128,
-    quote_asset_reserve: Uint128,
-    base_asset_reserve: Uint128,
-) -> StdResult<Uint128> {
-    if base_asset_amount == Uint128::zero() {
-        return Ok(Uint128::zero());
-    }
-
-    let invariant_k = quote_asset_reserve
-        .checked_mul(base_asset_reserve)?
-        .checked_div(decimals)?;
-
-    let base_asset_after = match direction {
-        Direction::AddToAmm => base_asset_reserve.checked_add(base_asset_amount)?,
-        Direction::RemoveFromAmm => base_asset_reserve.checked_sub(base_asset_amount)?,
-    };
-
-    let invariant_k_decimals = invariant_k.checked_mul(decimals)?;
-
-    let quote_asset_after = invariant_k_decimals.checked_div(base_asset_after)?;
-
-    let mut quote_asset_sold = quote_asset_after.abs_diff(quote_asset_reserve);
-
-    // follows the design of the perpetual protocol decimals
-    // https://github.com/perpetual-protocol/perpetual-protocol/blob/release/v2.1.x/src/utils/Decimal.sol
-    let remainder = invariant_k_decimals.checked_rem(base_asset_after)?;
-    if remainder != Uint128::zero() {
-        if *direction == Direction::AddToAmm {
-            quote_asset_sold = quote_asset_sold.checked_sub(1u128.into())?;
-        } else {
-            quote_asset_sold = quote_asset_sold.checked_add(1u128.into())?;
-        }
-    }
-    Ok(quote_asset_sold)
-}
-
 // simulate the spot price after close the position
 pub fn simulate_spot_price(
     deps: Deps,
     decimals: Uint128,
     vamm: Addr,
-    position: &Position
+    position: &Position,
 ) -> StdResult<TmpReserveInfo> {
     let vamm_controller = VammController(vamm.clone());
     let vamm_state = vamm_controller.state(&deps.querier)?;
@@ -590,13 +556,13 @@ pub fn simulate_spot_price(
     }
 
     let base_asset_amount = position.size.value;
-    let quote_asset_amount = get_output_with_reserves(
+    let quote_asset_amount = get_output_price_with_reserves(
         decimals,
         &position.direction.clone(),
         base_asset_amount,
         tmp_reserve.quote_asset_reserve,
         tmp_reserve.base_asset_reserve,
-    ).unwrap();
+    )?;
 
     // flip direction when simulate close position
     let update_direction = match position.direction {
@@ -606,17 +572,22 @@ pub fn simulate_spot_price(
 
     match update_direction {
         Direction::AddToAmm => {
-            tmp_reserve.quote_asset_reserve =
-                tmp_reserve.quote_asset_reserve.checked_add(quote_asset_amount)?;
-            tmp_reserve.base_asset_reserve = tmp_reserve.base_asset_reserve.checked_sub(base_asset_amount)?;
+            tmp_reserve.quote_asset_reserve = tmp_reserve
+                .quote_asset_reserve
+                .checked_add(quote_asset_amount)?;
+            tmp_reserve.base_asset_reserve = tmp_reserve
+                .base_asset_reserve
+                .checked_sub(base_asset_amount)?;
         }
         Direction::RemoveFromAmm => {
-            tmp_reserve.base_asset_reserve = tmp_reserve.base_asset_reserve.checked_add(base_asset_amount)?;
-            tmp_reserve.quote_asset_reserve =
-                tmp_reserve.quote_asset_reserve.checked_sub(quote_asset_amount)?;
+            tmp_reserve.base_asset_reserve = tmp_reserve
+                .base_asset_reserve
+                .checked_add(base_asset_amount)?;
+            tmp_reserve.quote_asset_reserve = tmp_reserve
+                .quote_asset_reserve
+                .checked_sub(quote_asset_amount)?;
         }
     }
-
 
     Ok(tmp_reserve)
 }

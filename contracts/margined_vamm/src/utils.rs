@@ -1,12 +1,12 @@
 use cosmwasm_std::{Addr, Deps, Env, Response, StdError, StdResult, Storage, Uint128};
 use margined_perp::margined_vamm::Direction;
+use margined_utils::tools::price_swap::{
+    get_input_price_with_reserves, get_output_price_with_reserves,
+};
 
-use crate::{
-    handle::{get_input_price_with_reserves, get_output_price_with_reserves},
-    state::{
-        read_config, read_reserve_snapshot, read_reserve_snapshot_counter, read_state,
-        store_reserve_snapshot, update_current_reserve_snapshot,
-    },
+use crate::state::{
+    read_config, read_reserve_snapshot, read_reserve_snapshot_counter, read_state,
+    store_reserve_snapshot, update_current_reserve_snapshot,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -181,7 +181,7 @@ pub fn get_price_with_specific_snapshot(
 
             if asset.quote {
                 return get_input_price_with_reserves(
-                    deps,
+                    config.decimals,
                     &asset.direction,
                     asset.amount,
                     snapshot.quote_asset_reserve,
@@ -189,7 +189,7 @@ pub fn get_price_with_specific_snapshot(
                 );
             } else {
                 return get_output_price_with_reserves(
-                    deps,
+                    config.decimals,
                     &asset.direction,
                     asset.amount,
                     snapshot.quote_asset_reserve,

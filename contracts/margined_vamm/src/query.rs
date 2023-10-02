@@ -3,11 +3,13 @@ use margined_common::integer::Integer;
 use margined_perp::margined_vamm::{
     CalcFeeResponse, ConfigResponse, Direction, OwnerResponse, StateResponse,
 };
-use margined_utils::contracts::helpers::PricefeedController;
+use margined_utils::{
+    contracts::helpers::PricefeedController,
+    tools::price_swap::{get_input_price_with_reserves, get_output_price_with_reserves},
+};
 
 use crate::{
     contract::OWNER,
-    handle::{get_input_price_with_reserves, get_output_price_with_reserves},
     state::{read_config, read_reserve_snapshot_counter, read_state},
     utils::{
         calc_twap, price_boundaries_of_last_block, TwapCalcOption, TwapInputAsset,
@@ -46,9 +48,10 @@ pub fn query_owner(deps: Deps) -> StdResult<OwnerResponse> {
 /// Queries input price
 pub fn query_input_price(deps: Deps, direction: Direction, amount: Uint128) -> StdResult<Uint128> {
     let state = read_state(deps.storage)?;
+    let config = read_config(deps.storage)?;
 
     let output = get_input_price_with_reserves(
-        deps,
+        config.decimals,
         &direction,
         amount,
         state.quote_asset_reserve,
@@ -67,9 +70,10 @@ pub fn query_input_price(deps: Deps, direction: Direction, amount: Uint128) -> S
 /// Queries output price
 pub fn query_output_price(deps: Deps, direction: Direction, amount: Uint128) -> StdResult<Uint128> {
     let state = read_state(deps.storage)?;
+    let config = read_config(deps.storage)?;
 
     let output = get_output_price_with_reserves(
-        deps,
+        config.decimals,
         &direction,
         amount,
         state.quote_asset_reserve,
@@ -90,9 +94,10 @@ pub fn query_output_price(deps: Deps, direction: Direction, amount: Uint128) -> 
 /// Queries input amount
 pub fn query_input_amount(deps: Deps, direction: Direction, amount: Uint128) -> StdResult<Uint128> {
     let state = read_state(deps.storage)?;
+    let config = read_config(deps.storage)?;
 
     let output = get_input_price_with_reserves(
-        deps,
+        config.decimals,
         &direction,
         amount,
         state.quote_asset_reserve,
@@ -109,9 +114,10 @@ pub fn query_output_amount(
     amount: Uint128,
 ) -> StdResult<Uint128> {
     let state = read_state(deps.storage)?;
+    let config = read_config(deps.storage)?;
 
     let output = get_output_price_with_reserves(
-        deps,
+        config.decimals,
         &direction,
         amount,
         state.quote_asset_reserve,
