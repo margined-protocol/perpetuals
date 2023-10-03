@@ -324,6 +324,7 @@ pub fn update_tp_sl(
                 if take_profit >= position.entry_price {
                     return Err(StdError::generic_err("TP price is too high"));
                 }
+                position.take_profit = take_profit;
             }
             if let Some(sl) = stop_loss {
                 if sl < position.entry_price {
