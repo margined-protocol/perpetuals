@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, Uint128,
+    DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, Uint128,
 };
 
 use margined_common::{integer::Integer, validate::validate_ratio};

@@ -365,7 +365,7 @@ pub fn query_position_is_tpsl(
     let vamm_controller = VammController(vamm_addr.clone());
     let spot_price = vamm_controller.spot_price(&deps.querier)?;
 
-    let order_by = if take_profit && side == Side::Buy || take_profit && side == Side::Sell {
+    let order_by = if take_profit && side == Side::Buy || !take_profit && side == Side::Sell {
         Order::Descending
     } else {
         Order::Ascending
