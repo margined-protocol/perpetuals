@@ -14,7 +14,7 @@ use margined_utils::{
 use crate::{
     state::TmpReserveInfo,
     testing::new_simple_scenario,
-    utils::{calculate_tp_spread_sl_spread, simulate_spot_price},
+    utils::{calculate_tp_spread_sl_spread, simulate_spot_price, check_tp_sl_price},
 };
 
 #[test]
@@ -52,35 +52,142 @@ fn test_calculate_tp_spread_sl_spread() {
 
 #[test]
 fn test_check_tp_sl_price() {
-    /*
-    // buy cases
-    [2, 1, 0, "0", "0", true], // spot > profit
-    [1, 1, 0, "0", "0", true], // spot = profit
-    [1, 2, 0, "3", "0", true], // profit - spot < tpSpread
-    [1, 2, 0, "1", "0", true], // profit - spot < tpSpread
-    [1, 2, 2, "0", "0", true], // loss > spot
-    [1, 2, 1, "0", "0", true], // loss = spot
-    [2, 3, 1, "0", "2", true], // loss > 0 && spot - loss < slSpread
-    [2, 3, 1, "0", "1", true], // loss > 0 && spot - loss = slSpread
-    [10, 20, 0, "5", "1", false], // failed every case with stop loss = 0
-    [10, 20, 1, "5", "5", false], // failed every case with stop loss > 0 but spot - loss > slSpread
-    [20000000, 20000000, 10000000, "5000", "5000", true],
-     */
+    // LONG SIDE - TAKE PROFIT
+    // spot_price > take_profit
+    let mut action = check_tp_sl_price(
+        Uint128::from(2_000_000u64), 
+        Uint128::from(1_000_000u64),
+        Uint128::zero(),
+        Uint128::zero(),
+        Uint128::zero(),
+        &Side::Buy
+    ).unwrap();
+    assert_eq!(action, "trigger_take_profit");
 
-    /*
-    // sell cases
-    [1, 2, 0, "0", "0", true], // profit > spot
-    [1, 1, 0, "0", "0", true], // spot = profit
-    [2, 1, 0, "3", "0", true], // spot - profit < tpSpread
-    [2, 1, 0, "1", "0", true], // spot - profit = tpSpread
-    [2, 2, 1, "0", "0", true], // spot > loss
-    [1, 2, 1, "0", "0", true], // loss = spot
-    [1, 3, 2, "0", "2", true], // loss > 0 && loss - spot < slSpread
-    [1, 3, 2, "0", "1", true], // loss > 0 && loss - spot = slSpread
-    [20, 10, 30, "5", "1", false], // failed every case with stop loss > 0
-     */
+    // take_profit - spot_price <= tp_spread
+    action = check_tp_sl_price(
+        Uint128::from(2_000_000u64), 
+        Uint128::from(2_010_000u64),
+        Uint128::zero(),
+        Uint128::from(10_000u64),
+        Uint128::zero(),
+        &Side::Buy
+    ).unwrap();
+    assert_eq!(action, "trigger_take_profit");
 
-    // TODO: write test cases for check_tp_sl_price. Should be clean
+    // take_profit - spot_price > tp_spread
+    action = check_tp_sl_price(
+        Uint128::from(2_000_000u64), 
+        Uint128::from(2_020_000u64),
+        Uint128::zero(),
+        Uint128::from(10_000u64),
+        Uint128::zero(),
+        &Side::Buy
+    ).unwrap();
+    assert_eq!(action, "");
+
+    // LONG SIDE - STOP LOSS
+    // stop_loss > spot_price
+    action = check_tp_sl_price(
+        Uint128::from(1_000_000u64), 
+        Uint128::from(3_000_000u64),
+        Uint128::from(2_500_000u64),
+        Uint128::zero(),
+        Uint128::zero(),
+        &Side::Buy
+    ).unwrap();
+    assert_eq!(action, "trigger_stop_loss");
+
+    // spot_price - stop_loss <= tp_spread
+    action = check_tp_sl_price(
+        Uint128::from(1_000_000u64), 
+        Uint128::from(3_000_000u64),
+        Uint128::from(990_000u64),
+        Uint128::zero(),
+        Uint128::from(10_000u64),
+        &Side::Buy
+    ).unwrap();
+    assert_eq!(action, "trigger_stop_loss");
+
+    // spot_price - stop_loss > tp_spread
+    action = check_tp_sl_price(
+        Uint128::from(2_000_000u64), 
+        Uint128::from(3_000_000u64),
+        Uint128::from(1_980_000u64),
+        Uint128::zero(),
+        Uint128::from(10_000u64),
+        &Side::Buy
+    ).unwrap();
+    assert_eq!(action, "");
+
+
+    // SHORT SIDE - TAKE PROFIT
+    // take_profit > spot_price
+    let mut action = check_tp_sl_price(
+        Uint128::from(2_000_000u64), 
+        Uint128::from(3_000_000u64),
+        Uint128::zero(),
+        Uint128::zero(),
+        Uint128::zero(),
+        &Side::Sell
+    ).unwrap();
+    assert_eq!(action, "trigger_take_profit");
+
+    // spot_price - take_profit <= tp_spread
+    action = check_tp_sl_price(
+        Uint128::from(2_000_000u64), 
+        Uint128::from(1_990_000u64),
+        Uint128::zero(),
+        Uint128::from(10_000u64),
+        Uint128::zero(),
+        &Side::Sell
+    ).unwrap();
+    assert_eq!(action, "trigger_take_profit");
+
+    // spot_price - take_profit > tp_spread
+    action = check_tp_sl_price(
+        Uint128::from(2_000_000u64), 
+        Uint128::from(1_980_000u64),
+        Uint128::zero(),
+        Uint128::from(10_000u64),
+        Uint128::zero(),
+        &Side::Sell
+    ).unwrap();
+    assert_eq!(action, "");
+
+    // SHORT SIDE - STOP LOSS
+    // stop_loss > spot_price
+    action = check_tp_sl_price(
+        Uint128::from(3_000_000u64), 
+        Uint128::from(1_000_000u64),
+        Uint128::from(2_500_000u64),
+        Uint128::zero(),
+        Uint128::zero(),
+        &Side::Sell
+    ).unwrap();
+    assert_eq!(action, "trigger_stop_loss");
+
+    // stop_loss - spot_price <= tp_spread
+    action = check_tp_sl_price(
+        Uint128::from(3_000_000u64), 
+        Uint128::from(1_000_000u64),
+        Uint128::from(3_010_000u64),
+        Uint128::zero(),
+        Uint128::from(10_000u64),
+        &Side::Sell
+    ).unwrap();
+    assert_eq!(action, "trigger_stop_loss");
+
+    // stop_loss - spot_price > tp_spread
+    action = check_tp_sl_price(
+        Uint128::from(3_000_000u64), 
+        Uint128::from(1_000_000u64),
+        Uint128::from(3_020_000u64),
+        Uint128::zero(),
+        Uint128::from(10_000u64),
+        &Side::Sell
+    ).unwrap();
+    assert_eq!(action, "");
 }
 
 #[test]
