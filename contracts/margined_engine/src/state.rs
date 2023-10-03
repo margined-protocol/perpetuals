@@ -20,7 +20,6 @@ pub static KEY_STATE: &[u8] = b"state";
 pub static KEY_SENT_FUNDS: &[u8] = b"sent-funds";
 pub static KEY_TMP_SWAP: &[u8] = b"tmp-swap";
 pub static KEY_TMP_LIQUIDATOR: &[u8] = b"tmp-liquidator";
-pub static KEY_TMP_RESERVE: &[u8] = b"tmp-reserve";
 pub static KEY_VAMM_MAP: &[u8] = b"vamm-map";
 pub static KEY_LAST_POSITION_ID: &[u8] = b"last_position_id";
 

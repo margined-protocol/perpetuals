@@ -17,9 +17,10 @@ use crate::{
     },
     tick::query_ticks,
     utils::{
-        calc_remain_margin_with_funding_payment, check_tp_sl_price, direction_to_side, get_asset,
-        get_margin_ratio_calc_option, get_position_notional_unrealized_pnl, keccak_256,
-        position_to_side, require_additional_margin, require_bad_debt, require_insufficient_margin,
+        calc_remain_margin_with_funding_payment, calculate_tp_spread_sl_spread, check_tp_sl_price,
+        direction_to_side, get_asset, get_margin_ratio_calc_option,
+        get_position_notional_unrealized_pnl, keccak_256, position_to_side,
+        require_additional_margin, require_bad_debt, require_insufficient_margin,
         require_non_zero_input, require_not_paused, require_not_restriction_mode,
         require_position_not_zero, require_vamm, side_to_direction, simulate_spot_price,
     },
@@ -531,7 +532,21 @@ pub fn trigger_tp_sl(
         for position in position_by_price.iter() {
             // check the position isn't zero
             require_position_not_zero(position.size.value)?;
-            let tp_sl_action = check_tp_sl_price(config.clone(), &position, spot_price)?;
+            let stop_loss = position.stop_loss.unwrap_or_default();
+            let (tp_spread, sl_spread) = calculate_tp_spread_sl_spread(
+                config.tp_sl_spread,
+                position.take_profit,
+                stop_loss,
+                config.decimals,
+            )?;
+            let tp_sl_action = check_tp_sl_price(
+                spot_price,
+                position.take_profit,
+                stop_loss,
+                tp_spread,
+                sl_spread,
+                &position.side,
+            )?;
             if take_profit {
                 if tp_sl_action == "trigger_take_profit" {
                     tp_sl_flag = true;
@@ -543,7 +558,12 @@ pub fn trigger_tp_sl(
             }
             if tp_sl_flag {
                 tp_sl_flag = false;
-                simulate_spot_price(&mut tmp_reserve, config.decimals, &position)?;
+                simulate_spot_price(
+                    &mut tmp_reserve,
+                    config.decimals,
+                    position.size.value,
+                    position.direction.clone(),
+                )?;
                 spot_price = tmp_reserve
                     .quote_asset_reserve
                     .checked_mul(config.decimals)?

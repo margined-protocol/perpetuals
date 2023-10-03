@@ -1,8 +1,8 @@
-use cosmwasm_std::{Deps, Order, StdError, StdResult, Uint128, Storage};
+use cosmwasm_std::{Deps, Order, StdError, StdResult, Storage, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
     ConfigResponse, LastPositionIdResponse, PauserResponse, PnlCalcOption, Position,
-    PositionFilter, PositionUnrealizedPnlResponse, Side, StateResponse, PositionTpSlResponse,
+    PositionFilter, PositionTpSlResponse, PositionUnrealizedPnlResponse, Side, StateResponse,
 };
 use margined_utils::contracts::helpers::{InsuranceFundController, VammController};
 
@@ -13,10 +13,12 @@ use crate::{
         read_positions_with_indexer, read_state, read_vamm_map, PREFIX_POSITION_BY_PRICE,
         PREFIX_POSITION_BY_SIDE, PREFIX_POSITION_BY_TRADER,
     },
+    tick::query_ticks,
     utils::{
         calc_funding_payment, calc_remain_margin_with_funding_payment,
-        get_position_notional_unrealized_pnl, keccak_256, check_tp_sl_price,
-    }, tick::query_ticks,
+        calculate_tp_spread_sl_spread, check_tp_sl_price, get_position_notional_unrealized_pnl,
+        keccak_256,
+    },
 };
 
 /// Queries contract Config
@@ -76,8 +78,7 @@ pub fn query_all_positions(
 
     for vamm in vamms.iter() {
         let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
-        let positions =
-            read_positions(deps.storage, &vamm_key, start_after, limit, order_by)?;
+        let positions = read_positions(deps.storage, &vamm_key, start_after, limit, order_by)?;
 
         for position in positions {
             // a default is returned if no position found with no trader set
@@ -347,9 +348,7 @@ pub fn query_free_collateral(deps: Deps, vamm: String, position_id: u64) -> StdR
 
 pub fn query_last_position_id(deps: Deps) -> StdResult<LastPositionIdResponse> {
     let last_position_id = read_last_position_id(deps.storage)?;
-    let resp = LastPositionIdResponse {
-        last_position_id,
-    };
+    let resp = LastPositionIdResponse { last_position_id };
 
     Ok(resp)
 }
@@ -394,7 +393,21 @@ pub fn query_position_is_tpsl(
         )?;
 
         for position in position_by_price.iter() {
-            let tp_sl_action = check_tp_sl_price(config.clone(), &position, spot_price)?;
+            let stop_loss = position.stop_loss.unwrap_or_default();
+            let (tp_spread, sl_spread) = calculate_tp_spread_sl_spread(
+                config.tp_sl_spread,
+                position.take_profit,
+                stop_loss,
+                config.decimals,
+            )?;
+            let tp_sl_action = check_tp_sl_price(
+                spot_price,
+                position.take_profit,
+                stop_loss,
+                tp_spread,
+                sl_spread,
+                &position.side,
+            )?;
             if take_profit {
                 if tp_sl_action == "trigger_take_profit" {
                     is_tpsl = true;
@@ -407,7 +420,5 @@ pub fn query_position_is_tpsl(
         }
     }
 
-    Ok(PositionTpSlResponse {
-        is_tpsl
-    })
+    Ok(PositionTpSlResponse { is_tpsl })
 }
