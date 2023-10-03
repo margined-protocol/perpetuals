@@ -1,9 +1,9 @@
 use cosmwasm_std::{Deps, Order, StdError, StdResult, Storage, Uint128};
 use margined_common::integer::Integer;
-use margined_perp::margined_engine::{
+use margined_perp::{margined_engine::{
     ConfigResponse, LastPositionIdResponse, PauserResponse, PnlCalcOption, Position,
-    PositionFilter, PositionTpSlResponse, PositionUnrealizedPnlResponse, Side, StateResponse,
-};
+    PositionFilter, PositionTpSlResponse, PositionUnrealizedPnlResponse, Side, StateResponse, RemainMarginResponse,
+}, margined_vamm::Direction};
 use margined_utils::contracts::helpers::{InsuranceFundController, VammController};
 
 use crate::{
@@ -393,6 +393,34 @@ pub fn query_position_is_tpsl(
         )?;
 
         for position in position_by_price.iter() {
+            if !take_profit {
+                // simulate quote_amount
+                let simulate_output_amount = vamm_controller.output_amount(
+                    &deps.querier,
+                    position.direction.clone(),
+                    position.size.value,
+                )?;
+                // calculate margin delta between simulate_quote_amount and notional
+                let margin_delta = match &position.direction {
+                    Direction::AddToAmm => {
+                        Integer::new_positive(simulate_output_amount) - Integer::new_positive(position.notional)
+                    }
+                    Direction::RemoveFromAmm => {
+                        Integer::new_positive(position.notional) - Integer::new_positive(simulate_output_amount)
+                    }
+                };
+                let RemainMarginResponse {
+                    funding_payment: _,
+                    margin: _,
+                    bad_debt,
+                    latest_premium_fraction: _,
+                } = calc_remain_margin_with_funding_payment(deps, position.clone(), margin_delta)?;
+                // Can not trigger stop loss position if bad debt
+                if !bad_debt.is_zero() {
+                    continue;
+                }
+            }
+
             let stop_loss = position.stop_loss.unwrap_or_default();
             let (tp_spread, sl_spread) = calculate_tp_spread_sl_spread(
                 config.tp_sl_spread,
