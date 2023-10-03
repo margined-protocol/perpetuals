@@ -11,7 +11,11 @@ use margined_utils::{
     testing::{to_decimals, SimpleScenario},
 };
 
-use crate::{state::TmpReserveInfo, testing::new_simple_scenario, utils::simulate_spot_price};
+use crate::{
+    state::TmpReserveInfo,
+    testing::new_simple_scenario,
+    utils::{calculate_tp_spread_sl_spread, simulate_spot_price},
+};
 
 #[test]
 fn test_initialization() {
@@ -34,6 +38,16 @@ fn test_initialization() {
     assert_eq!(bob_balance, Uint128::new(5_000_000_000_000));
     let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
     assert_eq!(engine_balance, Uint128::zero());
+}
+
+#[test]
+fn test_calculate_tp_spread_sl_spread() {
+    let value = Uint128::from(5u128);
+    let (tp_spread, sl_spread) =
+        calculate_tp_spread_sl_spread(Uint128::from(2u128), value, value, Uint128::from(2u128))
+            .unwrap();
+    assert_eq!(tp_spread, value);
+    assert_eq!(sl_spread, value);
 }
 
 #[test]
