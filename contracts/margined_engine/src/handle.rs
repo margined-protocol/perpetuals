@@ -19,10 +19,11 @@ use crate::{
     utils::{
         calc_remain_margin_with_funding_payment, calculate_tp_spread_sl_spread, check_tp_sl_price,
         direction_to_side, get_asset, get_margin_ratio_calc_option,
-        get_position_notional_unrealized_pnl, keccak_256, position_to_side,
-        require_additional_margin, require_bad_debt, require_insufficient_margin,
-        require_non_zero_input, require_not_paused, require_not_restriction_mode,
-        require_position_not_zero, require_vamm, side_to_direction, simulate_spot_price,
+        get_position_notional_unrealized_pnl, keccak_256, position_is_bad_dept,
+        position_is_liquidated, position_to_side, require_additional_margin, require_bad_debt,
+        require_insufficient_margin, require_non_zero_input, require_not_paused,
+        require_not_restriction_mode, require_position_not_zero, require_vamm, side_to_direction,
+        simulate_spot_price,
     },
 };
 use margined_common::{
@@ -32,7 +33,8 @@ use margined_common::{
     validate::{validate_margin_ratios, validate_ratio},
 };
 use margined_perp::margined_engine::{
-    PnlCalcOption, Position, PositionFilter, PositionUnrealizedPnlResponse, Side, RemainMarginResponse,
+    PnlCalcOption, Position, PositionFilter, PositionUnrealizedPnlResponse,
+    Side,
 };
 use margined_perp::margined_vamm::{CalcFeeResponse, Direction, ExecuteMsg};
 
@@ -535,29 +537,21 @@ pub fn trigger_tp_sl(
             require_position_not_zero(position.size.value)?;
 
             if !take_profit {
-                // simulate quote_amount
-                let simulate_output_amount = vamm_controller.output_amount(
-                    &deps.querier,
-                    position.direction.clone(),
-                    position.size.value,
+                let is_bad_debt = position_is_bad_dept(
+                    deps.as_ref(),
+                    position,
+                    &vamm_controller
                 )?;
-                // calculate margin delta between simulate_quote_amount and notional
-                let margin_delta = match &position.direction {
-                    Direction::AddToAmm => {
-                        Integer::new_positive(simulate_output_amount) - Integer::new_positive(position.notional)
-                    }
-                    Direction::RemoveFromAmm => {
-                        Integer::new_positive(position.notional) - Integer::new_positive(simulate_output_amount)
-                    }
-                };
-                let RemainMarginResponse {
-                    funding_payment: _,
-                    margin: _,
-                    bad_debt,
-                    latest_premium_fraction: _,
-                } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), margin_delta)?;
-                // Can not trigger stop loss position if bad debt
-                if !bad_debt.is_zero() {
+                let is_liquidated = position_is_liquidated(
+                    deps.as_ref(),
+                    vamm.clone(),
+                    position,
+                    config.maintenance_margin_ratio,
+                    &vamm_controller,
+                )?;
+
+                // Can not trigger stop loss position if bad debt or liquidate
+                if is_bad_debt || is_liquidated {
                     continue;
                 }
             }

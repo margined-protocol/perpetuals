@@ -23,7 +23,7 @@ use margined_perp::margined_vamm::Direction;
 use crate::{
     contract::{PAUSER, WHITELIST},
     messages::execute_insurance_fund_withdrawal,
-    query::query_cumulative_premium_fraction,
+    query::{query_cumulative_premium_fraction, query_margin_ratio},
     state::{
         read_config, read_position, read_state, read_vamm_map, store_state, State, TmpReserveInfo,
     },
@@ -576,4 +576,76 @@ pub fn simulate_spot_price(
     }
 
     Ok(())
+}
+
+pub fn position_is_bad_dept(
+    deps: Deps,
+    position: &Position,
+    vamm_controller: &VammController
+) -> StdResult<bool> {
+    // simulate quote_amount
+    let simulate_output_amount = vamm_controller.output_amount(
+        &deps.querier,
+        position.direction.clone(),
+        position.size.value,
+    )?;
+    // calculate margin delta between simulate_quote_amount and notional
+    let margin_delta = match &position.direction {
+        Direction::AddToAmm => {
+            Integer::new_positive(simulate_output_amount)
+                - Integer::new_positive(position.notional)
+        }
+        Direction::RemoveFromAmm => {
+            Integer::new_positive(position.notional)
+                - Integer::new_positive(simulate_output_amount)
+        }
+    };
+    let RemainMarginResponse {
+        funding_payment: _,
+        margin: _,
+        bad_debt,
+        latest_premium_fraction: _,
+    } = calc_remain_margin_with_funding_payment(
+        deps,
+        position.clone(),
+        margin_delta,
+    )?;
+
+    if !bad_debt.is_zero()
+    {
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
+pub fn position_is_liquidated(
+    deps: Deps,
+    vamm: String,
+    position: &Position,
+    maintenance_margin_ratio: Uint128,
+    vamm_controller: &VammController
+) -> StdResult<bool> {
+    let mut margin_ratio =
+        query_margin_ratio(deps, vamm.to_string(), position.position_id)?;
+
+    if vamm_controller.is_over_spread_limit(&deps.querier)? {
+        let oracle_margin_ratio = get_margin_ratio_calc_option(
+            deps,
+            vamm.to_string(),
+            position.position_id,
+            PnlCalcOption::Oracle,
+        )?;
+
+        if oracle_margin_ratio.checked_sub(margin_ratio)? > Integer::zero() {
+            margin_ratio = oracle_margin_ratio
+        }
+    }
+
+    if margin_ratio <= Integer::new_positive(maintenance_margin_ratio)
+    {
+        Ok(true)
+    } else {
+        Ok(false)
+    }
 }
