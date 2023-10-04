@@ -622,18 +622,18 @@ pub fn position_is_bad_dept(
 pub fn position_is_liquidated(
     deps: Deps,
     vamm: String,
-    position: &Position,
+    position_id: u64,
     maintenance_margin_ratio: Uint128,
     vamm_controller: &VammController
 ) -> StdResult<bool> {
     let mut margin_ratio =
-        query_margin_ratio(deps, vamm.to_string(), position.position_id)?;
+        query_margin_ratio(deps, vamm.to_string(), position_id)?;
 
     if vamm_controller.is_over_spread_limit(&deps.querier)? {
         let oracle_margin_ratio = get_margin_ratio_calc_option(
             deps,
             vamm.to_string(),
-            position.position_id,
+            position_id,
             PnlCalcOption::Oracle,
         )?;
 

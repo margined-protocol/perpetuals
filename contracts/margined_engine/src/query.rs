@@ -403,7 +403,7 @@ pub fn query_position_is_tpsl(
                 let is_liquidated = position_is_liquidated(
                     deps,
                     vamm.clone(),
-                    position,
+                    position.position_id,
                     config.maintenance_margin_ratio,
                     &vamm_controller,
                 )?;

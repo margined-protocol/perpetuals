@@ -545,7 +545,7 @@ pub fn trigger_tp_sl(
                 let is_liquidated = position_is_liquidated(
                     deps.as_ref(),
                     vamm.clone(),
-                    position,
+                    position.position_id,
                     config.maintenance_margin_ratio,
                     &vamm_controller,
                 )?;
