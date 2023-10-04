@@ -18,7 +18,7 @@ use crate::{
     utils::{
         calc_funding_payment, calc_remain_margin_with_funding_payment,
         calculate_tp_spread_sl_spread, check_tp_sl_price,
-        get_position_notional_unrealized_pnl, keccak_256, position_is_bad_dept, position_is_liquidated,
+        get_position_notional_unrealized_pnl, keccak_256, position_is_bad_debt, position_is_liquidated,
     },
 };
 
@@ -395,7 +395,7 @@ pub fn query_position_is_tpsl(
 
         for position in position_by_price.iter() {
             if !take_profit {
-                let is_bad_debt = position_is_bad_dept(
+                let is_bad_debt = position_is_bad_debt(
                     deps,
                     position,
                     &vamm_controller

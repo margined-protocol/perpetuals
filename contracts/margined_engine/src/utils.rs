@@ -578,7 +578,7 @@ pub fn simulate_spot_price(
     Ok(())
 }
 
-pub fn position_is_bad_dept(
+pub fn position_is_bad_debt(
     deps: Deps,
     position: &Position,
     vamm_controller: &VammController
