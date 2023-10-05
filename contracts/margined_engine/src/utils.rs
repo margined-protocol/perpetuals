@@ -2,7 +2,10 @@ use cosmwasm_std::{
     Addr, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, SubMsg,
     SubMsgResponse, Uint128,
 };
-use margined_utils::contracts::helpers::{InsuranceFundController, VammController};
+use margined_utils::{
+    contracts::helpers::{InsuranceFundController, VammController},
+    tools::price_swap::get_output_price_with_reserves,
+};
 use sha3::{Digest, Sha3_256};
 
 use std::str::FromStr;
@@ -13,16 +16,17 @@ use margined_common::{
     messages::{read_event, read_response},
 };
 use margined_perp::margined_engine::{
-    ConfigResponse, PnlCalcOption, Position, PositionUnrealizedPnlResponse, RemainMarginResponse,
-    Side,
+    PnlCalcOption, Position, PositionUnrealizedPnlResponse, RemainMarginResponse, Side,
 };
 use margined_perp::margined_vamm::Direction;
 
 use crate::{
     contract::{PAUSER, WHITELIST},
     messages::execute_insurance_fund_withdrawal,
-    query::query_cumulative_premium_fraction,
-    state::{read_config, read_position, read_state, read_vamm_map, store_state, State},
+    query::{query_cumulative_premium_fraction, query_margin_ratio},
+    state::{
+        read_config, read_position, read_state, read_vamm_map, store_state, State, TmpReserveInfo,
+    },
 };
 
 pub fn keccak_256(input: &[u8]) -> Vec<u8> {
@@ -487,37 +491,40 @@ pub fn calc_range_start(start_after: Option<Vec<u8>>) -> Option<Vec<u8>> {
     })
 }
 
+pub fn calculate_tp_spread_sl_spread(
+    tp_sl_spread: Uint128,
+    take_profit: Uint128,
+    stop_loss: Uint128,
+    decimals: Uint128,
+) -> StdResult<(Uint128, Uint128)> {
+    let tp_spread = take_profit
+        .checked_mul(tp_sl_spread)?
+        .checked_div(decimals)?;
+    let sl_spread = stop_loss.checked_mul(tp_sl_spread)?.checked_div(decimals)?;
+    Ok((tp_spread, sl_spread))
+}
+
 pub fn check_tp_sl_price(
-    config: ConfigResponse,
-    position: &Position,
     spot_price: Uint128,
+    take_profit: Uint128,
+    stop_loss: Uint128,
+    tp_spread: Uint128,
+    sl_spread: Uint128,
+    side: &Side,
 ) -> StdResult<String> {
     let mut msg: String = String::from("");
 
-    let stop_loss = position.stop_loss.unwrap_or_default();
-    let tp_spread = position
-        .take_profit
-        .checked_mul(config.tp_sl_spread)?
-        .checked_div(config.decimals)?;
-    let sl_spread = stop_loss
-        .checked_mul(config.tp_sl_spread)?
-        .checked_div(config.decimals)?;
-
     // if spot_price is ~ take_profit or stop_loss, close position
-    if position.side == Side::Buy {
-        if spot_price > position.take_profit
-            || position.take_profit.abs_diff(spot_price) <= tp_spread
-        {
+    if side == &Side::Buy {
+        if spot_price > take_profit || take_profit.abs_diff(spot_price) <= tp_spread {
             msg = String::from("trigger_take_profit");
         } else if stop_loss > spot_price
             || stop_loss > Uint128::zero() && spot_price.abs_diff(stop_loss) <= sl_spread
         {
             msg = String::from("trigger_stop_loss");
         }
-    } else if position.side == Side::Sell {
-        if position.take_profit > spot_price
-            || spot_price.abs_diff(position.take_profit) <= tp_spread
-        {
+    } else if side == &Side::Sell {
+        if take_profit > spot_price || spot_price.abs_diff(take_profit) <= tp_spread {
             msg = String::from("trigger_take_profit");
         } else if stop_loss > Uint128::zero() && spot_price > stop_loss
             || stop_loss.abs_diff(spot_price) <= sl_spread
@@ -526,4 +533,119 @@ pub fn check_tp_sl_price(
         }
     }
     Ok(msg)
+}
+
+// simulate the spot price after close the position
+pub fn simulate_spot_price(
+    tmp_reserve: &mut TmpReserveInfo,
+    decimals: Uint128,
+    base_asset_amount: Uint128,
+    position_direction: Direction,
+) -> StdResult<()> {
+    let quote_asset_amount = get_output_price_with_reserves(
+        decimals,
+        &position_direction.clone(),
+        base_asset_amount,
+        tmp_reserve.quote_asset_reserve,
+        tmp_reserve.base_asset_reserve,
+    )?;
+
+    // flip direction when simulate close position
+    let update_direction = match position_direction {
+        Direction::AddToAmm => Direction::RemoveFromAmm,
+        Direction::RemoveFromAmm => Direction::AddToAmm,
+    };
+
+    match update_direction {
+        Direction::AddToAmm => {
+            tmp_reserve.quote_asset_reserve = tmp_reserve
+                .quote_asset_reserve
+                .checked_add(quote_asset_amount)?;
+            tmp_reserve.base_asset_reserve = tmp_reserve
+                .base_asset_reserve
+                .checked_sub(base_asset_amount)?;
+        }
+        Direction::RemoveFromAmm => {
+            tmp_reserve.base_asset_reserve = tmp_reserve
+                .base_asset_reserve
+                .checked_add(base_asset_amount)?;
+            tmp_reserve.quote_asset_reserve = tmp_reserve
+                .quote_asset_reserve
+                .checked_sub(quote_asset_amount)?;
+        }
+    }
+
+    Ok(())
+}
+
+pub fn position_is_bad_debt(
+    deps: Deps,
+    position: &Position,
+    vamm_controller: &VammController
+) -> StdResult<bool> {
+    // simulate quote_amount
+    let simulate_output_amount = vamm_controller.output_amount(
+        &deps.querier,
+        position.direction.clone(),
+        position.size.value,
+    )?;
+    // calculate margin delta between simulate_quote_amount and notional
+    let margin_delta = match &position.direction {
+        Direction::AddToAmm => {
+            Integer::new_positive(simulate_output_amount)
+                - Integer::new_positive(position.notional)
+        }
+        Direction::RemoveFromAmm => {
+            Integer::new_positive(position.notional)
+                - Integer::new_positive(simulate_output_amount)
+        }
+    };
+    let RemainMarginResponse {
+        funding_payment: _,
+        margin: _,
+        bad_debt,
+        latest_premium_fraction: _,
+    } = calc_remain_margin_with_funding_payment(
+        deps,
+        position.clone(),
+        margin_delta,
+    )?;
+
+    if !bad_debt.is_zero()
+    {
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
+pub fn position_is_liquidated(
+    deps: Deps,
+    vamm: String,
+    position_id: u64,
+    maintenance_margin_ratio: Uint128,
+    vamm_controller: &VammController
+) -> StdResult<bool> {
+    let mut margin_ratio =
+        query_margin_ratio(deps, vamm.to_string(), position_id)?;
+
+    if vamm_controller.is_over_spread_limit(&deps.querier)? {
+        let oracle_margin_ratio = get_margin_ratio_calc_option(
+            deps,
+            vamm.to_string(),
+            position_id,
+            PnlCalcOption::Oracle,
+        )?;
+
+        if oracle_margin_ratio.checked_sub(margin_ratio)? > Integer::zero() {
+            margin_ratio = oracle_margin_ratio
+        }
+    }
+
+    if margin_ratio <= Integer::new_positive(maintenance_margin_ratio)
+    {
+        Ok(true)
+    } else {
+        Ok(false)
+    }
 }

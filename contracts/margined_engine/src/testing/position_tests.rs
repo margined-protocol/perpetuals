@@ -303,7 +303,7 @@ fn test_open_position_two_longs() {
             None,
         )
         .unwrap();
-    println!("buy position: {:?}", buy_positions);
+
     for position in buy_positions {
         println!("buy position: {:?}", position);
     }

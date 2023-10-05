@@ -1,9 +1,10 @@
-use cosmwasm_std::{Deps, Order as OrderBy, StdError, StdResult, Uint128};
+use cosmwasm_std::{Deps, Order, StdError, StdResult, Storage, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
-    ConfigResponse, LastPositionIdResponse, PauserResponse, PnlCalcOption, Position,
-    PositionFilter, PositionUnrealizedPnlResponse, Side, StateResponse, PositionTpSlResponse,
-};
+        ConfigResponse, LastPositionIdResponse, PauserResponse, PnlCalcOption, Position,
+        PositionFilter, PositionTpSlResponse, PositionUnrealizedPnlResponse,
+        Side, StateResponse,
+    };
 use margined_utils::contracts::helpers::{InsuranceFundController, VammController};
 
 use crate::{
@@ -13,9 +14,11 @@ use crate::{
         read_positions_with_indexer, read_state, read_vamm_map, PREFIX_POSITION_BY_PRICE,
         PREFIX_POSITION_BY_SIDE, PREFIX_POSITION_BY_TRADER,
     },
+    tick::query_ticks,
     utils::{
         calc_funding_payment, calc_remain_margin_with_funding_payment,
-        get_position_notional_unrealized_pnl, keccak_256, check_tp_sl_price,
+        calculate_tp_spread_sl_spread, check_tp_sl_price,
+        get_position_notional_unrealized_pnl, keccak_256, position_is_bad_debt, position_is_liquidated,
     },
 };
 
@@ -61,7 +64,7 @@ pub fn query_all_positions(
     order_by: Option<i32>,
 ) -> StdResult<Vec<Position>> {
     let config = read_config(deps.storage)?;
-    let order_by = order_by.map_or(None, |val| OrderBy::try_from(val).ok());
+    let order_by = order_by.map_or(None, |val| Order::try_from(val).ok());
     let mut response: Vec<Position> = vec![];
 
     let vamms = match config.insurance_fund {
@@ -76,8 +79,7 @@ pub fn query_all_positions(
 
     for vamm in vamms.iter() {
         let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
-        let positions =
-            read_positions(deps.storage, &vamm_key, start_after, limit, order_by).unwrap();
+        let positions = read_positions(deps.storage, &vamm_key, start_after, limit, order_by)?;
 
         for position in positions {
             // a default is returned if no position found with no trader set
@@ -92,7 +94,7 @@ pub fn query_all_positions(
 
 /// Queries and returns users positions for registered vamms
 pub fn query_positions(
-    deps: Deps,
+    storage: &dyn Storage,
     vamm: String,
     side: Option<Side>,
     filter: PositionFilter,
@@ -100,7 +102,7 @@ pub fn query_positions(
     limit: Option<u32>,
     order_by: Option<i32>,
 ) -> StdResult<Vec<Position>> {
-    let order_by = order_by.map_or(None, |val| OrderBy::try_from(val).ok());
+    let order_by = order_by.map_or(None, |val| Order::try_from(val).ok());
     let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
 
     let (direction_filter, direction_key): (Box<dyn Fn(&Side) -> bool>, Vec<u8>) = match side {
@@ -111,7 +113,7 @@ pub fn query_positions(
 
     let positions: Option<Vec<Position>> = match filter {
         PositionFilter::Trader(trader_addr) => read_positions_with_indexer::<Side>(
-            deps.storage,
+            storage,
             &[PREFIX_POSITION_BY_TRADER, &vamm_key, trader_addr.as_bytes()],
             direction_filter,
             start_after,
@@ -121,7 +123,7 @@ pub fn query_positions(
         PositionFilter::Price(price) => {
             let price_key = price.to_be_bytes();
             read_positions_with_indexer::<Side>(
-                deps.storage,
+                storage,
                 &[PREFIX_POSITION_BY_PRICE, &vamm_key, &price_key],
                 direction_filter,
                 start_after,
@@ -131,7 +133,7 @@ pub fn query_positions(
         }
         PositionFilter::None => match side {
             Some(_) => read_positions_with_indexer::<Side>(
-                deps.storage,
+                storage,
                 &[PREFIX_POSITION_BY_SIDE, &vamm_key, &direction_key],
                 direction_filter,
                 start_after,
@@ -139,7 +141,7 @@ pub fn query_positions(
                 order_by,
             )?,
             None => Some(read_positions(
-                deps.storage,
+                storage,
                 &vamm_key,
                 start_after,
                 limit,
@@ -347,9 +349,7 @@ pub fn query_free_collateral(deps: Deps, vamm: String, position_id: u64) -> StdR
 
 pub fn query_last_position_id(deps: Deps) -> StdResult<LastPositionIdResponse> {
     let last_position_id = read_last_position_id(deps.storage)?;
-    let resp = LastPositionIdResponse {
-        last_position_id,
-    };
+    let resp = LastPositionIdResponse { last_position_id };
 
     Ok(resp)
 }
@@ -357,24 +357,89 @@ pub fn query_last_position_id(deps: Deps) -> StdResult<LastPositionIdResponse> {
 pub fn query_position_is_tpsl(
     deps: Deps,
     vamm: String,
-    position_id: u64,
+    side: Side,
+    take_profit: bool,
+    limit: u32,
 ) -> StdResult<PositionTpSlResponse> {
     let config = read_config(deps.storage)?;
+    let vamm_addr = deps.api.addr_validate(&vamm)?;
+    let vamm_controller = VammController(vamm_addr.clone());
+    let spot_price = vamm_controller.spot_price(&deps.querier)?;
 
-    let vamm = deps.api.addr_validate(&vamm)?;    // read the position for the trader from vamm
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
-    let position = read_position(deps.storage, &vamm_key, position_id)?;
-    let vamm_controller = VammController(vamm.clone());
-    let spot_price = vamm_controller.spot_price(&deps.querier).unwrap();
+    let order_by = if take_profit && side == Side::Buy || !take_profit && side == Side::Sell {
+        Order::Descending
+    } else {
+        Order::Ascending
+    };
 
-    let tp_sl_action = check_tp_sl_price(
-        config,
-        &position,
-        spot_price
-    )
-    .unwrap();
+    let mut is_tpsl: bool = false;
+    let ticks = query_ticks(
+        deps.storage,
+        vamm.clone(),
+        side,
+        None,
+        Some(limit),
+        Some(order_by.into()),
+    )?;
 
-    Ok(PositionTpSlResponse {
-        is_tpsl: tp_sl_action != ""
-    })
+    for tick in ticks.ticks.iter() {
+        let position_by_price = query_positions(
+            deps.storage,
+            vamm.clone(),
+            Some(side),
+            PositionFilter::Price(tick.entry_price),
+            None,
+            Some(limit),
+            Some(1),
+        )?;
+
+        for position in position_by_price.iter() {
+            if !take_profit {
+                let is_bad_debt = position_is_bad_debt(
+                    deps,
+                    position,
+                    &vamm_controller
+                )?;
+                let is_liquidated = position_is_liquidated(
+                    deps,
+                    vamm.clone(),
+                    position.position_id,
+                    config.maintenance_margin_ratio,
+                    &vamm_controller,
+                )?;
+
+                // Can not trigger stop loss position if bad debt or liquidate
+                if is_bad_debt || is_liquidated {
+                    continue;
+                }
+            }
+
+            let stop_loss = position.stop_loss.unwrap_or_default();
+            let (tp_spread, sl_spread) = calculate_tp_spread_sl_spread(
+                config.tp_sl_spread,
+                position.take_profit,
+                stop_loss,
+                config.decimals,
+            )?;
+            let tp_sl_action = check_tp_sl_price(
+                spot_price,
+                position.take_profit,
+                stop_loss,
+                tp_spread,
+                sl_spread,
+                &position.side,
+            )?;
+            if take_profit {
+                if tp_sl_action == "trigger_take_profit" {
+                    is_tpsl = true;
+                }
+            } else {
+                if tp_sl_action == "trigger_stop_loss" {
+                    is_tpsl = true;
+                }
+            }
+        }
+    }
+
+    Ok(PositionTpSlResponse { is_tpsl })
 }

@@ -177,6 +177,7 @@ pub fn open_position_reply(
         ("toll_fee", &position.toll_fee.to_string()),
     ]))
 }
+
 // Closes position after successful execution of the swap
 pub fn close_position_reply(
     deps: DepsMut,
@@ -188,6 +189,7 @@ pub fn close_position_reply(
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
     let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
     let position = read_position(deps.storage, &vamm_key, position_id)?;
+
     let margin_delta = match &position.direction {
         Direction::AddToAmm => {
             Integer::new_positive(output) - Integer::new_positive(swap.open_notional)
@@ -275,8 +277,7 @@ pub fn close_position_reply(
         swap.trader,
     )?;
 
-    let total_position = remove_position(deps.storage, &vamm_key, &position).unwrap();
-
+    let total_position = remove_position(deps.storage, &vamm_key, &position)?;
     store_state(deps.storage, &state)?;
     remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
 
@@ -393,7 +394,6 @@ pub fn liquidate_reply(
     position_id: u64,
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
-
     let liquidator = read_tmp_liquidator(deps.storage)?;
 
     let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
@@ -466,7 +466,7 @@ pub fn liquidate_reply(
     store_state(deps.storage, &state)?;
 
     let vamm_key = keccak_256(&[position.vamm.as_bytes()].concat());
-    let total_position = remove_position(deps.storage, &vamm_key, &position).unwrap();
+    let total_position = remove_position(deps.storage, &vamm_key, &position)?;
 
     remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
     remove_tmp_liquidator(deps.storage);

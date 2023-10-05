@@ -21,10 +21,9 @@ fn test_settle_funding_delay_before_buffer_period_ends() {
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let state = vamm.state(&router.wrap()).unwrap();
-    let original_next_funding_time = state.next_funding_time;
-    let expected_funding_time = router.block_info().time.plus_seconds(3_600u64);
-    assert_eq!(original_next_funding_time, expected_funding_time.seconds());
+    let mut state = vamm.state(&router.wrap()).unwrap();
+    let mut expected_funding_time = router.block_info().time.plus_seconds(3_600u64).seconds();
+    assert_eq!(state.next_funding_time, expected_funding_time);
 
     router.update_block(|block| {
         block.time = block.time.plus_seconds(5_400u64);
@@ -34,8 +33,8 @@ fn test_settle_funding_delay_before_buffer_period_ends() {
     let msg = vamm.settle_funding().unwrap();
     router.execute(owner.clone(), msg).unwrap();
 
-    let state = vamm.state(&router.wrap()).unwrap();
-    let expected_funding_time = original_next_funding_time + 3_600u64;
+    expected_funding_time = state.next_funding_time + 3_600u64;
+    state = vamm.state(&router.wrap()).unwrap();
     assert_eq!(state.next_funding_time, expected_funding_time);
 }
 

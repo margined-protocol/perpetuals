@@ -11,7 +11,7 @@ use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, MigrateMsg, Que
 
 use crate::error::ContractError;
 use crate::handle::{trigger_tp_sl, update_tp_sl};
-use crate::query::{query_last_position_id, query_positions, query_position_is_tpsl};
+use crate::query::{query_last_position_id, query_position_is_tpsl, query_positions};
 use crate::state::init_last_position_id;
 use crate::tick::{query_tick, query_ticks};
 use crate::utils::get_margin_ratio_calc_option;
@@ -27,8 +27,8 @@ use crate::{
         query_trader_balance_with_funding_payment, query_trader_position_with_funding_payment,
     },
     reply::{
-        close_position_reply, liquidate_reply, partial_close_position_reply,
-        partial_liquidation_reply, pay_funding_reply, open_position_reply,
+        close_position_reply, liquidate_reply, open_position_reply, partial_close_position_reply,
+        partial_liquidation_reply, pay_funding_reply,
     },
     state::{store_config, store_state, Config, State},
     utils::{
@@ -51,7 +51,6 @@ pub const PARTIAL_CLOSE_POSITION_REPLY_ID: u64 = 3;
 pub const LIQUIDATION_REPLY_ID: u64 = 4;
 pub const PARTIAL_LIQUIDATION_REPLY_ID: u64 = 5;
 pub const PAY_FUNDING_REPLY_ID: u64 = 6;
-
 pub const TRANSFER_FAILURE_REPLY_ID: u64 = 9;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -189,9 +188,10 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         } => liquidate(deps, env, info, vamm, position_id, quote_asset_limit),
         ExecuteMsg::TriggerTpSl {
             vamm,
-            position_id,
-            quote_asset_limit,
-        } => trigger_tp_sl(deps, env, info, vamm, position_id, quote_asset_limit),
+            side,
+            take_profit,
+            limit,
+        } => trigger_tp_sl(deps, vamm, side, take_profit, limit),
         ExecuteMsg::PayFunding { vamm } => pay_funding(deps, env, info, vamm),
         ExecuteMsg::DepositMargin {
             vamm,
@@ -235,7 +235,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             limit,
             order_by,
         } => to_binary(&query_positions(
-            deps,
+            deps.storage,
             vamm,
             side,
             filter,
@@ -253,7 +253,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             limit,
             order_by,
         } => to_binary(&query_ticks(
-            deps,
+            deps.storage,
             vamm,
             side,
             start_after,
@@ -264,7 +264,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             vamm,
             side,
             entry_price,
-        } => to_binary(&query_tick(deps, vamm, side, entry_price)?),
+        } => to_binary(&query_tick(deps.storage, vamm, side, entry_price)?),
         QueryMsg::MarginRatio { vamm, position_id } => {
             to_binary(&query_margin_ratio(deps, vamm, position_id)?)
         }
@@ -300,9 +300,18 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::PositionWithFundingPayment { vamm, position_id } => to_binary(
             &query_trader_position_with_funding_payment(deps, vamm, position_id)?,
         ),
-        QueryMsg::PositionIsTpSl { vamm, position_id } => to_binary(
-            &query_position_is_tpsl(deps, vamm, position_id)?,
-        ),
+        QueryMsg::PositionIsTpSl {
+            vamm,
+            side,
+            take_profit,
+            limit,
+        } => to_binary(&query_position_is_tpsl(
+            deps,
+            vamm,
+            side,
+            take_profit,
+            limit,
+        )?),
         QueryMsg::LastPositionId {} => to_binary(&query_last_position_id(deps)?),
     }
 }

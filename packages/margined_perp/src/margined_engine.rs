@@ -88,8 +88,9 @@ pub enum ExecuteMsg {
     },
     TriggerTpSl {
         vamm: String,
-        position_id: u64,
-        quote_asset_limit: Uint128,
+        side: Side,
+        take_profit: bool,
+        limit: u32,
     },
     Liquidate {
         vamm: String,
@@ -185,7 +186,12 @@ pub enum QueryMsg {
     #[returns(Position)]
     PositionWithFundingPayment { vamm: String, position_id: u64 },
     #[returns(PositionTpSlResponse)]
-    PositionIsTpSl { vamm: String, position_id: u64 },
+    PositionIsTpSl {
+        vamm: String,
+        side: Side,
+        take_profit: bool,
+        limit: u32,
+    },
     #[returns(LastPositionIdResponse)]
     LastPositionId {},
 }

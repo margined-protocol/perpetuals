@@ -243,14 +243,16 @@ impl EngineController {
     pub fn trigger_tp_sl(
         &self,
         vamm: String,
-        position_id: u64,
-        quote_asset_limit: Uint128,
+        side: Side,
+        take_profit: bool,
+        limit: u32,
     ) -> StdResult<CosmosMsg> {
         let msg = ExecuteMsg::TriggerTpSl {
             vamm,
-            position_id,
-            quote_asset_limit,
-        };
+            side,
+            take_profit,
+            limit
+        } ;
         wasm_execute(&self.0, &msg, vec![])
     }
 
@@ -466,9 +468,16 @@ impl EngineController {
         &self,
         querier: &QuerierWrapper,
         vamm: String,
-        position_id: u64,
+        side: Side,
+        take_profit: bool,
+        limit: u32,
     ) -> StdResult<PositionTpSlResponse> {
-        let msg = QueryMsg::PositionIsTpSl { vamm, position_id };
+        let msg = QueryMsg::PositionIsTpSl {
+            vamm,
+            side,
+            take_profit,
+            limit
+        };
 
         querier.query_wasm_smart(&self.0, &msg)
     }

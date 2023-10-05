@@ -3,7 +3,4 @@
     "prettier.trailingComma": "none",
     "prettier.jsxSingleQuote": false,
     "prettier.printWidth": 120,
-    "rust-analyzer.cargo.extraEnv": {
-        "CARGO_TARGET_DIR": "${userHome}/.cargo/target/analyzer"
-    }
 }
