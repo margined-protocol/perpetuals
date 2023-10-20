@@ -5,19 +5,19 @@ use margined_perp::margined_engine::{
         PositionFilter, PositionTpSlResponse, PositionUnrealizedPnlResponse,
         Side, StateResponse,
     };
-use margined_utils::contracts::helpers::{InsuranceFundController, VammController};
+use margined_utils::{contracts::helpers::{InsuranceFundController, VammController}, tools::price_swap::get_output_price_with_reserves};
 
 use crate::{
     contract::PAUSER,
     state::{
         read_config, read_last_position_id, read_position, read_positions,
         read_positions_with_indexer, read_state, read_vamm_map, PREFIX_POSITION_BY_PRICE,
-        PREFIX_POSITION_BY_SIDE, PREFIX_POSITION_BY_TRADER,
+        PREFIX_POSITION_BY_SIDE, PREFIX_POSITION_BY_TRADER, TmpReserveInfo,
     },
     tick::query_ticks,
     utils::{
         calc_funding_payment, calc_remain_margin_with_funding_payment,
-        calculate_tp_spread_sl_spread, check_tp_sl_price,
+        calculate_tp_sl_spread, check_tp_sl_price,
         get_position_notional_unrealized_pnl, keccak_256, position_is_bad_debt, position_is_liquidated,
     },
 };
@@ -364,12 +364,16 @@ pub fn query_position_is_tpsl(
     let config = read_config(deps.storage)?;
     let vamm_addr = deps.api.addr_validate(&vamm)?;
     let vamm_controller = VammController(vamm_addr.clone());
-    let spot_price = vamm_controller.spot_price(&deps.querier)?;
+    let vamm_state = vamm_controller.state(&deps.querier).unwrap();
+    let tmp_reserve = TmpReserveInfo {
+        quote_asset_reserve: vamm_state.quote_asset_reserve,
+        base_asset_reserve: vamm_state.base_asset_reserve,
+    };
 
     let order_by = if take_profit && side == Side::Buy || !take_profit && side == Side::Sell {
-        Order::Descending
-    } else {
         Order::Ascending
+    } else {
+        Order::Descending
     };
 
     let mut is_tpsl: bool = false;
@@ -414,15 +418,27 @@ pub fn query_position_is_tpsl(
                 }
             }
 
+            let base_asset_amount = position.size.value;
+            let quote_asset_amount = get_output_price_with_reserves(
+                config.decimals,
+                &position.direction.clone(),
+                base_asset_amount,
+                tmp_reserve.quote_asset_reserve,
+                tmp_reserve.base_asset_reserve,
+            )?;
+            let close_price = quote_asset_amount
+                .checked_mul(config.decimals)?
+                .checked_div(base_asset_amount)?;
+            
             let stop_loss = position.stop_loss.unwrap_or_default();
-            let (tp_spread, sl_spread) = calculate_tp_spread_sl_spread(
+            let (tp_spread, sl_spread) = calculate_tp_sl_spread(
                 config.tp_sl_spread,
                 position.take_profit,
                 stop_loss,
                 config.decimals,
             )?;
             let tp_sl_action = check_tp_sl_price(
-                spot_price,
+                close_price,
                 position.take_profit,
                 stop_loss,
                 tp_spread,
@@ -438,6 +454,8 @@ pub fn query_position_is_tpsl(
                     is_tpsl = true;
                 }
             }
+            println!("query - position_id: {} - close_price: {}", position.position_id, close_price);
+            println!("query - [BEFORE] tmp_reserve: {:?}", tmp_reserve);
         }
     }
 

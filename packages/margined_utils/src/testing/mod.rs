@@ -414,10 +414,10 @@ impl SimpleScenario {
                     insurance_fund: None,
                     fee_pool: fee_pool.0.to_string(),
                     eligible_collateral: usdc.0.to_string(),
-                    initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
-                    maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
-                    tp_sl_spread: Uint128::from(50_000_000u128),         // 0.05
-                    liquidation_fee: Uint128::from(50_000_000u128),      // 0.05
+                    initial_margin_ratio: Uint128::from(50_000_000u128),        // 0.05
+                    maintenance_margin_ratio: Uint128::from(50_000_000u128),    // 0.05
+                    tp_sl_spread: Uint128::from(5_000u128),                     // 0,000005
+                    liquidation_fee: Uint128::from(50_000_000u128),             // 0.05
                 },
                 &[],
                 "engine",

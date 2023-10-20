@@ -1,7 +1,9 @@
 use cosmwasm_std::{
     Addr, DepsMut, Env, MessageInfo, Order, Response, StdError, StdResult, Storage, SubMsg, Uint128,
 };
-use margined_utils::contracts::helpers::VammController;
+use margined_utils::{
+    contracts::helpers::VammController, tools::price_swap::get_output_price_with_reserves,
+};
 
 use crate::{
     contract::{
@@ -17,13 +19,13 @@ use crate::{
     },
     tick::query_ticks,
     utils::{
-        calc_remain_margin_with_funding_payment, calculate_tp_spread_sl_spread, check_tp_sl_price,
+        calc_remain_margin_with_funding_payment, calculate_tp_sl_spread, check_tp_sl_price,
         direction_to_side, get_asset, get_margin_ratio_calc_option,
         get_position_notional_unrealized_pnl, keccak_256, position_is_bad_debt,
         position_is_liquidated, position_to_side, require_additional_margin, require_bad_debt,
         require_insufficient_margin, require_non_zero_input, require_not_paused,
         require_not_restriction_mode, require_position_not_zero, require_vamm, side_to_direction,
-        simulate_spot_price,
+        update_reserve,
     },
 };
 use margined_common::{
@@ -33,8 +35,7 @@ use margined_common::{
     validate::{validate_margin_ratios, validate_ratio},
 };
 use margined_perp::margined_engine::{
-    PnlCalcOption, Position, PositionFilter, PositionUnrealizedPnlResponse,
-    Side,
+    PnlCalcOption, Position, PositionFilter, PositionUnrealizedPnlResponse, Side,
 };
 use margined_perp::margined_vamm::{CalcFeeResponse, Direction, ExecuteMsg};
 
@@ -490,8 +491,6 @@ pub fn trigger_tp_sl(
 ) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
     let vamm_addr = deps.api.addr_validate(&vamm.clone())?;
-    let vamm_controller = VammController(vamm_addr.clone());
-    let mut spot_price = vamm_controller.spot_price(&deps.querier)?;
     let mut msgs: Vec<SubMsg> = vec![];
     let mut tp_sl_flag: bool = false;
 
@@ -500,16 +499,16 @@ pub fn trigger_tp_sl(
     // query pool reserves of the vamm so that we can simulate it while triggering tp sl.
     // after simulating, we will know if the position is qualified to close or not
     let vamm_controller = VammController(vamm_addr.clone());
-    let vamm_state = vamm_controller.state(&deps.querier)?;
+    let vamm_state = vamm_controller.state(&deps.querier).unwrap();
     let mut tmp_reserve: TmpReserveInfo = TmpReserveInfo {
         quote_asset_reserve: vamm_state.quote_asset_reserve,
         base_asset_reserve: vamm_state.base_asset_reserve,
     };
 
     let order_by = if take_profit && side == Side::Buy || !take_profit && side == Side::Sell {
-        Order::Descending
-    } else {
         Order::Ascending
+    } else {
+        Order::Descending
     };
 
     let ticks = query_ticks(
@@ -556,15 +555,27 @@ pub fn trigger_tp_sl(
                 }
             }
 
+            let base_asset_amount = position.size.value;
+            let quote_asset_amount = get_output_price_with_reserves(
+                config.decimals,
+                &position.direction.clone(),
+                base_asset_amount,
+                tmp_reserve.quote_asset_reserve,
+                tmp_reserve.base_asset_reserve,
+            )?;
+            let close_price = quote_asset_amount
+                .checked_mul(config.decimals)?
+                .checked_div(base_asset_amount)?;
+
             let stop_loss = position.stop_loss.unwrap_or_default();
-            let (tp_spread, sl_spread) = calculate_tp_spread_sl_spread(
+            let (tp_spread, sl_spread) = calculate_tp_sl_spread(
                 config.tp_sl_spread,
                 position.take_profit,
                 stop_loss,
                 config.decimals,
             )?;
             let tp_sl_action = check_tp_sl_price(
-                spot_price,
+                close_price,
                 position.take_profit,
                 stop_loss,
                 tp_spread,
@@ -582,17 +593,12 @@ pub fn trigger_tp_sl(
             }
             if tp_sl_flag {
                 tp_sl_flag = false;
-                simulate_spot_price(
+                let _ = update_reserve(
                     &mut tmp_reserve,
-                    config.decimals,
-                    position.size.value,
+                    quote_asset_amount,
+                    base_asset_amount,
                     position.direction.clone(),
-                )?;
-                spot_price = tmp_reserve
-                    .quote_asset_reserve
-                    .checked_mul(config.decimals)?
-                    .checked_div(tmp_reserve.base_asset_reserve)?;
-
+                );
                 msgs.push(internal_close_position(
                     deps.storage,
                     &position,

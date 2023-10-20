@@ -2,10 +2,7 @@ use cosmwasm_std::{
     Addr, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, SubMsg,
     SubMsgResponse, Uint128,
 };
-use margined_utils::{
-    contracts::helpers::{InsuranceFundController, VammController},
-    tools::price_swap::get_output_price_with_reserves,
-};
+use margined_utils::contracts::helpers::{InsuranceFundController, VammController};
 use sha3::{Digest, Sha3_256};
 
 use std::str::FromStr;
@@ -491,7 +488,7 @@ pub fn calc_range_start(start_after: Option<Vec<u8>>) -> Option<Vec<u8>> {
     })
 }
 
-pub fn calculate_tp_spread_sl_spread(
+pub fn calculate_tp_sl_spread(
     tp_sl_spread: Uint128,
     take_profit: Uint128,
     stop_loss: Uint128,
@@ -505,7 +502,7 @@ pub fn calculate_tp_spread_sl_spread(
 }
 
 pub fn check_tp_sl_price(
-    spot_price: Uint128,
+    close_price: Uint128,
     take_profit: Uint128,
     stop_loss: Uint128,
     tp_spread: Uint128,
@@ -516,18 +513,18 @@ pub fn check_tp_sl_price(
 
     // if spot_price is ~ take_profit or stop_loss, close position
     if side == &Side::Buy {
-        if spot_price > take_profit || take_profit.abs_diff(spot_price) <= tp_spread {
+        if close_price > take_profit || take_profit.abs_diff(close_price) <= tp_spread {
             msg = String::from("trigger_take_profit");
-        } else if stop_loss > spot_price
-            || stop_loss > Uint128::zero() && spot_price.abs_diff(stop_loss) <= sl_spread
+        } else if stop_loss > close_price
+            || stop_loss > Uint128::zero() && close_price.abs_diff(stop_loss) <= sl_spread
         {
             msg = String::from("trigger_stop_loss");
         }
     } else if side == &Side::Sell {
-        if take_profit > spot_price || spot_price.abs_diff(take_profit) <= tp_spread {
+        if take_profit > close_price || close_price.abs_diff(take_profit) <= tp_spread {
             msg = String::from("trigger_take_profit");
-        } else if stop_loss > Uint128::zero() && spot_price > stop_loss
-            || stop_loss.abs_diff(spot_price) <= sl_spread
+        } else if stop_loss > Uint128::zero() && close_price > stop_loss
+            || stop_loss.abs_diff(close_price) <= sl_spread
         {
             msg = String::from("trigger_stop_loss");
         }
@@ -535,21 +532,13 @@ pub fn check_tp_sl_price(
     Ok(msg)
 }
 
-// simulate the spot price after close the position
-pub fn simulate_spot_price(
+// update temporary reserve amount after close position
+pub fn update_reserve(
     tmp_reserve: &mut TmpReserveInfo,
-    decimals: Uint128,
+    quote_asset_amount: Uint128,
     base_asset_amount: Uint128,
     position_direction: Direction,
 ) -> StdResult<()> {
-    let quote_asset_amount = get_output_price_with_reserves(
-        decimals,
-        &position_direction.clone(),
-        base_asset_amount,
-        tmp_reserve.quote_asset_reserve,
-        tmp_reserve.base_asset_reserve,
-    )?;
-
     // flip direction when simulate close position
     let update_direction = match position_direction {
         Direction::AddToAmm => Direction::RemoveFromAmm,
@@ -574,7 +563,6 @@ pub fn simulate_spot_price(
                 .checked_sub(quote_asset_amount)?;
         }
     }
-
     Ok(())
 }
 
