@@ -686,6 +686,8 @@ pub fn liquidate(
         ("vamm", vamm.as_ref()),
         ("pair", &position.pair),
         ("position_id", &position_id.to_string()),
+        ("margin_ratio", &margin_ratio.to_string()),
+        ("maintenance_margin_ratio", &config.maintenance_margin_ratio.to_string()),
         ("trader", &position.trader.as_ref()),
     ]))
 }
