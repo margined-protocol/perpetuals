@@ -454,8 +454,6 @@ pub fn query_position_is_tpsl(
                     is_tpsl = true;
                 }
             }
-            println!("query - position_id: {} - close_price: {}", position.position_id, close_price);
-            println!("query - [BEFORE] tmp_reserve: {:?}", tmp_reserve);
         }
     }
 
