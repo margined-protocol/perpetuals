@@ -192,6 +192,10 @@ pub enum QueryMsg {
         take_profit: bool,
         limit: u32,
     },
+    #[returns(bool)]
+    IsBadDebt { vamm: String, position_id: u64 },
+    #[returns(bool)]
+    IsLiquidated { vamm: String, position_id: u64 },
     #[returns(LastPositionIdResponse)]
     LastPositionId {},
 }

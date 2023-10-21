@@ -459,3 +459,38 @@ pub fn query_position_is_tpsl(
 
     Ok(PositionTpSlResponse { is_tpsl })
 }
+
+pub fn query_position_is_bad_debt(
+    deps: Deps,
+    position_id: u64,
+    vamm: String
+) -> StdResult<bool> {
+    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let vamm_addr = deps.api.addr_validate(&vamm)?;
+    let vamm_controller = VammController(vamm_addr.clone());
+    let position = read_position(deps.storage, &vamm_key, position_id)?;
+    let is_bad_debt = position_is_bad_debt(
+        deps,
+        &position,
+        &vamm_controller
+    )?;
+    Ok(is_bad_debt)
+}
+
+pub fn query_position_is_liquidated(
+    deps: Deps,
+    position_id: u64,
+    vamm: String
+) -> StdResult<bool> {
+    let config = read_config(deps.storage)?;
+    let vamm_addr = deps.api.addr_validate(&vamm)?;
+    let vamm_controller = VammController(vamm_addr.clone());
+    let is_liquidated = position_is_liquidated(
+        deps,
+        vamm,
+        position_id,
+        config.maintenance_margin_ratio,
+        &vamm_controller,
+    )?;
+    Ok(is_liquidated)
+}
