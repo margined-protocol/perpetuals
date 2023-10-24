@@ -62,7 +62,7 @@ impl TestTubeScenario {
     ) -> Self {
         let router = OraichainTestApp::default();
 
-        let init_funds = [Coin::new(5_000u128 * 10u128.pow(6), NATIVE_DENOM)];
+        let init_funds = [Coin::new(5_000_000_000_000u128, NATIVE_DENOM)];
 
         let accounts = router.init_accounts(&init_funds, 5).unwrap();
         // let owner = &accounts[0];

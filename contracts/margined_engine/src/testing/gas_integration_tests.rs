@@ -1,11 +1,13 @@
 use cosmwasm_std::{Addr, Coin, StdError, Uint128};
-use margined_perp::margined_engine::Side;
+use margined_perp::margined_engine::{PositionTpSlResponse, Side};
 use margined_utils::{
     cw_multi_test::Executor,
     testing::{test_tube::TestTubeScenario, to_decimals, SimpleScenario},
 };
 use osmosis_test_tube::{Module, OraichainTestApp, Wasm};
-use test_tube::Account;
+use test_tube::{
+    cosmrs::proto::cosmwasm::wasm::v1::MsgExecuteContractResponse, Account, Runner, SigningAccount,
+};
 
 #[test]
 fn test_takeprofit() {
@@ -27,28 +29,50 @@ fn test_takeprofit() {
         .unwrap();
     println!("[LOG] [0] spot price: {:?}", price);
 
-    // let mut alice_balance = usdc.balance(&router.wrap(), alice.clone()).unwrap();
-    // assert_eq!(alice_balance, Uint128::from(5_000_000_000_000u128));
+    let alice_balance = wasm
+        .query::<_, cw20::BalanceResponse>(
+            usdc.0.as_str(),
+            &cw20_base::msg::QueryMsg::Balance {
+                address: alice.address(),
+            },
+        )
+        .unwrap()
+        .balance;
 
-    // let msg = engine
-    //     .open_position(
-    //         vamm.addr().to_string(),
-    //         Side::Buy,
-    //         to_decimals(6u64),
-    //         to_decimals(10u64),
-    //         to_decimals(15u64),
-    //         Some(to_decimals(10u64)),
-    //         to_decimals(0u64),
-    //         vec![],
-    //     )
-    //     .unwrap();
-    // router.execute(alice.clone(), msg).unwrap();
+    assert_eq!(alice_balance, Uint128::from(5_000_000_000_000u128));
 
-    // let mut tp_sl_status = engine
-    //     .get_tp_sl_status(&router.wrap(), vamm.addr().to_string(), Side::Buy, true, 10)
-    //     .unwrap();
+    let msg = engine
+        .open_position(
+            vamm.addr().to_string(),
+            Side::Buy,
+            to_decimals(6u64),
+            to_decimals(10u64),
+            to_decimals(15u64),
+            Some(to_decimals(10u64)),
+            to_decimals(0u64),
+            vec![],
+        )
+        .unwrap();
 
-    // println!("tp_sl_status: {:?}", tp_sl_status);
+    let res = router
+        .execute_cosmos_msgs::<MsgExecuteContractResponse>(&[msg], alice)
+        .unwrap();
+
+    println!("res : {:?}", res.gas_info);
+
+    let tp_sl_status: PositionTpSlResponse = wasm
+        .query(
+            engine.0.as_str(),
+            &margined_perp::margined_engine::QueryMsg::PositionIsTpSl {
+                vamm: vamm.0.to_string(),
+                side: Side::Buy,
+                take_profit: true,
+                limit: 10,
+            },
+        )
+        .unwrap();
+
+    println!("tp_sl_status: {:?}", tp_sl_status);
     // assert_eq!(tp_sl_status.is_tpsl, false);
 
     // let alice_balance_after_open = usdc.balance(&router.wrap(), alice.clone()).unwrap();
