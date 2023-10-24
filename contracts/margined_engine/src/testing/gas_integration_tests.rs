@@ -12,7 +12,7 @@ use test_tube::{
 #[test]
 fn test_takeprofit() {
     let TestTubeScenario {
-        mut router,
+        router,
         accounts,
         usdc,
         engine,
