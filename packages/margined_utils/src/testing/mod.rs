@@ -20,6 +20,9 @@ use margined_perp::margined_pricefeed::{
 use margined_perp::margined_vamm::{
     ExecuteMsg as VammExecuteMsg, InstantiateMsg as VammInstantiateMsg,
 };
+
+pub mod test_tube;
+
 // use terra_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use cw_multi_test::{App, AppBuilder, Contract, Executor};
 
