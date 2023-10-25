@@ -490,7 +490,7 @@ pub fn trigger_tp_sl(
     limit: u32,
 ) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
-    let vamm_addr = deps.api.addr_validate(&vamm.clone())?;
+    let vamm_addr = deps.api.addr_validate(&vamm)?;
     let mut msgs: Vec<SubMsg> = vec![];
     let mut tp_sl_flag: bool = false;
 
@@ -524,7 +524,7 @@ pub fn trigger_tp_sl(
         Some(order_by.into()),
     )?;
 
-    for tick in ticks.ticks.iter() {
+    for tick in &ticks.ticks {
         let position_by_price = query_positions(
             deps.storage,
             vamm.clone(),
@@ -535,17 +535,13 @@ pub fn trigger_tp_sl(
             Some(Order::Ascending.into()),
         )?;
 
-        for position in position_by_price.iter() {
+        for position in &position_by_price {
             // check the position isn't zero
             require_position_not_zero(position.size.value)?;
 
             if !take_profit {
                 // Can not trigger stop loss position if bad debt
-                if position_is_bad_debt(
-                    deps.as_ref(),
-                    position,
-                    &vamm_controller
-                )? {
+                if position_is_bad_debt(deps.as_ref(), position, &vamm_controller)? {
                     continue;
                 }
 
@@ -564,7 +560,7 @@ pub fn trigger_tp_sl(
             let base_asset_amount = position.size.value;
             let quote_asset_amount = get_output_price_with_reserves(
                 config.decimals,
-                &position.direction.clone(),
+                &position.direction,
                 base_asset_amount,
                 tmp_reserve.quote_asset_reserve,
                 tmp_reserve.base_asset_reserve,
@@ -693,7 +689,10 @@ pub fn liquidate(
         ("pair", &position.pair),
         ("position_id", &position_id.to_string()),
         ("margin_ratio", &margin_ratio.to_string()),
-        ("maintenance_margin_ratio", &config.maintenance_margin_ratio.to_string()),
+        (
+            "maintenance_margin_ratio",
+            &config.maintenance_margin_ratio.to_string(),
+        ),
         ("trader", &position.trader.as_ref()),
     ]))
 }

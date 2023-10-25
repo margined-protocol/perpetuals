@@ -1,15 +1,10 @@
 use std::str::FromStr;
 
-use cosmwasm_std::{Addr, Attribute, Coin, StdError, Uint128};
+use cosmwasm_std::{Attribute, Uint128};
 use margined_perp::margined_engine::{Position, PositionTpSlResponse, Side};
-use margined_utils::{
-    cw_multi_test::Executor,
-    testing::{test_tube::TestTubeScenario, to_decimals, SimpleScenario},
-};
-use osmosis_test_tube::{Module, OraichainTestApp, Wasm};
-use test_tube::{
-    cosmrs::proto::cosmwasm::wasm::v1::MsgExecuteContractResponse, Account, Runner, SigningAccount,
-};
+use margined_utils::testing::{test_tube::TestTubeScenario, to_decimals};
+use osmosis_test_tube::{Module, Wasm};
+use test_tube::{cosmrs::proto::cosmwasm::wasm::v1::MsgExecuteContractResponse, Account, Runner};
 
 #[test]
 fn test_takeprofit() {

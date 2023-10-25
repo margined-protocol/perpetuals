@@ -569,7 +569,7 @@ pub fn update_reserve(
 pub fn position_is_bad_debt(
     deps: Deps,
     position: &Position,
-    vamm_controller: &VammController
+    vamm_controller: &VammController,
 ) -> StdResult<bool> {
     // simulate quote_amount
     let simulate_output_amount = vamm_controller.output_amount(
@@ -580,12 +580,10 @@ pub fn position_is_bad_debt(
     // calculate margin delta between simulate_quote_amount and notional
     let margin_delta = match &position.direction {
         Direction::AddToAmm => {
-            Integer::new_positive(simulate_output_amount)
-                - Integer::new_positive(position.notional)
+            Integer::new_positive(simulate_output_amount) - Integer::new_positive(position.notional)
         }
         Direction::RemoveFromAmm => {
-            Integer::new_positive(position.notional)
-                - Integer::new_positive(simulate_output_amount)
+            Integer::new_positive(position.notional) - Integer::new_positive(simulate_output_amount)
         }
     };
     let RemainMarginResponse {
@@ -593,14 +591,9 @@ pub fn position_is_bad_debt(
         margin: _,
         bad_debt,
         latest_premium_fraction: _,
-    } = calc_remain_margin_with_funding_payment(
-        deps,
-        position.clone(),
-        margin_delta,
-    )?;
+    } = calc_remain_margin_with_funding_payment(deps, position.clone(), margin_delta)?;
 
-    if !bad_debt.is_zero()
-    {
+    if !bad_debt.is_zero() {
         Ok(true)
     } else {
         Ok(false)
@@ -612,10 +605,9 @@ pub fn position_is_liquidated(
     vamm: String,
     position_id: u64,
     maintenance_margin_ratio: Uint128,
-    vamm_controller: &VammController
+    vamm_controller: &VammController,
 ) -> StdResult<bool> {
-    let mut margin_ratio =
-        query_margin_ratio(deps, vamm.to_string(), position_id)?;
+    let mut margin_ratio = query_margin_ratio(deps, vamm.to_string(), position_id)?;
 
     if vamm_controller.is_over_spread_limit(&deps.querier)? {
         let oracle_margin_ratio = get_margin_ratio_calc_option(
@@ -630,8 +622,7 @@ pub fn position_is_liquidated(
         }
     }
 
-    if margin_ratio <= Integer::new_positive(maintenance_margin_ratio)
-    {
+    if margin_ratio <= Integer::new_positive(maintenance_margin_ratio) {
         Ok(true)
     } else {
         Ok(false)
