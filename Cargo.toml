@@ -47,6 +47,9 @@ margined_insurance_fund = { path = "./contracts/margined_insurance_fund" }
 margined_pricefeed = { path = "./contracts/margined_pricefeed" }
 mock_pricefeed = { path = "./contracts/mocks/mock_pricefeed" }
 
+osmosis-test-tube = { git = "https://github.com/oraichain/test-tube.git", rev = "2d5ebe0" }
+test-tube = { git = "https://github.com/oraichain/test-tube.git", rev = "2d5ebe0" }
+
 # # override cosmwasm-std for all other packages
 # [patch.crates-io]
 # cosmwasm-std = { git = "https://github.com/oraichain/cosmwasm.git" }
