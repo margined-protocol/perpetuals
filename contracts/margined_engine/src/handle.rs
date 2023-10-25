@@ -494,13 +494,17 @@ pub fn trigger_tp_sl(
     let mut msgs: Vec<SubMsg> = vec![];
     let mut tp_sl_flag: bool = false;
 
-    require_vamm(deps.as_ref(), &config.insurance_fund, &vamm_addr)?;
+    let vamm_controller = VammController(vamm_addr.clone());
+    let vamm_state = vamm_controller.state(&deps.querier)?;
+
+    // check that vamm is open
+    if !vamm_state.open {
+        return Err(StdError::generic_err("vAMM is not open"));
+    }
 
     // query pool reserves of the vamm so that we can simulate it while triggering tp sl.
     // after simulating, we will know if the position is qualified to close or not
-    let vamm_controller = VammController(vamm_addr.clone());
-    let vamm_state = vamm_controller.state(&deps.querier).unwrap();
-    let mut tmp_reserve: TmpReserveInfo = TmpReserveInfo {
+    let mut tmp_reserve = TmpReserveInfo {
         quote_asset_reserve: vamm_state.quote_asset_reserve,
         base_asset_reserve: vamm_state.base_asset_reserve,
     };
@@ -536,21 +540,23 @@ pub fn trigger_tp_sl(
             require_position_not_zero(position.size.value)?;
 
             if !take_profit {
-                let is_bad_debt = position_is_bad_debt(
+                // Can not trigger stop loss position if bad debt
+                if position_is_bad_debt(
                     deps.as_ref(),
                     position,
                     &vamm_controller
-                )?;
-                let is_liquidated = position_is_liquidated(
+                )? {
+                    continue;
+                }
+
+                // Can not trigger stop loss position if liquidate
+                if position_is_liquidated(
                     deps.as_ref(),
                     vamm.clone(),
                     position.position_id,
                     config.maintenance_margin_ratio,
                     &vamm_controller,
-                )?;
-
-                // Can not trigger stop loss position if bad debt or liquidate
-                if is_bad_debt || is_liquidated {
+                )? {
                     continue;
                 }
             }
