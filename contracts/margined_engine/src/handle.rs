@@ -127,10 +127,10 @@ pub fn open_position(
 ) -> StdResult<Response> {
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
-    let trader = info.sender.clone();
-
+    let vamm_controller = VammController(vamm.clone());
     let config = read_config(deps.storage)?;
     let state = read_state(deps.storage)?;
+    let trader = info.sender.clone();
 
     require_not_paused(state.pause)?;
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
@@ -141,7 +141,6 @@ pub fn open_position(
     require_non_zero_input(take_profit)?;
 
     let position_id = increase_last_position_id(deps.storage)?;
-    let vamm_controller = VammController(vamm.clone());
 
     if leverage < config.decimals {
         return Err(StdError::generic_err("Leverage must be greater than 1"));
@@ -156,26 +155,6 @@ pub fn open_position(
         .checked_div(leverage)?;
 
     require_additional_margin(Integer::from(margin_ratio), config.initial_margin_ratio)?;
-
-    // creates a new position
-    let position: Position = Position {
-        position_id,
-        vamm: vamm.clone(),
-        trader: trader.clone(),
-        pair: format!("{}/{}", vamm_config.base_asset, vamm_config.quote_asset),
-        side: side.clone(),
-        direction: side_to_direction(&side),
-        size: Integer::zero(),
-        margin: Uint128::zero(),
-        notional: Uint128::zero(),
-        entry_price: Uint128::zero(),
-        take_profit: Uint128::zero(),
-        stop_loss: Some(Uint128::zero()),
-        last_updated_premium_fraction: Integer::zero(),
-        spread_fee: Uint128::zero(),
-        toll_fee: Uint128::zero(),
-        block_time: 0u64,
-    };
 
     // calculate the position notional
     let mut open_notional = margin_amount
@@ -224,9 +203,9 @@ pub fn open_position(
         }
     }
 
-    let msg = internal_increase_position(
+    let msg = internal_open_position(
         vamm.clone(),
-        side.clone(),
+        side,
         position_id,
         open_notional,
         base_asset_limit,
@@ -267,7 +246,7 @@ pub fn open_position(
         ("position_id", &position_id.to_string()),
         ("position_side", &format!("{:?}", side)),
         ("vamm", vamm.as_ref()),
-        ("pair", &position.pair),
+        ("pair", &format!("{}/{}", vamm_config.base_asset, vamm_config.quote_asset)),
         ("trader", trader.as_ref()),
         ("margin_amount", &margin_amount.to_string()),
         ("leverage", &leverage.to_string()),
@@ -847,8 +826,8 @@ pub fn withdraw_margin(
     ]))
 }
 
-// Increase the position through a swap
-pub fn internal_increase_position(
+// Open position via vamm
+pub fn internal_open_position(
     vamm: Addr,
     side: Side,
     position_id: u64,
@@ -866,6 +845,7 @@ pub fn internal_increase_position(
     )
 }
 
+// Close position via vamm
 pub fn internal_close_position(
     storage: &mut dyn Storage,
     position: &Position,
