@@ -34,7 +34,7 @@ pub fn open_position_reply(
 ) -> StdResult<Response> {
     let mut swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
 
-    let mut position: Position = Position {
+    let mut position = Position {
         position_id: swap.position_id,
         vamm: swap.vamm.clone(),
         trader: swap.trader.clone(),
@@ -73,8 +73,6 @@ pub fn open_position_reply(
     // define variables that differ across increase and decrease scenario
     let swap_margin;
     let margin_delta;
-    let new_direction;
-    let new_notional;
 
     // calculate margin needed given swap
     swap_margin = swap
@@ -87,8 +85,6 @@ pub fn open_position_reply(
         .checked_add(Integer::new_positive(swap_margin))?;
 
     margin_delta = Integer::new_positive(swap_margin);
-    new_direction = side_to_direction(&swap.side);
-    new_notional = position.notional.checked_add(swap.open_notional)?;
 
     // calculate the remaining margin
     let RemainMarginResponse {
@@ -99,8 +95,7 @@ pub fn open_position_reply(
     } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), margin_delta)?;
 
     // set the new position
-    position.direction = new_direction;
-    position.notional = new_notional;
+    position.notional = swap.open_notional;
     position.size += signed_output;
     position.margin = margin;
     position.last_updated_premium_fraction = latest_premium_fraction;
