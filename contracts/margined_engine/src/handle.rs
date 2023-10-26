@@ -510,7 +510,7 @@ pub fn trigger_tp_sl(
             Some(side),
             PositionFilter::Price(tick.entry_price),
             None,
-            Some(limit),
+            None,
             Some(Order::Ascending.into()),
         )?;
 
