@@ -312,7 +312,7 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
     }
 
     let pricefeed_controller = PricefeedController(config.pricefeed);
-
+    let pair = format!("{}/{}", config.base_asset, config.quote_asset);
     // twap price from oracle
     let underlying_price = pricefeed_controller.twap_price(
         &deps.querier,
@@ -356,9 +356,12 @@ pub fn settle_funding(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<R
 
     Ok(Response::new().add_attributes(vec![
         ("action", "settle_funding"),
+        ("pair", &pair),
+        ("time", &block_time_seconds.to_string()),
         ("premium_fraction", &premium_fraction.to_string()),
         ("underlying_price", &underlying_price.to_string()),
         ("index_price", &index_price.to_string()),
+        ("next_funding_time", &state.next_funding_time.to_string()),
     ]))
 }
 
