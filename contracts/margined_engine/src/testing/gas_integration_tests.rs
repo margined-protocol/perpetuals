@@ -18,12 +18,6 @@ fn test_takeprofit() {
     } = TestTubeScenario::default();
     let (alice, bob) = (&accounts[1], &accounts[2]);
     let wasm = Wasm::new(&router);
-    let price: Uint128 = wasm
-        .query(
-            vamm.0.as_str(),
-            &margined_perp::margined_vamm::QueryMsg::SpotPrice {},
-        )
-        .unwrap();
 
     let alice_balance = wasm
         .query::<_, cw20::BalanceResponse>(
@@ -188,12 +182,6 @@ fn test_stoploss() {
     } = TestTubeScenario::default();
     let (alice, bob) = (&accounts[1], &accounts[2]);
     let wasm = Wasm::new(&router);
-    let price: Uint128 = wasm
-        .query(
-            vamm.0.as_str(),
-            &margined_perp::margined_vamm::QueryMsg::SpotPrice {},
-        )
-        .unwrap();
 
     let alice_balance = wasm
         .query::<_, cw20::BalanceResponse>(
@@ -322,7 +310,7 @@ fn test_stoploss() {
         .unwrap()
         .balance;
 
-        let err = wasm
+    let err = wasm
         .query::<_, Position>(
             engine.0.as_str(),
             &margined_perp::margined_engine::QueryMsg::Position {

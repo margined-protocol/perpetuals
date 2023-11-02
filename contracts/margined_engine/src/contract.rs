@@ -11,7 +11,10 @@ use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, MigrateMsg, Que
 
 use crate::error::ContractError;
 use crate::handle::{trigger_tp_sl, update_tp_sl};
-use crate::query::{query_last_position_id, query_position_is_tpsl, query_positions, query_position_is_bad_debt, query_position_is_liquidated};
+use crate::query::{
+    query_last_position_id, query_position_is_bad_debt, query_position_is_liquidated,
+    query_position_is_tpsl, query_positions,
+};
 use crate::state::init_last_position_id;
 use crate::tick::{query_tick, query_ticks};
 use crate::utils::get_margin_ratio_calc_option;
@@ -312,12 +315,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             take_profit,
             limit,
         )?),
-        QueryMsg::IsBadDebt { vamm, position_id } => to_binary(
-            &query_position_is_bad_debt(deps, position_id, vamm)?,
-        ),
-        QueryMsg::IsLiquidated { vamm, position_id } => to_binary(
-            &query_position_is_liquidated(deps, position_id, vamm)?,
-        ),
+        QueryMsg::IsBadDebt { vamm, position_id } => {
+            to_binary(&query_position_is_bad_debt(deps, position_id, vamm)?)
+        }
+        QueryMsg::IsLiquidated { vamm, position_id } => {
+            to_binary(&query_position_is_liquidated(deps, position_id, vamm)?)
+        }
         QueryMsg::LastPositionId {} => to_binary(&query_last_position_id(deps)?),
     }
 }

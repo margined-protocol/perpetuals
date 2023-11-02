@@ -279,6 +279,8 @@ pub fn close_position_reply(
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "close_position_reply"),
         ("total_position", &total_position.to_string()),
+        ("take_profit", &position.take_profit.to_string()),
+        ("stop_loss", &position.stop_loss.unwrap_or_default().to_string()),
         ("pnl", &margin_delta.to_string()),
         ("spread_fee", &position.spread_fee.to_string()),
         ("toll_fee", &position.toll_fee.to_string()),
@@ -372,6 +374,8 @@ pub fn partial_close_position_reply(
         .add_submessages(fees_messages)
         .add_attributes(vec![
             ("action", "partial_close_position_reply"),
+            ("take_profit", &position.take_profit.to_string()),
+            ("stop_loss", &position.stop_loss.unwrap_or_default().to_string()),
             ("pnl", &unrealized_pnl_after.to_string()),
             ("spread_fee", &swap.spread_fee.to_string()),
             ("toll_fee", &swap.toll_fee.to_string()),
@@ -471,6 +475,8 @@ pub fn liquidate_reply(
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "liquidation_reply"),
         ("total_position", &total_position.to_string()),
+        ("take_profit", &position.take_profit.to_string()),
+        ("stop_loss", &position.stop_loss.unwrap_or_default().to_string()),
         ("liquidation_fee", &liquidation_fee.to_string()),
         ("pnl", &margin_delta.to_string()),
         (
