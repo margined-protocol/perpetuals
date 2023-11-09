@@ -111,49 +111,6 @@ fn test_force_error_open_position_zero_leverage_or_fractional_leverage() {
 }
 
 #[test]
-fn test_get_all_positions_open_position_long() {
-    let SimpleScenario {
-        mut router,
-        alice,
-        usdc,
-        engine,
-        vamm,
-        ..
-    } = new_simple_scenario();
-
-    let msg = engine
-        .open_position(
-            vamm.addr().to_string(),
-            Side::Buy,
-            to_decimals(60u64),
-            to_decimals(10u64),
-            to_decimals(18),
-            Some(to_decimals(9)),
-            to_decimals(0u64),
-            vec![],
-        )
-        .unwrap();
-    router.execute(alice.clone(), msg).unwrap();
-
-    // expect to be 60
-    let margin = engine
-        .get_balance_with_funding_payment(&router.wrap(), 1)
-        .unwrap();
-    assert_eq!(margin, to_decimals(60));
-
-    // personal position should be 37.5
-    let positions = engine
-        .get_all_positions(&router.wrap(), alice.to_string(), None, None, None)
-        .unwrap();
-    assert_eq!(positions[0].size, Integer::new_positive(37_500_000_000u128));
-    assert_eq!(positions[0].margin, to_decimals(60u64));
-
-    // clearing house token balance should be 60
-    let engine_balance = usdc.balance(&router.wrap(), engine.addr().clone()).unwrap();
-    assert_eq!(engine_balance, to_decimals(60));
-}
-
-#[test]
 fn test_open_position_long() {
     let SimpleScenario {
         mut router,
@@ -1632,7 +1589,7 @@ fn test_query_no_user_positions() {
 
     // we query all of bob's positions (should return an empty array)
     let positions = engine
-        .get_all_positions(&router.wrap(), bob.to_string(), None, None, None)
+        .get_positions(&router.wrap(), bob.to_string(), PositionFilter::None, None, None, None, None)
         .unwrap();
     assert_eq!(positions, vec![]);
 }

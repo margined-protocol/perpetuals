@@ -55,43 +55,6 @@ pub fn query_position(deps: Deps, vamm: String, position_id: u64) -> StdResult<P
     Ok(position)
 }
 
-/// Queries and returns users position for all registered vamms
-pub fn query_all_positions(
-    deps: Deps,
-    trader: String,
-    start_after: Option<u64>,
-    limit: Option<u32>,
-    order_by: Option<i32>,
-) -> StdResult<Vec<Position>> {
-    let config = read_config(deps.storage)?;
-    let order_by = order_by.map_or(None, |val| Order::try_from(val).ok());
-    let mut response: Vec<Position> = vec![];
-
-    let vamms = match config.insurance_fund {
-        Some(insurance_fund) => {
-            let insurance_controller = InsuranceFundController(insurance_fund);
-            insurance_controller
-                .all_vamms(&deps.querier, None)?
-                .vamm_list
-        }
-        None => return Err(StdError::generic_err("insurance fund is not registered")),
-    };
-
-    for vamm in vamms.iter() {
-        let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
-        let positions = read_positions(deps.storage, &vamm_key, start_after, limit, order_by)?;
-
-        for position in positions {
-            // a default is returned if no position found with no trader set
-            if position.trader == trader {
-                response.push(position)
-            }
-        }
-    }
-
-    Ok(response)
-}
-
 /// Queries and returns users positions for registered vamms
 pub fn query_positions(
     storage: &dyn Storage,
@@ -371,9 +334,9 @@ pub fn query_position_is_tpsl(
     };
 
     let order_by = if take_profit && side == Side::Buy || !take_profit && side == Side::Sell {
-        Order::Ascending
-    } else {
         Order::Descending
+    } else {
+        Order::Ascending
     };
 
     let mut is_tpsl: bool = false;
@@ -386,34 +349,32 @@ pub fn query_position_is_tpsl(
         Some(order_by.into()),
     )?;
 
-    for tick in ticks.ticks.iter() {
+    for tick in &ticks.ticks {
         let position_by_price = query_positions(
             deps.storage,
             vamm.clone(),
             Some(side),
             PositionFilter::Price(tick.entry_price),
             None,
-            Some(limit),
-            Some(1),
+            None,
+            Some(Order::Ascending.into()),
         )?;
 
-        for position in position_by_price.iter() {
+        for position in &position_by_price {
             if !take_profit {
-                let is_bad_debt = position_is_bad_debt(
-                    deps,
-                    position,
-                    &vamm_controller
-                )?;
-                let is_liquidated = position_is_liquidated(
+                // Can not trigger stop loss position if bad debt
+                if position_is_bad_debt(deps, position, &vamm_controller)? {
+                    continue;
+                }
+
+                // Can not trigger stop loss position if liquidate
+                if position_is_liquidated(
                     deps,
                     vamm.clone(),
                     position.position_id,
                     config.maintenance_margin_ratio,
                     &vamm_controller,
-                )?;
-
-                // Can not trigger stop loss position if bad debt or liquidate
-                if is_bad_debt || is_liquidated {
+                )? {
                     continue;
                 }
             }
@@ -421,7 +382,7 @@ pub fn query_position_is_tpsl(
             let base_asset_amount = position.size.value;
             let quote_asset_amount = get_output_price_with_reserves(
                 config.decimals,
-                &position.direction.clone(),
+                &position.direction,
                 base_asset_amount,
                 tmp_reserve.quote_asset_reserve,
                 tmp_reserve.base_asset_reserve,

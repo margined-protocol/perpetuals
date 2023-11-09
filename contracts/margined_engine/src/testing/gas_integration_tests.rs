@@ -127,7 +127,7 @@ fn test_takeprofit() {
 
     // take profit trigger
     let msg = engine
-        .trigger_tp_sl(vamm.addr().to_string(), Side::Buy, true, 10)
+        .trigger_multiple_tp_sl(vamm.addr().to_string(), Side::Buy, true, 10)
         .unwrap();
     let ret = router
         .execute_cosmos_msgs::<MsgExecuteContractResponse>(&[msg], alice)
@@ -285,7 +285,7 @@ fn test_stoploss() {
 
     // stop loss trigger
     let msg = engine
-        .trigger_tp_sl(vamm.addr().to_string(), Side::Buy, false, 10)
+        .trigger_multiple_tp_sl(vamm.addr().to_string(), Side::Buy, false, 10)
         .unwrap();
     let ret = router
         .execute_cosmos_msgs::<MsgExecuteContractResponse>(&[msg], alice)

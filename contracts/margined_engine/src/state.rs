@@ -152,8 +152,10 @@ pub fn remove_position(
     )
     .remove(position_id_key);
 
-    Bucket::<Side>::multilevel(storage, &[PREFIX_POSITION_BY_PRICE, key, &price_key])
-        .remove(position_id_key);
+    Bucket::<Side>::multilevel(
+        storage,
+        &[PREFIX_POSITION_BY_PRICE, key, &price_key]
+    ).remove(position_id_key);
 
     // return total orders belong to the tick
     Ok(total_tick_orders)

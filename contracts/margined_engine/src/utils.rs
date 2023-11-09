@@ -537,7 +537,7 @@ pub fn update_reserve(
     tmp_reserve: &mut TmpReserveInfo,
     quote_asset_amount: Uint128,
     base_asset_amount: Uint128,
-    position_direction: Direction,
+    position_direction: &Direction,
 ) -> StdResult<()> {
     // flip direction when simulate close position
     let update_direction = match position_direction {

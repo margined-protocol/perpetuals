@@ -10,7 +10,7 @@ use margined_common::validate::{
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 use crate::error::ContractError;
-use crate::handle::{trigger_tp_sl, update_tp_sl};
+use crate::handle::{trigger_mutiple_tp_sl, trigger_tp_sl, update_tp_sl};
 use crate::query::{
     query_last_position_id, query_position_is_bad_debt, query_position_is_liquidated,
     query_position_is_tpsl, query_positions,
@@ -24,7 +24,7 @@ use crate::{
         withdraw_margin,
     },
     query::{
-        query_all_positions, query_config, query_cumulative_premium_fraction,
+        query_config, query_cumulative_premium_fraction,
         query_free_collateral, query_margin_ratio, query_pauser, query_position,
         query_position_notional_unrealized_pnl, query_state,
         query_trader_balance_with_funding_payment, query_trader_position_with_funding_payment,
@@ -191,10 +191,15 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         } => liquidate(deps, env, info, vamm, position_id, quote_asset_limit),
         ExecuteMsg::TriggerTpSl {
             vamm,
+            position_id,
+            take_profit,
+        } => trigger_tp_sl(deps, vamm, position_id, take_profit),
+        ExecuteMsg::TriggerMultipleTpSl {
+            vamm,
             side,
             take_profit,
             limit,
-        } => trigger_tp_sl(deps, vamm, side, take_profit, limit),
+        } => trigger_mutiple_tp_sl(deps, vamm, side, take_profit, limit),
         ExecuteMsg::PayFunding { vamm } => pay_funding(deps, env, info, vamm),
         ExecuteMsg::DepositMargin {
             vamm,
@@ -218,18 +223,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetPauser {} => to_binary(&query_pauser(deps)?),
         QueryMsg::IsWhitelisted { address } => to_binary(&WHITELIST.query_hook(deps, address)?),
         QueryMsg::GetWhitelist {} => to_binary(&WHITELIST.query_hooks(deps)?),
-        QueryMsg::AllPositions {
-            trader,
-            start_after,
-            limit,
-            order_by,
-        } => to_binary(&query_all_positions(
-            deps,
-            trader,
-            start_after,
-            limit,
-            order_by,
-        )?),
         QueryMsg::Positions {
             vamm,
             filter,

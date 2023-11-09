@@ -246,7 +246,10 @@ pub fn open_position(
         ("position_id", &position_id.to_string()),
         ("position_side", &format!("{:?}", side)),
         ("vamm", vamm.as_ref()),
-        ("pair", &format!("{}/{}", vamm_config.base_asset, vamm_config.quote_asset)),
+        (
+            "pair",
+            &format!("{}/{}", vamm_config.base_asset, vamm_config.quote_asset),
+        ),
         ("trader", trader.as_ref()),
         ("margin_amount", &margin_amount.to_string()),
         ("leverage", &leverage.to_string()),
@@ -464,6 +467,123 @@ pub fn close_position(
 pub fn trigger_tp_sl(
     deps: DepsMut,
     vamm: String,
+    position_id: u64,
+    take_profit: bool,
+) -> StdResult<Response> {
+    let config = read_config(deps.storage)?;
+    let vamm_addr = deps.api.addr_validate(&vamm)?;
+    let mut msgs: Vec<SubMsg> = vec![];
+    let mut tp_sl_flag: bool = false;
+
+    let vamm_controller = VammController(vamm_addr.clone());
+    let vamm_state = vamm_controller.state(&deps.querier)?;
+
+    // read the position for the trader from vamm
+    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let position = read_position(deps.storage, &vamm_key, position_id)?;
+
+    // check that vamm is open
+    if !vamm_state.open {
+        return Err(StdError::generic_err("vAMM is not open"));
+    }
+
+    // query pool reserves of the vamm so that we can simulate it while triggering tp sl.
+    // after simulating, we will know if the position is qualified to close or not
+    let mut tmp_reserve = TmpReserveInfo {
+        quote_asset_reserve: vamm_state.quote_asset_reserve,
+        base_asset_reserve: vamm_state.base_asset_reserve,
+    };
+
+    // check the position isn't zero
+    require_position_not_zero(position.size.value)?;
+
+    if !take_profit {
+        // Can not trigger stop loss position if bad debt
+        if position_is_bad_debt(deps.as_ref(), &position, &vamm_controller)? {
+            return Err(StdError::generic_err("position is bad debt"));
+        }
+
+        // Can not trigger stop loss position if liquidate
+        if position_is_liquidated(
+            deps.as_ref(),
+            vamm.clone(),
+            position.position_id,
+            config.maintenance_margin_ratio,
+            &vamm_controller,
+        )? {
+            return Err(StdError::generic_err("position is liquidated"));
+        }
+    }
+
+    let base_asset_amount = position.size.value;
+    let quote_asset_amount = get_output_price_with_reserves(
+        config.decimals,
+        &position.direction,
+        base_asset_amount,
+        tmp_reserve.quote_asset_reserve,
+        tmp_reserve.base_asset_reserve,
+    )?;
+    let close_price = quote_asset_amount
+        .checked_mul(config.decimals)?
+        .checked_div(base_asset_amount)?;
+
+    let stop_loss = position.stop_loss.unwrap_or_default();
+    let (tp_spread, sl_spread) = calculate_tp_sl_spread(
+        config.tp_sl_spread,
+        position.take_profit,
+        stop_loss,
+        config.decimals,
+    )?;
+    let tp_sl_action = check_tp_sl_price(
+        close_price,
+        position.take_profit,
+        stop_loss,
+        tp_spread,
+        sl_spread,
+        &position.side,
+    )?;
+    if take_profit {
+        if tp_sl_action == "trigger_take_profit" {
+            tp_sl_flag = true;
+        }
+    } else {
+        if tp_sl_action == "trigger_stop_loss" {
+            tp_sl_flag = true;
+        }
+    }
+    if tp_sl_flag {
+        let _ = update_reserve(
+            &mut tmp_reserve,
+            quote_asset_amount,
+            base_asset_amount,
+            &position.direction,
+        );
+        msgs.push(internal_close_position(
+            deps.storage,
+            &position,
+            Uint128::zero(),
+            CLOSE_POSITION_REPLY_ID,
+        )?);
+    }
+
+    let action = if take_profit {
+        "trigger_take_profit"
+    } else {
+        "trigger_stop_loss"
+    };
+
+    Ok(Response::new()
+        .add_submessages(msgs)
+        .add_attribute("action", action)
+        .add_attributes(vec![
+            ("vamm", &vamm_addr.into_string()),
+            ("side", &format!("{:?}", &position.side)),
+        ]))
+}
+
+pub fn trigger_mutiple_tp_sl(
+    deps: DepsMut,
+    vamm: String,
     side: Side,
     take_profit: bool,
     limit: u32,
@@ -489,9 +609,9 @@ pub fn trigger_tp_sl(
     };
 
     let order_by = if take_profit && side == Side::Buy || !take_profit && side == Side::Sell {
-        Order::Ascending
-    } else {
         Order::Descending
+    } else {
+        Order::Ascending
     };
 
     let ticks = query_ticks(
@@ -578,7 +698,7 @@ pub fn trigger_tp_sl(
                     &mut tmp_reserve,
                     quote_asset_amount,
                     base_asset_amount,
-                    position.direction.clone(),
+                    &position.direction,
                 );
                 msgs.push(internal_close_position(
                     deps.storage,

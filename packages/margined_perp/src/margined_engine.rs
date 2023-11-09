@@ -88,6 +88,11 @@ pub enum ExecuteMsg {
     },
     TriggerTpSl {
         vamm: String,
+        position_id: u64,
+        take_profit: bool,
+    },
+    TriggerMultipleTpSl {
+        vamm: String,
         side: Side,
         take_profit: bool,
         limit: u32,
@@ -133,13 +138,6 @@ pub enum QueryMsg {
     GetWhitelist {},
     #[returns(Position)]
     Position { vamm: String, position_id: u64 },
-    #[returns(Vec<Position>)]
-    AllPositions {
-        trader: String,
-        start_after: Option<u64>,
-        limit: Option<u32>,
-        order_by: Option<i32>,
-    },
     #[returns(Vec<Position>)]
     Positions {
         vamm: String,
