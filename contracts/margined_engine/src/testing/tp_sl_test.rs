@@ -427,7 +427,7 @@ fn test_takeprofit() {
         },
         err
     );
-    println!("ret: {:?}", ret);
+
     assert_eq!(ret.events[1].attributes[1].value, "trigger_take_profit");
     assert_eq!(ret.events[5].attributes[10].key, "withdraw_amount");
     assert_eq!(

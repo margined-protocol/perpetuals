@@ -487,13 +487,6 @@ pub fn trigger_tp_sl(
         return Err(StdError::generic_err("vAMM is not open"));
     }
 
-    // query pool reserves of the vamm so that we can simulate it while triggering tp sl.
-    // after simulating, we will know if the position is qualified to close or not
-    let mut tmp_reserve = TmpReserveInfo {
-        quote_asset_reserve: vamm_state.quote_asset_reserve,
-        base_asset_reserve: vamm_state.base_asset_reserve,
-    };
-
     // check the position isn't zero
     require_position_not_zero(position.size.value)?;
 
@@ -520,8 +513,8 @@ pub fn trigger_tp_sl(
         config.decimals,
         &position.direction,
         base_asset_amount,
-        tmp_reserve.quote_asset_reserve,
-        tmp_reserve.base_asset_reserve,
+        vamm_state.quote_asset_reserve,
+        vamm_state.base_asset_reserve,
     )?;
     let close_price = quote_asset_amount
         .checked_mul(config.decimals)?
@@ -552,12 +545,6 @@ pub fn trigger_tp_sl(
         }
     }
     if tp_sl_flag {
-        let _ = update_reserve(
-            &mut tmp_reserve,
-            quote_asset_amount,
-            base_asset_amount,
-            &position.direction,
-        );
         msgs.push(internal_close_position(
             deps.storage,
             &position,
@@ -577,7 +564,6 @@ pub fn trigger_tp_sl(
         .add_attribute("action", action)
         .add_attributes(vec![
             ("vamm", &vamm_addr.into_string()),
-            ("side", &format!("{:?}", &position.side)),
         ]))
 }
 
