@@ -28,13 +28,15 @@ pub fn query_get_price(deps: Deps, key: String) -> StdResult<Uint128> {
 pub fn query_get_previous_price(
     deps: Deps,
     key: String,
-    round_id: u64,
+    num_round_back: u64,
 ) -> StdResult<Uint128> {
-    let price_data = read_price_data(deps.storage, key, round_id)?;
-    if price_data.price.is_zero() {
-       return Err(StdError::generic_err("Round id is not found"));
+    let last_round_id = read_last_round_id(deps.storage)?;
+    // check round_id to get last previous price round_id by num_round_back
+    if let Some(round_id) = last_round_id.checked_sub(num_round_back as u64) {
+        let price_data = read_price_data(deps.storage, key, round_id)?;
+        return Ok(price_data.price);
     }
-    Ok(price_data.price)
+    Err(StdError::generic_err("Not enough history"))
 }
 
 /// Queries contract Config

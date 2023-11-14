@@ -50,7 +50,7 @@ pub enum QueryMsg {
     #[returns(Uint128)]
     GetPrice { key: String },
     #[returns(Uint128)]
-    GetPreviousPrice { key: String, round_id: u64 },
+    GetPreviousPrice { key: String, num_round_back: u64 },
     #[returns(Uint128)]
     GetTwapPrice { key: String, interval: u64 },
 }

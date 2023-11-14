@@ -62,11 +62,11 @@ impl PricefeedController {
         &self,
         querier: &QuerierWrapper,
         key: String,
-        round_id: u64,
+        num_round_back: u64,
     ) -> StdResult<Uint128> {
         let msg = QueryMsg::GetPreviousPrice {
             key,
-            round_id,
+            num_round_back,
         };
 
         querier.query_wasm_smart(&self.0, &msg)

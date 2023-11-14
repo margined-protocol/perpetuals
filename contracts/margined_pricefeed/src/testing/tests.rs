@@ -197,7 +197,7 @@ fn test_get_previous_price() {
         mock_env(),
         QueryMsg::GetPreviousPrice {
             key: "ETHUSD".to_string(),
-            round_id: 3u64,
+            num_round_back: 3u64,
         },
     )
     .unwrap();
@@ -210,7 +210,7 @@ fn test_get_previous_price() {
         mock_env(),
         QueryMsg::GetPreviousPrice {
             key: "ETHUSD".to_string(),
-            round_id: 7u64,
+            num_round_back: 7u64,
         },
     );
     assert!(res.is_err());

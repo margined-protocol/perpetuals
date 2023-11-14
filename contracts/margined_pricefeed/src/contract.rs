@@ -69,8 +69,8 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetPrice { key } => to_binary(&query_get_price(deps, key)?),
         QueryMsg::GetPreviousPrice {
             key,
-            round_id,
-        } => to_binary(&query_get_previous_price(deps, key, round_id)?),
+            num_round_back,
+        } => to_binary(&query_get_previous_price(deps, key, num_round_back)?),
         QueryMsg::GetTwapPrice { key, interval } => {
             to_binary(&query_get_twap_price(deps, env, key, interval)?)
         }
