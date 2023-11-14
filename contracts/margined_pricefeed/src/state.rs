@@ -17,13 +17,13 @@ pub fn store_price_data(
     price: Uint128,
     timestamp: u64,
 ) -> StdResult<()> {
-    let last_round_id = read_last_round_id(storage)?;
+    let last_round_id = read_last_round_id(storage, &key)?;
     let price_data = PriceData {
         round_id: last_round_id + 1,
         price,
         timestamp: Timestamp::from_seconds(timestamp),
     };
-    store_last_round_id(storage, price_data.round_id)?;
+    store_last_round_id(storage, &key, price_data.round_id)?;
     Ok(storage.set(
         &[PRICES, key.as_bytes(), &price_data.round_id.to_be_bytes()].concat(),
         &to_vec(&price_data)?,
@@ -37,13 +37,22 @@ pub fn read_price_data(storage: &dyn Storage, key: String, round_id: u64) -> Std
     }
 }
 
-pub fn store_last_round_id(storage: &mut dyn Storage, round_id: u64) -> StdResult<()> {
-    Ok(storage.set(KEY_LAST_ROUND_ID, &to_vec(&round_id)?))
+pub fn store_last_round_id(
+    storage: &mut dyn Storage,
+    key: &String,
+    round_id: u64,
+) -> StdResult<()> {
+    Ok(storage.set(
+        &[KEY_LAST_ROUND_ID, key.as_bytes()].concat(),
+        &to_vec(&round_id)?,
+    ))
 }
 
-pub fn read_last_round_id(storage: &dyn Storage) -> StdResult<u64> {
-    Ok(match storage.get(KEY_LAST_ROUND_ID) {
-        Some(data) => from_slice(&data)?,
-        None => 0,
-    })
+pub fn read_last_round_id(storage: &dyn Storage, key: &String) -> StdResult<u64> {
+    Ok(
+        match storage.get(&[KEY_LAST_ROUND_ID, key.as_bytes()].concat()) {
+            Some(data) => from_slice(&data)?,
+            None => 0,
+        },
+    )
 }

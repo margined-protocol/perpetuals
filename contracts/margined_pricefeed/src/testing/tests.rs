@@ -152,7 +152,18 @@ fn test_set_multiple_price() {
     )
     .unwrap();
     let price: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(price, Uint128::from(700_000_000u128),);
+    assert_eq!(price, Uint128::from(700_000_000u128));
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetLastRoundId {
+            key: "ETHUSD".to_string(),
+        },
+    )
+    .unwrap();
+    let last_round_id: u64 = from_binary(&res).unwrap();
+    assert_eq!(last_round_id, 3u64);
 }
 
 #[test]
@@ -214,6 +225,17 @@ fn test_get_previous_price() {
         },
     );
     assert!(res.is_err());
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetLastRoundId {
+            key: "ETHUSD".to_string(),
+        },
+    )
+    .unwrap();
+    let last_round_id: u64 = from_binary(&res).unwrap();
+    assert_eq!(last_round_id, 6u64);
 }
 
 #[test]
@@ -296,6 +318,17 @@ fn test_get_twap_price() {
 
     let twap: Uint128 = from_binary(&res).unwrap();
     assert_eq!(twap, Uint128::from(405_113_636u128));
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetLastRoundId {
+            key: "ETHUSD".to_string(),
+        },
+    )
+    .unwrap();
+    let last_round_id: u64 = from_binary(&res).unwrap();
+    assert_eq!(last_round_id, 3u64);
 }
 
 #[test]
@@ -351,6 +384,17 @@ fn test_get_twap_variant_price_period() {
 
     let twap: Uint128 = from_binary(&res).unwrap();
     assert_eq!(twap, Uint128::from(409_736_842u128));
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetLastRoundId {
+            key: "ETHUSD".to_string(),
+        },
+    )
+    .unwrap();
+    let last_round_id: u64 = from_binary(&res).unwrap();
+    assert_eq!(last_round_id, 4u64);
 }
 
 #[test]
@@ -404,6 +448,17 @@ fn test_get_twap_latest_price_update_is_earlier_than_request() {
 
     let twap: Uint128 = from_binary(&res).unwrap();
     assert_eq!(twap, Uint128::from(410_000_000u128));
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetLastRoundId {
+            key: "ETHUSD".to_string(),
+        },
+    )
+    .unwrap();
+    let last_round_id: u64 = from_binary(&res).unwrap();
+    assert_eq!(last_round_id, 3u64);
 }
 
 #[test]
@@ -431,6 +486,17 @@ fn test_get_twap_no_rounds() {
     )
     .unwrap_err();
     assert_eq!(res.to_string(), "Generic error: Insufficient history");
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetLastRoundId {
+            key: "ETHUSD".to_string(),
+        },
+    )
+    .unwrap();
+    let last_round_id: u64 = from_binary(&res).unwrap();
+    assert_eq!(last_round_id, 0u64);
 }
 
 #[test]
@@ -481,4 +547,15 @@ fn test_get_twap_error_zero_interval() {
         },
     );
     assert!(res.is_err());
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetLastRoundId {
+            key: "ETHUSD".to_string(),
+        },
+    )
+    .unwrap();
+    let last_round_id: u64 = from_binary(&res).unwrap();
+    assert_eq!(last_round_id, 3u64);
 }

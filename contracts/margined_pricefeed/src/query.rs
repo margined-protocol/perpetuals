@@ -1,7 +1,10 @@
 use cosmwasm_std::{Deps, Env, StdError, StdResult, Uint128};
 use margined_perp::margined_pricefeed::{ConfigResponse, OwnerResponse};
 
-use crate::{contract::OWNER, state::{read_price_data, read_last_round_id}};
+use crate::{
+    contract::OWNER,
+    state::{read_last_round_id, read_price_data},
+};
 
 /// Queries contract Config
 pub fn query_config(_deps: Deps) -> StdResult<ConfigResponse> {
@@ -19,7 +22,7 @@ pub fn query_owner(deps: Deps) -> StdResult<OwnerResponse> {
 
 /// Queries latest price for pair stored with key
 pub fn query_get_price(deps: Deps, key: String) -> StdResult<Uint128> {
-    let last_round_id = read_last_round_id(deps.storage)?;
+    let last_round_id = read_last_round_id(deps.storage, &key)?;
     let price_data = read_price_data(deps.storage, key, last_round_id)?;
     Ok(price_data.price)
 }
@@ -30,7 +33,7 @@ pub fn query_get_previous_price(
     key: String,
     num_round_back: u64,
 ) -> StdResult<Uint128> {
-    let last_round_id = read_last_round_id(deps.storage)?;
+    let last_round_id = read_last_round_id(deps.storage, &key)?;
     // check round_id to get last previous price round_id by num_round_back
     if let Some(round_id) = last_round_id.checked_sub(num_round_back as u64) {
         let price_data = read_price_data(deps.storage, key, round_id)?;
@@ -60,7 +63,7 @@ pub fn query_get_twap_price(
     };
 
     // get the current data
-    let mut latest_round_ind = read_last_round_id(deps.storage)?;
+    let mut latest_round_ind = read_last_round_id(deps.storage, &key)?;
     let mut latest_round = read_price_data(deps.storage, key.clone(), latest_round_ind)?;
     let mut timestamp = Uint128::from(latest_round.timestamp.seconds());
 
@@ -112,4 +115,10 @@ pub fn query_get_twap_price(
     let twap = weighted_price.checked_div(Uint128::from(interval))?;
 
     Ok(twap)
+}
+
+/// Queries latest round id of price
+pub fn query_last_round_id(deps: Deps, key: String) -> StdResult<u64> {
+    let last_round_id = read_last_round_id(deps.storage, &key)?;
+    Ok(last_round_id)
 }

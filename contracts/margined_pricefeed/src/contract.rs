@@ -1,4 +1,5 @@
 use crate::error::ContractError;
+use crate::query::query_last_round_id;
 use crate::{
     handle::{append_multiple_price, append_price, update_owner},
     query::{
@@ -73,6 +74,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => to_binary(&query_get_previous_price(deps, key, num_round_back)?),
         QueryMsg::GetTwapPrice { key, interval } => {
             to_binary(&query_get_twap_price(deps, env, key, interval)?)
+        },
+        QueryMsg::GetLastRoundId { key } => {
+            to_binary(&query_last_round_id(deps, key)?)
         }
     }
 }
