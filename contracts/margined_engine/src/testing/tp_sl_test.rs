@@ -429,11 +429,11 @@ fn test_takeprofit() {
     );
 
     assert_eq!(ret.events[1].attributes[1].value, "trigger_take_profit");
-    assert_eq!(ret.events[5].attributes[10].key, "withdraw_amount");
+    assert_eq!(ret.events[5].attributes[9].key, "withdraw_amount");
     assert_eq!(
         alice_balance,
         alice_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[5].attributes[10].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[5].attributes[9].value).unwrap())
             .unwrap()
     );
 }
@@ -539,11 +539,11 @@ fn test_stoploss() {
     );
 
     assert_eq!(ret.events[1].attributes[1].value, "trigger_stop_loss");
-    assert_eq!(ret.events[5].attributes[10].key, "withdraw_amount");
+    assert_eq!(ret.events[5].attributes[9].key, "withdraw_amount");
     assert_eq!(
         alice_balance,
         alice_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[5].attributes[10].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[5].attributes[9].value).unwrap())
             .unwrap()
     );
 }
@@ -693,17 +693,17 @@ fn test_multi_takeprofit_long() {
     assert_eq!(ret.events[3].attributes[7].value, "3");
     assert_eq!(ret.events[9].attributes[7].value, "1");
 
-    assert_eq!(ret.events[5].attributes[10].key, "withdraw_amount");
+    assert_eq!(ret.events[5].attributes[9].key, "withdraw_amount");
     assert_eq!(
         alice_balance,
         alice_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[11].attributes[10].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[11].attributes[9].value).unwrap())
             .unwrap()
     );
     assert_eq!(
         bob_balance,
         bob_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[5].attributes[10].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[5].attributes[9].value).unwrap())
             .unwrap()
     );
 }
@@ -844,17 +844,17 @@ fn test_multi_stoploss_long() {
     assert_eq!(ret.events[3].attributes[7].value, "1");
 
     assert_eq!(ret.events[1].attributes[1].value, "trigger_stop_loss");
-    assert_eq!(ret.events[5].attributes[10].key, "withdraw_amount");
+    assert_eq!(ret.events[5].attributes[9].key, "withdraw_amount");
     assert_eq!(
         alice_balance,
         alice_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[5].attributes[10].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[5].attributes[9].value).unwrap())
             .unwrap()
     );
     assert_eq!(
         bob_balance,
         bob_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[11].attributes[10].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[11].attributes[9].value).unwrap())
             .unwrap()
     );
 }
@@ -999,17 +999,17 @@ fn test_multi_takeprofit_short() {
     assert_eq!(ret.events[3].attributes[7].value, "2");
     assert_eq!(ret.events[9].attributes[7].value, "1");
 
-    assert_eq!(ret.events[5].attributes[10].key, "withdraw_amount");
+    assert_eq!(ret.events[5].attributes[9].key, "withdraw_amount");
     assert_eq!(
         alice_balance,
         alice_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[11].attributes[10].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[11].attributes[9].value).unwrap())
             .unwrap()
     );
     assert_eq!(
         bob_balance,
         bob_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[5].attributes[10].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[5].attributes[9].value).unwrap())
             .unwrap()
     );
 }
@@ -1149,17 +1149,17 @@ fn test_multi_stoploss_short() {
     assert_eq!(ret.events[9].attributes[7].value, "2");
 
     assert_eq!(ret.events[1].attributes[1].value, "trigger_stop_loss");
-    assert_eq!(ret.events[5].attributes[10].key, "withdraw_amount");
+    assert_eq!(ret.events[5].attributes[9].key, "withdraw_amount");
     assert_eq!(
         alice_balance,
         alice_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[5].attributes[10].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[5].attributes[9].value).unwrap())
             .unwrap()
     );
     assert_eq!(
         bob_balance,
         bob_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[11].attributes[10].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[11].attributes[9].value).unwrap())
             .unwrap()
     );
 }

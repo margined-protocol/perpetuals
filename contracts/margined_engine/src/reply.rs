@@ -137,23 +137,21 @@ pub fn open_position_reply(
     };
 
     // create messages to pay for toll and spread fees, check flag is true if this follows a reverse
-    if !swap.fees_paid {
-        let mut fees_messages = transfer_fees(
-            deps.as_ref(),
-            swap.trader,
-            swap.spread_fee,
-            swap.toll_fee,
-            true,
-        )?;
-        // add the fee transfer messages
-        msgs.append(&mut fees_messages);
+    let mut fees_messages = transfer_fees(
+        deps.as_ref(),
+        swap.trader,
+        swap.spread_fee,
+        swap.toll_fee,
+        true,
+    )?;
+    // add the fee transfer messages
+    msgs.append(&mut fees_messages);
 
-        // add the total fees to the required funds counter
-        funds.required = funds
-            .required
-            .checked_add(swap.spread_fee)?
-            .checked_add(swap.toll_fee)?;
-    };
+    // add the total fees to the required funds counter
+    funds.required = funds
+        .required
+        .checked_add(swap.spread_fee)?
+        .checked_add(swap.toll_fee)?;
 
     // check if native tokens are sufficient
     if let AssetInfo::NativeToken { .. } = config.eligible_collateral {
@@ -272,13 +270,12 @@ pub fn close_position_reply(
         swap.trader,
     )?;
 
-    let total_position = remove_position(deps.storage, &vamm_key, &position)?;
+    remove_position(deps.storage, &vamm_key, &position)?;
     store_state(deps.storage, &state)?;
     remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "close_position_reply"),
-        ("total_position", &total_position.to_string()),
         ("take_profit", &position.take_profit.to_string()),
         (
             "stop_loss",
@@ -361,7 +358,6 @@ pub fn partial_close_position_reply(
     position.last_updated_premium_fraction = latest_premium_fraction;
     position.block_time = env.block.time.seconds();
 
-    let vamm_key = keccak_256(&[position.vamm.as_bytes()].concat());
     store_position(deps.storage, &vamm_key, &position, false)?;
     store_state(deps.storage, &state)?;
 
@@ -470,8 +466,7 @@ pub fn liquidate_reply(
 
     store_state(deps.storage, &state)?;
 
-    let vamm_key = keccak_256(&[position.vamm.as_bytes()].concat());
-    let total_position = remove_position(deps.storage, &vamm_key, &position)?;
+    remove_position(deps.storage, &vamm_key, &position)?;
 
     remove_tmp_swap(deps.storage, &position_id.to_be_bytes());
     remove_tmp_liquidator(deps.storage);
@@ -480,7 +475,6 @@ pub fn liquidate_reply(
 
     Ok(Response::new().add_submessages(msgs).add_attributes(vec![
         ("action", "liquidation_reply"),
-        ("total_position", &total_position.to_string()),
         ("take_profit", &position.take_profit.to_string()),
         (
             "stop_loss",
@@ -576,7 +570,7 @@ pub fn partial_liquidation_reply(
             Uint128::zero(),
         )?);
     }
-    let vamm_key = keccak_256(&[position.vamm.as_bytes()].concat());
+
     store_position(deps.storage, &vamm_key, &position, false)?;
     store_state(deps.storage, &state)?;
 
