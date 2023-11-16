@@ -1,4 +1,4 @@
-use cosmwasm_std::{DepsMut, MessageInfo, Response, StdError, Uint128};
+use cosmwasm_std::{DepsMut, MessageInfo, Response, StdError, Uint128, Env};
 
 use crate::{contract::OWNER, error::ContractError, state::store_price_data};
 
@@ -18,6 +18,7 @@ pub fn update_owner(
 /// with on-chain price oracles in the future.
 pub fn append_price(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     key: String,
     price: Uint128,
@@ -26,6 +27,11 @@ pub fn append_price(
     // check permission
     OWNER.assert_admin(deps.as_ref(), &info.sender)?;
 
+    if timestamp > env.block.time.seconds() || timestamp == 0u64 {
+        return Err(ContractError::Std(StdError::generic_err(
+            "Invalid timestamp",
+        )));
+    }
     store_price_data(deps.storage, key, price, timestamp)?;
 
     Ok(Response::default().add_attribute("action", "append_price"))
@@ -36,6 +42,7 @@ pub fn append_price(
 /// with on-chain price oracles in the future.
 pub fn append_multiple_price(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     key: String,
     prices: Vec<Uint128>,
@@ -52,6 +59,11 @@ pub fn append_multiple_price(
     }
 
     for index in 0..prices.len() {
+        if timestamps[index] > env.block.time.seconds() || timestamps[index] == 0u64 {
+            return Err(ContractError::Std(StdError::generic_err(
+                "Invalid timestamp",
+            )));
+        }
         store_price_data(deps.storage, key.clone(), prices[index], timestamps[index])?;
     }
 
