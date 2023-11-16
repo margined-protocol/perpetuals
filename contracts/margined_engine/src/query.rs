@@ -207,11 +207,7 @@ pub fn query_trader_position_with_funding_payment(
 }
 
 /// Queries the margin ratio of a trader
-pub fn query_margin_ratio(deps: Deps, vamm: String, position_id: u64) -> StdResult<Integer> {
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
-    // retrieve the latest position
-    let position = read_position(deps.storage, &vamm_key, position_id)?;
-
+pub fn query_margin_ratio(deps: Deps, position: &Position) -> StdResult<Integer> {
     if position.size.is_zero() {
         return Ok(Integer::zero());
     }
@@ -370,8 +366,7 @@ pub fn query_position_is_tpsl(
                 // Can not trigger stop loss position if liquidate
                 if position_is_liquidated(
                     deps,
-                    vamm.clone(),
-                    position.position_id,
+                    position,
                     config.maintenance_margin_ratio,
                     &vamm_controller,
                 )? {
@@ -444,12 +439,13 @@ pub fn query_position_is_liquidated(
     vamm: String
 ) -> StdResult<bool> {
     let config = read_config(deps.storage)?;
+    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
     let vamm_addr = deps.api.addr_validate(&vamm)?;
     let vamm_controller = VammController(vamm_addr.clone());
+    let position = read_position(deps.storage, &vamm_key, position_id)?;
     let is_liquidated = position_is_liquidated(
         deps,
-        vamm,
-        position_id,
+        &position,
         config.maintenance_margin_ratio,
         &vamm_controller,
     )?;

@@ -15,18 +15,17 @@ use crate::query::{
     query_last_position_id, query_position_is_bad_debt, query_position_is_liquidated,
     query_position_is_tpsl, query_positions,
 };
-use crate::state::init_last_position_id;
+use crate::state::{init_last_position_id, read_position};
 use crate::tick::{query_tick, query_ticks};
-use crate::utils::get_margin_ratio_calc_option;
+use crate::utils::{get_margin_ratio_calc_option, keccak_256};
 use crate::{
     handle::{
         close_position, deposit_margin, liquidate, open_position, pay_funding, update_config,
         withdraw_margin,
     },
     query::{
-        query_config, query_cumulative_premium_fraction,
-        query_free_collateral, query_margin_ratio, query_pauser, query_position,
-        query_position_notional_unrealized_pnl, query_state,
+        query_config, query_cumulative_premium_fraction, query_free_collateral, query_margin_ratio,
+        query_pauser, query_position, query_position_notional_unrealized_pnl, query_state,
         query_trader_balance_with_funding_payment, query_trader_position_with_funding_payment,
     },
     reply::{
@@ -262,18 +261,19 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             entry_price,
         } => to_binary(&query_tick(deps.storage, vamm, side, entry_price)?),
         QueryMsg::MarginRatio { vamm, position_id } => {
-            to_binary(&query_margin_ratio(deps, vamm, position_id)?)
+            let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+            let position = read_position(deps.storage, &vamm_key, position_id)?;
+            to_binary(&query_margin_ratio(deps, &position)?)
         }
         QueryMsg::MarginRatioByCalcOption {
             vamm,
             position_id,
             calc_option,
-        } => to_binary(&get_margin_ratio_calc_option(
-            deps,
-            vamm,
-            position_id,
-            calc_option,
-        )?),
+        } => {
+            let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+            let position = read_position(deps.storage, &vamm_key, position_id)?;
+            to_binary(&get_margin_ratio_calc_option(deps, &position, calc_option)?)
+        }
         QueryMsg::CumulativePremiumFraction { vamm } => {
             to_binary(&query_cumulative_premium_fraction(deps, vamm)?)
         }

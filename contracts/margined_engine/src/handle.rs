@@ -497,8 +497,7 @@ pub fn trigger_tp_sl(
         // Can not trigger stop loss position if liquidate
         if position_is_liquidated(
             deps.as_ref(),
-            vamm.clone(),
-            position.position_id,
+            &position,
             config.maintenance_margin_ratio,
             &vamm_controller,
         )? {
@@ -560,9 +559,7 @@ pub fn trigger_tp_sl(
     Ok(Response::new()
         .add_submessages(msgs)
         .add_attribute("action", action)
-        .add_attributes(vec![
-            ("vamm", &vamm_addr.into_string()),
-        ]))
+        .add_attributes(vec![("vamm", &vamm_addr.into_string())]))
 }
 
 pub fn trigger_mutiple_tp_sl(
@@ -631,8 +628,7 @@ pub fn trigger_mutiple_tp_sl(
                 // Can not trigger stop loss position if liquidate
                 if position_is_liquidated(
                     deps.as_ref(),
-                    vamm.clone(),
-                    position.position_id,
+                    &position,
                     config.maintenance_margin_ratio,
                     &vamm_controller,
                 )? {
@@ -717,37 +713,34 @@ pub fn liquidate(
     position_id: u64,
     quote_asset_limit: Uint128,
 ) -> StdResult<Response> {
+    let config = read_config(deps.storage)?;
+
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
+
+    // read the position for the trader from vamm
+    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let position = read_position(deps.storage, &vamm_key, position_id)?;
 
     // store the liquidator
     store_tmp_liquidator(deps.storage, &info.sender)?;
 
     // retrieve the existing margin ratio of the position
-    let mut margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), position_id)?;
+    let mut margin_ratio = query_margin_ratio(deps.as_ref(), &position)?;
 
     let vamm_controller = VammController(vamm.clone());
 
     if vamm_controller.is_over_spread_limit(&deps.querier)? {
-        let oracle_margin_ratio = get_margin_ratio_calc_option(
-            deps.as_ref(),
-            vamm.to_string(),
-            position_id,
-            PnlCalcOption::Oracle,
-        )?;
+        let oracle_margin_ratio =
+            get_margin_ratio_calc_option(deps.as_ref(), &position, PnlCalcOption::Oracle)?;
 
         if oracle_margin_ratio.checked_sub(margin_ratio)? > Integer::zero() {
             margin_ratio = oracle_margin_ratio
         }
     }
 
-    let config = read_config(deps.storage)?;
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
     require_insufficient_margin(margin_ratio, config.maintenance_margin_ratio)?;
-
-    // read the position for the trader from vamm
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
-    let position = read_position(deps.storage, &vamm_key, position_id)?;
 
     // check the position isn't zero
     require_position_not_zero(position.size.value)?;
@@ -889,7 +882,7 @@ pub fn withdraw_margin(
 
     let remain_margin = calc_remain_margin_with_funding_payment(
         deps.as_ref(),
-        position.clone(),
+        &position,
         Integer::new_negative(amount),
     )?;
     require_bad_debt(remain_margin.bad_debt)?;

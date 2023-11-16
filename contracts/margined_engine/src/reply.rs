@@ -92,7 +92,7 @@ pub fn open_position_reply(
         margin,
         bad_debt: _,
         latest_premium_fraction,
-    } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), margin_delta)?;
+    } = calc_remain_margin_with_funding_payment(deps.as_ref(), &position, margin_delta)?;
 
     // set the new position
     position.notional = swap.open_notional;
@@ -197,7 +197,7 @@ pub fn close_position_reply(
         margin,
         bad_debt,
         latest_premium_fraction: _,
-    } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), margin_delta)?;
+    } = calc_remain_margin_with_funding_payment(deps.as_ref(), &position, margin_delta)?;
 
     let mut msgs: Vec<SubMsg> = vec![];
     let mut withdraw_amount = Integer::new_positive(margin).checked_add(swap.unrealized_pnl)?;
@@ -329,7 +329,7 @@ pub fn partial_close_position_reply(
         margin,
         bad_debt,
         latest_premium_fraction,
-    } = calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), realized_pnl)?;
+    } = calc_remain_margin_with_funding_payment(deps.as_ref(), &position, realized_pnl)?;
 
     let unrealized_pnl_after = swap.unrealized_pnl - realized_pnl;
 
@@ -411,7 +411,7 @@ pub fn liquidate_reply(
     };
 
     let mut remain_margin =
-        calc_remain_margin_with_funding_payment(deps.as_ref(), position.clone(), margin_delta)?;
+        calc_remain_margin_with_funding_payment(deps.as_ref(), &position, margin_delta)?;
 
     let config = read_config(deps.storage)?;
 
