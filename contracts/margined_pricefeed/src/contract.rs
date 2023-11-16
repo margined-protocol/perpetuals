@@ -1,4 +1,5 @@
 use crate::error::ContractError;
+use crate::query::query_last_round_id;
 use crate::{
     handle::{append_multiple_price, append_price, update_owner},
     query::{
@@ -42,7 +43,7 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
@@ -51,12 +52,12 @@ pub fn execute(
             key,
             price,
             timestamp,
-        } => append_price(deps, info, key, price, timestamp),
+        } => append_price(deps, env, info, key, price, timestamp),
         ExecuteMsg::AppendMultiplePrice {
             key,
             prices,
             timestamps,
-        } => append_multiple_price(deps, info, key, prices, timestamps),
+        } => append_multiple_price(deps, env, info, key, prices, timestamps),
         ExecuteMsg::UpdateOwner { owner } => update_owner(deps, info, owner),
     }
 }
@@ -74,6 +75,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetTwapPrice { key, interval } => {
             to_binary(&query_get_twap_price(deps, env, key, interval)?)
         }
+        QueryMsg::GetLastRoundId { key } => to_binary(&query_last_round_id(deps, key)?),
     }
 }
 
