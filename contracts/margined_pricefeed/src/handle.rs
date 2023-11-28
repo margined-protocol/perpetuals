@@ -29,7 +29,7 @@ pub fn append_price(
 
     if price.is_zero() {
         return Err(ContractError::Std(StdError::generic_err(
-            "price is must not be zero",
+            "Price is must not be zero",
         )));
     }
 
@@ -65,6 +65,12 @@ pub fn append_multiple_price(
     }
 
     for index in 0..prices.len() {
+        if prices[index].is_zero() {
+            return Err(ContractError::Std(StdError::generic_err(
+                "Price is must not be zero",
+            )));
+        }
+
         if timestamps[index] > env.block.time.seconds() || timestamps[index] == 0u64 {
             return Err(ContractError::Std(StdError::generic_err(
                 "Invalid timestamp",
