@@ -588,7 +588,7 @@ pub fn trigger_mutiple_tp_sl(
         base_asset_reserve: vamm_state.base_asset_reserve,
     };
 
-    let order_by = if take_profit && side == Side::Buy || !take_profit && side == Side::Sell {
+    let order_by = if take_profit == (side == Side::Buy) {
         Order::Descending
     } else {
         Order::Ascending
