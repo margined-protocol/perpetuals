@@ -27,6 +27,12 @@ pub fn append_price(
     // check permission
     OWNER.assert_admin(deps.as_ref(), &info.sender)?;
 
+    if price.is_zero() {
+        return Err(ContractError::Std(StdError::generic_err(
+            "price is must not be zero",
+        )));
+    }
+
     if timestamp > env.block.time.seconds() || timestamp == 0u64 {
         return Err(ContractError::Std(StdError::generic_err(
             "Invalid timestamp",

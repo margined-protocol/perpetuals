@@ -86,7 +86,6 @@ pub fn transfer_fees(
     open_position: bool,
 ) -> StdResult<Vec<SubMsg>> {
     let mut messages: Vec<SubMsg> = vec![];
-
     let config = read_config(deps.storage)?;
 
     if !spread_fee.is_zero() {
@@ -95,7 +94,6 @@ pub fn transfer_fees(
                 true => execute_transfer_from(deps.storage, &from, &insurance_fund, spread_fee)?,
                 false => execute_transfer(deps.storage, &insurance_fund, spread_fee)?,
             };
-
             messages.push(msg);
         }
     };

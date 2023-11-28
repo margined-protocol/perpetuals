@@ -343,6 +343,10 @@ pub fn close_position(
     position_id: u64,
     quote_amount_limit: Uint128,
 ) -> StdResult<Response> {
+    // read configuration and state information
+    let config = read_config(deps.storage)?;
+    let state = read_state(deps.storage)?;
+
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = info.sender;
@@ -351,8 +355,6 @@ pub fn close_position(
     let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
     let position = read_position(deps.storage, &vamm_key, position_id)?;
 
-    let state = read_state(deps.storage)?;
-
     if position.trader != trader {
         return Err(StdError::generic_err("Unauthorized"));
     }
@@ -360,7 +362,6 @@ pub fn close_position(
     // check the position isn't zero
     require_not_paused(state.pause)?;
     require_position_not_zero(position.size.value)?;
-
     require_not_restriction_mode(deps.storage, &vamm, env.block.height)?;
 
     // if it is long position, close a position means short it (which means base dir is AddToAmm) and vice versa
@@ -376,8 +377,6 @@ pub fn close_position(
         Direction::RemoveFromAmm,
         position.size.value,
     )?;
-
-    let config = read_config(deps.storage)?;
 
     // check if this position exceed fluctuation limit
     // if over fluctuation limit, then close partial position. Otherwise close all.
@@ -782,7 +781,6 @@ pub fn pay_funding(
 ) -> StdResult<Response> {
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
-
     let config = read_config(deps.storage)?;
     // check its a valid vamm
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
