@@ -287,6 +287,7 @@ pub fn close_position_reply(
         ("funding_payment", &funding_payment.to_string()),
         ("bad_debt", &bad_debt.to_string()),
         ("withdraw_amount", &withdraw_amount.value.to_string()),
+        ("trader", &position.trader.as_ref()),
     ]))
 }
 
