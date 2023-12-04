@@ -61,9 +61,8 @@ pub fn query_input_price(deps: Deps, direction: Direction, amount: Uint128) -> S
     if output.is_zero() {
         return Ok(Uint128::zero());
     }
-    let config = read_config(deps.storage)?;
-    let price = amount.checked_mul(config.decimals)?.checked_div(output)?;
 
+    let price = amount.checked_mul(config.decimals)?.checked_div(output)?;
     Ok(price)
 }
 
@@ -83,11 +82,7 @@ pub fn query_output_price(deps: Deps, direction: Direction, amount: Uint128) -> 
     if output.is_zero() {
         return Ok(Uint128::zero());
     }
-
-    let config = read_config(deps.storage)?;
-
     let price = amount.checked_mul(config.decimals)?.checked_div(output)?;
-
     Ok(price)
 }
 
