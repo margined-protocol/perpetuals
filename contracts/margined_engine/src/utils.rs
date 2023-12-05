@@ -522,6 +522,7 @@ pub fn check_tp_sl_price(
         {
             msg = String::from("trigger_stop_loss");
         }
+        
     }
     Ok(msg)
 }

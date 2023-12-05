@@ -213,7 +213,6 @@ fn test_simulate_close_price() {
     };
 
     let quote_asset_amount = get_output_price_with_reserves(
-        decimals,
         &Direction::AddToAmm,
         base_asset_amount,
         tmp_reserve_info.quote_asset_reserve,
@@ -250,7 +249,6 @@ fn test_simulate_close_price() {
         quote_asset_reserve: reserve_amount.clone(),
     };
     let quote_asset_amount = get_output_price_with_reserves(
-        decimals,
         &Direction::RemoveFromAmm,
         base_asset_amount,
         tmp_reserve_info.quote_asset_reserve,

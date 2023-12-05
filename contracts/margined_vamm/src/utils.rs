@@ -181,7 +181,6 @@ pub fn get_price_with_specific_snapshot(
 
             if asset.quote {
                 return get_input_price_with_reserves(
-                    config.decimals,
                     &asset.direction,
                     asset.amount,
                     snapshot.quote_asset_reserve,
@@ -189,7 +188,6 @@ pub fn get_price_with_specific_snapshot(
                 );
             } else {
                 return get_output_price_with_reserves(
-                    config.decimals,
                     &asset.direction,
                     asset.amount,
                     snapshot.quote_asset_reserve,

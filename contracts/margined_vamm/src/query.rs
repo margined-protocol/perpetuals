@@ -51,7 +51,6 @@ pub fn query_input_price(deps: Deps, direction: Direction, amount: Uint128) -> S
     let config = read_config(deps.storage)?;
 
     let output = get_input_price_with_reserves(
-        config.decimals,
         &direction,
         amount,
         state.quote_asset_reserve,
@@ -72,7 +71,6 @@ pub fn query_output_price(deps: Deps, direction: Direction, amount: Uint128) -> 
     let config = read_config(deps.storage)?;
 
     let output = get_output_price_with_reserves(
-        config.decimals,
         &direction,
         amount,
         state.quote_asset_reserve,
@@ -89,10 +87,8 @@ pub fn query_output_price(deps: Deps, direction: Direction, amount: Uint128) -> 
 /// Queries input amount
 pub fn query_input_amount(deps: Deps, direction: Direction, amount: Uint128) -> StdResult<Uint128> {
     let state = read_state(deps.storage)?;
-    let config = read_config(deps.storage)?;
 
     let output = get_input_price_with_reserves(
-        config.decimals,
         &direction,
         amount,
         state.quote_asset_reserve,
@@ -109,16 +105,12 @@ pub fn query_output_amount(
     amount: Uint128,
 ) -> StdResult<Uint128> {
     let state = read_state(deps.storage)?;
-    let config = read_config(deps.storage)?;
-
     let output = get_output_price_with_reserves(
-        config.decimals,
         &direction,
         amount,
         state.quote_asset_reserve,
         state.base_asset_reserve,
     )?;
-
     Ok(output)
 }
 

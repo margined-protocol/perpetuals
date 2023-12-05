@@ -506,7 +506,6 @@ pub fn trigger_tp_sl(
 
     let base_asset_amount = position.size.value;
     let quote_asset_amount = get_output_price_with_reserves(
-        config.decimals,
         &position.direction,
         base_asset_amount,
         vamm_state.quote_asset_reserve,
@@ -637,7 +636,6 @@ pub fn trigger_mutiple_tp_sl(
 
             let base_asset_amount = position.size.value;
             let quote_asset_amount = get_output_price_with_reserves(
-                config.decimals,
                 &position.direction,
                 base_asset_amount,
                 tmp_reserve.quote_asset_reserve,

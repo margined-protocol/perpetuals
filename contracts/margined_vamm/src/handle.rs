@@ -181,7 +181,6 @@ pub fn swap_input(
 
     let base_asset_amount = if !quote_asset_amount.is_zero() {
         let base_asset_amount = get_input_price_with_reserves(
-            config.decimals,
             &direction,
             quote_asset_amount,
             state.quote_asset_reserve,
@@ -251,7 +250,6 @@ pub fn swap_output(
 
     let quote_asset_amount = if !base_asset_amount.is_zero() {
         let quote_asset_amount = get_output_price_with_reserves(
-            config.decimals,
             &direction,
             base_asset_amount,
             state.quote_asset_reserve,

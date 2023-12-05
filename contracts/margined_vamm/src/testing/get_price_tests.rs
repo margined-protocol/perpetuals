@@ -1,5 +1,4 @@
 use crate::contract::{instantiate, query};
-use crate::state::read_config;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Uint128};
 use margined_perp::margined_vamm::{Direction, InstantiateMsg, QueryMsg, StateResponse};
@@ -216,12 +215,10 @@ fn test_get_input_and_output_price_with_reserves() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&res).unwrap();
-    let config = read_config(deps.as_ref().storage).unwrap();
 
     // amount = 0
     // price = 0
     let result = get_input_price_with_reserves(
-        config.decimals,
         &Direction::AddToAmm,
         Uint128::zero(),
         state.quote_asset_reserve,
@@ -233,7 +230,6 @@ fn test_get_input_and_output_price_with_reserves() {
     // amount = 0
     // price = 0
     let result = get_output_price_with_reserves(
-        config.decimals,
         &Direction::AddToAmm,
         Uint128::zero(),
         state.quote_asset_reserve,
@@ -246,7 +242,6 @@ fn test_get_input_and_output_price_with_reserves() {
     // price = 50 / 4.7619 = 10.499
     let quote_asset_amount = to_decimals(50);
     let result = get_input_price_with_reserves(
-        config.decimals,
         &Direction::AddToAmm,
         quote_asset_amount,
         state.quote_asset_reserve,
@@ -262,7 +257,6 @@ fn test_get_input_and_output_price_with_reserves() {
     // price = 50 / 5.263 = 9.5
     let quote_asset_amount = to_decimals(50);
     let result = get_input_price_with_reserves(
-        config.decimals,
         &Direction::RemoveFromAmm,
         quote_asset_amount,
         state.quote_asset_reserve,
@@ -278,7 +272,6 @@ fn test_get_input_and_output_price_with_reserves() {
     // price = 47.619 / 5 = 9.52
     let quote_asset_amount = to_decimals(5);
     let result = get_output_price_with_reserves(
-        config.decimals,
         &Direction::AddToAmm,
         quote_asset_amount,
         state.quote_asset_reserve,
@@ -293,7 +286,6 @@ fn test_get_input_and_output_price_with_reserves() {
     // a dividable number should not plus 1 at mantissa
     let quote_asset_amount = to_decimals(25);
     let result = get_output_price_with_reserves(
-        config.decimals,
         &Direction::AddToAmm,
         quote_asset_amount,
         state.quote_asset_reserve,
@@ -309,7 +301,6 @@ fn test_get_input_and_output_price_with_reserves() {
     // price = 52.631 / 5 = 10.52
     let quote_asset_amount = to_decimals(5);
     let result = get_output_price_with_reserves(
-        config.decimals,
         &Direction::RemoveFromAmm,
         quote_asset_amount,
         state.quote_asset_reserve,
@@ -324,7 +315,6 @@ fn test_get_input_and_output_price_with_reserves() {
     // divisable output
     let quote_asset_amount = Uint128::from(37_500_000_000u128);
     let result = get_output_price_with_reserves(
-        config.decimals,
         &Direction::RemoveFromAmm,
         quote_asset_amount,
         state.quote_asset_reserve,
