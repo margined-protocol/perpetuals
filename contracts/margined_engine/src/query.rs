@@ -359,27 +359,27 @@ pub fn query_position_is_tpsl(
         )?;
 
         for position in &position_by_price {
-            if !take_profit {
-                // Can not trigger stop loss position if bad debt
-                if position_is_bad_debt(
-                    deps,
-                    position,
-                    tmp_reserve.quote_asset_reserve,
-                    tmp_reserve.base_asset_reserve,
-                )? {
-                    continue;
-                }
+            // if !take_profit {
+            //     // Can not trigger stop loss position if bad debt
+            //     if position_is_bad_debt(
+            //         deps,
+            //         position,
+            //         tmp_reserve.quote_asset_reserve,
+            //         tmp_reserve.base_asset_reserve,
+            //     )? {
+            //         continue;
+            //     }
 
-                // Can not trigger stop loss position if liquidate
-                if position_is_liquidated(
-                    deps,
-                    position,
-                    config.maintenance_margin_ratio,
-                    &vamm_controller,
-                )? {
-                    continue;
-                }
-            }
+            //     // Can not trigger stop loss position if liquidate
+            //     if position_is_liquidated(
+            //         deps,
+            //         position,
+            //         config.maintenance_margin_ratio,
+            //         &vamm_controller,
+            //     )? {
+            //         continue;
+            //     }
+            // }
 
             let base_asset_amount = position.size.value;
             let quote_asset_amount = get_output_price_with_reserves(
