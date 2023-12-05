@@ -21,11 +21,10 @@ use crate::{
     utils::{
         calc_remain_margin_with_funding_payment, calculate_tp_sl_spread, check_tp_sl_price,
         direction_to_side, get_asset, get_margin_ratio_calc_option,
-        get_position_notional_unrealized_pnl, keccak_256, position_is_bad_debt,
-        position_is_liquidated, position_to_side, require_additional_margin, require_bad_debt,
-        require_insufficient_margin, require_non_zero_input, require_not_paused,
-        require_not_restriction_mode, require_position_not_zero, require_vamm, side_to_direction,
-        update_reserve,
+        get_position_notional_unrealized_pnl, keccak_256, position_to_side,
+        require_additional_margin, require_bad_debt, require_insufficient_margin,
+        require_non_zero_input, require_not_paused, require_not_restriction_mode,
+        require_position_not_zero, require_vamm, side_to_direction, update_reserve,
     },
 };
 use margined_common::{
