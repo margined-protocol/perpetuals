@@ -487,27 +487,27 @@ pub fn trigger_tp_sl(
     // check the position isn't zero
     require_position_not_zero(position.size.value)?;
 
-    if !take_profit {
-        // Can not trigger stop loss position if bad debt
-        if position_is_bad_debt(
-            deps.as_ref(),
-            &position,
-            vamm_state.quote_asset_reserve,
-            vamm_state.base_asset_reserve
-        )? {
-            return Err(StdError::generic_err("position is bad debt"));
-        }
+    // if !take_profit {
+    //     // Can not trigger stop loss position if bad debt
+    //     if position_is_bad_debt(
+    //         deps.as_ref(),
+    //         &position,
+    //         vamm_state.quote_asset_reserve,
+    //         vamm_state.base_asset_reserve
+    //     )? {
+    //         return Err(StdError::generic_err("position is bad debt"));
+    //     }
 
-        // Can not trigger stop loss position if liquidate
-        if position_is_liquidated(
-            deps.as_ref(),
-            &position,
-            config.maintenance_margin_ratio,
-            &vamm_controller,
-        )? {
-            return Err(StdError::generic_err("position is liquidated"));
-        }
-    }
+    //     // Can not trigger stop loss position if liquidate
+    //     if position_is_liquidated(
+    //         deps.as_ref(),
+    //         &position,
+    //         config.maintenance_margin_ratio,
+    //         &vamm_controller,
+    //     )? {
+    //         return Err(StdError::generic_err("position is liquidated"));
+    //     }
+    // }
 
     let base_asset_amount = position.size.value;
     let quote_asset_amount = get_output_price_with_reserves(
@@ -622,27 +622,27 @@ pub fn trigger_mutiple_tp_sl(
             // check the position isn't zero
             require_position_not_zero(position.size.value)?;
 
-            if !take_profit {
-                // Can not trigger stop loss position if bad debt
-                if position_is_bad_debt(
-                    deps.as_ref(),
-                    position,
-                    tmp_reserve.quote_asset_reserve,
-                    tmp_reserve.base_asset_reserve,
-                )? {
-                    continue;
-                }
+            // if !take_profit {
+            //     // Can not trigger stop loss position if bad debt
+            //     if position_is_bad_debt(
+            //         deps.as_ref(),
+            //         position,
+            //         tmp_reserve.quote_asset_reserve,
+            //         tmp_reserve.base_asset_reserve,
+            //     )? {
+            //         continue;
+            //     }
 
-                // Can not trigger stop loss position if liquidate
-                if position_is_liquidated(
-                    deps.as_ref(),
-                    &position,
-                    config.maintenance_margin_ratio,
-                    &vamm_controller,
-                )? {
-                    continue;
-                }
-            }
+            //     // Can not trigger stop loss position if liquidate
+            //     if position_is_liquidated(
+            //         deps.as_ref(),
+            //         &position,
+            //         config.maintenance_margin_ratio,
+            //         &vamm_controller,
+            //     )? {
+            //         continue;
+            //     }
+            // }
 
             let base_asset_amount = position.size.value;
             let quote_asset_amount = get_output_price_with_reserves(
