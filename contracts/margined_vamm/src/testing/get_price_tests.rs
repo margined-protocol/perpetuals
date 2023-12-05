@@ -83,7 +83,7 @@ fn test_get_input_add_to_amm() {
     )
     .unwrap();
     let result: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(result, Uint128::from(105_000_000u128));
+    assert_eq!(result, Uint128::from(9_523_809_523u128));
 
     let res = query(
         deps.as_ref(),
@@ -95,7 +95,7 @@ fn test_get_input_add_to_amm() {
     )
     .unwrap();
     let result: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(result, Uint128::from(125_000_000u128));
+    assert_eq!(result, Uint128::from(8_000_000_000u128));
 
     let res = query(
         deps.as_ref(),
@@ -107,7 +107,7 @@ fn test_get_input_add_to_amm() {
     )
     .unwrap();
     let result: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(result, Uint128::from(94_999_999u128));
+    assert_eq!(result, Uint128::from(10_526_315_789u128));
 
     let res = query(
         deps.as_ref(),
@@ -119,7 +119,7 @@ fn test_get_input_add_to_amm() {
     )
     .unwrap();
     let result: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(result, Uint128::from(62_500_000u128));
+    assert_eq!(result, Uint128::from(16_000_000_000u128));
 }
 
 /// Unit tests
