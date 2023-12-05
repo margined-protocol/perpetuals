@@ -80,7 +80,7 @@ pub fn query_output_price(deps: Deps, direction: Direction, amount: Uint128) -> 
     if output.is_zero() {
         return Ok(Uint128::zero());
     }
-    let price = amount.checked_mul(config.decimals)?.checked_div(output)?;
+    let price = output.checked_mul(config.decimals)?.checked_div(amount)?;
     Ok(price)
 }
 

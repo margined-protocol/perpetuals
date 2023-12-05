@@ -489,7 +489,12 @@ pub fn trigger_tp_sl(
 
     if !take_profit {
         // Can not trigger stop loss position if bad debt
-        if position_is_bad_debt(deps.as_ref(), &position, &vamm_controller)? {
+        if position_is_bad_debt(
+            deps.as_ref(),
+            &position,
+            vamm_state.quote_asset_reserve,
+            vamm_state.base_asset_reserve
+        )? {
             return Err(StdError::generic_err("position is bad debt"));
         }
 
@@ -619,7 +624,12 @@ pub fn trigger_mutiple_tp_sl(
 
             if !take_profit {
                 // Can not trigger stop loss position if bad debt
-                if position_is_bad_debt(deps.as_ref(), position, &vamm_controller)? {
+                if position_is_bad_debt(
+                    deps.as_ref(),
+                    position,
+                    tmp_reserve.quote_asset_reserve,
+                    tmp_reserve.base_asset_reserve,
+                )? {
                     continue;
                 }
 

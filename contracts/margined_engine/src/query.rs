@@ -361,7 +361,12 @@ pub fn query_position_is_tpsl(
         for position in &position_by_price {
             if !take_profit {
                 // Can not trigger stop loss position if bad debt
-                if position_is_bad_debt(deps, position, &vamm_controller)? {
+                if position_is_bad_debt(
+                    deps,
+                    position,
+                    tmp_reserve.quote_asset_reserve,
+                    tmp_reserve.base_asset_reserve,
+                )? {
                     continue;
                 }
 
@@ -421,8 +426,14 @@ pub fn query_position_is_bad_debt(deps: Deps, position_id: u64, vamm: String) ->
     let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
     let vamm_addr = deps.api.addr_validate(&vamm)?;
     let vamm_controller = VammController(vamm_addr.clone());
+    let vamm_state = vamm_controller.state(&deps.querier)?;
     let position = read_position(deps.storage, &vamm_key, position_id)?;
-    let is_bad_debt = position_is_bad_debt(deps, &position, &vamm_controller)?;
+    let is_bad_debt = position_is_bad_debt(
+        deps,
+        &position,
+        vamm_state.quote_asset_reserve,
+        vamm_state.base_asset_reserve,
+    )?;
     Ok(is_bad_debt)
 }
 

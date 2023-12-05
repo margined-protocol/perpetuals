@@ -2,7 +2,7 @@ use cosmwasm_std::{
     Addr, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, SubMsg,
     SubMsgResponse, Uint128,
 };
-use margined_utils::contracts::helpers::{InsuranceFundController, VammController};
+use margined_utils::{contracts::helpers::{InsuranceFundController, VammController}, tools::price_swap::get_output_price_with_reserves};
 use sha3::{Digest, Sha3_256};
 
 use std::str::FromStr;
@@ -564,13 +564,15 @@ pub fn update_reserve(
 pub fn position_is_bad_debt(
     deps: Deps,
     position: &Position,
-    vamm_controller: &VammController,
+    quote_asset_reserve: Uint128,
+    base_asset_reserve: Uint128,
 ) -> StdResult<bool> {
     // simulate quote_amount
-    let simulate_output_amount = vamm_controller.output_amount(
-        &deps.querier,
-        position.direction.clone(),
+    let simulate_output_amount = get_output_price_with_reserves(
+        &position.direction,
         position.size.value,
+        quote_asset_reserve,
+        base_asset_reserve,
     )?;
     // calculate margin delta between simulate_quote_amount and notional
     let margin_delta = match &position.direction {
