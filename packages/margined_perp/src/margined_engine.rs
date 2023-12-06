@@ -216,6 +216,7 @@ pub struct ConfigResponse {
 pub struct StateResponse {
     pub open_interest_notional: Uint128,
     pub bad_debt: Uint128,
+    pub pause: bool,
 }
 
 #[cw_serde]

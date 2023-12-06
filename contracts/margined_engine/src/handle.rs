@@ -483,30 +483,10 @@ pub fn trigger_tp_sl(
         return Err(StdError::generic_err("vAMM is not open"));
     }
 
+    let state = read_state(deps.storage)?;
+    require_not_paused(state.pause)?;
     // check the position isn't zero
     require_position_not_zero(position.size.value)?;
-
-    // if !take_profit {
-    //     // Can not trigger stop loss position if bad debt
-    //     if position_is_bad_debt(
-    //         deps.as_ref(),
-    //         &position,
-    //         vamm_state.quote_asset_reserve,
-    //         vamm_state.base_asset_reserve
-    //     )? {
-    //         return Err(StdError::generic_err("position is bad debt"));
-    //     }
-
-    //     // Can not trigger stop loss position if liquidate
-    //     if position_is_liquidated(
-    //         deps.as_ref(),
-    //         &position,
-    //         config.maintenance_margin_ratio,
-    //         &vamm_controller,
-    //     )? {
-    //         return Err(StdError::generic_err("position is liquidated"));
-    //     }
-    // }
 
     let base_asset_amount = position.size.value;
     let quote_asset_amount = get_output_price_with_reserves(
@@ -583,6 +563,9 @@ pub fn trigger_mutiple_tp_sl(
     if !vamm_state.open {
         return Err(StdError::generic_err("vAMM is not open"));
     }
+
+    let state = read_state(deps.storage)?;
+    require_not_paused(state.pause)?;
 
     // query pool reserves of the vamm so that we can simulate it while triggering tp sl.
     // after simulating, we will know if the position is qualified to close or not
@@ -720,7 +703,8 @@ pub fn liquidate(
     quote_asset_limit: Uint128,
 ) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
-
+    let state = read_state(deps.storage)?;
+    require_not_paused(state.pause)?;
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
 
