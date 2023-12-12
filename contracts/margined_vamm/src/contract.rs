@@ -54,6 +54,7 @@ pub fn instantiate(
     // check the decimal places supplied and ensure it is at least 6
     let decimals = validate_decimal_places(msg.decimals)?;
 
+    validate_ratio(msg.initial_margin_ratio, decimals)?;
     validate_ratio(msg.toll_ratio, decimals)?;
     validate_ratio(msg.spread_ratio, decimals)?;
     validate_ratio(msg.fluctuation_limit_ratio, decimals)?;
@@ -75,6 +76,7 @@ pub fn instantiate(
         decimals,
         spot_price_twap_interval: ONE_HOUR_IN_SECONDS,
         funding_period: msg.funding_period,
+        initial_margin_ratio: msg.initial_margin_ratio,
     };
 
     // set and update margin engine
@@ -133,6 +135,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             insurance_fund,
             pricefeed,
             spot_price_twap_interval,
+            initial_margin_ratio,
         } => update_config(
             deps,
             info,
@@ -145,6 +148,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             insurance_fund,
             pricefeed,
             spot_price_twap_interval,
+            initial_margin_ratio
         ),
         ExecuteMsg::UpdateOwner { owner } => update_owner(deps, info, owner),
         ExecuteMsg::SwapInput {

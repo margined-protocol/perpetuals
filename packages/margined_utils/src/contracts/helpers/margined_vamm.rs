@@ -29,6 +29,7 @@ impl VammController {
         insurance_fund: Option<String>,
         pricefeed: Option<String>,
         spot_price_twap_interval: Option<u64>,
+        initial_margin_ratio: Option<Uint128>,
     ) -> StdResult<CosmosMsg> {
         wasm_execute(
             &self.0,
@@ -42,6 +43,7 @@ impl VammController {
                 insurance_fund,
                 pricefeed,
                 spot_price_twap_interval,
+                initial_margin_ratio
             },
             vec![],
         )
@@ -62,6 +64,7 @@ impl VammController {
             insurance_fund: None,
             pricefeed: None,
             spot_price_twap_interval: None,
+            initial_margin_ratio: None
         };
         wasm_execute(&self.0, &msg, vec![])
     }
@@ -77,6 +80,7 @@ impl VammController {
             insurance_fund: None,
             pricefeed: None,
             spot_price_twap_interval: None,
+            initial_margin_ratio: None
         };
         wasm_execute(&self.0, &msg, vec![])
     }
@@ -95,6 +99,7 @@ impl VammController {
             insurance_fund: None,
             pricefeed: None,
             spot_price_twap_interval: None,
+            initial_margin_ratio: None
         };
         wasm_execute(&self.0, &msg, vec![])
     }
@@ -113,6 +118,7 @@ impl VammController {
             insurance_fund: None,
             pricefeed: None,
             spot_price_twap_interval: None,
+            initial_margin_ratio: None
         };
         wasm_execute(&self.0, &msg, vec![])
     }
@@ -131,6 +137,7 @@ impl VammController {
             insurance_fund: None,
             pricefeed: None,
             spot_price_twap_interval: None,
+            initial_margin_ratio: None
         };
         wasm_execute(&self.0, &msg, vec![])
     }

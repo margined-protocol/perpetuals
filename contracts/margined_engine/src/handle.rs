@@ -154,6 +154,7 @@ pub fn open_position(
         .checked_div(leverage)?;
 
     require_additional_margin(Integer::from(margin_ratio), config.initial_margin_ratio)?;
+    require_additional_margin(Integer::from(margin_ratio), vamm_config.initial_margin_ratio)?;
 
     // calculate the position notional
     let mut open_notional = margin_amount
