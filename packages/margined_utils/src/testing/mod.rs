@@ -507,7 +507,7 @@ impl SimpleScenario {
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: None,
                     insurance_fund: Some(insurance_fund_addr.to_string()),
-                    initial_margin_ratio: Uint128::from(50_000u128)
+                    initial_margin_ratio: Uint128::from(50_000_000u128)
                 },
                 &[],
                 "vamm",
@@ -979,7 +979,7 @@ impl ShutdownScenario {
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
                     insurance_fund: Some(insurance_fund.0.to_string()),
-                    initial_margin_ratio: Uint128::from(50_000u128)
+                    initial_margin_ratio: Uint128::from(500_000u128)
                 },
                 &[],
                 "vamm5",

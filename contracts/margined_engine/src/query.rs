@@ -254,7 +254,7 @@ pub fn query_margin_ratio(deps: Deps, position: &Position) -> StdResult<Integer>
 /// Queries the withdrawable collateral of a trader
 pub fn query_free_collateral(deps: Deps, vamm: String, position_id: u64) -> StdResult<Integer> {
     // retrieve the latest position
-    let position = query_trader_position_with_funding_payment(deps, vamm, position_id)?;
+    let position = query_trader_position_with_funding_payment(deps, vamm.clone(), position_id)?;
 
     // get trader's unrealized PnL and choose the least beneficial one for the trader
     let PositionUnrealizedPnlResponse {
@@ -293,17 +293,20 @@ pub fn query_free_collateral(deps: Deps, vamm: String, position_id: u64) -> StdR
         account_value
     };
 
-    let config = read_config(deps.storage)?;
+    // validate address inputs
+    let vamm = deps.api.addr_validate(&vamm.clone())?;
+    let vamm_controller = VammController(vamm.clone());
+    let vamm_config = vamm_controller.config(&deps.querier)?;
 
     let margin_requirement = if position.size.is_positive() {
         position
             .notional
-            .checked_mul(config.initial_margin_ratio)?
-            .checked_div(config.decimals)?
+            .checked_mul(vamm_config.initial_margin_ratio)?
+            .checked_div(vamm_config.decimals)?
     } else {
         position_notional
-            .checked_mul(config.initial_margin_ratio)?
-            .checked_div(config.decimals)?
+            .checked_mul(vamm_config.initial_margin_ratio)?
+            .checked_div(vamm_config.decimals)?
     };
 
     Ok(minimum_collateral.checked_sub(Integer::new_positive(margin_requirement))?)
