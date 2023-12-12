@@ -269,7 +269,36 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+    // check the decimal places supplied and ensure it is at least 6
+    let decimals = validate_decimal_places(msg.decimals)?;
+
+    validate_ratio(msg.initial_margin_ratio, decimals)?;
+    validate_ratio(msg.toll_ratio, decimals)?;
+    validate_ratio(msg.spread_ratio, decimals)?;
+    validate_ratio(msg.fluctuation_limit_ratio, decimals)?;
+
+    validate_assets(&msg.base_asset)?;
+    validate_assets(&msg.quote_asset)?;
+
+    let config = Config { 
+        margin_engine: deps.api.addr_validate(&msg.margin_engine)?, // default to nothing, must be set
+        insurance_fund:deps.api.addr_validate(&msg.insurance_fund)?, // default to nothing, must be set like the engine
+        quote_asset: msg.quote_asset,
+        base_asset: msg.base_asset,
+        base_asset_holding_cap: Uint128::zero(),
+        open_interest_notional_cap: Uint128::zero(),
+        toll_ratio: msg.toll_ratio,
+        spread_ratio: msg.spread_ratio,
+        fluctuation_limit_ratio: msg.fluctuation_limit_ratio,
+        pricefeed: deps.api.addr_validate(&msg.pricefeed)?,
+        decimals,
+        spot_price_twap_interval: ONE_HOUR_IN_SECONDS,
+        funding_period: msg.funding_period,
+        initial_margin_ratio: msg.initial_margin_ratio,
+    };
+
+    store_config(deps.storage, &config)?;
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     Ok(Response::new())
 }
