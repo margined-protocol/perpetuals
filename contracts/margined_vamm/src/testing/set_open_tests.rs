@@ -22,6 +22,7 @@ fn test_set_open_admin_open_amm() {
         margin_engine: Some("addr0000".to_string()),
         insurance_fund: Some("insurance_fund".to_string()),
         pricefeed: "oracle".to_string(),
+        initial_margin_ratio: Uint128::from(50_000u128)
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -52,6 +53,7 @@ fn test_set_open_init_next_funding_time_zero() {
         margin_engine: Some("addr0000".to_string()),
         insurance_fund: Some("insurance_fund".to_string()),
         pricefeed: "oracle".to_string(),
+        initial_margin_ratio: Uint128::from(50_000u128)
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -77,6 +79,7 @@ fn test_set_open_admin_open_updates_next_funding_time() {
         margin_engine: Some("addr0000".to_string()),
         insurance_fund: Some("insurance_fund".to_string()),
         pricefeed: "oracle".to_string(),
+        initial_margin_ratio: Uint128::from(50_000u128)
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -110,6 +113,7 @@ fn test_set_open_admin_closes_amm() {
         margin_engine: Some("addr0000".to_string()),
         insurance_fund: Some("insurance_fund".to_string()),
         pricefeed: "oracle".to_string(),
+        initial_margin_ratio: Uint128::from(50_000u128)
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -144,6 +148,7 @@ fn test_set_open_cant_do_anything_when_its_beginning() {
         margin_engine: Some("addr0000".to_string()),
         insurance_fund: Some("insurance_fund".to_string()),
         pricefeed: "oracle".to_string(),
+        initial_margin_ratio: Uint128::from(50_000u128)
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -200,6 +205,7 @@ fn test_set_open_cant_do_anything_when_closed() {
         margin_engine: Some("addr0000".to_string()),
         insurance_fund: Some("insurance_fund".to_string()),
         pricefeed: "oracle".to_string(),
+        initial_margin_ratio: Uint128::from(50_000u128)
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();

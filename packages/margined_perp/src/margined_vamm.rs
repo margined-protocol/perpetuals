@@ -22,7 +22,19 @@ impl Direction {
 }
 
 #[cw_serde]
-pub struct MigrateMsg {}
+pub struct MigrateMsg {
+    pub decimals: u8,
+    pub pricefeed: String,
+    pub margin_engine: String,
+    pub insurance_fund: String,
+    pub quote_asset: String,
+    pub base_asset: String,
+    pub funding_period: u64,
+    pub toll_ratio: Uint128,
+    pub spread_ratio: Uint128,
+    pub fluctuation_limit_ratio: Uint128,
+    pub initial_margin_ratio: Uint128
+}
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -38,6 +50,7 @@ pub struct InstantiateMsg {
     pub toll_ratio: Uint128,
     pub spread_ratio: Uint128,
     pub fluctuation_limit_ratio: Uint128,
+    pub initial_margin_ratio: Uint128
 }
 
 #[cw_serde]
@@ -53,6 +66,7 @@ pub enum ExecuteMsg {
         insurance_fund: Option<String>,
         pricefeed: Option<String>,
         spot_price_twap_interval: Option<u64>,
+        initial_margin_ratio: Option<Uint128>,
     },
     UpdateOwner {
         owner: String,
@@ -153,6 +167,7 @@ pub struct ConfigResponse {
     pub decimals: Uint128,
     pub funding_period: u64,
     pub spot_price_twap_interval: u64,
+    pub initial_margin_ratio: Uint128,
 }
 
 #[cw_serde]

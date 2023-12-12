@@ -25,6 +25,8 @@ mod whitelist_tests;
 
 mod gas_integration_tests;
 
+mod vamm_leverage_test;
+
 use margined_utils::{
     create_entry_points_testing,
     testing::{NativeTokenScenario, SimpleScenario},

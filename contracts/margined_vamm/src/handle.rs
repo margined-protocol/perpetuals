@@ -34,6 +34,7 @@ pub fn update_config(
     insurance_fund: Option<String>,
     pricefeed: Option<String>,
     spot_price_twap_interval: Option<u64>,
+    initial_margin_ratio: Option<Uint128>,
 ) -> StdResult<Response> {
     let mut config: Config = read_config(deps.storage)?;
 
@@ -94,6 +95,12 @@ pub fn update_config(
         config.spot_price_twap_interval = spot_price_twap_interval;
     }
 
+    // update initial margin ratio
+    if let Some(initial_margin_ratio) = initial_margin_ratio {
+        validate_ratio(initial_margin_ratio, config.decimals)?;
+        config.initial_margin_ratio = initial_margin_ratio;
+    }
+    
     store_config(deps.storage, &config)?;
 
     Ok(Response::default().add_attribute("action", "update_config"))
