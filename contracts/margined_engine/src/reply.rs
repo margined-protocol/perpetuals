@@ -611,13 +611,14 @@ pub fn pay_funding_reply(
 
     let mut response: Response = Response::new();
 
-    if funding_payment.is_negative() && !funding_payment.is_zero() {
-        let msg = execute_insurance_fund_withdrawal(deps.as_ref(), funding_payment.value)?;
-        response = response.add_submessage(msg);
-    } else if funding_payment.is_positive() && !funding_payment.is_zero() {
-        let msg = execute_transfer_to_insurance_fund(deps.as_ref(), env, funding_payment.value)?;
-        response = response.add_submessage(msg);
-    };
+    if !funding_payment.is_zero() {
+        let sub_msg = if funding_payment.is_negative() {
+            execute_insurance_fund_withdrawal(deps.as_ref(), funding_payment.value)?
+        } else {
+            execute_transfer_to_insurance_fund(deps.as_ref(), env, funding_payment.value)?
+        };
+        response = response.add_submessage(sub_msg);
+    }
 
     Ok(response.add_attributes(vec![
         ("action", "pay_funding_reply"),
