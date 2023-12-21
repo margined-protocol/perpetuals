@@ -536,11 +536,7 @@ pub fn trigger_tp_sl(
             require_position_not_zero(position.size.value)?;
 
             if !take_profit {
-                let is_bad_debt = position_is_bad_debt(
-                    deps.as_ref(),
-                    position,
-                    &vamm_controller
-                )?;
+                let is_bad_debt = position_is_bad_debt(deps.as_ref(), position, &vamm_controller)?;
                 let is_liquidated = position_is_liquidated(
                     deps.as_ref(),
                     vamm.clone(),
@@ -687,7 +683,10 @@ pub fn liquidate(
         ("pair", &position.pair),
         ("position_id", &position_id.to_string()),
         ("margin_ratio", &margin_ratio.to_string()),
-        ("maintenance_margin_ratio", &config.maintenance_margin_ratio.to_string()),
+        (
+            "maintenance_margin_ratio",
+            &config.maintenance_margin_ratio.to_string(),
+        ),
         ("trader", &position.trader.as_ref()),
     ]))
 }
@@ -839,6 +838,15 @@ pub fn withdraw_margin(
         ("position_id", &position_id.to_string()),
         ("trader", trader.as_ref()),
         ("withdrawal_amount", &amount.to_string()),
+        (
+            "funding_payment",
+            &remain_margin.funding_payment.to_string(),
+        ),
+        (
+            "latest_premium_faction",
+            &remain_margin.latest_premium_fraction.to_string(),
+        ),
+        ("bad_debt", &remain_margin.bad_debt.to_string()),
     ]))
 }
 
