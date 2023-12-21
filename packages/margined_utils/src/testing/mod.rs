@@ -7,7 +7,7 @@ use crate::contracts::helpers::{
 };
 use crate::tools::fund_calculator::calculate_funds_needed;
 use cosmwasm_std::{
-    Addr, BankMsg, BlockInfo, Coin, CosmosMsg, Empty, Response, Timestamp, Uint128,
+    Addr, BankMsg, BlockInfo, Coin, CosmosMsg, Decimal, Empty, Response, Timestamp, Uint128,
 };
 use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg, MinterResponse};
 use margined_common::asset::NATIVE_DENOM;
@@ -419,10 +419,10 @@ impl SimpleScenario {
                     insurance_fund: None,
                     fee_pool: fee_pool.0.to_string(),
                     eligible_collateral: usdc.0.to_string(),
-                    initial_margin_ratio: Uint128::from(50_000_000u128),        // 0.05
-                    maintenance_margin_ratio: Uint128::from(50_000_000u128),    // 0.05
-                    tp_sl_spread: Uint128::from(5_000u128),                     // 0,000005
-                    liquidation_fee: Uint128::from(50_000_000u128),             // 0.05
+                    initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
+                    maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
+                    tp_sl_spread: Uint128::from(5_000u128),              // 0,000005
+                    liquidation_fee: Uint128::from(50_000_000u128),      // 0.05
                 },
                 &[],
                 "engine",
@@ -1019,6 +1019,10 @@ macro_rules! create_entry_points_testing {
 // takes in a Uint128 and multiplies by the decimals just to make tests more legible
 pub fn to_decimals(input: u64) -> Uint128 {
     Uint128::from(input) * DECIMAL_MULTIPLIER
+}
+
+pub fn from_decimals(input: Uint128) -> String {
+    Decimal::from_ratio(input, Uint128::from(DECIMAL_MULTIPLIER)).to_string()
 }
 
 pub fn parse_event(res: &Response, key: &str) -> String {

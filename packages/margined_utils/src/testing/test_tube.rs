@@ -257,7 +257,7 @@ impl TestTubeScenario {
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: None,
                     insurance_fund: Some(insurance_fund_addr.to_string()),
-                    initial_margin_ratio: Uint128::from(50_000u128)
+                    initial_margin_ratio: Uint128::from(50_000u128),
                 },
                 Some(&owner.address()),
                 Some("vamm"),
@@ -282,7 +282,7 @@ impl TestTubeScenario {
                 insurance_fund: None,
                 pricefeed: None,
                 spot_price_twap_interval: None,
-                initial_margin_ratio: None
+                initial_margin_ratio: None,
             },
             &[],
             owner,

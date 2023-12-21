@@ -2,6 +2,7 @@ use crate::contract::{execute, instantiate, query};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr, Uint128};
 use margined_common::asset::{AssetInfo, NATIVE_DENOM};
+use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
     ConfigResponse, ExecuteMsg, InstantiateMsg, PauserResponse, QueryMsg,
 };
@@ -9,6 +10,12 @@ use margined_perp::margined_engine::{
 const OWNER: &str = "owner";
 const INSURANCE_FUND: &str = "insurance_fund";
 const FEE_POOL: &str = "fee_pool";
+
+#[test]
+fn test_funding_payment_display() {
+    let value = Integer::new_negative(5000u64);
+    assert_eq!(value.to_string(), "-5000");
+}
 
 #[test]
 fn test_instantiation() {
@@ -20,7 +27,7 @@ fn test_instantiation() {
         eligible_collateral: NATIVE_DENOM.to_string(),
         initial_margin_ratio: Uint128::from(50_000u128), // 0.05
         maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
-        tp_sl_spread: Uint128::from(50_000u128), // 0.05
+        tp_sl_spread: Uint128::from(50_000u128),         // 0.05
         liquidation_fee: Uint128::from(100u128),
     };
     let info = mock_info(OWNER, &[]);
@@ -58,7 +65,7 @@ fn test_update_config() {
         eligible_collateral: NATIVE_DENOM.to_string(),
         initial_margin_ratio: Uint128::from(50_000u128), // 0.05
         maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
-        tp_sl_spread: Uint128::from(50_000u128), // 0.05
+        tp_sl_spread: Uint128::from(50_000u128),         // 0.05
         liquidation_fee: Uint128::from(100u128),
     };
     let info = mock_info(OWNER, &[]);
@@ -142,7 +149,7 @@ fn test_update_pauser() {
         eligible_collateral: NATIVE_DENOM.to_string(),
         initial_margin_ratio: Uint128::from(50_000u128), // 0.05
         maintenance_margin_ratio: Uint128::from(50_000u128), // 0.05
-        tp_sl_spread: Uint128::from(50_000u128), // 0.05
+        tp_sl_spread: Uint128::from(50_000u128),         // 0.05
         liquidation_fee: Uint128::from(100u128),
     };
     let info = mock_info(OWNER, &[]);

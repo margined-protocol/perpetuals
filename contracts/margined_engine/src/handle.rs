@@ -915,6 +915,15 @@ pub fn withdraw_margin(
         ("position_id", &position_id.to_string()),
         ("trader", trader.as_ref()),
         ("withdrawal_amount", &amount.to_string()),
+        (
+            "funding_payment",
+            &remain_margin.funding_payment.to_string(),
+        ),
+        (
+            "latest_premium_faction",
+            &remain_margin.latest_premium_fraction.to_string(),
+        ),
+        ("bad_debt", &remain_margin.bad_debt.to_string()),
     ]))
 }
 

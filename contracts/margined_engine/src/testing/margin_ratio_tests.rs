@@ -3,7 +3,7 @@ use margined_common::integer::Integer;
 use margined_perp::margined_engine::Side;
 use margined_utils::{
     cw_multi_test::Executor,
-    testing::{to_decimals, SimpleScenario},
+    testing::{from_decimals, to_decimals, SimpleScenario},
 };
 
 use crate::testing::new_simple_scenario;
@@ -52,6 +52,11 @@ fn test_get_margin_ratio_long() {
         ..
     } = new_simple_scenario();
 
+    let config = engine.config(&router.wrap()).unwrap();
+    println!("config: {:?}", config);
+    let spot_price = vamm.spot_price(&router.wrap()).unwrap();
+    println!("current spot price: {:?}", from_decimals(spot_price));
+
     let msg = engine
         .open_position(
             vamm.addr().to_string(),
@@ -69,7 +74,18 @@ fn test_get_margin_ratio_long() {
     let position = engine
         .position(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
+    println!("position margin: {:?}", from_decimals(position.margin));
+    println!("notional: {:?}", from_decimals(position.notional));
+    println!("position: {:?}", position);
     assert_eq!(position.size, Integer::new_positive(20_000_000_000u128));
+    let margin_ratio = engine
+        .get_margin_ratio(
+            &router.wrap(),
+            vamm.addr().to_string(),
+            position.position_id,
+        )
+        .unwrap();
+    println!("margin ratio: {:?}", margin_ratio);
 
     let msg = engine
         .open_position(
@@ -503,7 +519,7 @@ fn test_verify_margin_ratio_with_pnl_funding_payment_negative() {
     // unrealized Pnl: 250 - 110.3448275862 = 139.6551724138
     // margin ratio: (25 + 2 - 139.6551724138) / 110.3448275862 = -1.0209375
     let margin_ratio = engine
-        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(),1)
+        .get_margin_ratio(&router.wrap(), vamm.addr().to_string(), 1)
         .unwrap();
     assert_eq!(margin_ratio, Integer::new_negative(1_020_937_500u128));
 
