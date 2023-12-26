@@ -1,6 +1,6 @@
-use cosmwasm_std::{
-    DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, Uint128,
-};
+use std::ops::{Div, Mul};
+
+use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, Uint128};
 
 use margined_common::{integer::Integer, validate::validate_ratio};
 use margined_perp::margined_vamm::Direction;
@@ -16,8 +16,8 @@ use crate::{
     query::query_twap_price,
     state::{read_config, read_state, store_config, store_state, Config},
     utils::{
-        add_reserve_snapshot, check_is_over_block_fluctuation_limit, require_margin_engine,
-        require_open, TwapCalcOption,
+        add_reserve_snapshot, check_is_over_block_fluctuation_limit,
+        price_boundaries_of_last_block, require_margin_engine, require_open, TwapCalcOption,
     },
 };
 
@@ -100,7 +100,7 @@ pub fn update_config(
         validate_ratio(initial_margin_ratio, config.decimals)?;
         config.initial_margin_ratio = initial_margin_ratio;
     }
-    
+
     store_config(deps.storage, &config)?;
 
     Ok(Response::default().add_attribute("action", "update_config"))
@@ -139,35 +139,81 @@ pub fn set_open(deps: DepsMut, env: Env, info: MessageInfo, open: bool) -> StdRe
     Ok(Response::new().add_attribute("action", "set_open"))
 }
 
-// pub fn change_reserve(
-//     deps: DepsMut,
-//     info: MessageInfo,
-//     quote_asset_reserve: Uint128,
-//     base_asset_reserve: Uint128,
-// ) -> StdResult<Response> {
-//     let config = read_config(deps.storage)?;
-//     let mut state = read_state(deps.storage)?;
+pub fn migrate_liquidity(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    fluctuation_limit_ratio: Option<Uint128>,
+    liquidity_multiplier: Uint128,
+) -> StdResult<Response> {
+    // check permission and if state matches
+    if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
+        return Err(StdError::generic_err("unauthorized"));
+    }
 
-//     // check permission and if state matches
-//     if !OWNER.is_admin(deps.as_ref(), &info.sender)? {
-//         return Err(StdError::generic_err("unauthorized"));
-//     }
+    if liquidity_multiplier == Uint128::one() {
+        return Err(StdError::generic_err("multiplier can't be 1"));
+    }
 
-//     if quote_asset_reserve.is_zero() || base_asset_reserve.is_zero() {
-//         return Err(StdError::generic_err("Input must be non-zero"));
-//     }
+    let config = read_config(deps.storage)?;
+    let mut state = read_state(deps.storage)?;
 
-//     state.quote_asset_reserve = quote_asset_reserve;
-//     state.base_asset_reserve = base_asset_reserve;
+    // check liquidity multiplier limit, have lower bound if position size is positive for now.
+    if state.total_position_size.is_positive() {
+        let liquidity_multiplier_lower_bound = state
+            .total_position_size
+            .value
+            .mul(config.decimals)
+            .div(state.base_asset_reserve);
+        if liquidity_multiplier < liquidity_multiplier_lower_bound {
+            return Err(StdError::generic_err("illegal liquidity multiplier"));
+        }
+    }
 
-//     store_state(deps.storage, &state)?;
+    if let Some(fluctuation_limit_ratio) = fluctuation_limit_ratio {
+        validate_ratio(fluctuation_limit_ratio, config.decimals)?;
 
-//     Ok(Response::new().add_attributes(vec![
-//         ("action", "change_reserve"),
-//         ("quote_asset_reserve", &quote_asset_reserve.to_string()),
-//         ("base_asset_reserve", &base_asset_reserve.to_string()),
-//     ]))
-// }
+        // fix sandwich attack during liquidity migration
+        if !fluctuation_limit_ratio.is_zero() {
+            let (upper_limit, lower_limit) = price_boundaries_of_last_block(
+                deps.storage,
+                config.decimals,
+                fluctuation_limit_ratio,
+                env,
+            )?;
+
+            let price = state
+                .quote_asset_reserve
+                .checked_mul(config.decimals)?
+                .checked_div(state.base_asset_reserve)?;
+
+            // ensure that the latest price isn't over the limit which would restrict any further
+            // swaps from occurring in this block
+            if price > upper_limit || price < lower_limit {
+                return Err(StdError::generic_err("price is over fluctuation limit"));
+            }
+        }
+    }
+
+    // migrate liquidity
+    state.quote_asset_reserve = state
+        .quote_asset_reserve
+        .multiply_ratio(liquidity_multiplier, config.decimals);
+    state.base_asset_reserve = state
+        .base_asset_reserve
+        .multiply_ratio(liquidity_multiplier, config.decimals);
+
+    store_state(deps.storage, &state)?;
+
+    Ok(Response::new().add_attributes(vec![
+        ("action", "migrate_liquidity"),
+        (
+            "quote_asset_reserve",
+            &state.quote_asset_reserve.to_string(),
+        ),
+        ("base_asset_reserve", &state.base_asset_reserve.to_string()),
+    ]))
+}
 
 // Function should only be called by the margin engine
 pub fn swap_input(
@@ -378,9 +424,12 @@ pub fn update_reserve(
     base_asset_amount: Uint128,
     can_go_over_fluctuation: bool,
 ) -> StdResult<Response> {
+    let config = read_config(storage)?;
     check_is_over_block_fluctuation_limit(
         storage,
         env.clone(),
+        config.decimals,
+        config.fluctuation_limit_ratio,
         direction.clone(),
         quote_asset_amount,
         base_asset_amount,

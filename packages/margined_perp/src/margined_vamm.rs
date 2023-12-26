@@ -33,7 +33,7 @@ pub struct MigrateMsg {
     pub toll_ratio: Uint128,
     pub spread_ratio: Uint128,
     pub fluctuation_limit_ratio: Uint128,
-    pub initial_margin_ratio: Uint128
+    pub initial_margin_ratio: Uint128,
 }
 
 #[cw_serde]
@@ -50,7 +50,7 @@ pub struct InstantiateMsg {
     pub toll_ratio: Uint128,
     pub spread_ratio: Uint128,
     pub fluctuation_limit_ratio: Uint128,
-    pub initial_margin_ratio: Uint128
+    pub initial_margin_ratio: Uint128,
 }
 
 #[cw_serde]
@@ -88,10 +88,10 @@ pub enum ExecuteMsg {
     SetOpen {
         open: bool,
     },
-    // ChangeReserve {
-    //     quote_asset_reserve: Uint128,
-    //     base_asset_reserve: Uint128,
-    // },
+    MigrateLiquidity {
+        fluctuation_limit_ratio: Option<Uint128>,
+        liquidity_multiplier: Uint128,
+    },
 }
 
 #[cw_serde]

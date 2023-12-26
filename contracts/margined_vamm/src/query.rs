@@ -204,7 +204,12 @@ pub fn query_is_over_fluctuation_limit(
         return Ok(false);
     };
 
-    let (upper_limit, lower_limit) = price_boundaries_of_last_block(deps.storage, env)?;
+    let (upper_limit, lower_limit) = price_boundaries_of_last_block(
+        deps.storage,
+        config.decimals,
+        config.fluctuation_limit_ratio,
+        env,
+    )?;
 
     let quote_asset_amount = query_output_amount(deps, direction.clone(), base_asset_amount)?;
 

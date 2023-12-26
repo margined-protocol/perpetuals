@@ -14,6 +14,7 @@ use margined_utils::contracts::helpers::PricefeedController;
 
 use crate::{
     error::ContractError,
+    handle::migrate_liquidity,
     // handle::change_reserve,
     state::read_config,
     utils::{TwapCalcOption, TwapInputAsset},
@@ -148,7 +149,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             insurance_fund,
             pricefeed,
             spot_price_twap_interval,
-            initial_margin_ratio
+            initial_margin_ratio,
         ),
         ExecuteMsg::UpdateOwner { owner } => update_owner(deps, info, owner),
         ExecuteMsg::SwapInput {
@@ -183,10 +184,16 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         ),
         ExecuteMsg::SettleFunding {} => settle_funding(deps, env, info),
         ExecuteMsg::SetOpen { open } => set_open(deps, env, info, open),
-        // ExecuteMsg::ChangeReserve {
-        //     quote_asset_reserve,
-        //     base_asset_reserve,
-        // } => change_reserve(deps, info, quote_asset_reserve, base_asset_reserve),
+        ExecuteMsg::MigrateLiquidity {
+            fluctuation_limit_ratio,
+            liquidity_multiplier,
+        } => migrate_liquidity(
+            deps,
+            env,
+            info,
+            fluctuation_limit_ratio,
+            liquidity_multiplier,
+        ),
     }
 }
 
@@ -281,9 +288,9 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
     validate_assets(&msg.base_asset)?;
     validate_assets(&msg.quote_asset)?;
 
-    let config = Config { 
+    let config = Config {
         margin_engine: deps.api.addr_validate(&msg.margin_engine)?, // default to nothing, must be set
-        insurance_fund:deps.api.addr_validate(&msg.insurance_fund)?, // default to nothing, must be set like the engine
+        insurance_fund: deps.api.addr_validate(&msg.insurance_fund)?, // default to nothing, must be set like the engine
         quote_asset: msg.quote_asset,
         base_asset: msg.base_asset,
         base_asset_holding_cap: Uint128::zero(),

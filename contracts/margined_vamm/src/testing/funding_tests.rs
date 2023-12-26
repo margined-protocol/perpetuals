@@ -32,7 +32,7 @@ fn test_settle_funding_delay_before_buffer_period_ends() {
 
     let msg = vamm.settle_funding().unwrap();
     router.execute(owner.clone(), msg).unwrap();
-    
+
     expected_funding_time = state.next_funding_time + 3_600u64;
     state = vamm.state(&router.wrap()).unwrap();
     assert_eq!(state.next_funding_time, expected_funding_time);
