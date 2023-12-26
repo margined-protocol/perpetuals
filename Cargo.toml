@@ -24,9 +24,9 @@ exclude = [
 ]
 
 [workspace.dependencies]
-cosmwasm-schema = { version = "1.1.9" }
-cosmwasm-std = { version = "1.1.9" }
-cosmwasm-storage = { version = "1.1.9" }
+cosmwasm-schema = { version = "=1.2" }
+cosmwasm-std = { version = "=1.2" }
+cosmwasm-storage = { version = "=1.2" }
 thiserror = "1.0.26"
 cw-controllers = "1.0.1"
 cw2 = "1.0.1"
@@ -47,9 +47,9 @@ margined_insurance_fund = { path = "./contracts/margined_insurance_fund" }
 margined_pricefeed = { path = "./contracts/margined_pricefeed" }
 mock_pricefeed = { path = "./contracts/mocks/mock_pricefeed" }
 
-# # override cosmwasm-std for all other packages
-# [patch.crates-io]
-# cosmwasm-std = { git = "https://github.com/oraichain/cosmwasm.git" }
+osmosis-test-tube = { git = "https://github.com/oraichain/test-tube.git", rev = "354d580" }
+test-tube = { git = "https://github.com/oraichain/test-tube.git", rev = "354d580" }
+
 
 [profile.release]
 opt-level = 3

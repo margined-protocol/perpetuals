@@ -7,7 +7,7 @@ use crate::contracts::helpers::{
 };
 use crate::tools::fund_calculator::calculate_funds_needed;
 use cosmwasm_std::{
-    Addr, BankMsg, BlockInfo, Coin, CosmosMsg, Empty, Response, Timestamp, Uint128,
+    Addr, BankMsg, BlockInfo, Coin, CosmosMsg, Decimal, Empty, Response, Timestamp, Uint128,
 };
 use cw20::{Cw20Coin, Cw20Contract, Cw20ExecuteMsg, MinterResponse};
 use margined_common::asset::NATIVE_DENOM;
@@ -20,6 +20,9 @@ use margined_perp::margined_pricefeed::{
 use margined_perp::margined_vamm::{
     ExecuteMsg as VammExecuteMsg, InstantiateMsg as VammInstantiateMsg,
 };
+
+pub mod test_tube;
+
 // use terra_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 use cw_multi_test::{App, AppBuilder, Contract, Executor};
 
@@ -211,6 +214,7 @@ impl NativeTokenScenario {
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: None,
                     insurance_fund: Some(insurance_fund.0.to_string()),
+                    initial_margin_ratio: Uint128::from(50_000u128)
                 },
                 &[],
                 "vamm",
@@ -234,6 +238,7 @@ impl NativeTokenScenario {
                     insurance_fund: None,
                     pricefeed: None,
                     spot_price_twap_interval: None,
+                    initial_margin_ratio: None,
                 },
                 &[],
             )
@@ -414,10 +419,10 @@ impl SimpleScenario {
                     insurance_fund: None,
                     fee_pool: fee_pool.0.to_string(),
                     eligible_collateral: usdc.0.to_string(),
-                    initial_margin_ratio: Uint128::from(50_000_000u128),        // 0.05
-                    maintenance_margin_ratio: Uint128::from(50_000_000u128),    // 0.05
-                    tp_sl_spread: Uint128::from(5_000u128),                     // 0,000005
-                    liquidation_fee: Uint128::from(50_000_000u128),             // 0.05
+                    initial_margin_ratio: Uint128::from(50_000_000u128), // 0.05
+                    maintenance_margin_ratio: Uint128::from(50_000_000u128), // 0.05
+                    tp_sl_spread: Uint128::from(5_000u128),              // 0,000005
+                    liquidation_fee: Uint128::from(50_000_000u128),      // 0.05
                 },
                 &[],
                 "engine",
@@ -502,6 +507,7 @@ impl SimpleScenario {
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: None,
                     insurance_fund: Some(insurance_fund_addr.to_string()),
+                    initial_margin_ratio: Uint128::from(50_000_000u128)
                 },
                 &[],
                 "vamm",
@@ -525,6 +531,7 @@ impl SimpleScenario {
                     insurance_fund: None,
                     pricefeed: None,
                     spot_price_twap_interval: None,
+                    initial_margin_ratio: None
                 },
                 &[],
             )
@@ -735,6 +742,7 @@ impl VammScenario {
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
                     insurance_fund: Some("insurance_fund".to_string()),
+                    initial_margin_ratio: Uint128::from(50_000u128)
                 },
                 &[],
                 "vamm",
@@ -855,6 +863,7 @@ impl ShutdownScenario {
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
                     insurance_fund: Some(insurance_fund_addr.to_string()),
+                    initial_margin_ratio: Uint128::from(50_000u128)
                 },
                 &[],
                 "vamm1",
@@ -883,6 +892,7 @@ impl ShutdownScenario {
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
                     insurance_fund: Some(insurance_fund_addr.to_string()),
+                    initial_margin_ratio: Uint128::from(50_000u128)
                 },
                 &[],
                 "vamm2",
@@ -911,6 +921,7 @@ impl ShutdownScenario {
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
                     insurance_fund: Some(insurance_fund_addr.to_string()),
+                    initial_margin_ratio: Uint128::from(50_000u128)
                 },
                 &[],
                 "vamm3",
@@ -939,6 +950,7 @@ impl ShutdownScenario {
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
                     insurance_fund: Some(insurance_fund.0.to_string()),
+                    initial_margin_ratio: Uint128::from(50_000u128)
                 },
                 &[],
                 "vamm4",
@@ -967,6 +979,7 @@ impl ShutdownScenario {
                     pricefeed: pricefeed_addr.to_string(),
                     margin_engine: Some(owner.to_string()),
                     insurance_fund: Some(insurance_fund.0.to_string()),
+                    initial_margin_ratio: Uint128::from(500_000u128)
                 },
                 &[],
                 "vamm5",
@@ -1006,6 +1019,10 @@ macro_rules! create_entry_points_testing {
 // takes in a Uint128 and multiplies by the decimals just to make tests more legible
 pub fn to_decimals(input: u64) -> Uint128 {
     Uint128::from(input) * DECIMAL_MULTIPLIER
+}
+
+pub fn from_decimals(input: Uint128) -> String {
+    Decimal::from_ratio(input, Uint128::from(DECIMAL_MULTIPLIER)).to_string()
 }
 
 pub fn parse_event(res: &Response, key: &str) -> String {

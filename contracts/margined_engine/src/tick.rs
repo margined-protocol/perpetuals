@@ -1,4 +1,4 @@
-use cosmwasm_std::{Order as OrderBy, StdResult, Uint128, Storage};
+use cosmwasm_std::{Order as OrderBy, StdResult, Storage, Uint128};
 use cosmwasm_storage::ReadonlyBucket;
 use margined_perp::margined_engine::{Side, TickResponse, TicksResponse};
 use std::convert::{TryFrom, TryInto};
@@ -19,7 +19,7 @@ pub fn query_ticks(
     let order_by = order_by.map_or(None, |val| OrderBy::try_from(val).ok());
     let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
 
-    let position_bucket: ReadonlyBucket<u64> =
+    let position_bucket =
         ReadonlyBucket::multilevel(storage, &[PREFIX_TICK, &vamm_key, side.as_bytes()]);
 
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;

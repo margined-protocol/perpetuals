@@ -243,11 +243,25 @@ impl EngineController {
     pub fn trigger_tp_sl(
         &self,
         vamm: String,
+        position_id: u64,
+        take_profit: bool,
+    ) -> StdResult<CosmosMsg> {
+        let msg = ExecuteMsg::TriggerTpSl {
+            vamm,
+            position_id,
+            take_profit
+        } ;
+        wasm_execute(&self.0, &msg, vec![])
+    }
+
+    pub fn trigger_multiple_tp_sl(
+        &self,
+        vamm: String,
         side: Side,
         take_profit: bool,
         limit: u32,
     ) -> StdResult<CosmosMsg> {
-        let msg = ExecuteMsg::TriggerTpSl {
+        let msg = ExecuteMsg::TriggerMultipleTpSl {
             vamm,
             side,
             take_profit,
@@ -288,25 +302,6 @@ impl EngineController {
         position_id: u64,
     ) -> StdResult<Position> {
         let msg = QueryMsg::Position { vamm, position_id };
-
-        querier.query_wasm_smart(&self.0, &msg)
-    }
-
-    /// get traders positions for all registered vamms
-    pub fn get_all_positions(
-        &self,
-        querier: &QuerierWrapper,
-        trader: String,
-        start_after: Option<u64>,
-        limit: Option<u32>,
-        order_by: Option<i32>,
-    ) -> StdResult<Vec<Position>> {
-        let msg = QueryMsg::AllPositions {
-            trader,
-            start_after,
-            limit,
-            order_by,
-        };
 
         querier.query_wasm_smart(&self.0, &msg)
     }

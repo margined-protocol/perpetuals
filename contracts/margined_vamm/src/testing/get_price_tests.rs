@@ -1,5 +1,4 @@
 use crate::contract::{instantiate, query};
-use crate::state::read_config;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_binary, Uint128};
 use margined_perp::margined_vamm::{Direction, InstantiateMsg, QueryMsg, StateResponse};
@@ -25,6 +24,7 @@ fn test_get_input_add_to_amm() {
         margin_engine: Some("addr0000".to_string()),
         insurance_fund: Some("insurance_fund".to_string()),
         pricefeed: "oracle".to_string(),
+        initial_margin_ratio: Uint128::from(50_000u128)
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -84,7 +84,7 @@ fn test_get_input_add_to_amm() {
     )
     .unwrap();
     let result: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(result, Uint128::from(105_000_000u128));
+    assert_eq!(result, Uint128::from(9_523_809_523u128));
 
     let res = query(
         deps.as_ref(),
@@ -96,7 +96,7 @@ fn test_get_input_add_to_amm() {
     )
     .unwrap();
     let result: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(result, Uint128::from(125_000_000u128));
+    assert_eq!(result, Uint128::from(8_000_000_000u128));
 
     let res = query(
         deps.as_ref(),
@@ -108,7 +108,7 @@ fn test_get_input_add_to_amm() {
     )
     .unwrap();
     let result: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(result, Uint128::from(94_999_999u128));
+    assert_eq!(result, Uint128::from(10_526_315_789u128));
 
     let res = query(
         deps.as_ref(),
@@ -120,7 +120,7 @@ fn test_get_input_add_to_amm() {
     )
     .unwrap();
     let result: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(result, Uint128::from(62_500_000u128));
+    assert_eq!(result, Uint128::from(16_000_000_000u128));
 }
 
 /// Unit tests
@@ -140,6 +140,7 @@ fn test_get_output_amount() {
         margin_engine: Some("addr0000".to_string()),
         insurance_fund: Some("insurance_fund".to_string()),
         pricefeed: "oracle".to_string(),
+        initial_margin_ratio: Uint128::from(50_000u128)
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -210,18 +211,17 @@ fn test_get_input_and_output_price_with_reserves() {
         margin_engine: Some("addr0000".to_string()),
         insurance_fund: Some("insurance_fund".to_string()),
         pricefeed: "oracle".to_string(),
+        initial_margin_ratio: Uint128::from(50_000u128)
     };
     let info = mock_info("addr0000", &[]);
     instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&res).unwrap();
-    let config = read_config(deps.as_ref().storage).unwrap();
 
     // amount = 0
     // price = 0
     let result = get_input_price_with_reserves(
-        config.decimals,
         &Direction::AddToAmm,
         Uint128::zero(),
         state.quote_asset_reserve,
@@ -233,7 +233,6 @@ fn test_get_input_and_output_price_with_reserves() {
     // amount = 0
     // price = 0
     let result = get_output_price_with_reserves(
-        config.decimals,
         &Direction::AddToAmm,
         Uint128::zero(),
         state.quote_asset_reserve,
@@ -246,7 +245,6 @@ fn test_get_input_and_output_price_with_reserves() {
     // price = 50 / 4.7619 = 10.499
     let quote_asset_amount = to_decimals(50);
     let result = get_input_price_with_reserves(
-        config.decimals,
         &Direction::AddToAmm,
         quote_asset_amount,
         state.quote_asset_reserve,
@@ -262,7 +260,6 @@ fn test_get_input_and_output_price_with_reserves() {
     // price = 50 / 5.263 = 9.5
     let quote_asset_amount = to_decimals(50);
     let result = get_input_price_with_reserves(
-        config.decimals,
         &Direction::RemoveFromAmm,
         quote_asset_amount,
         state.quote_asset_reserve,
@@ -278,7 +275,6 @@ fn test_get_input_and_output_price_with_reserves() {
     // price = 47.619 / 5 = 9.52
     let quote_asset_amount = to_decimals(5);
     let result = get_output_price_with_reserves(
-        config.decimals,
         &Direction::AddToAmm,
         quote_asset_amount,
         state.quote_asset_reserve,
@@ -293,7 +289,6 @@ fn test_get_input_and_output_price_with_reserves() {
     // a dividable number should not plus 1 at mantissa
     let quote_asset_amount = to_decimals(25);
     let result = get_output_price_with_reserves(
-        config.decimals,
         &Direction::AddToAmm,
         quote_asset_amount,
         state.quote_asset_reserve,
@@ -309,7 +304,6 @@ fn test_get_input_and_output_price_with_reserves() {
     // price = 52.631 / 5 = 10.52
     let quote_asset_amount = to_decimals(5);
     let result = get_output_price_with_reserves(
-        config.decimals,
         &Direction::RemoveFromAmm,
         quote_asset_amount,
         state.quote_asset_reserve,
@@ -324,7 +318,6 @@ fn test_get_input_and_output_price_with_reserves() {
     // divisable output
     let quote_asset_amount = Uint128::from(37_500_000_000u128);
     let result = get_output_price_with_reserves(
-        config.decimals,
         &Direction::RemoveFromAmm,
         quote_asset_amount,
         state.quote_asset_reserve,

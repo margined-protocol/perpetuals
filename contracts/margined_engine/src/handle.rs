@@ -21,11 +21,10 @@ use crate::{
     utils::{
         calc_remain_margin_with_funding_payment, calculate_tp_sl_spread, check_tp_sl_price,
         direction_to_side, get_asset, get_margin_ratio_calc_option,
-        get_position_notional_unrealized_pnl, keccak_256, position_is_bad_debt,
-        position_is_liquidated, position_to_side, require_additional_margin, require_bad_debt,
-        require_insufficient_margin, require_non_zero_input, require_not_paused,
-        require_not_restriction_mode, require_position_not_zero, require_vamm, side_to_direction,
-        update_reserve,
+        get_position_notional_unrealized_pnl, keccak_256, position_to_side,
+        require_additional_margin, require_bad_debt, require_insufficient_margin,
+        require_non_zero_input, require_not_paused, require_not_restriction_mode,
+        require_position_not_zero, require_vamm, side_to_direction, update_reserve,
     },
 };
 use margined_common::{
@@ -127,10 +126,10 @@ pub fn open_position(
 ) -> StdResult<Response> {
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
-    let trader = info.sender.clone();
-
+    let vamm_controller = VammController(vamm.clone());
     let config = read_config(deps.storage)?;
     let state = read_state(deps.storage)?;
+    let trader = info.sender.clone();
 
     require_not_paused(state.pause)?;
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
@@ -141,7 +140,6 @@ pub fn open_position(
     require_non_zero_input(take_profit)?;
 
     let position_id = increase_last_position_id(deps.storage)?;
-    let vamm_controller = VammController(vamm.clone());
 
     if leverage < config.decimals {
         return Err(StdError::generic_err("Leverage must be greater than 1"));
@@ -155,27 +153,13 @@ pub fn open_position(
         .checked_mul(config.decimals)?
         .checked_div(leverage)?;
 
-    require_additional_margin(Integer::from(margin_ratio), config.initial_margin_ratio)?;
-
-    // creates a new position
-    let position: Position = Position {
-        position_id,
-        vamm: vamm.clone(),
-        trader: trader.clone(),
-        pair: format!("{}/{}", vamm_config.base_asset, vamm_config.quote_asset),
-        side: side.clone(),
-        direction: side_to_direction(&side),
-        size: Integer::zero(),
-        margin: Uint128::zero(),
-        notional: Uint128::zero(),
-        entry_price: Uint128::zero(),
-        take_profit: Uint128::zero(),
-        stop_loss: Some(Uint128::zero()),
-        last_updated_premium_fraction: Integer::zero(),
-        spread_fee: Uint128::zero(),
-        toll_fee: Uint128::zero(),
-        block_time: 0u64,
-    };
+    require_additional_margin(
+        Integer::from(margin_ratio),
+        Uint128::max(
+            config.initial_margin_ratio,
+            vamm_config.initial_margin_ratio,
+        ),
+    )?;
 
     // calculate the position notional
     let mut open_notional = margin_amount
@@ -224,9 +208,9 @@ pub fn open_position(
         }
     }
 
-    let msg = internal_increase_position(
+    let msg = internal_open_position(
         vamm.clone(),
-        side.clone(),
+        side,
         position_id,
         open_notional,
         base_asset_limit,
@@ -246,7 +230,6 @@ pub fn open_position(
             position_notional: Uint128::zero(),
             unrealized_pnl: Integer::zero(),
             margin_to_vault: Integer::zero(),
-            fees_paid: false,
             spread_fee,
             toll_fee,
             take_profit,
@@ -267,7 +250,10 @@ pub fn open_position(
         ("position_id", &position_id.to_string()),
         ("position_side", &format!("{:?}", side)),
         ("vamm", vamm.as_ref()),
-        ("pair", &position.pair),
+        (
+            "pair",
+            &format!("{}/{}", vamm_config.base_asset, vamm_config.quote_asset),
+        ),
         ("trader", trader.as_ref()),
         ("margin_amount", &margin_amount.to_string()),
         ("leverage", &leverage.to_string()),
@@ -362,6 +348,10 @@ pub fn close_position(
     position_id: u64,
     quote_amount_limit: Uint128,
 ) -> StdResult<Response> {
+    // read configuration and state information
+    let config = read_config(deps.storage)?;
+    let state = read_state(deps.storage)?;
+
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
     let trader = info.sender;
@@ -370,8 +360,6 @@ pub fn close_position(
     let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
     let position = read_position(deps.storage, &vamm_key, position_id)?;
 
-    let state = read_state(deps.storage)?;
-
     if position.trader != trader {
         return Err(StdError::generic_err("Unauthorized"));
     }
@@ -379,7 +367,6 @@ pub fn close_position(
     // check the position isn't zero
     require_not_paused(state.pause)?;
     require_position_not_zero(position.size.value)?;
-
     require_not_restriction_mode(deps.storage, &vamm, env.block.height)?;
 
     // if it is long position, close a position means short it (which means base dir is AddToAmm) and vice versa
@@ -395,8 +382,6 @@ pub fn close_position(
         Direction::RemoveFromAmm,
         position.size.value,
     )?;
-
-    let config = read_config(deps.storage)?;
 
     // check if this position exceed fluctuation limit
     // if over fluctuation limit, then close partial position. Otherwise close all.
@@ -436,7 +421,6 @@ pub fn close_position(
                 position_notional,
                 unrealized_pnl,
                 margin_to_vault: Integer::zero(),
-                fees_paid: false,
                 spread_fee: position.spread_fee,
                 toll_fee: position.toll_fee,
                 take_profit: position.take_profit,
@@ -485,30 +469,121 @@ pub fn close_position(
 pub fn trigger_tp_sl(
     deps: DepsMut,
     vamm: String,
+    position_id: u64,
+    take_profit: bool,
+) -> StdResult<Response> {
+    let config = read_config(deps.storage)?;
+    let vamm_addr = deps.api.addr_validate(&vamm)?;
+    let mut msgs: Vec<SubMsg> = vec![];
+    let mut tp_sl_flag: bool = false;
+
+    let vamm_controller = VammController(vamm_addr.clone());
+    let vamm_state = vamm_controller.state(&deps.querier)?;
+
+    // read the position for the trader from vamm
+    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let position = read_position(deps.storage, &vamm_key, position_id)?;
+
+    // check that vamm is open
+    if !vamm_state.open {
+        return Err(StdError::generic_err("vAMM is not open"));
+    }
+
+    let state = read_state(deps.storage)?;
+    require_not_paused(state.pause)?;
+    // check the position isn't zero
+    require_position_not_zero(position.size.value)?;
+
+    let base_asset_amount = position.size.value;
+    let quote_asset_amount = get_output_price_with_reserves(
+        &position.direction,
+        base_asset_amount,
+        vamm_state.quote_asset_reserve,
+        vamm_state.base_asset_reserve,
+    )?;
+    let close_price = quote_asset_amount
+        .checked_mul(config.decimals)?
+        .checked_div(base_asset_amount)?;
+
+    let stop_loss = position.stop_loss.unwrap_or_default();
+    let (tp_spread, sl_spread) = calculate_tp_sl_spread(
+        config.tp_sl_spread,
+        position.take_profit,
+        stop_loss,
+        config.decimals,
+    )?;
+    let tp_sl_action = check_tp_sl_price(
+        close_price,
+        position.take_profit,
+        stop_loss,
+        tp_spread,
+        sl_spread,
+        &position.side,
+    )?;
+    if take_profit {
+        if tp_sl_action == "trigger_take_profit" {
+            tp_sl_flag = true;
+        }
+    } else {
+        if tp_sl_action == "trigger_stop_loss" {
+            tp_sl_flag = true;
+        }
+    }
+    if tp_sl_flag {
+        msgs.push(internal_close_position(
+            deps.storage,
+            &position,
+            Uint128::zero(),
+            CLOSE_POSITION_REPLY_ID,
+        )?);
+    }
+
+    let action = if take_profit {
+        "trigger_take_profit"
+    } else {
+        "trigger_stop_loss"
+    };
+
+    Ok(Response::new()
+        .add_submessages(msgs)
+        .add_attribute("action", action)
+        .add_attributes(vec![("vamm", &vamm_addr.into_string())]))
+}
+
+pub fn trigger_mutiple_tp_sl(
+    deps: DepsMut,
+    vamm: String,
     side: Side,
     take_profit: bool,
     limit: u32,
 ) -> StdResult<Response> {
     let config = read_config(deps.storage)?;
-    let vamm_addr = deps.api.addr_validate(&vamm.clone())?;
+    let vamm_addr = deps.api.addr_validate(&vamm)?;
     let mut msgs: Vec<SubMsg> = vec![];
     let mut tp_sl_flag: bool = false;
 
-    require_vamm(deps.as_ref(), &config.insurance_fund, &vamm_addr)?;
+    let vamm_controller = VammController(vamm_addr.clone());
+    let vamm_state = vamm_controller.state(&deps.querier)?;
+
+    // check that vamm is open
+    if !vamm_state.open {
+        return Err(StdError::generic_err("vAMM is not open"));
+    }
+
+    let state = read_state(deps.storage)?;
+    require_not_paused(state.pause)?;
 
     // query pool reserves of the vamm so that we can simulate it while triggering tp sl.
     // after simulating, we will know if the position is qualified to close or not
-    let vamm_controller = VammController(vamm_addr.clone());
-    let vamm_state = vamm_controller.state(&deps.querier).unwrap();
-    let mut tmp_reserve: TmpReserveInfo = TmpReserveInfo {
+    let mut tmp_reserve = TmpReserveInfo {
         quote_asset_reserve: vamm_state.quote_asset_reserve,
         base_asset_reserve: vamm_state.base_asset_reserve,
     };
 
-    let order_by = if take_profit && side == Side::Buy || !take_profit && side == Side::Sell {
-        Order::Ascending
-    } else {
+    let order_by = if take_profit == (side == Side::Buy) {
         Order::Descending
+    } else {
+        Order::Ascending
     };
 
     let ticks = query_ticks(
@@ -520,45 +595,46 @@ pub fn trigger_tp_sl(
         Some(order_by.into()),
     )?;
 
-    for tick in ticks.ticks.iter() {
+    for tick in &ticks.ticks {
         let position_by_price = query_positions(
             deps.storage,
             vamm.clone(),
             Some(side),
             PositionFilter::Price(tick.entry_price),
             None,
-            Some(limit),
+            None,
             Some(Order::Ascending.into()),
         )?;
 
-        for position in position_by_price.iter() {
+        for position in &position_by_price {
             // check the position isn't zero
             require_position_not_zero(position.size.value)?;
 
-            if !take_profit {
-                let is_bad_debt = position_is_bad_debt(
-                    deps.as_ref(),
-                    position,
-                    &vamm_controller
-                )?;
-                let is_liquidated = position_is_liquidated(
-                    deps.as_ref(),
-                    vamm.clone(),
-                    position.position_id,
-                    config.maintenance_margin_ratio,
-                    &vamm_controller,
-                )?;
+            // if !take_profit {
+            //     // Can not trigger stop loss position if bad debt
+            //     if position_is_bad_debt(
+            //         deps.as_ref(),
+            //         position,
+            //         tmp_reserve.quote_asset_reserve,
+            //         tmp_reserve.base_asset_reserve,
+            //     )? {
+            //         continue;
+            //     }
 
-                // Can not trigger stop loss position if bad debt or liquidate
-                if is_bad_debt || is_liquidated {
-                    continue;
-                }
-            }
+            //     // Can not trigger stop loss position if liquidate
+            //     if position_is_liquidated(
+            //         deps.as_ref(),
+            //         &position,
+            //         config.maintenance_margin_ratio,
+            //         &vamm_controller,
+            //     )? {
+            //         continue;
+            //     }
+            // }
 
             let base_asset_amount = position.size.value;
             let quote_asset_amount = get_output_price_with_reserves(
-                config.decimals,
-                &position.direction.clone(),
+                &position.direction,
                 base_asset_amount,
                 tmp_reserve.quote_asset_reserve,
                 tmp_reserve.base_asset_reserve,
@@ -597,7 +673,7 @@ pub fn trigger_tp_sl(
                     &mut tmp_reserve,
                     quote_asset_amount,
                     base_asset_amount,
-                    position.direction.clone(),
+                    &position.direction,
                 );
                 msgs.push(internal_close_position(
                     deps.storage,
@@ -632,37 +708,35 @@ pub fn liquidate(
     position_id: u64,
     quote_asset_limit: Uint128,
 ) -> StdResult<Response> {
+    let config = read_config(deps.storage)?;
+    let state = read_state(deps.storage)?;
+    require_not_paused(state.pause)?;
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
+
+    // read the position for the trader from vamm
+    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let position = read_position(deps.storage, &vamm_key, position_id)?;
 
     // store the liquidator
     store_tmp_liquidator(deps.storage, &info.sender)?;
 
     // retrieve the existing margin ratio of the position
-    let mut margin_ratio = query_margin_ratio(deps.as_ref(), vamm.to_string(), position_id)?;
+    let mut margin_ratio = query_margin_ratio(deps.as_ref(), &position)?;
 
     let vamm_controller = VammController(vamm.clone());
 
     if vamm_controller.is_over_spread_limit(&deps.querier)? {
-        let oracle_margin_ratio = get_margin_ratio_calc_option(
-            deps.as_ref(),
-            vamm.to_string(),
-            position_id,
-            PnlCalcOption::Oracle,
-        )?;
+        let oracle_margin_ratio =
+            get_margin_ratio_calc_option(deps.as_ref(), &position, PnlCalcOption::Oracle)?;
 
         if oracle_margin_ratio.checked_sub(margin_ratio)? > Integer::zero() {
             margin_ratio = oracle_margin_ratio
         }
     }
 
-    let config = read_config(deps.storage)?;
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
     require_insufficient_margin(margin_ratio, config.maintenance_margin_ratio)?;
-
-    // read the position for the trader from vamm
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
-    let position = read_position(deps.storage, &vamm_key, position_id)?;
 
     // check the position isn't zero
     require_position_not_zero(position.size.value)?;
@@ -687,7 +761,10 @@ pub fn liquidate(
         ("pair", &position.pair),
         ("position_id", &position_id.to_string()),
         ("margin_ratio", &margin_ratio.to_string()),
-        ("maintenance_margin_ratio", &config.maintenance_margin_ratio.to_string()),
+        (
+            "maintenance_margin_ratio",
+            &config.maintenance_margin_ratio.to_string(),
+        ),
         ("trader", &position.trader.as_ref()),
     ]))
 }
@@ -701,7 +778,6 @@ pub fn pay_funding(
 ) -> StdResult<Response> {
     // validate address inputs
     let vamm = deps.api.addr_validate(&vamm)?;
-
     let config = read_config(deps.storage)?;
     // check its a valid vamm
     require_vamm(deps.as_ref(), &config.insurance_fund, &vamm)?;
@@ -801,7 +877,7 @@ pub fn withdraw_margin(
 
     let remain_margin = calc_remain_margin_with_funding_payment(
         deps.as_ref(),
-        position.clone(),
+        &position,
         Integer::new_negative(amount),
     )?;
     require_bad_debt(remain_margin.bad_debt)?;
@@ -839,11 +915,20 @@ pub fn withdraw_margin(
         ("position_id", &position_id.to_string()),
         ("trader", trader.as_ref()),
         ("withdrawal_amount", &amount.to_string()),
+        (
+            "funding_payment",
+            &remain_margin.funding_payment.to_string(),
+        ),
+        (
+            "latest_premium_faction",
+            &remain_margin.latest_premium_fraction.to_string(),
+        ),
+        ("bad_debt", &remain_margin.bad_debt.to_string()),
     ]))
 }
 
-// Increase the position through a swap
-pub fn internal_increase_position(
+// Open position via vamm
+pub fn internal_open_position(
     vamm: Addr,
     side: Side,
     position_id: u64,
@@ -861,6 +946,7 @@ pub fn internal_increase_position(
     )
 }
 
+// Close position via vamm
 pub fn internal_close_position(
     storage: &mut dyn Storage,
     position: &Position,
@@ -882,7 +968,6 @@ pub fn internal_close_position(
             position_notional: Uint128::zero(),
             unrealized_pnl: Integer::zero(),
             margin_to_vault: Integer::zero(),
-            fees_paid: false,
             take_profit: position.take_profit,
             stop_loss: position.stop_loss,
             spread_fee: position.spread_fee,
@@ -949,7 +1034,6 @@ fn partial_liquidation(
             position_notional: Uint128::zero(),
             unrealized_pnl,
             margin_to_vault: Integer::zero(),
-            fees_paid: false,
             take_profit: position.take_profit,
             stop_loss: position.stop_loss,
             spread_fee: position.spread_fee,

@@ -20,8 +20,12 @@ mod position_liquidation_tests;
 mod position_tests;
 mod position_upper_bound_tests;
 mod tests;
-mod whitelist_tests;
 mod tp_sl_test;
+mod whitelist_tests;
+
+mod gas_integration_tests;
+
+mod vamm_leverage_test;
 
 use margined_utils::{
     create_entry_points_testing,

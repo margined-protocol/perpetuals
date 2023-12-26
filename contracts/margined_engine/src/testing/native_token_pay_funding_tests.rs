@@ -504,11 +504,11 @@ fn test_have_huge_funding_payment_margin_zero_with_bad_debt() {
         .unwrap();
     let response = router.execute(bob.clone(), msg).unwrap();
     assert_eq!(
-        response.events[5].attributes[5].value,
+        response.events[5].attributes[6].value,
         Uint128::from(3_750_000_000u128).to_string()
     ); // funding payment
     assert_eq!(
-        response.events[5].attributes[6].value,
+        response.events[5].attributes[7].value,
         Uint128::from(2_580_000_000u128).to_string()
     ); // bad debt
 }
@@ -767,11 +767,11 @@ fn test_reduce_bad_debt_after_adding_margin_to_an_underwater_position() {
         .unwrap();
     let response = router.execute(bob.clone(), msg).unwrap();
     assert_eq!(
-        response.events[5].attributes[5].value,
+        response.events[5].attributes[6].value,
         Uint128::from(3_750_000_000u128).to_string()
     ); // funding payment
     assert_eq!(
-        response.events[5].attributes[6].value,
+        response.events[5].attributes[7].value,
         Uint128::from(2_570_000_000u128).to_string()
     ); // bad debt
 }

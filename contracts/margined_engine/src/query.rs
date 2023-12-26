@@ -1,24 +1,26 @@
 use cosmwasm_std::{Deps, Order, StdError, StdResult, Storage, Uint128};
 use margined_common::integer::Integer;
 use margined_perp::margined_engine::{
-        ConfigResponse, LastPositionIdResponse, PauserResponse, PnlCalcOption, Position,
-        PositionFilter, PositionTpSlResponse, PositionUnrealizedPnlResponse,
-        Side, StateResponse,
-    };
-use margined_utils::{contracts::helpers::{InsuranceFundController, VammController}, tools::price_swap::get_output_price_with_reserves};
+    ConfigResponse, LastPositionIdResponse, PauserResponse, PnlCalcOption, Position,
+    PositionFilter, PositionTpSlResponse, PositionUnrealizedPnlResponse, Side, StateResponse,
+};
+use margined_utils::{
+    contracts::helpers::{InsuranceFundController, VammController},
+    tools::price_swap::get_output_price_with_reserves,
+};
 
 use crate::{
     contract::PAUSER,
     state::{
         read_config, read_last_position_id, read_position, read_positions,
-        read_positions_with_indexer, read_state, read_vamm_map, PREFIX_POSITION_BY_PRICE,
-        PREFIX_POSITION_BY_SIDE, PREFIX_POSITION_BY_TRADER, TmpReserveInfo,
+        read_positions_with_indexer, read_state, read_vamm_map, TmpReserveInfo,
+        PREFIX_POSITION_BY_PRICE, PREFIX_POSITION_BY_SIDE, PREFIX_POSITION_BY_TRADER,
     },
     tick::query_ticks,
     utils::{
-        calc_funding_payment, calc_remain_margin_with_funding_payment,
-        calculate_tp_sl_spread, check_tp_sl_price,
-        get_position_notional_unrealized_pnl, keccak_256, position_is_bad_debt, position_is_liquidated,
+        calc_funding_payment, calc_remain_margin_with_funding_payment, calculate_tp_sl_spread,
+        check_tp_sl_price, get_position_notional_unrealized_pnl, keccak_256, position_is_bad_debt,
+        position_is_liquidated,
     },
 };
 
@@ -34,6 +36,7 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
     Ok(StateResponse {
         open_interest_notional: state.open_interest_notional,
         bad_debt: state.prepaid_bad_debt,
+        pause: state.pause
     })
 }
 
@@ -53,43 +56,6 @@ pub fn query_position(deps: Deps, vamm: String, position_id: u64) -> StdResult<P
     let position = read_position(deps.storage, &vamm_key, position_id)?;
 
     Ok(position)
-}
-
-/// Queries and returns users position for all registered vamms
-pub fn query_all_positions(
-    deps: Deps,
-    trader: String,
-    start_after: Option<u64>,
-    limit: Option<u32>,
-    order_by: Option<i32>,
-) -> StdResult<Vec<Position>> {
-    let config = read_config(deps.storage)?;
-    let order_by = order_by.map_or(None, |val| Order::try_from(val).ok());
-    let mut response: Vec<Position> = vec![];
-
-    let vamms = match config.insurance_fund {
-        Some(insurance_fund) => {
-            let insurance_controller = InsuranceFundController(insurance_fund);
-            insurance_controller
-                .all_vamms(&deps.querier, None)?
-                .vamm_list
-        }
-        None => return Err(StdError::generic_err("insurance fund is not registered")),
-    };
-
-    for vamm in vamms.iter() {
-        let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
-        let positions = read_positions(deps.storage, &vamm_key, start_after, limit, order_by)?;
-
-        for position in positions {
-            // a default is returned if no position found with no trader set
-            if position.trader == trader {
-                response.push(position)
-            }
-        }
-    }
-
-    Ok(response)
 }
 
 /// Queries and returns users positions for registered vamms
@@ -244,11 +210,7 @@ pub fn query_trader_position_with_funding_payment(
 }
 
 /// Queries the margin ratio of a trader
-pub fn query_margin_ratio(deps: Deps, vamm: String, position_id: u64) -> StdResult<Integer> {
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
-    // retrieve the latest position
-    let position = read_position(deps.storage, &vamm_key, position_id)?;
-
+pub fn query_margin_ratio(deps: Deps, position: &Position) -> StdResult<Integer> {
     if position.size.is_zero() {
         return Ok(Integer::zero());
     }
@@ -292,7 +254,7 @@ pub fn query_margin_ratio(deps: Deps, vamm: String, position_id: u64) -> StdResu
 /// Queries the withdrawable collateral of a trader
 pub fn query_free_collateral(deps: Deps, vamm: String, position_id: u64) -> StdResult<Integer> {
     // retrieve the latest position
-    let position = query_trader_position_with_funding_payment(deps, vamm, position_id)?;
+    let position = query_trader_position_with_funding_payment(deps, vamm.clone(), position_id)?;
 
     // get trader's unrealized PnL and choose the least beneficial one for the trader
     let PositionUnrealizedPnlResponse {
@@ -331,17 +293,20 @@ pub fn query_free_collateral(deps: Deps, vamm: String, position_id: u64) -> StdR
         account_value
     };
 
-    let config = read_config(deps.storage)?;
+    // validate address inputs
+    let vamm = deps.api.addr_validate(&vamm.clone())?;
+    let vamm_controller = VammController(vamm.clone());
+    let vamm_config = vamm_controller.config(&deps.querier)?;
 
     let margin_requirement = if position.size.is_positive() {
         position
             .notional
-            .checked_mul(config.initial_margin_ratio)?
-            .checked_div(config.decimals)?
+            .checked_mul(vamm_config.initial_margin_ratio)?
+            .checked_div(vamm_config.decimals)?
     } else {
         position_notional
-            .checked_mul(config.initial_margin_ratio)?
-            .checked_div(config.decimals)?
+            .checked_mul(vamm_config.initial_margin_ratio)?
+            .checked_div(vamm_config.decimals)?
     };
 
     Ok(minimum_collateral.checked_sub(Integer::new_positive(margin_requirement))?)
@@ -370,10 +335,10 @@ pub fn query_position_is_tpsl(
         base_asset_reserve: vamm_state.base_asset_reserve,
     };
 
-    let order_by = if take_profit && side == Side::Buy || !take_profit && side == Side::Sell {
-        Order::Ascending
-    } else {
+    let order_by = if take_profit == (side == Side::Buy) {
         Order::Descending
+    } else {
+        Order::Ascending
     };
 
     let mut is_tpsl: bool = false;
@@ -386,42 +351,21 @@ pub fn query_position_is_tpsl(
         Some(order_by.into()),
     )?;
 
-    for tick in ticks.ticks.iter() {
+    for tick in &ticks.ticks {
         let position_by_price = query_positions(
             deps.storage,
             vamm.clone(),
             Some(side),
             PositionFilter::Price(tick.entry_price),
             None,
-            Some(limit),
-            Some(1),
+            None,
+            Some(Order::Ascending.into()),
         )?;
 
-        for position in position_by_price.iter() {
-            if !take_profit {
-                let is_bad_debt = position_is_bad_debt(
-                    deps,
-                    position,
-                    &vamm_controller
-                )?;
-                let is_liquidated = position_is_liquidated(
-                    deps,
-                    vamm.clone(),
-                    position.position_id,
-                    config.maintenance_margin_ratio,
-                    &vamm_controller,
-                )?;
-
-                // Can not trigger stop loss position if bad debt or liquidate
-                if is_bad_debt || is_liquidated {
-                    continue;
-                }
-            }
-
+        for position in &position_by_price {
             let base_asset_amount = position.size.value;
             let quote_asset_amount = get_output_price_with_reserves(
-                config.decimals,
-                &position.direction.clone(),
+                &position.direction,
                 base_asset_amount,
                 tmp_reserve.quote_asset_reserve,
                 tmp_reserve.base_asset_reserve,
@@ -429,7 +373,7 @@ pub fn query_position_is_tpsl(
             let close_price = quote_asset_amount
                 .checked_mul(config.decimals)?
                 .checked_div(base_asset_amount)?;
-            
+
             let stop_loss = position.stop_loss.unwrap_or_default();
             let (tp_spread, sl_spread) = calculate_tp_sl_spread(
                 config.tp_sl_spread,
@@ -460,35 +404,30 @@ pub fn query_position_is_tpsl(
     Ok(PositionTpSlResponse { is_tpsl })
 }
 
-pub fn query_position_is_bad_debt(
-    deps: Deps,
-    position_id: u64,
-    vamm: String
-) -> StdResult<bool> {
+pub fn query_position_is_bad_debt(deps: Deps, position_id: u64, vamm: String) -> StdResult<bool> {
     let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
     let vamm_addr = deps.api.addr_validate(&vamm)?;
     let vamm_controller = VammController(vamm_addr.clone());
+    let vamm_state = vamm_controller.state(&deps.querier)?;
     let position = read_position(deps.storage, &vamm_key, position_id)?;
     let is_bad_debt = position_is_bad_debt(
         deps,
         &position,
-        &vamm_controller
+        vamm_state.quote_asset_reserve,
+        vamm_state.base_asset_reserve,
     )?;
     Ok(is_bad_debt)
 }
 
-pub fn query_position_is_liquidated(
-    deps: Deps,
-    position_id: u64,
-    vamm: String
-) -> StdResult<bool> {
+pub fn query_position_is_liquidated(deps: Deps, position_id: u64, vamm: String) -> StdResult<bool> {
     let config = read_config(deps.storage)?;
+    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
     let vamm_addr = deps.api.addr_validate(&vamm)?;
     let vamm_controller = VammController(vamm_addr.clone());
+    let position = read_position(deps.storage, &vamm_key, position_id)?;
     let is_liquidated = position_is_liquidated(
         deps,
-        vamm,
-        position_id,
+        &position,
         config.maintenance_margin_ratio,
         &vamm_controller,
     )?;

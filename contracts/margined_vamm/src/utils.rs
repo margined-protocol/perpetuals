@@ -50,23 +50,25 @@ pub fn require_open(open: bool) -> StdResult<()> {
 pub fn check_is_over_block_fluctuation_limit(
     storage: &mut dyn Storage,
     env: Env,
+    decimals: Uint128,
+    fluctuation_limit_ratio: Uint128,
     direction: Direction,
     quote_asset_amount: Uint128,
     base_asset_amount: Uint128,
     can_go_over_limit: bool,
 ) -> StdResult<Response> {
-    let config = read_config(storage)?;
     let state = read_state(storage)?;
 
-    if config.fluctuation_limit_ratio.is_zero() {
+    if fluctuation_limit_ratio.is_zero() {
         return Ok(Response::new());
     }
 
-    let (upper_limit, lower_limit) = price_boundaries_of_last_block(storage, env)?;
+    let (upper_limit, lower_limit) =
+        price_boundaries_of_last_block(storage, decimals, fluctuation_limit_ratio, env)?;
 
     let current_price = state
         .quote_asset_reserve
-        .checked_mul(config.decimals)?
+        .checked_mul(decimals)?
         .checked_div(state.base_asset_reserve)?;
 
     // ensure that the latest price isn't over the limit which would restrict any further
@@ -82,13 +84,13 @@ pub fn check_is_over_block_fluctuation_limit(
             state
                 .quote_asset_reserve
                 .checked_add(quote_asset_amount)?
-                .checked_mul(config.decimals)?
+                .checked_mul(decimals)?
                 .checked_div(state.base_asset_reserve.checked_sub(base_asset_amount)?)
         } else {
             state
                 .quote_asset_reserve
                 .checked_sub(quote_asset_amount)?
-                .checked_mul(config.decimals)?
+                .checked_mul(decimals)?
                 .checked_div(state.base_asset_reserve.checked_add(base_asset_amount)?)
         }?;
         if price > upper_limit || price < lower_limit {
@@ -101,10 +103,10 @@ pub fn check_is_over_block_fluctuation_limit(
 
 pub fn price_boundaries_of_last_block(
     storage: &dyn Storage,
+    decimals: Uint128,
+    fluctuation_limit_ratio: Uint128,
     env: Env,
 ) -> StdResult<(Uint128, Uint128)> {
-    let config = read_config(storage)?;
-
     // calculate the price boundary of the previous block
     let height = read_reserve_snapshot_counter(storage)?;
     let mut latest_snapshot = read_reserve_snapshot(storage, height)?;
@@ -115,15 +117,15 @@ pub fn price_boundaries_of_last_block(
 
     let last_price = latest_snapshot
         .quote_asset_reserve
-        .checked_mul(config.decimals)?
+        .checked_mul(decimals)?
         .checked_div(latest_snapshot.base_asset_reserve)?;
 
     let upper_limit = last_price
-        .checked_mul(config.decimals + config.fluctuation_limit_ratio)?
-        .checked_div(config.decimals)?;
+        .checked_mul(decimals + fluctuation_limit_ratio)?
+        .checked_div(decimals)?;
     let lower_limit = last_price
-        .checked_mul(config.decimals - config.fluctuation_limit_ratio)?
-        .checked_div(config.decimals)?;
+        .checked_mul(decimals - fluctuation_limit_ratio)?
+        .checked_div(decimals)?;
 
     Ok((upper_limit, lower_limit))
 }
@@ -181,7 +183,6 @@ pub fn get_price_with_specific_snapshot(
 
             if asset.quote {
                 return get_input_price_with_reserves(
-                    config.decimals,
                     &asset.direction,
                     asset.amount,
                     snapshot.quote_asset_reserve,
@@ -189,7 +190,6 @@ pub fn get_price_with_specific_snapshot(
                 );
             } else {
                 return get_output_price_with_reserves(
-                    config.decimals,
                     &asset.direction,
                     asset.amount,
                     snapshot.quote_asset_reserve,

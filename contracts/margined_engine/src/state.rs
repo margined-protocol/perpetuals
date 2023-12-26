@@ -152,8 +152,10 @@ pub fn remove_position(
     )
     .remove(position_id_key);
 
-    Bucket::<Side>::multilevel(storage, &[PREFIX_POSITION_BY_PRICE, key, &price_key])
-        .remove(position_id_key);
+    Bucket::<Side>::multilevel(
+        storage,
+        &[PREFIX_POSITION_BY_PRICE, key, &price_key]
+    ).remove(position_id_key);
 
     // return total orders belong to the tick
     Ok(total_tick_orders)
@@ -263,7 +265,6 @@ pub struct TmpSwapInfo {
     pub position_notional: Uint128, // notional of existing position, inclusing funding
     pub unrealized_pnl: Integer,    // any pnl due
     pub margin_to_vault: Integer,   // margin to be sent to vault
-    pub fees_paid: bool, // true if fees have been paid, used in case of reversing position
     pub take_profit: Uint128, // take profit price of position
     pub stop_loss: Option<Uint128>, // stop loss price of position
     pub spread_fee: Uint128, // spread fee

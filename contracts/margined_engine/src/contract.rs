@@ -10,20 +10,22 @@ use margined_common::validate::{
 use margined_perp::margined_engine::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 use crate::error::ContractError;
-use crate::handle::{trigger_tp_sl, update_tp_sl};
-use crate::query::{query_last_position_id, query_position_is_tpsl, query_positions, query_position_is_bad_debt, query_position_is_liquidated};
-use crate::state::init_last_position_id;
+use crate::handle::{trigger_mutiple_tp_sl, trigger_tp_sl, update_tp_sl};
+use crate::query::{
+    query_last_position_id, query_position_is_bad_debt, query_position_is_liquidated,
+    query_position_is_tpsl, query_positions,
+};
+use crate::state::{init_last_position_id, read_position};
 use crate::tick::{query_tick, query_ticks};
-use crate::utils::get_margin_ratio_calc_option;
+use crate::utils::{get_margin_ratio_calc_option, keccak_256};
 use crate::{
     handle::{
         close_position, deposit_margin, liquidate, open_position, pay_funding, update_config,
         withdraw_margin,
     },
     query::{
-        query_all_positions, query_config, query_cumulative_premium_fraction,
-        query_free_collateral, query_margin_ratio, query_pauser, query_position,
-        query_position_notional_unrealized_pnl, query_state,
+        query_config, query_cumulative_premium_fraction, query_free_collateral, query_margin_ratio,
+        query_pauser, query_position, query_position_notional_unrealized_pnl, query_state,
         query_trader_balance_with_funding_payment, query_trader_position_with_funding_payment,
     },
     reply::{
@@ -188,10 +190,15 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         } => liquidate(deps, env, info, vamm, position_id, quote_asset_limit),
         ExecuteMsg::TriggerTpSl {
             vamm,
+            position_id,
+            take_profit,
+        } => trigger_tp_sl(deps, vamm, position_id, take_profit),
+        ExecuteMsg::TriggerMultipleTpSl {
+            vamm,
             side,
             take_profit,
             limit,
-        } => trigger_tp_sl(deps, vamm, side, take_profit, limit),
+        } => trigger_mutiple_tp_sl(deps, vamm, side, take_profit, limit),
         ExecuteMsg::PayFunding { vamm } => pay_funding(deps, env, info, vamm),
         ExecuteMsg::DepositMargin {
             vamm,
@@ -215,18 +222,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetPauser {} => to_binary(&query_pauser(deps)?),
         QueryMsg::IsWhitelisted { address } => to_binary(&WHITELIST.query_hook(deps, address)?),
         QueryMsg::GetWhitelist {} => to_binary(&WHITELIST.query_hooks(deps)?),
-        QueryMsg::AllPositions {
-            trader,
-            start_after,
-            limit,
-            order_by,
-        } => to_binary(&query_all_positions(
-            deps,
-            trader,
-            start_after,
-            limit,
-            order_by,
-        )?),
         QueryMsg::Positions {
             vamm,
             filter,
@@ -266,18 +261,19 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             entry_price,
         } => to_binary(&query_tick(deps.storage, vamm, side, entry_price)?),
         QueryMsg::MarginRatio { vamm, position_id } => {
-            to_binary(&query_margin_ratio(deps, vamm, position_id)?)
+            let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+            let position = read_position(deps.storage, &vamm_key, position_id)?;
+            to_binary(&query_margin_ratio(deps, &position)?)
         }
         QueryMsg::MarginRatioByCalcOption {
             vamm,
             position_id,
             calc_option,
-        } => to_binary(&get_margin_ratio_calc_option(
-            deps,
-            vamm,
-            position_id,
-            calc_option,
-        )?),
+        } => {
+            let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+            let position = read_position(deps.storage, &vamm_key, position_id)?;
+            to_binary(&get_margin_ratio_calc_option(deps, &position, calc_option)?)
+        }
         QueryMsg::CumulativePremiumFraction { vamm } => {
             to_binary(&query_cumulative_premium_fraction(deps, vamm)?)
         }
@@ -312,12 +308,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             take_profit,
             limit,
         )?),
-        QueryMsg::IsBadDebt { vamm, position_id } => to_binary(
-            &query_position_is_bad_debt(deps, position_id, vamm)?,
-        ),
-        QueryMsg::IsLiquidated { vamm, position_id } => to_binary(
-            &query_position_is_liquidated(deps, position_id, vamm)?,
-        ),
+        QueryMsg::IsBadDebt { vamm, position_id } => {
+            to_binary(&query_position_is_bad_debt(deps, position_id, vamm)?)
+        }
+        QueryMsg::IsLiquidated { vamm, position_id } => {
+            to_binary(&query_position_is_liquidated(deps, position_id, vamm)?)
+        }
         QueryMsg::LastPositionId {} => to_binary(&query_last_position_id(deps)?),
     }
 }

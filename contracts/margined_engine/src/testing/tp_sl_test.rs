@@ -213,7 +213,6 @@ fn test_simulate_close_price() {
     };
 
     let quote_asset_amount = get_output_price_with_reserves(
-        decimals,
         &Direction::AddToAmm,
         base_asset_amount,
         tmp_reserve_info.quote_asset_reserve,
@@ -229,7 +228,7 @@ fn test_simulate_close_price() {
         &mut tmp_reserve_info,
         quote_asset_amount,
         base_asset_amount,
-        Direction::AddToAmm,
+        &Direction::AddToAmm,
     );
     
     // direction AddToVamm, since we are closing => reverse it to remove from vamm. base +=, quote -=
@@ -250,7 +249,6 @@ fn test_simulate_close_price() {
         quote_asset_reserve: reserve_amount.clone(),
     };
     let quote_asset_amount = get_output_price_with_reserves(
-        decimals,
         &Direction::RemoveFromAmm,
         base_asset_amount,
         tmp_reserve_info.quote_asset_reserve,
@@ -266,7 +264,7 @@ fn test_simulate_close_price() {
         &mut tmp_reserve_info,
         quote_asset_amount,
         base_asset_amount,
-        Direction::RemoveFromAmm,
+        &Direction::RemoveFromAmm,
     );
 
     // 1_000_000_000 * 1_000_000_000 / (1_000_000_000 - 100_000) = 1_000_100_011 => new quote reserve is 1_000_000_000 + 100_011 = 1_000_100_011
@@ -411,7 +409,7 @@ fn test_takeprofit() {
 
     // take profit trigger
     let msg = engine
-        .trigger_tp_sl(vamm.addr().to_string(), Side::Buy, true, 10)
+        .trigger_tp_sl(vamm.addr().to_string(), 1, true)
         .unwrap();
     let ret = router.execute(alice.clone(), msg).unwrap();
 
@@ -429,11 +427,11 @@ fn test_takeprofit() {
     );
 
     assert_eq!(ret.events[1].attributes[1].value, "trigger_take_profit");
-    assert_eq!(ret.events[5].attributes[8].key, "withdraw_amount");
+    assert_eq!(ret.events[5].attributes[9].key, "withdraw_amount");
     assert_eq!(
         alice_balance,
         alice_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[5].attributes[8].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[5].attributes[9].value).unwrap())
             .unwrap()
     );
 }
@@ -518,7 +516,7 @@ fn test_stoploss() {
 
     // stop loss trigger
     let msg = engine
-        .trigger_tp_sl(vamm.addr().to_string(), Side::Buy, false, 10)
+        .trigger_tp_sl(vamm.addr().to_string(), 1, false)
         .unwrap();
     let ret = router.execute(alice.clone(), msg).unwrap();
 
@@ -539,11 +537,11 @@ fn test_stoploss() {
     );
 
     assert_eq!(ret.events[1].attributes[1].value, "trigger_stop_loss");
-    assert_eq!(ret.events[5].attributes[8].key, "withdraw_amount");
+    assert_eq!(ret.events[5].attributes[9].key, "withdraw_amount");
     assert_eq!(
         alice_balance,
         alice_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[5].attributes[8].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[5].attributes[9].value).unwrap())
             .unwrap()
     );
 }
@@ -655,7 +653,7 @@ fn test_multi_takeprofit_long() {
 
     // take profit trigger
     let msg = engine
-        .trigger_tp_sl(vamm.addr().to_string(), Side::Buy, true, 10)
+        .trigger_multiple_tp_sl(vamm.addr().to_string(), Side::Buy, true, 10)
         .unwrap();
     let ret = router.execute(alice.clone(), msg).unwrap();
 
@@ -690,20 +688,20 @@ fn test_multi_takeprofit_long() {
     assert_eq!(ret.events[1].attributes[1].value, "trigger_take_profit");
 
     // take profit for position 1 and position 3
-    assert_eq!(ret.events[3].attributes[7].value, "1");
-    assert_eq!(ret.events[9].attributes[7].value, "3");
+    assert_eq!(ret.events[3].attributes[7].value, "3");
+    assert_eq!(ret.events[9].attributes[7].value, "1");
 
-    assert_eq!(ret.events[5].attributes[8].key, "withdraw_amount");
+    assert_eq!(ret.events[5].attributes[9].key, "withdraw_amount");
     assert_eq!(
         alice_balance,
         alice_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[5].attributes[8].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[11].attributes[9].value).unwrap())
             .unwrap()
     );
     assert_eq!(
         bob_balance,
         bob_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[11].attributes[8].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[5].attributes[9].value).unwrap())
             .unwrap()
     );
 }
@@ -807,7 +805,7 @@ fn test_multi_stoploss_long() {
 
     // stop loss trigger
     let msg = engine
-        .trigger_tp_sl(vamm.addr().to_string(), Side::Buy, false, 10)
+        .trigger_multiple_tp_sl(vamm.addr().to_string(), Side::Buy, false, 10)
         .unwrap();
     let ret = router.execute(alice.clone(), msg).unwrap();
 
@@ -840,21 +838,21 @@ fn test_multi_stoploss_long() {
     );
 
     // stop loss for position 1 and position 2
-    assert_eq!(ret.events[9].attributes[7].value, "1");
-    assert_eq!(ret.events[3].attributes[7].value, "2");
+    assert_eq!(ret.events[9].attributes[7].value, "2");
+    assert_eq!(ret.events[3].attributes[7].value, "1");
 
     assert_eq!(ret.events[1].attributes[1].value, "trigger_stop_loss");
-    assert_eq!(ret.events[5].attributes[8].key, "withdraw_amount");
+    assert_eq!(ret.events[5].attributes[9].key, "withdraw_amount");
     assert_eq!(
         alice_balance,
         alice_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[11].attributes[8].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[5].attributes[9].value).unwrap())
             .unwrap()
     );
     assert_eq!(
         bob_balance,
         bob_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[5].attributes[8].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[11].attributes[9].value).unwrap())
             .unwrap()
     );
 }
@@ -961,7 +959,7 @@ fn test_multi_takeprofit_short() {
 
     // take profit trigger
     let msg = engine
-        .trigger_tp_sl(vamm.addr().to_string(), Side::Sell, true, 10)
+        .trigger_multiple_tp_sl(vamm.addr().to_string(), Side::Sell, true, 10)
         .unwrap();
     let ret = router.execute(alice.clone(), msg).unwrap();
 
@@ -996,20 +994,20 @@ fn test_multi_takeprofit_short() {
     assert_eq!(ret.events[1].attributes[1].value, "trigger_take_profit");
 
     // take profit for position 1 and position 3
-    assert_eq!(ret.events[3].attributes[7].value, "1");
-    assert_eq!(ret.events[9].attributes[7].value, "2");
+    assert_eq!(ret.events[3].attributes[7].value, "2");
+    assert_eq!(ret.events[9].attributes[7].value, "1");
 
-    assert_eq!(ret.events[5].attributes[8].key, "withdraw_amount");
+    assert_eq!(ret.events[5].attributes[9].key, "withdraw_amount");
     assert_eq!(
         alice_balance,
         alice_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[5].attributes[8].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[11].attributes[9].value).unwrap())
             .unwrap()
     );
     assert_eq!(
         bob_balance,
         bob_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[11].attributes[8].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[5].attributes[9].value).unwrap())
             .unwrap()
     );
 }
@@ -1112,7 +1110,7 @@ fn test_multi_stoploss_short() {
 
     // stop loss trigger
     let msg = engine
-        .trigger_tp_sl(vamm.addr().to_string(), Side::Sell, false, 10)
+        .trigger_multiple_tp_sl(vamm.addr().to_string(), Side::Sell, false, 10)
         .unwrap();
     let ret = router.execute(alice.clone(), msg).unwrap();
 
@@ -1145,21 +1143,21 @@ fn test_multi_stoploss_short() {
     );
 
     // stop loss for position 1 and position 2
-    assert_eq!(ret.events[3].attributes[7].value, "2");
-    assert_eq!(ret.events[9].attributes[7].value, "1");
+    assert_eq!(ret.events[3].attributes[7].value, "1");
+    assert_eq!(ret.events[9].attributes[7].value, "2");
 
     assert_eq!(ret.events[1].attributes[1].value, "trigger_stop_loss");
-    assert_eq!(ret.events[5].attributes[8].key, "withdraw_amount");
+    assert_eq!(ret.events[5].attributes[9].key, "withdraw_amount");
     assert_eq!(
         alice_balance,
         alice_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[11].attributes[8].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[5].attributes[9].value).unwrap())
             .unwrap()
     );
     assert_eq!(
         bob_balance,
         bob_balance_after_open
-            .checked_add(Uint128::from_str(&ret.events[5].attributes[8].value).unwrap())
+            .checked_add(Uint128::from_str(&ret.events[11].attributes[9].value).unwrap())
             .unwrap()
     );
 }

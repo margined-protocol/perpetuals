@@ -2,7 +2,7 @@ use cosmwasm_std::{
     Addr, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, SubMsg,
     SubMsgResponse, Uint128,
 };
-use margined_utils::contracts::helpers::{InsuranceFundController, VammController};
+use margined_utils::{contracts::helpers::{InsuranceFundController, VammController}, tools::price_swap::get_output_price_with_reserves};
 use sha3::{Digest, Sha3_256};
 
 use std::str::FromStr;
@@ -21,9 +21,7 @@ use crate::{
     contract::{PAUSER, WHITELIST},
     messages::execute_insurance_fund_withdrawal,
     query::{query_cumulative_premium_fraction, query_margin_ratio},
-    state::{
-        read_config, read_position, read_state, read_vamm_map, store_state, State, TmpReserveInfo,
-    },
+    state::{read_config, read_state, read_vamm_map, store_state, State, TmpReserveInfo},
 };
 
 pub fn keccak_256(input: &[u8]) -> Vec<u8> {
@@ -138,14 +136,10 @@ pub fn check_base_asset_holding_cap(
 
 pub fn get_margin_ratio_calc_option(
     deps: Deps,
-    vamm: String,
-    position_id: u64,
+    position: &Position,
     calc_option: PnlCalcOption,
 ) -> StdResult<Integer> {
     let config = read_config(deps.storage)?;
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
-    // retrieve the latest position
-    let position = read_position(deps.storage, &vamm_key, position_id)?;
 
     if position.size.is_zero() {
         return Ok(Integer::zero());
@@ -154,7 +148,7 @@ pub fn get_margin_ratio_calc_option(
     let PositionUnrealizedPnlResponse {
         position_notional,
         unrealized_pnl,
-    } = get_position_notional_unrealized_pnl(deps, &position, calc_option)?;
+    } = get_position_notional_unrealized_pnl(deps, position, calc_option)?;
 
     let remain_margin = calc_remain_margin_with_funding_payment(deps, position, unrealized_pnl)?;
 
@@ -218,7 +212,7 @@ pub fn get_position_notional_unrealized_pnl(
 
 pub fn calc_remain_margin_with_funding_payment(
     deps: Deps,
-    position: Position,
+    position: &Position,
     margin_delta: Integer,
 ) -> StdResult<RemainMarginResponse> {
     // calculate the funding payment
@@ -528,6 +522,7 @@ pub fn check_tp_sl_price(
         {
             msg = String::from("trigger_stop_loss");
         }
+        
     }
     Ok(msg)
 }
@@ -537,7 +532,7 @@ pub fn update_reserve(
     tmp_reserve: &mut TmpReserveInfo,
     quote_asset_amount: Uint128,
     base_asset_amount: Uint128,
-    position_direction: Direction,
+    position_direction: &Direction,
 ) -> StdResult<()> {
     // flip direction when simulate close position
     let update_direction = match position_direction {
@@ -569,23 +564,23 @@ pub fn update_reserve(
 pub fn position_is_bad_debt(
     deps: Deps,
     position: &Position,
-    vamm_controller: &VammController
+    quote_asset_reserve: Uint128,
+    base_asset_reserve: Uint128,
 ) -> StdResult<bool> {
     // simulate quote_amount
-    let simulate_output_amount = vamm_controller.output_amount(
-        &deps.querier,
-        position.direction.clone(),
+    let simulate_output_amount = get_output_price_with_reserves(
+        &position.direction,
         position.size.value,
+        quote_asset_reserve,
+        base_asset_reserve,
     )?;
     // calculate margin delta between simulate_quote_amount and notional
     let margin_delta = match &position.direction {
         Direction::AddToAmm => {
-            Integer::new_positive(simulate_output_amount)
-                - Integer::new_positive(position.notional)
+            Integer::new_positive(simulate_output_amount) - Integer::new_positive(position.notional)
         }
         Direction::RemoveFromAmm => {
-            Integer::new_positive(position.notional)
-                - Integer::new_positive(simulate_output_amount)
+            Integer::new_positive(position.notional) - Integer::new_positive(simulate_output_amount)
         }
     };
     let RemainMarginResponse {
@@ -593,14 +588,9 @@ pub fn position_is_bad_debt(
         margin: _,
         bad_debt,
         latest_premium_fraction: _,
-    } = calc_remain_margin_with_funding_payment(
-        deps,
-        position.clone(),
-        margin_delta,
-    )?;
+    } = calc_remain_margin_with_funding_payment(deps, position, margin_delta)?;
 
-    if !bad_debt.is_zero()
-    {
+    if !bad_debt.is_zero() {
         Ok(true)
     } else {
         Ok(false)
@@ -609,29 +599,22 @@ pub fn position_is_bad_debt(
 
 pub fn position_is_liquidated(
     deps: Deps,
-    vamm: String,
-    position_id: u64,
+    position: &Position,
     maintenance_margin_ratio: Uint128,
-    vamm_controller: &VammController
+    vamm_controller: &VammController,
 ) -> StdResult<bool> {
-    let mut margin_ratio =
-        query_margin_ratio(deps, vamm.to_string(), position_id)?;
+    let mut margin_ratio = query_margin_ratio(deps, position)?;
 
     if vamm_controller.is_over_spread_limit(&deps.querier)? {
-        let oracle_margin_ratio = get_margin_ratio_calc_option(
-            deps,
-            vamm.to_string(),
-            position_id,
-            PnlCalcOption::Oracle,
-        )?;
+        let oracle_margin_ratio =
+            get_margin_ratio_calc_option(deps, position, PnlCalcOption::Oracle)?;
 
         if oracle_margin_ratio.checked_sub(margin_ratio)? > Integer::zero() {
             margin_ratio = oracle_margin_ratio
         }
     }
 
-    if margin_ratio <= Integer::new_positive(maintenance_margin_ratio)
-    {
+    if margin_ratio <= Integer::new_positive(maintenance_margin_ratio) {
         Ok(true)
     } else {
         Ok(false)

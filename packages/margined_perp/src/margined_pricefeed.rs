@@ -53,6 +53,8 @@ pub enum QueryMsg {
     GetPreviousPrice { key: String, num_round_back: u64 },
     #[returns(Uint128)]
     GetTwapPrice { key: String, interval: u64 },
+    #[returns(u64)]
+    GetLastRoundId { key: String },
 }
 
 #[cw_serde]

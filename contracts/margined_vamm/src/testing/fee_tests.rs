@@ -55,6 +55,7 @@ fn test_set_diff_fee_ratio() {
             None,
             None,
             None,
+            None
         )
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
@@ -89,6 +90,7 @@ fn test_set_fee_ratio_zero() {
             None,
             None,
             None,
+            None
         )
         .unwrap();
     router.execute(owner.clone(), msg).unwrap();
@@ -137,6 +139,7 @@ fn test_update_not_owner() {
             None,
             None,
             None,
+            None
         )
         .unwrap();
     let err = router.execute(alice.clone(), msg).unwrap_err();
