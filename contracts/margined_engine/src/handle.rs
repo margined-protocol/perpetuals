@@ -745,7 +745,15 @@ pub fn liquidate(
     let msg = if margin_ratio.value > config.liquidation_fee
         && !config.partial_liquidation_ratio.is_zero()
     {
-        partial_liquidation(deps, env, vamm.clone(), position_id, quote_asset_limit)?
+        partial_liquidation(
+            deps,
+            env,
+            vamm.clone(),
+            position_id,
+            quote_asset_limit,
+            config.decimals,
+            config.partial_liquidation_ratio,
+        )?
     } else {
         internal_close_position(
             deps.storage,
@@ -991,19 +999,20 @@ fn partial_liquidation(
     vamm: Addr,
     position_id: u64,
     quote_asset_limit: Uint128,
+    decimals: Uint128,
+    partial_liquidation_ratio: Uint128,
 ) -> StdResult<SubMsg> {
     let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
     let position = read_position(deps.storage, &vamm_key, position_id)?;
-    let config = read_config(deps.storage)?;
     let partial_position_size = position
         .size
         .value
-        .checked_mul(config.partial_liquidation_ratio)?
-        .checked_div(config.decimals)?;
+        .checked_mul(partial_liquidation_ratio)?
+        .checked_div(decimals)?;
 
     let partial_asset_limit = quote_asset_limit
-        .checked_mul(config.partial_liquidation_ratio)?
-        .checked_div(config.decimals)?;
+        .checked_mul(partial_liquidation_ratio)?
+        .checked_div(decimals)?;
 
     let vamm_controller = VammController(vamm.clone());
 
