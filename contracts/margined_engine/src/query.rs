@@ -36,7 +36,7 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
     Ok(StateResponse {
         open_interest_notional: state.open_interest_notional,
         bad_debt: state.prepaid_bad_debt,
-        pause: state.pause
+        pause: state.pause,
     })
 }
 
@@ -52,7 +52,7 @@ pub fn query_pauser(deps: Deps) -> StdResult<PauserResponse> {
 /// Queries user position
 pub fn query_position(deps: Deps, vamm: String, position_id: u64) -> StdResult<Position> {
     // if vamm and trader are not correct, vamm_key will throw not found error
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(vamm.as_bytes());
     let position = read_position(deps.storage, &vamm_key, position_id)?;
 
     Ok(position)
@@ -69,7 +69,7 @@ pub fn query_positions(
     order_by: Option<i32>,
 ) -> StdResult<Vec<Position>> {
     let order_by = order_by.map_or(None, |val| Order::try_from(val).ok());
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(vamm.as_bytes());
 
     let (direction_filter, direction_key): (Box<dyn Fn(&Side) -> bool>, Vec<u8>) = match side {
         // copy value to closure
@@ -126,7 +126,7 @@ pub fn query_position_notional_unrealized_pnl(
     position_id: u64,
     calc_option: PnlCalcOption,
 ) -> StdResult<PositionUnrealizedPnlResponse> {
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(vamm.as_bytes());
     // read the msg.senders position
     let position = read_position(deps.storage, &vamm_key, position_id)?;
 
@@ -184,7 +184,7 @@ pub fn query_trader_position_with_funding_payment(
 ) -> StdResult<Position> {
     let config = read_config(deps.storage)?;
 
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(vamm.as_bytes());
 
     // retrieve latest user position
     let mut position = read_position(deps.storage, &vamm_key, position_id)?;
@@ -405,7 +405,7 @@ pub fn query_position_is_tpsl(
 }
 
 pub fn query_position_is_bad_debt(deps: Deps, position_id: u64, vamm: String) -> StdResult<bool> {
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(vamm.as_bytes());
     let vamm_addr = deps.api.addr_validate(&vamm)?;
     let vamm_controller = VammController(vamm_addr.clone());
     let vamm_state = vamm_controller.state(&deps.querier)?;
@@ -421,7 +421,7 @@ pub fn query_position_is_bad_debt(deps: Deps, position_id: u64, vamm: String) ->
 
 pub fn query_position_is_liquidated(deps: Deps, position_id: u64, vamm: String) -> StdResult<bool> {
     let config = read_config(deps.storage)?;
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(vamm.as_bytes());
     let vamm_addr = deps.api.addr_validate(&vamm)?;
     let vamm_controller = VammController(vamm_addr.clone());
     let position = read_position(deps.storage, &vamm_key, position_id)?;

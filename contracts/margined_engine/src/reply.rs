@@ -105,7 +105,7 @@ pub fn open_position_reply(
         .checked_div(position.size.value)?;
     position.block_time = env.block.time.seconds();
 
-    let vamm_key = keccak_256(&[position.vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(position.vamm.as_bytes());
     store_position(deps.storage, &vamm_key, &position, true)?;
 
     // check the new position doesn't exceed any caps
@@ -180,7 +180,7 @@ pub fn close_position_reply(
     position_id: u64,
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
-    let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(swap.vamm.as_bytes());
     let position = read_position(deps.storage, &vamm_key, position_id)?;
 
     let margin_delta = match &position.direction {
@@ -300,7 +300,7 @@ pub fn partial_close_position_reply(
     position_id: u64,
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
-    let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(swap.vamm.as_bytes());
     let mut position = read_position(deps.storage, &vamm_key, position_id)?;
 
     let mut state: State = read_state(deps.storage)?;
@@ -398,7 +398,7 @@ pub fn liquidate_reply(
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
     let liquidator = read_tmp_liquidator(deps.storage)?;
 
-    let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(swap.vamm.as_bytes());
     let position = read_position(deps.storage, &vamm_key, position_id)?;
 
     // calculate delta from trade and whether it was profitable or a loss
@@ -502,7 +502,7 @@ pub fn partial_liquidation_reply(
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
     let liquidator = read_tmp_liquidator(deps.storage)?;
 
-    let vamm_key = keccak_256(&[swap.vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(swap.vamm.as_bytes());
     let mut position = read_position(deps.storage, &vamm_key, position_id)?;
     let config = read_config(deps.storage)?;
 

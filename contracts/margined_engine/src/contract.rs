@@ -261,7 +261,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             entry_price,
         } => to_binary(&query_tick(deps.storage, vamm, side, entry_price)?),
         QueryMsg::MarginRatio { vamm, position_id } => {
-            let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+            let vamm_key = keccak_256(vamm.as_bytes());
             let position = read_position(deps.storage, &vamm_key, position_id)?;
             to_binary(&query_margin_ratio(deps, &position)?)
         }
@@ -270,7 +270,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             position_id,
             calc_option,
         } => {
-            let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+            let vamm_key = keccak_256(vamm.as_bytes());
             let position = read_position(deps.storage, &vamm_key, position_id)?;
             to_binary(&get_margin_ratio_calc_option(deps, &position, calc_option)?)
         }

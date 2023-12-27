@@ -275,7 +275,7 @@ pub fn update_tp_sl(
     let trader = info.sender;
 
     // read the position for the trader from vamm
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(vamm.as_bytes());
     let mut position = read_position(deps.storage, &vamm_key, position_id)?;
 
     let state = read_state(deps.storage)?;
@@ -357,7 +357,7 @@ pub fn close_position(
     let trader = info.sender;
 
     // read the position for the trader from vamm
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(vamm.as_bytes());
     let position = read_position(deps.storage, &vamm_key, position_id)?;
 
     if position.trader != trader {
@@ -481,7 +481,7 @@ pub fn trigger_tp_sl(
     let vamm_state = vamm_controller.state(&deps.querier)?;
 
     // read the position for the trader from vamm
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(vamm.as_bytes());
     let position = read_position(deps.storage, &vamm_key, position_id)?;
 
     // check that vamm is open
@@ -702,7 +702,7 @@ pub fn trigger_mutiple_tp_sl(
 
 pub fn liquidate(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     vamm: String,
     position_id: u64,
@@ -715,7 +715,7 @@ pub fn liquidate(
     let vamm = deps.api.addr_validate(&vamm)?;
 
     // read the position for the trader from vamm
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(vamm.as_bytes());
     let position = read_position(deps.storage, &vamm_key, position_id)?;
 
     // store the liquidator
@@ -747,9 +747,8 @@ pub fn liquidate(
     {
         partial_liquidation(
             deps,
-            env,
-            vamm.clone(),
-            position_id,
+            &vamm,
+            &position,
             quote_asset_limit,
             config.decimals,
             config.partial_liquidation_ratio,
@@ -836,7 +835,7 @@ pub fn deposit_margin(
             response = response.add_submessage(msg);
         }
     };
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(vamm.as_bytes());
     // read the position for the trader from vamm
     let mut position = read_position(deps.storage, &vamm_key, position_id)?;
 
@@ -876,7 +875,7 @@ pub fn withdraw_margin(
     require_non_zero_input(amount)?;
 
     // read the position for the trader from vamm
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(vamm.as_bytes());
     let mut position = read_position(deps.storage, &vamm_key, position_id)?;
 
     if position.trader != trader {
@@ -995,15 +994,12 @@ pub fn internal_close_position(
 
 fn partial_liquidation(
     deps: DepsMut,
-    _env: Env,
-    vamm: Addr,
-    position_id: u64,
+    vamm: &Addr,
+    position: &Position,
     quote_asset_limit: Uint128,
     decimals: Uint128,
     partial_liquidation_ratio: Uint128,
 ) -> StdResult<SubMsg> {
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
-    let position = read_position(deps.storage, &vamm_key, position_id)?;
     let partial_position_size = position
         .size
         .value
@@ -1052,7 +1048,7 @@ fn partial_liquidation(
 
     let msg = if current_notional > position.notional {
         swap_input(
-            &vamm,
+            vamm,
             &direction_to_side(&position.direction),
             position.position_id,
             position.notional,
@@ -1062,7 +1058,7 @@ fn partial_liquidation(
         )?
     } else {
         swap_output(
-            &vamm,
+            vamm,
             &direction_to_side(&position.direction),
             position.position_id,
             partial_position_size,

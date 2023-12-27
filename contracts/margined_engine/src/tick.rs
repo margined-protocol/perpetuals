@@ -17,7 +17,7 @@ pub fn query_ticks(
     order_by: Option<i32>,
 ) -> StdResult<TicksResponse> {
     let order_by = order_by.map_or(None, |val| OrderBy::try_from(val).ok());
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(vamm.as_bytes());
 
     let position_bucket =
         ReadonlyBucket::multilevel(storage, &[PREFIX_TICK, &vamm_key, side.as_bytes()]);
@@ -52,7 +52,7 @@ pub fn query_tick(
     entry_price: Uint128,
 ) -> StdResult<TickResponse> {
     let price_key = entry_price.to_be_bytes();
-    let vamm_key = keccak_256(&[vamm.as_bytes()].concat());
+    let vamm_key = keccak_256(vamm.as_bytes());
 
     let total_positions =
         ReadonlyBucket::<u64>::multilevel(storage, &[PREFIX_TICK, &vamm_key, side.as_bytes()])
