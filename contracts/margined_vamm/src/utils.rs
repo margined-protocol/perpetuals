@@ -5,8 +5,8 @@ use margined_utils::tools::price_swap::{
 };
 
 use crate::state::{
-    read_config, read_reserve_snapshot, read_reserve_snapshot_counter, read_state,
-    store_reserve_snapshot, update_current_reserve_snapshot,
+    read_config, read_reserve_snapshot, read_reserve_snapshot_counter, store_reserve_snapshot,
+    update_current_reserve_snapshot,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -55,10 +55,10 @@ pub fn check_is_over_block_fluctuation_limit(
     direction: Direction,
     quote_asset_amount: Uint128,
     base_asset_amount: Uint128,
+    quote_asset_reserve: Uint128,
+    base_asset_reserve: Uint128,
     can_go_over_limit: bool,
 ) -> StdResult<Response> {
-    let state = read_state(storage)?;
-
     if fluctuation_limit_ratio.is_zero() {
         return Ok(Response::new());
     }
@@ -66,10 +66,9 @@ pub fn check_is_over_block_fluctuation_limit(
     let (upper_limit, lower_limit) =
         price_boundaries_of_last_block(storage, decimals, fluctuation_limit_ratio, env)?;
 
-    let current_price = state
-        .quote_asset_reserve
+    let current_price = quote_asset_reserve
         .checked_mul(decimals)?
-        .checked_div(state.base_asset_reserve)?;
+        .checked_div(base_asset_reserve)?;
 
     // ensure that the latest price isn't over the limit which would restrict any further
     // swaps from occurring in this block
@@ -81,17 +80,15 @@ pub fn check_is_over_block_fluctuation_limit(
 
     if !can_go_over_limit {
         let price = if direction == Direction::AddToAmm {
-            state
-                .quote_asset_reserve
+            quote_asset_reserve
                 .checked_add(quote_asset_amount)?
                 .checked_mul(decimals)?
-                .checked_div(state.base_asset_reserve.checked_sub(base_asset_amount)?)
+                .checked_div(base_asset_reserve.checked_sub(base_asset_amount)?)
         } else {
-            state
-                .quote_asset_reserve
+            quote_asset_reserve
                 .checked_sub(quote_asset_amount)?
                 .checked_mul(decimals)?
-                .checked_div(state.base_asset_reserve.checked_add(base_asset_amount)?)
+                .checked_div(base_asset_reserve.checked_add(base_asset_amount)?)
         }?;
         if price > upper_limit || price < lower_limit {
             return Err(StdError::generic_err("price is over fluctuation limit"));

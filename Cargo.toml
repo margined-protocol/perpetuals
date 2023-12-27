@@ -49,6 +49,7 @@ mock_pricefeed = { path = "./contracts/mocks/mock_pricefeed" }
 
 osmosis-test-tube = { git = "https://github.com/oraichain/test-tube.git", rev = "354d580" }
 test-tube = { git = "https://github.com/oraichain/test-tube.git", rev = "354d580" }
+cosmwasm-testing-util = { git = "https://github.com/oraichain/cosmwasm-testing-util.git", rev = "77d6a49" }
 
 
 [profile.release]

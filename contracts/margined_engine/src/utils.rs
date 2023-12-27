@@ -2,7 +2,10 @@ use cosmwasm_std::{
     Addr, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Storage, SubMsg,
     SubMsgResponse, Uint128,
 };
-use margined_utils::{contracts::helpers::{InsuranceFundController, VammController}, tools::price_swap::get_output_price_with_reserves};
+use margined_utils::{
+    contracts::helpers::{InsuranceFundController, VammController},
+    tools::price_swap::get_output_price_with_reserves,
+};
 use sha3::{Digest, Sha3_256};
 
 use std::str::FromStr;
@@ -522,7 +525,6 @@ pub fn check_tp_sl_price(
         {
             msg = String::from("trigger_stop_loss");
         }
-        
     }
     Ok(msg)
 }

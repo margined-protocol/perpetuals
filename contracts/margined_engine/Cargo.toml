@@ -43,3 +43,4 @@ mock_pricefeed = { workspace = true }
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
 osmosis-test-tube = { workspace = true }
 test-tube = { workspace = true }
+cosmwasm-testing-util = { workspace = true }

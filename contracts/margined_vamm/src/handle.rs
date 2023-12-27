@@ -425,6 +425,8 @@ pub fn update_reserve(
     can_go_over_fluctuation: bool,
 ) -> StdResult<Response> {
     let config = read_config(storage)?;
+    let mut state = read_state(storage)?;
+
     check_is_over_block_fluctuation_limit(
         storage,
         env.clone(),
@@ -433,10 +435,10 @@ pub fn update_reserve(
         direction.clone(),
         quote_asset_amount,
         base_asset_amount,
+        state.quote_asset_reserve,
+        state.base_asset_reserve,
         can_go_over_fluctuation,
     )?;
-
-    let mut state = read_state(storage)?;
 
     match direction {
         Direction::AddToAmm => {
