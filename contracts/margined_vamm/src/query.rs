@@ -211,9 +211,14 @@ pub fn query_is_over_fluctuation_limit(
         env,
     )?;
 
-    let quote_asset_amount = query_output_amount(deps, direction.clone(), base_asset_amount)?;
-
     let state = read_state(deps.storage)?;
+
+    let quote_asset_amount = get_output_price_with_reserves(
+        &direction,
+        base_asset_amount,
+        state.quote_asset_reserve,
+        state.base_asset_reserve,
+    )?;
 
     let price = if direction == Direction::RemoveFromAmm {
         state
