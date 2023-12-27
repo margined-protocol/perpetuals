@@ -5,22 +5,21 @@ use std::convert::{TryFrom, TryInto};
 
 use crate::{
     state::{DEFAULT_LIMIT, MAX_LIMIT, PREFIX_TICK},
-    utils::{calc_range_start, keccak_256},
+    utils::calc_range_start,
 };
 
 pub fn query_ticks(
     storage: &dyn Storage,
-    vamm: String,
+    vamm_key: &[u8],
     side: Side,
     start_after: Option<Uint128>,
     limit: Option<u32>,
     order_by: Option<i32>,
 ) -> StdResult<TicksResponse> {
     let order_by = order_by.map_or(None, |val| OrderBy::try_from(val).ok());
-    let vamm_key = keccak_256(vamm.as_bytes());
 
     let position_bucket =
-        ReadonlyBucket::multilevel(storage, &[PREFIX_TICK, &vamm_key, side.as_bytes()]);
+        ReadonlyBucket::multilevel(storage, &[PREFIX_TICK, vamm_key, side.as_bytes()]);
 
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let start_after = start_after.map(|id| id.to_be_bytes().to_vec());
@@ -47,15 +46,14 @@ pub fn query_ticks(
 
 pub fn query_tick(
     storage: &dyn Storage,
-    vamm: String,
+    vamm_key: &[u8],
     side: Side,
     entry_price: Uint128,
 ) -> StdResult<TickResponse> {
     let price_key = entry_price.to_be_bytes();
-    let vamm_key = keccak_256(vamm.as_bytes());
 
     let total_positions =
-        ReadonlyBucket::<u64>::multilevel(storage, &[PREFIX_TICK, &vamm_key, side.as_bytes()])
+        ReadonlyBucket::<u64>::multilevel(storage, &[PREFIX_TICK, vamm_key, side.as_bytes()])
             .load(&price_key)?;
 
     Ok(TickResponse {

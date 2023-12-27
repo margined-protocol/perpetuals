@@ -231,7 +231,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             order_by,
         } => to_binary(&query_positions(
             deps.storage,
-            vamm,
+            &keccak_256(vamm.as_bytes()),
             side,
             filter,
             start_after,
@@ -249,7 +249,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             order_by,
         } => to_binary(&query_ticks(
             deps.storage,
-            vamm,
+            &keccak_256(vamm.as_bytes()),
             side,
             start_after,
             limit,
@@ -259,7 +259,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             vamm,
             side,
             entry_price,
-        } => to_binary(&query_tick(deps.storage, vamm, side, entry_price)?),
+        } => to_binary(&query_tick(
+            deps.storage,
+            &keccak_256(vamm.as_bytes()),
+            side,
+            entry_price,
+        )?),
         QueryMsg::MarginRatio { vamm, position_id } => {
             let vamm_key = keccak_256(vamm.as_bytes());
             let position = read_position(deps.storage, &vamm_key, position_id)?;

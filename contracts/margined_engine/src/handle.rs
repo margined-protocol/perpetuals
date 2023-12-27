@@ -586,9 +586,11 @@ pub fn trigger_mutiple_tp_sl(
         Order::Ascending
     };
 
+    let vamm_key = keccak_256(vamm.as_bytes());
+
     let ticks = query_ticks(
         deps.storage,
-        vamm.clone(),
+        &vamm_key,
         side,
         None,
         Some(limit),
@@ -598,7 +600,7 @@ pub fn trigger_mutiple_tp_sl(
     for tick in &ticks.ticks {
         let position_by_price = query_positions(
             deps.storage,
-            vamm.clone(),
+            &vamm_key,
             Some(side),
             PositionFilter::Price(tick.entry_price),
             None,

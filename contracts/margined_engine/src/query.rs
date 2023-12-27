@@ -61,7 +61,7 @@ pub fn query_position(deps: Deps, vamm: String, position_id: u64) -> StdResult<P
 /// Queries and returns users positions for registered vamms
 pub fn query_positions(
     storage: &dyn Storage,
-    vamm: String,
+    vamm_key: &[u8],
     side: Option<Side>,
     filter: PositionFilter,
     start_after: Option<u64>,
@@ -69,7 +69,6 @@ pub fn query_positions(
     order_by: Option<i32>,
 ) -> StdResult<Vec<Position>> {
     let order_by = order_by.map_or(None, |val| Order::try_from(val).ok());
-    let vamm_key = keccak_256(vamm.as_bytes());
 
     let (direction_filter, direction_key): (Box<dyn Fn(&Side) -> bool>, Vec<u8>) = match side {
         // copy value to closure
@@ -80,7 +79,7 @@ pub fn query_positions(
     let positions: Option<Vec<Position>> = match filter {
         PositionFilter::Trader(trader_addr) => read_positions_with_indexer::<Side>(
             storage,
-            &[PREFIX_POSITION_BY_TRADER, &vamm_key, trader_addr.as_bytes()],
+            &[PREFIX_POSITION_BY_TRADER, vamm_key, trader_addr.as_bytes()],
             direction_filter,
             start_after,
             limit,
@@ -90,7 +89,7 @@ pub fn query_positions(
             let price_key = price.to_be_bytes();
             read_positions_with_indexer::<Side>(
                 storage,
-                &[PREFIX_POSITION_BY_PRICE, &vamm_key, &price_key],
+                &[PREFIX_POSITION_BY_PRICE, vamm_key, &price_key],
                 direction_filter,
                 start_after,
                 limit,
@@ -100,7 +99,7 @@ pub fn query_positions(
         PositionFilter::None => match side {
             Some(_) => read_positions_with_indexer::<Side>(
                 storage,
-                &[PREFIX_POSITION_BY_SIDE, &vamm_key, &direction_key],
+                &[PREFIX_POSITION_BY_SIDE, vamm_key, &direction_key],
                 direction_filter,
                 start_after,
                 limit,
@@ -108,7 +107,7 @@ pub fn query_positions(
             )?,
             None => Some(read_positions(
                 storage,
-                &vamm_key,
+                vamm_key,
                 start_after,
                 limit,
                 order_by,
@@ -340,11 +339,11 @@ pub fn query_position_is_tpsl(
     } else {
         Order::Ascending
     };
-
+    let vamm_key = keccak_256(vamm.as_bytes());
     let mut is_tpsl: bool = false;
     let ticks = query_ticks(
         deps.storage,
-        vamm.clone(),
+        &vamm_key,
         side,
         None,
         Some(limit),
@@ -354,7 +353,7 @@ pub fn query_position_is_tpsl(
     for tick in &ticks.ticks {
         let position_by_price = query_positions(
             deps.storage,
-            vamm.clone(),
+            &vamm_key,
             Some(side),
             PositionFilter::Price(tick.entry_price),
             None,
