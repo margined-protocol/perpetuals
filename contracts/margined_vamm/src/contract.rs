@@ -277,15 +277,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
-    let mut config: Config = read_config(deps.storage)?;
-
-    validate_assets(&msg.base_asset)?;
-    validate_assets(&msg.quote_asset)?;
-
-    config.base_asset = msg.base_asset;
-    config.quote_asset = msg.quote_asset;
-
-    store_config(deps.storage, &config)?;
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     Ok(Response::new())
 }

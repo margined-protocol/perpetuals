@@ -22,10 +22,7 @@ impl Direction {
 }
 
 #[cw_serde]
-pub struct MigrateMsg {
-    pub base_asset: String,
-    pub quote_asset: String,
-}
+pub struct MigrateMsg {}
 
 #[cw_serde]
 pub struct InstantiateMsg {
