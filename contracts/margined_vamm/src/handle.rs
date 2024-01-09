@@ -136,7 +136,11 @@ pub fn set_open(deps: DepsMut, env: Env, info: MessageInfo, open: bool) -> StdRe
 
     store_state(deps.storage, &state)?;
 
-    Ok(Response::new().add_attribute("action", "set_open"))
+    Ok(Response::new()
+        .add_attribute("action", "set_open")
+        .add_attribute("vamm", &env.contract.address)
+        .add_attribute("base_asset", config.base_asset)
+        .add_attribute("quote_asset", config.quote_asset))
 }
 
 pub fn migrate_liquidity(
