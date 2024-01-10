@@ -798,7 +798,8 @@ pub fn pay_funding(
 
     Ok(Response::new()
         .add_submessage(funding_msg)
-        .add_attribute("action", "pay_funding"))
+        .add_attribute("action", "pay_funding")
+        .add_attribute("vamm", &vamm))
 }
 
 /// Enables a user to directly deposit margin into their position
@@ -854,6 +855,7 @@ pub fn deposit_margin(
         ("position_id", &position_id.to_string()),
         ("trader", trader.as_ref()),
         ("deposit_amount", &amount.to_string()),
+        ("vamm", &vamm),
     ]))
 }
 
@@ -933,6 +935,7 @@ pub fn withdraw_margin(
             &remain_margin.latest_premium_fraction.to_string(),
         ),
         ("bad_debt", &remain_margin.bad_debt.to_string()),
+        ("vamm", &vamm),
     ]))
 }
 
