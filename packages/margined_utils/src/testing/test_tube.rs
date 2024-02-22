@@ -162,6 +162,7 @@ impl TestTubeScenario {
                 engine_id,
                 &InstantiateMsg {
                     pauser: owner.address(),
+                    operator: None,
                     insurance_fund: None,
                     fee_pool: fee_pool.0.to_string(),
                     eligible_collateral: usdc.0.to_string(),

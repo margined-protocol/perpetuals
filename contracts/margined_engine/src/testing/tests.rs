@@ -22,6 +22,7 @@ fn test_instantiation() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         pauser: OWNER.to_string(),
+        operator: None,
         insurance_fund: Some(INSURANCE_FUND.to_string()),
         fee_pool: FEE_POOL.to_string(),
         eligible_collateral: NATIVE_DENOM.to_string(),
@@ -40,6 +41,7 @@ fn test_instantiation() {
         config,
         ConfigResponse {
             owner: info.sender,
+            operator: None,
             insurance_fund: Some(Addr::unchecked(INSURANCE_FUND.to_string())),
             fee_pool: Addr::unchecked(FEE_POOL.to_string()),
             eligible_collateral: AssetInfo::NativeToken {
@@ -60,6 +62,7 @@ fn test_update_config() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         pauser: OWNER.to_string(),
+        operator: None,
         insurance_fund: Some(INSURANCE_FUND.to_string()),
         fee_pool: FEE_POOL.to_string(),
         eligible_collateral: NATIVE_DENOM.to_string(),
@@ -92,6 +95,7 @@ fn test_update_config() {
         config,
         ConfigResponse {
             owner: Addr::unchecked("addr0001".to_string()),
+            operator: None,
             insurance_fund: Some(Addr::unchecked(INSURANCE_FUND.to_string())),
             fee_pool: Addr::unchecked(FEE_POOL.to_string()),
             eligible_collateral: AssetInfo::NativeToken {
@@ -144,6 +148,7 @@ fn test_update_pauser() {
     let mut deps = mock_dependencies();
     let msg = InstantiateMsg {
         pauser: OWNER.to_string(),
+        operator: None,
         insurance_fund: Some(INSURANCE_FUND.to_string()),
         fee_pool: FEE_POOL.to_string(),
         eligible_collateral: NATIVE_DENOM.to_string(),

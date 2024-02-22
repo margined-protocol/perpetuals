@@ -396,7 +396,6 @@ pub fn liquidate_reply(
     position_id: u64,
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
-    let liquidator = read_tmp_liquidator(deps.storage)?;
 
     let vamm_key = keccak_256(swap.vamm.as_bytes());
     let position = read_position(deps.storage, &vamm_key, position_id)?;
@@ -415,6 +414,11 @@ pub fn liquidate_reply(
         calc_remain_margin_with_funding_payment(deps.as_ref(), &position, margin_delta)?;
 
     let config = read_config(deps.storage)?;
+
+    let liquidator = match config.operator {
+        Some(addr) => addr,
+        None => read_tmp_liquidator(deps.storage)?,
+    };
 
     // calculate liquidation penalty and fee for liquidator
     let liquidation_penalty = output
@@ -500,11 +504,15 @@ pub fn partial_liquidation_reply(
     position_id: u64,
 ) -> StdResult<Response> {
     let swap = read_tmp_swap(deps.storage, &position_id.to_be_bytes())?;
-    let liquidator = read_tmp_liquidator(deps.storage)?;
 
     let vamm_key = keccak_256(swap.vamm.as_bytes());
     let mut position = read_position(deps.storage, &vamm_key, position_id)?;
     let config = read_config(deps.storage)?;
+
+    let liquidator = match config.operator {
+        Some(addr) => addr,
+        None => read_tmp_liquidator(deps.storage)?,
+    };
 
     // calculate delta from trade and whether it was profitable or a loss
     let realized_pnl = (swap.unrealized_pnl

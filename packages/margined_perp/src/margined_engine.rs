@@ -36,6 +36,7 @@ pub enum PositionFilter {
 #[cw_serde]
 pub struct InstantiateMsg {
     pub pauser: String,
+    pub operator: Option<String>,       // address to receive reward
     pub insurance_fund: Option<String>, // insurance_fund need engine addr, so there is senario when we re-deploy engine
     pub fee_pool: String,
     pub eligible_collateral: String,
@@ -210,6 +211,7 @@ pub struct ConfigResponse {
     pub partial_liquidation_ratio: Uint128,
     pub tp_sl_spread: Uint128,
     pub liquidation_fee: Uint128,
+    pub operator: Option<Addr>,
 }
 
 #[cw_serde]

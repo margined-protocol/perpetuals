@@ -70,6 +70,10 @@ pub fn instantiate(
         Some(addr) => Some(deps.api.addr_validate(&addr)?),
         None => None,
     };
+    let operator = match msg.operator {
+        Some(addr) => Some(deps.api.addr_validate(&addr)?),
+        None => None,
+    };
 
     let fee_pool = deps.api.addr_validate(&msg.fee_pool)?;
 
@@ -95,6 +99,7 @@ pub fn instantiate(
     let config = Config {
         owner: info.sender,
         insurance_fund,
+        operator,
         fee_pool,
         eligible_collateral,
         decimals,
